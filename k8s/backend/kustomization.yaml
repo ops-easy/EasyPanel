@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: kube-bt-sync
+
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - pvc.yaml
+  # Secret 请自行创建（见 secret-example.yaml），勿将真实密钥提交仓库
+  - deployment.yaml
+  - service.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/component: kube-bt-sync
+    includeSelectors: false
+
+# 后端只暴露 ClusterIP；外部访问入口在 k8s/frontend。

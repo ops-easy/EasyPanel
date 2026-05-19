@@ -1,0 +1,217 @@
+# Kube-BT-Sync
+
+Kube-BT-Sync 是面向自建 Kubernetes、Homelab 与小型私有云环境的运维控制台。它以 Go 后端和 React 前端组成，提供 Kubernetes 资源管理、Ingress 到宝塔面板的同步、应用中心、vCenter/云主机纳管、监控日志查询、文档中心与账号权限管理等能力。
+
+当前仓库计划作为新项目发布到 `https://github.com/ops-easy/kube-bt-sync.git`。文档、部署清单和镜像发布流程均以这个新仓库作为默认上下文。
+
+## 核心能力
+
+| 模块 | 说明 |
+| --- | --- |
+| 工作台 | 汇总平台状态，并在 Kubernetes、宝塔、应用中心、vCenter、堡垒机、巡检、文档等工作区之间切换 |
+| Kubernetes | 查看命名空间、Pods、Nodes、Services、Ingresses、Workloads、PVC、ConfigMap、Secret、RBAC、CRD；支持日志、终端、YAML 与图形化编辑 |
+| Ingress 同步 | 监听带注解的 Ingress，将域名与上游规则同步到宝塔 Nginx，支持 HTTPS 证书配置 |
+| 应用中心 | 管理 Redis、Kafka、OpenSearch、Cloud VM、OpenClaw、DNS 等实例和模板 |
+| vCenter 与堡垒机 | 纳管 vSphere 虚拟机、ESXi 主机、WebMKS 控制台、SSH/SFTP、云主机和来宾性能数据 |
+| 监控与日志 | 对接 Prometheus、VictoriaMetrics、VictoriaLogs、Harbor、企业微信告警和巡检报告 |
+| 文档中心 | 内置 Markdown 编辑器、附件上传、公开分享页面、Excalidraw 白板和 CDN 静态资源配置 |
+| 账号与安全 | 本地账号、TOTP、OIDC、角色权限、审计日志、访问统计和平台外观配置 |
+
+## 技术栈
+
+后端：
+
+- Go 1.25.6
+- Gin
+- Kubernetes client-go
+- MySQL、Redis
+- govmomi
+- franz-go
+- Gorilla WebSocket
+
+前端：
+
+- React 19
+- TypeScript
+- Vite 7
+- Tailwind CSS v4
+- Radix UI / shadcn 风格组件
+- TanStack Query
+- React Router
+- XTerm.js、Recharts、ByteMD、Excalidraw
+
+## 项目结构
+
+```text
+kube-bt-sync/
+├── api/                         # Go 后端，入口为 api/main.go
+├── web/                         # React + Vite 前端
+├── k8s/backend/                 # 后端 Kubernetes 清单
+├── k8s/frontend/                # 前端 Kubernetes 清单
+├── k8s/charts/kube-bt-sync/     # Helm Chart
+├── docs/                        # 运维说明文档
+├── .github/workflows/           # GHCR 镜像发布工作流
+└── makefile                     # 常用本地开发命令
+```
+
+## 快速开始
+
+### 本地开发
+
+准备：
+
+- Go 1.25.6 或兼容版本
+- Node.js 20+ 与 npm
+- 可选：kubectl、Helm、Docker
+
+启动后端：
+
+```bash
+make start-backend
+```
+
+启动前端：
+
+```bash
+make start-frontend
+```
+
+常用检查：
+
+```bash
+cd api && go test ./...
+cd web && npm run build
+cd web && npm run lint
+```
+
+### Kustomize 部署
+
+默认清单会创建 `kube-bt-sync` 命名空间、RBAC、PVC、后端 Deployment/Service、前端 Deployment/NodePort Service。
+
+```bash
+kubectl apply -k k8s
+kubectl -n kube-bt-sync get pod,svc,pvc
+```
+
+前端 Service 默认暴露 NodePort `32080`：
+
+```text
+http://<任意节点 IP>:32080/setup
+```
+
+首次访问 `/setup` 完成初始化。生产环境建议再配置 Ingress 与 HTTPS：
+
+```bash
+kubectl apply -f k8s/frontend/ingress.yaml
+```
+
+### Helm 部署
+
+```bash
+helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
+  --namespace kube-bt-sync \
+  --create-namespace \
+  --set backend.image.repository=ghcr.io/ops-easy/kube-bt-sync \
+  --set backend.image.tag=latest \
+  --set frontend.image.repository=ghcr.io/ops-easy/kube-bt-sync-web \
+  --set frontend.image.tag=latest
+```
+
+## 镜像发布
+
+仓库包含 GitHub Actions 工作流 `.github/workflows/publish-images.yml`。推送到 `main` 或手动触发后，会发布：
+
+- `ghcr.io/ops-easy/kube-bt-sync:latest`
+- `ghcr.io/ops-easy/kube-bt-sync:<commit-sha>`
+- `ghcr.io/ops-easy/kube-bt-sync-web:latest`
+- `ghcr.io/ops-easy/kube-bt-sync-web:<commit-sha>`
+
+后端镜像使用多阶段构建，最终运行镜像基于 `distroless/static-debian12:nonroot`；前端镜像基于 Nginx，并将 `/api/` 与 `/r/` 反向代理到后端 Service。
+
+## 关键配置
+
+完整配置以 `api/internal/config.go` 中的 `LoadConfig()` 为准。常用变量如下：
+
+| 变量 | 说明 |
+| --- | --- |
+| `DASHBOARD_HTTP_ADDR` | 后端监听地址，默认 `:8080` |
+| `DASHBOARD_USER` / `DASHBOARD_PASSWORD` | 本地登录账号和密码 |
+| `DASHBOARD_SESSION_SECRET` | 会话签名密钥，多副本部署必须固定一致 |
+| `DASHBOARD_COOKIE_SECURE` | HTTPS 部署时建议设为 `true` |
+| `DASHBOARD_TRUSTED_PROXIES` | 可信代理 CIDR，用于正确解析客户端 IP |
+| `KUBEBT_DATA_DIR` | 运行数据目录，Kubernetes 中默认挂载到 `/data` |
+| `KUBEBT_ENCRYPTION_KEY` | SSH/SFTP 等敏感凭据的加密密钥 |
+| `KUBEBT_ENABLE_BACKGROUND_JOBS` | 是否启用后台同步、巡检和通知任务；多副本时仅保留一个副本为 `true` |
+| `BAOTA_URL` / `BAOTA_API_KEY` | 宝塔面板 API 地址与密钥 |
+| `INGRESS_BAOTA_SYNC_ENABLED` | 是否启用 Ingress 到宝塔的后台同步 |
+| `DDNS_HOST` / `DEFAULT_PORT` | Ingress 同步时默认上游域名与端口 |
+| `MYSQL_DSN` 或 `MYSQL_HOST` 系列 | MySQL 连接配置 |
+| `REDIS_ADDR` / `REDIS_PASSWORD` | Redis 连接配置 |
+| `PROMETHEUS_URL_K8S` / `VM_SELECT_URL_K8S` | Kubernetes 监控数据源 |
+| `VICTORIA_LOGS_URL` | VictoriaLogs 查询地址 |
+| `VCENTER_URL` / `VCENTER_USER` / `VCENTER_PASSWORD` | vCenter 连接配置 |
+| `HARBOR_BASE_URL` / `HARBOR_USERNAME` / `HARBOR_PASSWORD` | Harbor API 配置 |
+| `OIDC_ISSUER_URL` 等 | OIDC 登录配置 |
+| `KUBEBT_ASSETS_CDN_BASE` | 文档公开页静态资源 CDN 根地址 |
+
+敏感配置请通过 Kubernetes `Secret`、CI Secret 或外部密钥系统注入，不要写入镜像和公开仓库。
+
+## Ingress 同步注解
+
+为需要同步到宝塔的 Ingress 添加注解：
+
+```bash
+kubectl annotate ingress <name> -n <namespace> kube-bt-sync.io/baota-sync="true"
+```
+
+常用注解：
+
+| 注解 | 说明 |
+| --- | --- |
+| `kube-bt-sync.io/baota-sync: "true"` | 标记为受管 Ingress |
+| `kube-bt-sync.io/baota-https: "true"` | 在宝塔侧启用 HTTPS |
+| `kube-bt-sync.io/baota-ssl-cert-name: "<cert>"` | 指定宝塔证书名称 |
+| `kube-bt-sync.io/ddns-port: "<port>"` | 覆盖默认上游端口 |
+| `i4t.com/baota-sync: "true"` | 旧版兼容注解 |
+
+示例：
+
+```yaml
+metadata:
+  annotations:
+    kube-bt-sync.io/baota-sync: "true"
+    kube-bt-sync.io/baota-https: "true"
+    kube-bt-sync.io/baota-ssl-cert-name: "example-cert"
+```
+
+## 数据持久化
+
+| 数据 | 推荐位置 |
+| --- | --- |
+| 运行时配置 | `/data/runtime-config.json` 或 MySQL / Redis 镜像 |
+| 平台 KV | 文件、MySQL 或 Redis |
+| 用户、审计、应用实例、文档索引 | MySQL |
+| 文档附件 | 本地 `/data/doc-uploads` 或腾讯云 COS |
+| SSH/SFTP 凭据 | `/data/ssh-settings`，配合 `KUBEBT_ENCRYPTION_KEY` 加密 |
+
+多副本部署建议使用 MySQL 保存平台核心状态，并固定 `DASHBOARD_SESSION_SECRET` 与 `KUBEBT_ENCRYPTION_KEY`。
+
+## 文档索引
+
+- [Kubernetes 部署说明](./k8s/README.md)
+- [MetalLB 与 ingress-nginx 说明](./docs/kubernetes-metallb-ingress-nginx.md)
+- [Kubernetes Dashboard 与 Prometheus 对接](./docs/kubernetes-dashboard-prometheus.md)
+- [文档公开页静态资源 CDN](./docs/external-assets-for-oss.md)
+- [前端开发说明](./web/README.md)
+- [Kafka 限速压测手册](./k8s/backend/kafka-throttle-perf.md)
+- [贡献指南](./CONTRIBUTING.md)
+- [安全策略](./SECURITY.md)
+- [行为准则](./CODE_OF_CONDUCT.md)
+
+## 许可证
+
+本项目使用 [MIT License](./LICENSE)。
+
+## 免责声明
+
+Kube-BT-Sync 面向自建基础设施与运维自动化场景。生产环境使用前，请结合你的网络边界、权限模型、密钥管理、审计要求和灾备策略完成安全评估。

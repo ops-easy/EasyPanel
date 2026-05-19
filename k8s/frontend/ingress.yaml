@@ -1,0 +1,28 @@
+# 可选：用 Ingress 暴露前端控制台（需集群已安装 Ingress Controller）
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kube-bt-sync-frontend
+  namespace: kube-bt-sync
+  labels:
+    app.kubernetes.io/name: kube-bt-sync-frontend
+    app.kubernetes.io/part-of: kube-bt-sync
+    app.kubernetes.io/component: frontend
+  annotations:
+    # 应用中心 OpenClaw 对话等长请求；默认 60s 易 504，且勿小于后端 WriteTimeout。
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "15"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: kube-bt-sync.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kube-bt-sync-frontend
+                port:
+                  number: 80

@@ -1,0 +1,97 @@
+{{- $backend := .Values.backend | default dict -}}
+{{- $legacyImage := .Values.image | default dict -}}
+{{- $backendImage := $backend.image | default dict -}}
+{{- $legacyService := .Values.service | default dict -}}
+{{- $backendService := $backend.service | default dict -}}
+{{- $env := default ($backend.env | default dict) .Values.env -}}
+{{- $extraEnv := default ($backend.extraEnv | default list) .Values.extraEnv -}}
+{{- $extraEnvFrom := default ($backend.extraEnvFrom | default list) .Values.extraEnvFrom -}}
+{{- $podSecurityContext := default ($backend.podSecurityContext | default dict) .Values.podSecurityContext -}}
+{{- $securityContext := default ($backend.securityContext | default dict) .Values.securityContext -}}
+{{- $resources := default ($backend.resources | default dict) .Values.resources -}}
+{{- $nodeSelector := default ($backend.nodeSelector | default dict) .Values.nodeSelector -}}
+{{- $affinity := default ($backend.affinity | default dict) .Values.affinity -}}
+{{- $tolerations := default ($backend.tolerations | default list) .Values.tolerations -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kube-bt-sync.fullname" . }}
+  labels:
+    {{- include "kube-bt-sync.labels" . | nindent 4 }}
+spec:
+  replicas: {{ default ($backend.replicaCount | default 1) .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "kube-bt-sync.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kube-bt-sync.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with $podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "kube-bt-sync.serviceAccountName" . }}
+      containers:
+        - name: kube-bt-sync
+          image: "{{ default $backendImage.repository $legacyImage.repository }}:{{ default ($backendImage.tag | default "latest") $legacyImage.tag }}"
+          imagePullPolicy: {{ default ($backendImage.pullPolicy | default "IfNotPresent") $legacyImage.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ default ($backendService.port | default 8080) $legacyService.port }}
+          {{- with $securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if or $env $extraEnv }}
+          env:
+            {{- range $k, $v := $env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+            {{- with $extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with $extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            {{- toYaml $resources | nindent 12 }}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "kube-bt-sync.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- with $nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

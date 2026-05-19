@@ -1,0 +1,34 @@
+# Git / IDE
+.git
+.gitignore
+.github
+.cursor
+.idea
+.vscode
+
+# 文档与示例（不参与 Go/Web 构建）
+*.md
+.env*
+!.env.example
+connectivity-check.env.example
+
+# 前端
+web/node_modules
+web/dist
+
+# 本地数据与日志（切勿打入镜像）
+data
+api/kube-bt-sync
+*.log
+.DS_Store
+dist
+
+# Helm / 裸 YAML 部署清单（镜像内不需要）
+k8s
+
+# 独立命令行工具（主程序不依赖）
+api/cmd
+
+# 其他
+k8s/**/*.tgz
+*.test
