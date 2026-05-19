@@ -27,8 +27,8 @@ import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
 import { apiGetJson } from "@/lib/api";
 import { menuItemVisible, moduleVisible } from "@/lib/platform-permissions";
 import { cn } from "@/lib/utils";
-import { type K8sSummary } from "@/pages/cluster/types";
-import { type VCenterVMsResponse, type VCenterHostsResponse } from "@/pages/vcenter/types";
+import { type K8sSummary } from "@/features/cluster/pages/types";
+import { type VCenterVMsResponse, type VCenterHostsResponse } from "@/features/vcenter/pages/types";
 
 type RedisStatus = {
   mysqlReachable: boolean;

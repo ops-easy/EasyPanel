@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FilePlus2, ImageIcon, PenLine, Save, Share2, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import { cn } from "@/lib/utils";
 
 interface ToolbarProps {

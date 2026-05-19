@@ -1,5 +1,15 @@
 # 贡献指南
 
+## 前端目录约定
+
+前端新增业务页面、业务组件、接口封装和类型定义时，优先放入 `web/src/features/<domain>`。
+
+- 跨业务基础 UI 放在 `web/src/shared/ui`。
+- 通用 HTTP/WebSocket client 放在 `web/src/shared/api`。
+- 全局布局放在 `web/src/shared/layout`。
+- 应用启动、Provider、路由组合和守卫放在 `web/src/app`。
+- `web/src/pages` 只保留 `HomeHub`、`Login`、`Setup`、`NotFound` 等顶层入口。
+
 感谢你对 Kube-BT-Sync 的关注。这个项目覆盖 Kubernetes、宝塔面板、vCenter、监控日志、应用中心和文档中心等多个运维场景，欢迎通过 Issue、Pull Request 或文档改进参与。
 
 ## 提交 Issue

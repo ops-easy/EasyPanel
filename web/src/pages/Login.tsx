@@ -12,14 +12,14 @@ import {
   Shield,
   Terminal,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import { useAuth } from "@/auth/auth-context";
 import { ApiHttpError, apiPostJson, type SystemCheck } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { TechBadge } from "@/components/login/TechBadge";
-import { DockerLogo, GoLogo, K8sLogo, PrometheusLogo, VCenterLogo } from "@/components/login/TechLogos";
+import { TechBadge } from "@/features/auth/components/login/TechBadge";
+import { DockerLogo, GoLogo, K8sLogo, PrometheusLogo, VCenterLogo } from "@/features/auth/components/login/TechLogos";
 import "./Login.css";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";

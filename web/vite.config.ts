@@ -77,7 +77,7 @@ export default defineConfig(({ mode }) => {
     react(),
     tailwindcss(),
     AutoImport({
-      dts: "auto-imports.d.ts",
+      dts: "src/generated/auto-imports.d.ts",
       include: [/\.[tj]sx?$/],
       ignore: ["Activity"],
       imports: [

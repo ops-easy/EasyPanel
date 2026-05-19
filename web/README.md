@@ -1,5 +1,17 @@
 # 前端开发说明
 
+## 当前源码分层
+
+- `src/app`：应用启动、Provider、路由组合、认证守卫、全局 fallback。
+- `src/shared`：跨业务共享的 UI、API client、布局、工具组件。
+- `src/features`：按业务归属的页面、组件、接口、类型和 hooks。
+- `src/pages`：只保留 `HomeHub`、`Login`、`Setup`、`NotFound` 等顶层入口。
+- `src/md-editor`：文档中心编辑器，后续按独立功能包继续演进。
+- `deploy`：前端镜像相关部署配置，例如 Nginx 配置。
+- `src/generated`：构建工具生成的类型声明，不手工维护。
+
+新增业务页面时，优先放入 `src/features/<domain>/pages`；不要继续堆到 `src/pages` 根目录。
+
 `web/` 是 Kube-BT-Sync 的前端控制台，基于 React、TypeScript、Vite、Tailwind CSS、Radix UI、TanStack Query 和 React Router。
 
 ## 主要能力
@@ -39,8 +51,7 @@ web/
 ├── src/auth/                   # 登录态与认证上下文
 ├── src/md-editor/              # 文档中心编辑器
 ├── public/                     # 静态资源
-├── scripts/                    # 构建辅助脚本
-├── nginx.conf                  # 前端镜像 Nginx 配置
+├── deploy/                     # 前端镜像 Nginx 等部署配置
 └── Dockerfile                  # 前端镜像构建
 ```
 

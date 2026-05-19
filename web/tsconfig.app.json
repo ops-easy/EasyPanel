@@ -27,5 +27,5 @@
       ]
     }
   },
-  "include": ["src","auto-imports.d.ts"]
+  "include": ["src", "src/generated/auto-imports.d.ts"]
 }
