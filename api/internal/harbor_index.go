@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	harborint "kube-bt-sync/internal/integrations/harbor"
+	harborprovider "kube-bt-sync/api/harbor/provider"
 )
 
 // HarborImageIndexEntry 一条可拉取的镜像引用（细到 tag）。
@@ -132,7 +132,7 @@ func harborIndexMaxProjectPages() int {
 var harborIndexRunning atomic.Bool
 
 func harborImageReference(host, project, repo, tag string) string {
-	return harborint.ImageReference(host, project, repo, tag)
+	return harborprovider.ImageReference(host, project, repo, tag)
 }
 
 func harborIndexSearchMatch(entry *HarborImageIndexEntry, tokens []string) bool {

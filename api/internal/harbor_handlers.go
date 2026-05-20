@@ -11,13 +11,13 @@ import (
 	"strings"
 	"time"
 
-	harborint "kube-bt-sync/internal/integrations/harbor"
+	harborprovider "kube-bt-sync/api/harbor/provider"
 
 	"github.com/gin-gonic/gin"
 )
 
-func harborClientFromCfg(cfg Config) *harborint.Client {
-	return harborint.NewClient(harborint.ClientConfig{
+func harborClientFromCfg(cfg Config) *harborprovider.Client {
+	return harborprovider.NewClient(harborprovider.ClientConfig{
 		BaseURL:  cfg.HarborBaseURL,
 		Username: cfg.HarborUsername,
 		Password: cfg.HarborPassword,
@@ -26,24 +26,24 @@ func harborClientFromCfg(cfg Config) *harborint.Client {
 }
 
 func maskHarborURL(raw string) string {
-	return harborint.MaskURL(raw)
+	return harborprovider.MaskURL(raw)
 }
 
 // harborRegistryPullHost 用于 docker/K8s 镜像引用（host 或 host:port），不含路径与协议。
 func harborRegistryPullHost(baseURL string) string {
-	return harborint.RegistryPullHost(baseURL)
+	return harborprovider.RegistryPullHost(baseURL)
 }
 
 // harborNormalizeRepositoryForProject Harbor 列表接口返回的 name 常为「项目名/仓库名」（与镜像全名一致），
 // 而 API 路径已是 /projects/{project}/repositories/{repository_name}，此处应去掉与 project 重复的前缀，否则会 404。
 func harborNormalizeRepositoryForProject(project, repo string) string {
-	return harborint.NormalizeRepositoryForProject(project, repo)
+	return harborprovider.NormalizeRepositoryForProject(project, repo)
 }
 
 // harborRepositoryPathSegmentCandidates Harbor .../repositories/{repository_name}/... 中仓库名单段须 PathEscape；
 // 含 "/" 的层级仓库标准写法是将 slash 编成 %2F。若前有网关把 %2F 解码成 /，会拆成多段路由而 404，此时再试对整段二次 Escape（%→%25），即 kubebuilder%252Fkube-rbac-proxy。
 func harborRepositoryPathSegmentCandidates(repoRelative string) []string {
-	return harborint.RepositoryPathSegmentCandidates(repoRelative)
+	return harborprovider.RepositoryPathSegmentCandidates(repoRelative)
 }
 
 func harborDoGET404RepoAlt(ctx context.Context, cfg Config, primary, alt string) ([]byte, int, error) {
@@ -61,40 +61,40 @@ func harborArtifactListRepoPathEsc(ctx context.Context, cfg Config, projEsc, rep
 
 // harborLooksLikeDockerTag 用于从「仓库名:tag」中剥离 tag，避免 repositories 的 q 含冒号触发 Harbor 400。
 func harborLooksLikeDockerTag(tag string) bool {
-	return harborint.LooksLikeDockerTag(tag)
+	return harborprovider.LooksLikeDockerTag(tag)
 }
 
 func harborIsColonRune(r rune) bool {
-	return harborint.IsColonRune(r)
+	return harborprovider.IsColonRune(r)
 }
 
 // harborTrimTrailingColons 去掉末尾冒号（含全角），避免 busybox: / busybox： 触发 Harbor repositories 的 q 解析 400。
 func harborTrimTrailingColons(s string) string {
-	return harborint.TrimTrailingColons(s)
+	return harborprovider.TrimTrailingColons(s)
 }
 
 // harborLastColonIndex 返回最后一个 ASCII/全角冒号的字节下标，无则 -1。
 func harborLastColonIndex(s string) int {
-	return harborint.LastColonIndex(s)
+	return harborprovider.LastColonIndex(s)
 }
 
 // harborSanitizeRepositoryListQ Harbor GET .../repositories 的 q 为查询/glob 语法，镜像引用中的冒号（如 busybox:1.36、busybox:）会导致上游 400。
 func harborSanitizeRepositoryListQ(raw string) string {
-	return harborint.SanitizeRepositoryListQ(raw)
+	return harborprovider.SanitizeRepositoryListQ(raw)
 }
 
 func harborConfiguredFromCfg(cfg Config) bool {
-	return harborint.Configured(cfg.HarborBaseURL, cfg.HarborUsername, cfg.HarborPassword)
+	return harborprovider.Configured(cfg.HarborBaseURL, cfg.HarborUsername, cfg.HarborPassword)
 }
 
 func harborAPIRoot(cfg Config) string {
-	return harborint.APIRoot(cfg.HarborBaseURL)
+	return harborprovider.APIRoot(cfg.HarborBaseURL)
 }
 
 // harborResolvePublicUIURL 浏览器可打开的 Harbor 控制台根地址（不含凭据）。
 // 优先使用 Harbor systeminfo.external_url，否则使用运行时 harborBaseUrl。
 func harborResolvePublicUIURL(cfg Config, systeminfo map[string]any) string {
-	return harborint.ResolvePublicUIURL(cfg.HarborBaseURL, systeminfo)
+	return harborprovider.ResolvePublicUIURL(cfg.HarborBaseURL, systeminfo)
 }
 
 // harborFetchSystemInfoMap 拉取 GET /systeminfo 解析为 map（失败返回 nil）。
@@ -104,22 +104,22 @@ func harborFetchSystemInfoMap(ctx context.Context, cfg Config) map[string]any {
 
 func harborDo(ctx context.Context, cfg Config, method, pathAndQuery string, body io.Reader) ([]byte, int, error) {
 	b, code, err := harborClientFromCfg(cfg).Do(ctx, method, pathAndQuery, body)
-	if err == harborint.ErrNotConfigured {
+	if err == harborprovider.ErrNotConfigured {
 		return nil, 0, errHarborNotConfigured
 	}
 	return b, code, err
 }
 
 // harborAPIErrorItem Harbor v2 常见错误体：{"errors":[{"code":"UNAUTHORIZED","message":"unauthorized"}]}
-type harborAPIErrorItem = harborint.APIErrorItem
+type harborAPIErrorItem = harborprovider.APIErrorItem
 
 func harborParseUpstreamErrors(b []byte) []harborAPIErrorItem {
-	return harborint.ParseUpstreamErrors(b)
+	return harborprovider.ParseUpstreamErrors(b)
 }
 
 // harborFormatHarborAuthFailure 将上游 401/403 正文整理为可读说明（解析 Harbor errors JSON，避免整段 JSON 塞进 error）。
 func harborFormatHarborAuthFailure(code int, b []byte) (human string, items []harborAPIErrorItem) {
-	return harborint.FormatAuthFailure(code, b)
+	return harborprovider.FormatAuthFailure(code, b)
 }
 
 // harborUnauthorizedUserHint 说明本平台账号与 Harbor 凭据、Harbor「系统管理员」与项目成员的区别（用于 401/403 → 502 的 JSON hint 字段）。
@@ -218,12 +218,12 @@ func handleHarborStatus(app *ServerApp) gin.HandlerFunc {
 
 // harborStatisticsJSONLooksLikeStatistic 避免把登录页/HTML 或非统计 JSON 写入 Redis。
 func harborStatisticsJSONLooksLikeStatistic(b []byte) bool {
-	return harborint.StatisticsJSONLooksLikeStatistic(b)
+	return harborprovider.StatisticsJSONLooksLikeStatistic(b)
 }
 
 // harborStatisticsPrunedJSONBody 仅保留 Harbor 官方统计中的项目数与仓库数，供控制台展示。
 func harborStatisticsPrunedJSONBody(b []byte) []byte {
-	return harborint.StatisticsPrunedJSONBody(b)
+	return harborprovider.StatisticsPrunedJSONBody(b)
 }
 
 func harborStatisticsSkipRedisCache(c *gin.Context) bool {
@@ -282,7 +282,7 @@ func harborGETStatisticsCached(ctx context.Context, app *ServerApp, c *gin.Conte
 }
 
 func harborJSONToInt64(v interface{}) int64 {
-	return harborint.JSONToInt64(v)
+	return harborprovider.JSONToInt64(v)
 }
 
 // harborStatisticsAggregateFromProjects 在 GET /statistics 返回 401/403 时：分页 /projects 汇总项目数与各项目 repo_count 之和。
@@ -480,7 +480,7 @@ func handleHarborRepositories(app *ServerApp) gin.HandlerFunc {
 }
 
 func harborArtifactAdditionAllowed(addition string) bool {
-	return harborint.ArtifactAdditionAllowed(addition)
+	return harborprovider.ArtifactAdditionAllowed(addition)
 }
 
 // handleHarborArtifactAddition GET Harbor 制品附加信息，如 build_history（镜像 Dockerfile 层 / 打包历史）。
