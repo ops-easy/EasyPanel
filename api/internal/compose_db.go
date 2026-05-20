@@ -1,26 +1,16 @@
 package internal
 
 import (
-	"fmt"
 	"net"
-	"net/url"
 	"strconv"
 	"strings"
+
+	"kube-bt-sync/internal/storage/mysqlconn"
 )
 
 // ComposeMySQLDSN 由主机、端口、库、用户、密码生成 go-sql-driver 兼容 DSN。
 func ComposeMySQLDSN(host string, port int, user, password, database string) string {
-	host = strings.TrimSpace(host)
-	user = strings.TrimSpace(user)
-	database = strings.TrimSpace(database)
-	addr := net.JoinHostPort(host, strconv.Itoa(port))
-	var userinfo string
-	if password != "" {
-		userinfo = url.UserPassword(user, password).String()
-	} else {
-		userinfo = user
-	}
-	return fmt.Sprintf("%s@tcp(%s)/%s?parseTime=true&charset=utf8mb4", userinfo, addr, database)
+	return mysqlconn.ComposeDSN(host, port, user, password, database)
 }
 
 // FinalizeConnectionStrings 若填写了分字段 MySQL/Redis，则写入 MySQLDSN、RedisAddr。
