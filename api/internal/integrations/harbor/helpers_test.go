@@ -31,6 +31,21 @@ func TestRepositoryPathSegmentCandidates(t *testing.T) {
 	}
 }
 
+func TestArtifactAdditionAllowed(t *testing.T) {
+	allowed := []string{"build_history", "v1.2-rc1", "SBOM"}
+	for _, v := range allowed {
+		if !ArtifactAdditionAllowed(v) {
+			t.Fatalf("expected %q to be allowed", v)
+		}
+	}
+	blocked := []string{"", "build/history", "build history", "../secret", "x:y"}
+	for _, v := range blocked {
+		if ArtifactAdditionAllowed(v) {
+			t.Fatalf("expected %q to be blocked", v)
+		}
+	}
+}
+
 func TestImageReference(t *testing.T) {
 	if got := ImageReference("registry.local", "library", "busybox", "1.36"); got != "registry.local/library/busybox:1.36" {
 		t.Fatalf("tag ref = %q", got)

@@ -540,16 +540,7 @@ func handleHarborRepositories(app *ServerApp) gin.HandlerFunc {
 }
 
 func harborArtifactAdditionAllowed(addition string) bool {
-	if addition == "" {
-		return false
-	}
-	for _, r := range addition {
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '.' || r == '-' {
-			continue
-		}
-		return false
-	}
-	return true
+	return harborint.ArtifactAdditionAllowed(addition)
 }
 
 // handleHarborArtifactAddition GET Harbor 制品附加信息，如 build_history（镜像 Dockerfile 层 / 打包历史）。

@@ -64,6 +64,19 @@ func LooksLikeDockerTag(tag string) bool {
 	return true
 }
 
+func ArtifactAdditionAllowed(addition string) bool {
+	if addition == "" {
+		return false
+	}
+	for _, r := range addition {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '.' || r == '-' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
 func IsColonRune(r rune) bool {
 	return r == ':' || r == '：'
 }
