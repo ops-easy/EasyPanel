@@ -171,58 +171,15 @@ func harborDo(ctx context.Context, cfg Config, method, pathAndQuery string, body
 }
 
 // harborAPIErrorItem Harbor v2 常见错误体：{"errors":[{"code":"UNAUTHORIZED","message":"unauthorized"}]}
-type harborAPIErrorItem struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
+type harborAPIErrorItem = harborint.APIErrorItem
 
 func harborParseUpstreamErrors(b []byte) []harborAPIErrorItem {
-	var w struct {
-		Errors []harborAPIErrorItem `json:"errors"`
-	}
-	if json.Unmarshal(b, &w) != nil || len(w.Errors) == 0 {
-		return nil
-	}
-	return w.Errors
+	return harborint.ParseUpstreamErrors(b)
 }
 
 // harborFormatHarborAuthFailure 将上游 401/403 正文整理为可读说明（解析 Harbor errors JSON，避免整段 JSON 塞进 error）。
 func harborFormatHarborAuthFailure(code int, b []byte) (human string, items []harborAPIErrorItem) {
-	items = harborParseUpstreamErrors(b)
-	if len(items) > 0 {
-		var sb strings.Builder
-		for i, e := range items {
-			if i > 0 {
-				sb.WriteString("；")
-			}
-			c := strings.TrimSpace(e.Code)
-			m := strings.TrimSpace(e.Message)
-			switch {
-			case c != "" && m != "":
-				sb.WriteString(c)
-				sb.WriteString("：")
-				sb.WriteString(m)
-			case m != "":
-				sb.WriteString(m)
-			default:
-				sb.WriteString(c)
-			}
-		}
-		human = sb.String()
-	} else {
-		human = strings.TrimSpace(string(b))
-		if len(human) > 600 {
-			human = human[:600] + "…"
-		}
-	}
-	if human == "" {
-		if code == http.StatusUnauthorized {
-			human = "401 未授权"
-		} else {
-			human = "403 禁止访问"
-		}
-	}
-	return human, items
+	return harborint.FormatAuthFailure(code, b)
 }
 
 // harborUnauthorizedUserHint 说明本平台账号与 Harbor 凭据、Harbor「系统管理员」与项目成员的区别（用于 401/403 → 502 的 JSON hint 字段）。
