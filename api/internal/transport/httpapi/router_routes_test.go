@@ -3,7 +3,7 @@ package httpapi
 import (
 	"testing"
 
-	core "kube-bt-sync/internal"
+	core "kube-bt-sync/common/core"
 )
 
 func TestRouterRegistersCriticalRoutes(t *testing.T) {

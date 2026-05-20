@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	core "kube-bt-sync/internal"
+	core "kube-bt-sync/common/core"
 )
 
 // StartServer 负责 Dashboard HTTP 服务生命周期。

@@ -6,7 +6,7 @@ import (
 	appcentersvc "kube-bt-sync/api/appcenter/service"
 	harborsvc "kube-bt-sync/api/harbor/service"
 	"kube-bt-sync/common/appctx"
-	core "kube-bt-sync/internal"
+	core "kube-bt-sync/common/core"
 )
 
 func StartSettingsCrossPodRuntimeSync(ctx context.Context, getApp func() *appctx.ServerApp) {

@@ -1,7 +1,7 @@
 package result
 
 import (
-	core "kube-bt-sync/internal"
+	core "kube-bt-sync/common/core"
 
 	"github.com/gin-gonic/gin"
 )

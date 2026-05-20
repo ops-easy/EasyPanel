@@ -1,6 +1,6 @@
 package appctx
 
-import core "kube-bt-sync/internal"
+import core "kube-bt-sync/common/core"
 
 type ServerApp = core.ServerApp
 type Config = core.Config

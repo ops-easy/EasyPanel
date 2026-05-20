@@ -1,7 +1,7 @@
 package httpapi
 
 import (
-	core "kube-bt-sync/internal"
+	core "kube-bt-sync/common/core"
 	apirouter "kube-bt-sync/router"
 
 	"github.com/gin-gonic/gin"

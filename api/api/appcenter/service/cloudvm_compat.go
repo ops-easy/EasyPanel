@@ -9,9 +9,9 @@ import (
 	"sync"
 
 	sharedaudit "kube-bt-sync/common/audit"
+	core "kube-bt-sync/common/core"
 	sharedcrypto "kube-bt-sync/common/crypto"
 	"kube-bt-sync/common/k8sutil"
-	core "kube-bt-sync/internal"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

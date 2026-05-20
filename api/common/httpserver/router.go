@@ -2,7 +2,7 @@ package httpserver
 
 import (
 	"kube-bt-sync/common/appctx"
-	core "kube-bt-sync/internal"
+	core "kube-bt-sync/common/core"
 
 	"github.com/gin-gonic/gin"
 )
