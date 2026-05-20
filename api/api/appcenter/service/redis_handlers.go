@@ -1,4 +1,4 @@
-package redis
+package service
 
 import (
 	"context"
@@ -11,13 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"kube-bt-sync/internal/transport/authz"
-
 	"github.com/gin-gonic/gin"
 	mysql "github.com/go-sql-driver/mysql"
 )
 
-func RegisterRoutes(api *gin.RouterGroup, app *ServerApp) {
+func RegisterRedisRoutes(api *gin.RouterGroup, app *ServerApp) {
 	g := api.Group("/app-center/redis")
 	g.GET("/status", func(c *gin.Context) { handleAppRedisStatus(c, app) })
 	// 与 /instances/:id/runtime 等价，避免部分环境下子路径未命中路由；前端优先使用本接口。
@@ -71,10 +69,6 @@ func appRedisRequireWrite(c *gin.Context) bool {
 		return false
 	}
 	return true
-}
-
-func dashboardUsernameFromGin(c *gin.Context) string {
-	return authz.DashboardUser(c)
 }
 
 func appRedisRowVisibleForUser(c *gin.Context, row *appRedisRow) bool {

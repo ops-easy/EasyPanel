@@ -10,14 +10,11 @@ import (
 
 	sharedaudit "kube-bt-sync/common/audit"
 	sharedcrypto "kube-bt-sync/common/crypto"
-	"kube-bt-sync/common/k8sutil"
 	core "kube-bt-sync/internal"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/ssh"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -25,13 +22,18 @@ import (
 type ServerApp = core.ServerApp
 type Config = core.Config
 type PlatformKV = core.PlatformKV
+type RedisLight = core.RedisLight
 
 const (
 	DashboardRoleAdmin             = core.DashboardRoleAdmin
+	DashboardRoleViewer            = core.DashboardRoleViewer
 	ModuleAccessNone               = core.ModuleAccessNone
 	ModuleAccessRO                 = core.ModuleAccessRO
+	ModuleAccessRW                 = core.ModuleAccessRW
+	AppCenterRedisScopeFull        = core.AppCenterRedisScopeFull
 	AppCenterRedisScopeReadonly    = core.AppCenterRedisScopeReadonly
 	AppCenterRedisScopeManagedOnly = core.AppCenterRedisScopeManagedOnly
+	APIErrorPermissionDenied       = core.APIErrorPermissionDenied
 )
 
 func RespondAPIPermissionDenied(c *gin.Context) {
@@ -52,6 +54,10 @@ func getDashboardRoleFromGin(c *gin.Context) string {
 
 func getEffectiveDashboardPermissionsFromGin(c *gin.Context) *core.EffectiveDashboardPermissions {
 	return core.EffectiveDashboardPermissionsFromGin(c)
+}
+
+func appRedisMaskSensitive(eff *core.EffectiveDashboardPermissions) bool {
+	return core.AppRedisMaskSensitive(eff)
 }
 
 func dashboardUsernameFromGin(c *gin.Context) string {
@@ -82,14 +88,6 @@ func mirrorPlatformKVIfDualWrite(app *ServerApp) {
 	core.MirrorPlatformKVIfDualWrite(app)
 }
 
-func ValidateOptionalK8sNodePort(field string, p int32) error {
-	return k8sutil.ValidateOptionalNodePort(field, p)
-}
-
-func ResolveRedisK8sStorageClass(ctx context.Context, k8s *kubernetes.Clientset, userOrCfg string) (string, error) {
-	return k8sutil.ResolveStorageClass(ctx, k8s, userOrCfg)
-}
-
 func GetPrometheusURLForScope(cfg Config, scope string) string {
 	return core.GetPrometheusURLForScope(cfg, scope)
 }
@@ -102,23 +100,17 @@ func k8sExpandPVCStorage(ctx context.Context, k8s *kubernetes.Clientset, ns, pvc
 	return core.K8sExpandPVCStorage(ctx, k8s, ns, pvcName, newSize)
 }
 
-func buildRedisPVC(ns, name string, storageClassName string, size string, labels map[string]string) (*corev1.PersistentVolumeClaim, error) {
-	return k8sutil.BuildRWOPVC(ns, name, storageClassName, size, labels)
+func GuardK8s(c *gin.Context, k8s *kubernetes.Clientset) bool {
+	return core.GuardK8s(c, k8s)
 }
 
-func applyPVC(ctx context.Context, k8s *kubernetes.Clientset, pvc *corev1.PersistentVolumeClaim) error {
-	return k8sutil.ApplyPVC(ctx, k8s, pvc)
+func GuardK8sREST(c *gin.Context, k8s *kubernetes.Clientset, rc *rest.Config) bool {
+	return core.GuardK8sREST(c, k8s, rc)
 }
 
-func upsertService(ctx context.Context, k8s *kubernetes.Clientset, svc *corev1.Service) error {
-	return k8sutil.UpsertService(ctx, k8s, svc)
+func StreamK8sPodExecTTY(conn *websocket.Conn, k8s *kubernetes.Clientset, restCfg *rest.Config, ns, podName, container string, command []string, mergeStderr bool) error {
+	return core.StreamK8sPodExecTTY(conn, k8s, restCfg, ns, podName, container, command, mergeStderr)
 }
-
-func upsertDeployment(ctx context.Context, k8s *kubernetes.Clientset, dep *appsv1.Deployment) error {
-	return k8sutil.UpsertDeployment(ctx, k8s, dep)
-}
-
-func int32Ptr(i int32) *int32 { return k8sutil.Int32Ptr(i) }
 
 var execUpgrader = core.ExecUpgrader
 
