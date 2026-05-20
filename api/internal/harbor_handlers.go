@@ -11,58 +11,31 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
+
+	harborint "kube-bt-sync/internal/integrations/harbor"
 
 	"github.com/gin-gonic/gin"
 )
 
 func maskHarborURL(raw string) string {
-	u, err := url.Parse(strings.TrimSpace(raw))
-	if err != nil || u.Scheme == "" || u.Host == "" {
-		return ""
-	}
-	return u.Scheme + "://" + u.Host + "/…"
+	return harborint.MaskURL(raw)
 }
 
 // harborRegistryPullHost 用于 docker/K8s 镜像引用（host 或 host:port），不含路径与协议。
 func harborRegistryPullHost(baseURL string) string {
-	u, err := url.Parse(strings.TrimSpace(baseURL))
-	if err != nil || u.Host == "" {
-		return ""
-	}
-	return u.Host
+	return harborint.RegistryPullHost(baseURL)
 }
 
 // harborNormalizeRepositoryForProject Harbor 列表接口返回的 name 常为「项目名/仓库名」（与镜像全名一致），
 // 而 API 路径已是 /projects/{project}/repositories/{repository_name}，此处应去掉与 project 重复的前缀，否则会 404。
 func harborNormalizeRepositoryForProject(project, repo string) string {
-	project = strings.Trim(strings.TrimSpace(project), "/")
-	repo = strings.Trim(strings.TrimSpace(repo), "/")
-	if project == "" || repo == "" {
-		return repo
-	}
-	if repo == project {
-		return repo
-	}
-	prefix := project + "/"
-	if strings.HasPrefix(repo, prefix) {
-		return strings.TrimPrefix(repo, prefix)
-	}
-	return repo
+	return harborint.NormalizeRepositoryForProject(project, repo)
 }
 
 // harborRepositoryPathSegmentCandidates Harbor .../repositories/{repository_name}/... 中仓库名单段须 PathEscape；
 // 含 "/" 的层级仓库标准写法是将 slash 编成 %2F。若前有网关把 %2F 解码成 /，会拆成多段路由而 404，此时再试对整段二次 Escape（%→%25），即 kubebuilder%252Fkube-rbac-proxy。
 func harborRepositoryPathSegmentCandidates(repoRelative string) []string {
-	repoRelative = strings.Trim(strings.TrimSpace(repoRelative), "/")
-	if repoRelative == "" {
-		return nil
-	}
-	once := url.PathEscape(repoRelative)
-	if !strings.Contains(repoRelative, "/") {
-		return []string{once}
-	}
-	return []string{once, url.PathEscape(once)}
+	return harborint.RepositoryPathSegmentCandidates(repoRelative)
 }
 
 func harborDoGET404RepoAlt(ctx context.Context, cfg Config, primary, alt string) ([]byte, int, error) {
@@ -105,67 +78,26 @@ func harborArtifactListRepoPathEsc(ctx context.Context, cfg Config, projEsc, rep
 
 // harborLooksLikeDockerTag 用于从「仓库名:tag」中剥离 tag，避免 repositories 的 q 含冒号触发 Harbor 400。
 func harborLooksLikeDockerTag(tag string) bool {
-	tag = strings.TrimSpace(tag)
-	if tag == "" {
-		return false
-	}
-	for _, r := range tag {
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '.' || r == '_' || r == '-' {
-			continue
-		}
-		return false
-	}
-	return true
+	return harborint.LooksLikeDockerTag(tag)
 }
 
 func harborIsColonRune(r rune) bool {
-	return r == ':' || r == '：' // ASCII、全角（输入法常见）
+	return harborint.IsColonRune(r)
 }
 
 // harborTrimTrailingColons 去掉末尾冒号（含全角），避免 busybox: / busybox： 触发 Harbor repositories 的 q 解析 400。
 func harborTrimTrailingColons(s string) string {
-	s = strings.TrimSpace(s)
-	for len(s) > 0 {
-		r, sz := utf8.DecodeLastRuneInString(s)
-		if !harborIsColonRune(r) {
-			break
-		}
-		s = strings.TrimSpace(s[:len(s)-sz])
-	}
-	return strings.TrimSpace(s)
+	return harborint.TrimTrailingColons(s)
 }
 
 // harborLastColonIndex 返回最后一个 ASCII/全角冒号的字节下标，无则 -1。
 func harborLastColonIndex(s string) int {
-	last := -1
-	for i := 0; i < len(s); {
-		r, sz := utf8.DecodeRuneInString(s[i:])
-		if harborIsColonRune(r) {
-			last = i
-		}
-		i += sz
-	}
-	return last
+	return harborint.LastColonIndex(s)
 }
 
 // harborSanitizeRepositoryListQ Harbor GET .../repositories 的 q 为查询/glob 语法，镜像引用中的冒号（如 busybox:1.36、busybox:）会导致上游 400。
 func harborSanitizeRepositoryListQ(raw string) string {
-	s := strings.TrimSpace(raw)
-	if s == "" {
-		return ""
-	}
-	s = harborTrimTrailingColons(s)
-	if s == "" {
-		return ""
-	}
-	if i := harborLastColonIndex(s); i > 0 {
-		_, colonSz := utf8.DecodeRuneInString(s[i:])
-		rhs := strings.TrimSpace(s[i+colonSz:])
-		if rhs != "" && !strings.Contains(rhs, "/") && harborLooksLikeDockerTag(rhs) {
-			s = strings.TrimSpace(s[:i])
-		}
-	}
-	return strings.TrimSpace(s)
+	return harborint.SanitizeRepositoryListQ(raw)
 }
 
 func harborConfiguredFromCfg(cfg Config) bool {
@@ -185,21 +117,7 @@ func harborAPIRoot(cfg Config) string {
 // harborResolvePublicUIURL 浏览器可打开的 Harbor 控制台根地址（不含凭据）。
 // 优先使用 Harbor systeminfo.external_url，否则使用运行时 harborBaseUrl。
 func harborResolvePublicUIURL(cfg Config, systeminfo map[string]any) string {
-	if systeminfo != nil {
-		raw, _ := systeminfo["external_url"].(string)
-		raw = strings.TrimSpace(raw)
-		if raw != "" {
-			if u, err := url.Parse(raw); err == nil && u.Host != "" && (u.Scheme == "http" || u.Scheme == "https") {
-				u.Fragment = ""
-				u.RawQuery = ""
-				s := strings.TrimRight(u.String(), "/")
-				if s != "" {
-					return s
-				}
-			}
-		}
-	}
-	return strings.TrimSuffix(strings.TrimSpace(cfg.HarborBaseURL), "/")
+	return harborint.ResolvePublicUIURL(cfg.HarborBaseURL, systeminfo)
 }
 
 // harborFetchSystemInfoMap 拉取 GET /systeminfo 解析为 map（失败返回 nil）。
@@ -553,7 +471,7 @@ func harborStatisticsAggregateFromProjects(ctx context.Context, cfg Config) (map
 
 	return map[string]interface{}{
 		"total_project_count": totalProjects,
-		"total_repo_count":  totalRepos,
+		"total_repo_count":    totalRepos,
 	}, nil
 }
 

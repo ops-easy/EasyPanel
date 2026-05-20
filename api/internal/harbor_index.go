@@ -10,15 +10,17 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+
+	harborint "kube-bt-sync/internal/integrations/harbor"
 )
 
 // HarborImageIndexEntry 一条可拉取的镜像引用（细到 tag）。
 type HarborImageIndexEntry struct {
-	Project  string `json:"project"`
-	Repo     string `json:"repo"`     // 相对 project 的仓库路径（与 Harbor API 一致）
-	Tag      string `json:"tag"`      // 空表示仅 digest
-	Digest   string `json:"digest,omitempty"`
-	PushTime string `json:"pushTime,omitempty"`
+	Project   string `json:"project"`
+	Repo      string `json:"repo"` // 相对 project 的仓库路径（与 Harbor API 一致）
+	Tag       string `json:"tag"`  // 空表示仅 digest
+	Digest    string `json:"digest,omitempty"`
+	PushTime  string `json:"pushTime,omitempty"`
 	Reference string `json:"reference"` // registry/project/repo:tag
 }
 
@@ -130,20 +132,7 @@ func harborIndexMaxProjectPages() int {
 var harborIndexRunning atomic.Bool
 
 func harborImageReference(host, project, repo, tag string) string {
-	host = strings.TrimSpace(host)
-	project = strings.Trim(strings.TrimSpace(project), "/")
-	repo = strings.Trim(strings.TrimSpace(repo), "/")
-	tag = strings.TrimSpace(tag)
-	if host == "" || project == "" || repo == "" {
-		return ""
-	}
-	if tag == "" {
-		return host + "/" + project + "/" + repo
-	}
-	if strings.HasPrefix(tag, "sha256:") {
-		return host + "/" + project + "/" + repo + "@" + tag
-	}
-	return host + "/" + project + "/" + repo + ":" + tag
+	return harborint.ImageReference(host, project, repo, tag)
 }
 
 func harborIndexSearchMatch(entry *HarborImageIndexEntry, tokens []string) bool {
