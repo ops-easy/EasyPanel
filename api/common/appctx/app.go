@@ -13,3 +13,7 @@ func DataDirFromEnv() string {
 func NewServerApp(dataDir string) (*ServerApp, error) {
 	return core.NewServerApp(dataDir)
 }
+
+func MirrorPlatformKVIfDualWrite(app *ServerApp) {
+	core.MirrorPlatformKVIfDualWrite(app)
+}
