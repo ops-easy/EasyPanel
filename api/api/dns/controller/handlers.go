@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	baotasvc "kube-bt-sync/api/baota/service"
 	core "kube-bt-sync/internal"
 
 	"github.com/gin-gonic/gin"
@@ -1282,7 +1283,7 @@ func handleDnsCertPushBaota(c *gin.Context, app *core.ServerApp) {
 		return
 	}
 	cfg := app.Cfg()
-	if len(core.EffectiveBaotaTargets(cfg)) == 0 {
+	if len(baotasvc.EffectiveTargets(cfg)) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "未配置宝塔实例（baotaTargets 或 BAOTA_URL / BAOTA_API_KEY），无法部署证书"})
 		return
 	}
@@ -1326,7 +1327,7 @@ func handleDnsCertPushBaota(c *gin.Context, app *core.ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "证书 PEM 或私钥为空"})
 		return
 	}
-	if err := core.DeployBaotaSiteSSLPEM(cfg, site, order.CertPEM, order.KeyPEM); err != nil {
+	if err := baotasvc.DeploySiteSSLPEM(cfg, site, order.CertPEM, order.KeyPEM); err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}

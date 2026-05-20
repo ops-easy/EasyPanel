@@ -1,23 +1,24 @@
 package controller
 
 import (
-	core "kube-bt-sync/internal"
+	"kube-bt-sync/api/baota/service"
+	"kube-bt-sync/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Controller struct {
-	app *core.ServerApp
+	app *appctx.ServerApp
 }
 
-func New(app *core.ServerApp) *Controller {
+func New(app *appctx.ServerApp) *Controller {
 	return &Controller{app: app}
 }
 
 func (ctl *Controller) IngressSyncStatus(c *gin.Context) {
-	core.HandleBaotaIngressSyncStatus(ctl.app)(c)
+	service.IngressSyncStatus(ctl.app)(c)
 }
 
 func (ctl *Controller) IngressSyncRun(c *gin.Context) {
-	core.HandleBaotaIngressSyncRun(ctl.app)(c)
+	service.IngressSyncRun(ctl.app)(c)
 }
