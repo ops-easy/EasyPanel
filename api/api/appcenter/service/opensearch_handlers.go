@@ -1,4 +1,4 @@
-package opensearch
+package service
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	mysql "github.com/go-sql-driver/mysql"
 )
 
-func RegisterRoutes(api *gin.RouterGroup, app *ServerApp) {
+func RegisterOpenSearchRoutes(api *gin.RouterGroup, app *ServerApp) {
 	g := api.Group("/app-center/opensearch")
 	registerOpenSearchManageRoutes(g, app)
 	g.GET("/status", func(c *gin.Context) { handleOpenSearchStatus(c, app) })

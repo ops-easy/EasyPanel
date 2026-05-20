@@ -5,7 +5,6 @@ import (
 	core "kube-bt-sync/internal"
 	"kube-bt-sync/internal/modules/appcenter/kafka"
 	"kube-bt-sync/internal/modules/appcenter/openclaw"
-	"kube-bt-sync/internal/modules/appcenter/opensearch"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +20,7 @@ func New(app *core.ServerApp) *Controller {
 func (ctl *Controller) RegisterRoutes(api *gin.RouterGroup) {
 	appcentersvc.RegisterRedisRoutes(api, ctl.app)
 	kafka.RegisterRoutes(api, ctl.app)
-	opensearch.RegisterRoutes(api, ctl.app)
+	appcentersvc.RegisterOpenSearchRoutes(api, ctl.app)
 	openclaw.RegisterRoutes(api, ctl.app)
 	appcentersvc.RegisterCloudVMRoutes(api, ctl.app)
 }
