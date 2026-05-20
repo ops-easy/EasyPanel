@@ -1,19 +1,20 @@
 package controller
 
 import (
-	core "kube-bt-sync/internal"
+	"kube-bt-sync/api/vcenter/service"
+	"kube-bt-sync/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Controller struct {
-	app *core.ServerApp
+	app *appctx.ServerApp
 }
 
-func New(app *core.ServerApp) *Controller {
+func New(app *appctx.ServerApp) *Controller {
 	return &Controller{app: app}
 }
 
 func (ctl *Controller) RegisterRoutes(api *gin.RouterGroup) {
-	core.RegisterVCenterRoutes(api, ctl.app)
+	service.RegisterRoutes(api, ctl.app)
 }
