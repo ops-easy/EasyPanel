@@ -2,7 +2,7 @@ package service
 
 import (
 	"kube-bt-sync/common/appctx"
-	"kube-bt-sync/common/legacy"
+	legacycore "kube-bt-sync/common/core"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,13 +10,13 @@ import (
 type ServerApp = appctx.ServerApp
 
 func PublicRoute(c *gin.Context, app *ServerApp) {
-	legacy.HandleDocPublicRoute(c, app)
+	legacycore.ServeDocPublicRoute(c, app)
 }
 
 func PublicMedia(c *gin.Context, app *ServerApp) {
-	legacy.HandleDocPublicMedia(c, app)
+	legacycore.ServeDocPublicMedia(c, app)
 }
 
 func RegisterAPIRoutes(api *gin.RouterGroup, app *ServerApp) {
-	legacy.RegisterDocsRoutes(api, app)
+	legacycore.MountDocsAPIRoutes(api, app)
 }

@@ -2,7 +2,7 @@ package service
 
 import (
 	"kube-bt-sync/common/appctx"
-	"kube-bt-sync/common/legacy"
+	legacycore "kube-bt-sync/common/core"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,5 +10,5 @@ import (
 type ServerApp = appctx.ServerApp
 
 func RegisterRoutes(api *gin.RouterGroup, app *ServerApp) {
-	legacy.RegisterK8sRoutes(api, app)
+	legacycore.MountK8sRoutes(api, app)
 }
