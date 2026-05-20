@@ -45,6 +45,9 @@ func RegisterRoutes(api *gin.RouterGroup, app *appctx.ServerApp) {
 }
 
 func handlePVEProbe(c *gin.Context, app *ServerApp) {
+	if !requirePVEAdmin(c) {
+		return
+	}
 	client, target, ok := pveClientForRequest(c, app)
 	if !ok {
 		return

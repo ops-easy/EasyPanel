@@ -220,7 +220,7 @@ const Header: React.FC = () => {
             {headerShowCompute ? (
             <DropdownMenuItem
               className="cursor-pointer gap-2 py-2.5"
-              onSelect={() => navigate("/cluster/compute")}
+              onSelect={() => navigate("/cluster/compute/dashboard")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600">
                 <Monitor className="text-white" size={17} strokeWidth={2.25} />
@@ -234,7 +234,7 @@ const Header: React.FC = () => {
             {headerShowNetwork ? (
             <DropdownMenuItem
               className="cursor-pointer gap-2 py-2.5"
-              onSelect={() => navigate("/cluster/network")}
+              onSelect={() => navigate("/cluster/network/dashboard")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-600">
                 <Network className="text-white" size={17} strokeWidth={2.25} />

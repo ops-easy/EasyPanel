@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, Loader2, RefreshCw, Rocket, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -58,11 +59,13 @@ const MODE_LABEL: Record<string, string> = {
   "gateway-dashboard": "Gateway + Dashboard",
 };
 
-const AppCenterHermes: React.FC = () => {
+export type HermesPageTab = "list" | "create" | "bootstrap";
+
+const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab = "list" }) => {
   const qc = useQueryClient();
   const { status } = useAuth();
   const canWrite = cloudVmAppCenterCanWrite(status?.role, status?.permissions);
-  const [tab, setTab] = useState<"list" | "create" | "bootstrap">("list");
+  const [tab, setTab] = useState<HermesPageTab>(initialTab);
   const [apiKey, setApiKey] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -97,6 +100,10 @@ const AppCenterHermes: React.FC = () => {
   });
 
   React.useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
+
+  React.useEffect(() => {
     if (!boot) return;
     setForm((f) => ({
       ...f,
@@ -109,7 +116,7 @@ const AppCenterHermes: React.FC = () => {
     }));
   }, [boot]);
 
-  const rows = listQ.data?.instances ?? [];
+  const rows = useMemo(() => listQ.data?.instances ?? [], [listQ.data?.instances]);
   const readyCount = useMemo(
     () => rows.filter((x) => statusQ.data?.statuses?.[x.id]?.ready).length,
     [rows, statusQ.data?.statuses]
@@ -269,6 +276,9 @@ const AppCenterHermes: React.FC = () => {
                           <div className="flex justify-end gap-1">
                             <Button variant="ghost" size="sm" onClick={() => restartMut.mutate(row.id)} disabled={!canWrite || restartMut.isPending}>
                               重启
+                            </Button>
+                            <Button asChild variant="ghost" size="sm">
+                              <Link to={`/cluster/apps/hermes/${encodeURIComponent(row.id)}`}>详情</Link>
                             </Button>
                             <Button variant="ghost" size="sm" className="text-red-700" onClick={() => deleteMut.mutate(row.id)} disabled={!canWrite || deleteMut.isPending}>
                               <Trash2 className="h-4 w-4" />

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Loader2, Network, Plus, RadioTower, RefreshCw, Router, Trash2, Wifi } from "lucide-react";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
+import { useAuth } from "@/auth/auth-context";
 
 type NetworkKind = "ikuai" | "openwrt";
 
@@ -49,8 +50,11 @@ const familyLabels: Array<[keyof OpenWrtFamilies, string]> = [
 
 const NetworkDashboard: React.FC = () => {
   const qc = useQueryClient();
+  const loc = useLocation();
+  const { status } = useAuth();
+  const canWrite = status?.role === "admin";
   const [params] = useSearchParams();
-  const preferredKind = params.get("kind") === "openwrt" ? "openwrt" : "";
+  const preferredKind = params.get("kind") === "openwrt" || loc.pathname.includes("/openwrt") ? "openwrt" : "";
   const [activeId, setActiveId] = useState("");
   const [form, setForm] = useState({
     kind: (preferredKind || "ikuai") as NetworkKind,
@@ -72,8 +76,10 @@ const NetworkDashboard: React.FC = () => {
 
   useEffect(() => {
     const rows = devicesQ.data?.devices ?? [];
-    if (!activeId && rows.length > 0) setActiveId(rows[0].id);
-  }, [activeId, devicesQ.data?.devices]);
+    if (!activeId && rows.length > 0) {
+      setActiveId((preferredKind ? rows.find((x) => x.kind === preferredKind) : undefined)?.id ?? rows[0].id);
+    }
+  }, [activeId, devicesQ.data?.devices, preferredKind]);
 
   const active = useMemo(
     () => (devicesQ.data?.devices ?? []).find((x) => x.id === activeId),
@@ -135,7 +141,7 @@ const NetworkDashboard: React.FC = () => {
             </p>
           </div>
           <Button asChild className="w-fit gap-2 bg-cyan-600 hover:bg-cyan-700">
-            <Link to="/cluster/network/ikuai">
+            <Link to="/cluster/network/ikuai/dashboard">
               iKuai 图表
               <ArrowRight className="h-4 w-4" />
             </Link>
@@ -199,7 +205,7 @@ const NetworkDashboard: React.FC = () => {
                 <Label>备注</Label>
                 <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </div>
-              <Button className="w-full gap-2 bg-cyan-600 hover:bg-cyan-700" disabled={createMut.isPending} onClick={() => createMut.mutate()}>
+              <Button className="w-full gap-2 bg-cyan-600 hover:bg-cyan-700" disabled={!canWrite || createMut.isPending} onClick={() => createMut.mutate()}>
                 {createMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                 保存设备
               </Button>
@@ -247,7 +253,7 @@ const NetworkDashboard: React.FC = () => {
                 <div className="flex flex-wrap gap-2">
                   {active.kind === "ikuai" ? (
                     <Button asChild variant="outline" size="sm" className="gap-1.5">
-                      <Link to="/cluster/network/ikuai">
+                      <Link to="/cluster/network/ikuai/dashboard">
                         <RadioTower className="h-4 w-4" />
                         打开图表
                       </Link>
@@ -258,7 +264,7 @@ const NetworkDashboard: React.FC = () => {
                       探测指标族
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" className="gap-1.5 text-red-700" onClick={() => deleteMut.mutate(active.id)} disabled={deleteMut.isPending}>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-red-700" onClick={() => deleteMut.mutate(active.id)} disabled={!canWrite || deleteMut.isPending}>
                     <Trash2 className="h-4 w-4" />
                     删除
                   </Button>

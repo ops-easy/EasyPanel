@@ -35,6 +35,15 @@ const AppCenterOpenClawDetail = lazy(
   () => import("@/features/app-center/openclaw/pages/AppCenterOpenClawDetail")
 );
 const AppCenterHermes = lazy(() => import("@/features/app-center/hermes/pages/AppCenterHermes"));
+const AppCenterHermesBootstrap = lazy(
+  () => import("@/features/app-center/hermes/pages/AppCenterHermesBootstrap")
+);
+const AppCenterHermesCreate = lazy(
+  () => import("@/features/app-center/hermes/pages/AppCenterHermesCreate")
+);
+const AppCenterHermesDetail = lazy(
+  () => import("@/features/app-center/hermes/pages/AppCenterHermesDetail")
+);
 
 export function appCenterRoutes(): ReactNode {
   return (
@@ -134,6 +143,30 @@ export function appCenterRoutes(): ReactNode {
         element={
           <RouteSuspense>
             <AppCenterOpenClaw />
+          </RouteSuspense>
+        }
+      />
+      <Route
+        path="hermes/bootstrap"
+        element={
+          <RouteSuspense>
+            <AppCenterHermesBootstrap />
+          </RouteSuspense>
+        }
+      />
+      <Route
+        path="hermes/create"
+        element={
+          <RouteSuspense>
+            <AppCenterHermesCreate />
+          </RouteSuspense>
+        }
+      />
+      <Route
+        path="hermes/:id"
+        element={
+          <RouteSuspense>
+            <AppCenterHermesDetail />
           </RouteSuspense>
         }
       />

@@ -79,7 +79,7 @@ export function vcenterRoutes(): ReactNode {
           </ViewerRedirect>
         }
       />
-      <Route path="vcenter/router" element={<Navigate to="/cluster/network/ikuai" replace />} />
+      <Route path="vcenter/router" element={<Navigate to="/cluster/network/ikuai/dashboard" replace />} />
       <Route path="vcenter" element={<VCenterList />} />
       <Route
         path="vcenter/:moref"

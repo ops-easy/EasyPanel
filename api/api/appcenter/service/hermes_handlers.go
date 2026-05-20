@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -264,12 +265,34 @@ func handleAppHermesRestart(c *gin.Context, app *ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"ok": true, "message": "已触发 Hermes Deployment 滚动重启"})
 }
 
+type hermesMigrationOptions struct {
+	DryRun    bool
+	Preset    string
+	Overwrite bool
+}
+
+func buildHermesMigrationCommand(opts hermesMigrationOptions) []string {
+	cmd := []string{"hermes", "claw", "migrate"}
+	if opts.DryRun {
+		return append(cmd, "--dry-run")
+	}
+	preset := strings.TrimSpace(opts.Preset)
+	if preset == "" {
+		preset = "user-data"
+	}
+	cmd = append(cmd, "--preset", preset)
+	if opts.Overwrite {
+		cmd = append(cmd, "--overwrite")
+	}
+	return cmd
+}
+
 func handleAppHermesMigrateDryRun(c *gin.Context, app *ServerApp) {
 	if getDashboardRoleFromGin(c) != DashboardRoleAdmin {
 		RespondAPIPermissionDenied(c)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"command": []string{"hermes", "claw", "migrate", "--dry-run"}, "dryRun": true})
+	runHermesMigration(c, app, hermesMigrationOptions{DryRun: true})
 }
 
 func handleAppHermesMigrate(c *gin.Context, app *ServerApp) {
@@ -277,7 +300,108 @@ func handleAppHermesMigrate(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"command": []string{"hermes", "claw", "migrate", "--preset", "user-data"}, "started": true})
+	var body struct {
+		Preset    string `json:"preset"`
+		Overwrite bool   `json:"overwrite"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	preset := strings.TrimSpace(body.Preset)
+	if preset == "" {
+		preset = "user-data"
+	}
+	if preset != "user-data" && preset != "full" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "preset 仅支持 user-data 或 full"})
+		return
+	}
+	runHermesMigration(c, app, hermesMigrationOptions{Preset: preset, Overwrite: body.Overwrite})
+}
+
+func runHermesMigration(c *gin.Context, app *ServerApp, opts hermesMigrationOptions) {
+	inst, ok := loadHermesInstanceByParam(c, app)
+	if !ok {
+		return
+	}
+	if !GuardK8sREST(c, app.K8s(), app.K8sREST()) {
+		return
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Minute)
+	defer cancel()
+	pod, container, err := hermesPickExecTarget(ctx, app, *inst)
+	cmd := buildHermesMigrationCommand(opts)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "command": cmd, "dryRun": opts.DryRun})
+		return
+	}
+	stdout, stderr, err := k8sPodExecRun(ctx, app.K8s(), app.K8sREST(), inst.Namespace, pod, container, cmd, nil)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{
+			"error":     err.Error(),
+			"stdout":    stdout.String(),
+			"stderr":    stderr.String(),
+			"command":   cmd,
+			"pod":       pod,
+			"container": container,
+			"dryRun":    opts.DryRun,
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"ok":        true,
+		"stdout":    stdout.String(),
+		"stderr":    stderr.String(),
+		"command":   cmd,
+		"pod":       pod,
+		"container": container,
+		"dryRun":    opts.DryRun,
+	})
+}
+
+func hermesPickExecTarget(ctx context.Context, app *ServerApp, inst HermesInstance) (string, string, error) {
+	if app.K8s() == nil {
+		return "", "", errors.New("K8s 未连接")
+	}
+	pods, err := app.K8s().CoreV1().Pods(inst.Namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/instance=" + inst.DeploymentName,
+	})
+	if err != nil {
+		return "", "", err
+	}
+	preferred := []string{"gateway", "hermes", "dashboard"}
+	if inst.Mode == "dashboard" {
+		preferred = []string{"dashboard", "hermes", "gateway"}
+	}
+	var fallbackPod, fallbackContainer string
+	for i := range pods.Items {
+		p := &pods.Items[i]
+		if p.Status.Phase != corev1.PodRunning {
+			continue
+		}
+		if fallbackPod == "" && len(p.Spec.Containers) > 0 {
+			fallbackPod = p.Name
+			fallbackContainer = p.Spec.Containers[0].Name
+		}
+		for _, want := range preferred {
+			if hermesPodContainerReady(p, want) {
+				return p.Name, want, nil
+			}
+		}
+	}
+	if fallbackPod != "" {
+		return fallbackPod, fallbackContainer, nil
+	}
+	return "", "", errors.New("没有处于 Running 的 Hermes Pod")
+}
+
+func hermesPodContainerReady(p *corev1.Pod, name string) bool {
+	if p == nil || strings.TrimSpace(name) == "" {
+		return false
+	}
+	for _, cs := range p.Status.ContainerStatuses {
+		if cs.Name == name && cs.Ready {
+			return true
+		}
+	}
+	return false
 }
 
 func handleAppHermesDelete(c *gin.Context, app *ServerApp) {

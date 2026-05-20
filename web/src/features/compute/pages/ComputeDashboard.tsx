@@ -14,7 +14,7 @@ const tiles = [
   {
     title: "PVE",
     desc: "新增 Proxmox VE 纳管目标、节点、虚拟机与基础电源操作。",
-    to: "/cluster/compute/pve",
+    to: "/cluster/compute/pve/dashboard",
     icon: Server,
     tint: "text-amber-700 bg-amber-50 border-amber-100",
   },
@@ -53,7 +53,7 @@ const ComputeDashboard: React.FC = () => {
             </p>
           </div>
           <Button asChild className="w-fit gap-2 bg-violet-600 hover:bg-violet-700">
-            <Link to="/cluster/compute/pve">
+            <Link to="/cluster/compute/pve/dashboard">
               进入 PVE
               <ArrowRight className="h-4 w-4" />
             </Link>

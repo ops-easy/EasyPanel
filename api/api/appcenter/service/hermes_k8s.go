@@ -59,14 +59,6 @@ func hermesContainer(name string, args []string, image, secretName, configMapNam
 			},
 		)
 	}
-	if mode == "gateway-dashboard" {
-		env = append(env,
-			corev1.EnvVar{Name: "HERMES_DASHBOARD", Value: "1"},
-			corev1.EnvVar{Name: "HERMES_DASHBOARD_HOST", Value: "0.0.0.0"},
-			corev1.EnvVar{Name: "HERMES_DASHBOARD_PORT", Value: "9119"},
-			corev1.EnvVar{Name: "HERMES_DASHBOARD_TUI", Value: "1"},
-		)
-	}
 	ports := []corev1.ContainerPort{}
 	if mode == "gateway" || mode == "gateway-dashboard" {
 		ports = append(ports, corev1.ContainerPort{Name: "gateway", ContainerPort: hermesGatewayPort, Protocol: corev1.ProtocolTCP})
@@ -116,11 +108,14 @@ func buildHermesDeployment(opts HermesK8sDeployOpts) (*appsv1.Deployment, error)
 	containers := []corev1.Container{}
 	switch mode {
 	case "gateway":
-		containers = append(containers, hermesContainer("hermes", []string{"gateway", "run"}, image, secret, cm, mode))
+		containers = append(containers, hermesContainer("gateway", []string{"gateway", "run"}, image, secret, cm, mode))
 	case "dashboard":
-		containers = append(containers, hermesContainer("hermes", []string{"dashboard", "--host", "0.0.0.0", "--no-open", "--insecure"}, image, secret, cm, mode))
+		containers = append(containers, hermesContainer("dashboard", []string{"dashboard", "--host", "0.0.0.0", "--no-open"}, image, secret, cm, mode))
 	case "gateway-dashboard":
-		containers = append(containers, hermesContainer("hermes", []string{"gateway", "run"}, image, secret, cm, mode))
+		containers = append(containers,
+			hermesContainer("gateway", []string{"gateway", "run"}, image, secret, cm, "gateway"),
+			hermesContainer("dashboard", []string{"dashboard", "--host", "0.0.0.0", "--no-open"}, image, secret, cm, "dashboard"),
+		)
 	}
 	labels := hermesLabels(name)
 	replicas := int32(1)

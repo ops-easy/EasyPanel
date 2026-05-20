@@ -54,3 +54,30 @@ func TestOpenWrtFamilyProbeHints(t *testing.T) {
 		t.Fatalf("MissingHints length=%d, want 2: %#v", len(hints), hints)
 	}
 }
+
+func TestIkuaiStreamPerfRowFromRaw(t *testing.T) {
+	bytesRow := ikuaiStreamPerfRowFromRaw(2048, 1024, "bytes")
+	if got := bytesRow["netRx"].(float64); got != 2 {
+		t.Fatalf("bytes netRx=%v, want 2", got)
+	}
+	if got := bytesRow["netTx"].(float64); got != 1 {
+		t.Fatalf("bytes netTx=%v, want 1", got)
+	}
+
+	kbsRow := ikuaiStreamPerfRowFromRaw(128, 64, "kbs")
+	if got := kbsRow["netRx"].(float64); got != 128 {
+		t.Fatalf("kbs netRx=%v, want 128", got)
+	}
+	if got := kbsRow["netRxUnit"].(string); got != "kiloBytesPerSecond" {
+		t.Fatalf("netRxUnit=%q, want kiloBytesPerSecond", got)
+	}
+}
+
+func TestIkuaiQueryCatalogCoversModernAndLegacyExporters(t *testing.T) {
+	if len(ikuaiModernDownloadByIPQueries) == 0 || len(ikuaiModernUploadByIPQueries) == 0 {
+		t.Fatalf("modern iKuai query lists must not be empty")
+	}
+	if len(ikuaiClientDownloadByIPQueries) == 0 || len(ikuaiClientUploadByIPQueries) == 0 {
+		t.Fatalf("legacy iKuai query lists must not be empty")
+	}
+}

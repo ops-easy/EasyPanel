@@ -382,7 +382,7 @@ const HomeHub: React.FC = () => {
         {/* 虚拟化与主机 */}
         {showVc && (
           <Link
-            to="/cluster/compute"
+            to="/cluster/compute/dashboard"
             className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-violet-200 hover:shadow-md"
           >
             <div className="flex items-center justify-between">

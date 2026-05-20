@@ -29,6 +29,7 @@ declare global {
   const Box: typeof import('lucide-react').Box
   const Boxes: typeof import('lucide-react').Boxes
   const Brain: typeof import('lucide-react').Brain
+  const Cable: typeof import('lucide-react').Cable
   const Calendar: typeof import('lucide-react').Calendar
   const Check: typeof import('lucide-react').Check
   const CheckCircle: typeof import('lucide-react').CheckCircle
@@ -148,6 +149,7 @@ declare global {
   const Route: typeof import('lucide-react').Route
   const Router: typeof import('lucide-react').Router
   const Save: typeof import('lucide-react').Save
+  const ScanSearch: typeof import('lucide-react').ScanSearch
   const ScrollText: typeof import('lucide-react').ScrollText
   const Search: typeof import('lucide-react').Search
   const SearchCheck: typeof import('lucide-react').SearchCheck

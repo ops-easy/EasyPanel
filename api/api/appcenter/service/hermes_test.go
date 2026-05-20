@@ -7,28 +7,27 @@ func TestHermesBuildDeploymentModeCommands(t *testing.T) {
 		mode       string
 		containers int
 		commands   map[string][]string
-		dashboard  bool
 	}{
 		{
 			mode:       "gateway",
 			containers: 1,
 			commands: map[string][]string{
-				"hermes": {"gateway", "run"},
+				"gateway": {"gateway", "run"},
 			},
 		},
 		{
 			mode:       "dashboard",
 			containers: 1,
 			commands: map[string][]string{
-				"hermes": {"dashboard", "--host", "0.0.0.0", "--no-open", "--insecure"},
+				"dashboard": {"dashboard", "--host", "0.0.0.0", "--no-open"},
 			},
 		},
 		{
 			mode:       "gateway-dashboard",
-			containers: 1,
-			dashboard:  true,
+			containers: 2,
 			commands: map[string][]string{
-				"hermes": {"gateway", "run"},
+				"gateway":   {"gateway", "run"},
+				"dashboard": {"dashboard", "--host", "0.0.0.0", "--no-open"},
 			},
 		},
 	}
@@ -72,14 +71,14 @@ func TestHermesBuildDeploymentModeCommands(t *testing.T) {
 				if !foundHome {
 					t.Fatalf("container %q missing HERMES_HOME=/opt/data", c.Name)
 				}
-				foundDashboard := false
-				for _, env := range c.Env {
-					if env.Name == "HERMES_DASHBOARD" && env.Value == "1" {
-						foundDashboard = true
+				foundPVC := false
+				for _, mount := range c.VolumeMounts {
+					if mount.Name == "hermes-home" && mount.MountPath == "/opt/data" {
+						foundPVC = true
 					}
 				}
-				if foundDashboard != tc.dashboard {
-					t.Fatalf("container %q HERMES_DASHBOARD=%v, want %v", c.Name, foundDashboard, tc.dashboard)
+				if !foundPVC {
+					t.Fatalf("container %q missing shared /opt/data PVC mount", c.Name)
 				}
 			}
 		})
@@ -95,5 +94,29 @@ func TestHermesNormalizeMode(t *testing.T) {
 	}
 	if _, err := normalizeHermesMode("cli"); err == nil {
 		t.Fatalf("normalizeHermesMode(cli) returned nil error, want error")
+	}
+}
+
+func TestHermesMigrationCommand(t *testing.T) {
+	dry := buildHermesMigrationCommand(hermesMigrationOptions{DryRun: true})
+	wantDry := []string{"hermes", "claw", "migrate", "--dry-run"}
+	if len(dry) != len(wantDry) {
+		t.Fatalf("dry-run command=%v, want %v", dry, wantDry)
+	}
+	for i := range wantDry {
+		if dry[i] != wantDry[i] {
+			t.Fatalf("dry-run command=%v, want %v", dry, wantDry)
+		}
+	}
+
+	run := buildHermesMigrationCommand(hermesMigrationOptions{Preset: "user-data", Overwrite: true})
+	wantRun := []string{"hermes", "claw", "migrate", "--preset", "user-data", "--overwrite"}
+	if len(run) != len(wantRun) {
+		t.Fatalf("run command=%v, want %v", run, wantRun)
+	}
+	for i := range wantRun {
+		if run[i] != wantRun[i] {
+			t.Fatalf("run command=%v, want %v", run, wantRun)
+		}
 	}
 }

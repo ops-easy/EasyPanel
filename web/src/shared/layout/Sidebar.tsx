@@ -76,9 +76,9 @@ function dashboardPath(ws: SidebarWorkspace): string {
     case "kubernetes":
       return "/cluster";
     case "compute":
-      return "/cluster/compute";
+      return "/cluster/compute/dashboard";
     case "network":
-      return "/cluster/network";
+      return "/cluster/network/dashboard";
     case "vcenter":
       return "/cluster/vcenter/dashboard";
     case "baota":
@@ -123,10 +123,10 @@ function isDashboardActive(pathname: string, ws: SidebarWorkspace): boolean {
     );
   }
   if (ws === "compute") {
-    return pathname === "/cluster/compute" || pathname === "/cluster/compute/";
+    return pathname === "/cluster/compute" || pathname === "/cluster/compute/" || pathname === "/cluster/compute/dashboard";
   }
   if (ws === "network") {
-    return pathname === "/cluster/network" || pathname === "/cluster/network/";
+    return pathname === "/cluster/network" || pathname === "/cluster/network/" || pathname === "/cluster/network/dashboard";
   }
   if (ws === "bastion") {
     return pathname === "/cluster/bastion" || pathname === "/cluster/bastion/";
@@ -722,13 +722,13 @@ const Sidebar: React.FC = () => {
               </Link>
             )}
             {showComputeNav && (
-              <Link to="/cluster/compute" className={navLinkTint(false, "violet")}>
+              <Link to="/cluster/compute/dashboard" className={navLinkTint(false, "violet")}>
                 <Monitor size={20} className="text-gray-400" />
                 <span>虚拟化与主机</span>
               </Link>
             )}
             {showNetworkNav && (
-              <Link to="/cluster/network" className={navLinkTint(false, "slate")}>
+              <Link to="/cluster/network/dashboard" className={navLinkTint(false, "slate")}>
                 <Network size={20} className="text-gray-400" />
                 <span>网络设备</span>
               </Link>
@@ -839,7 +839,7 @@ const Sidebar: React.FC = () => {
               <span>vCenter</span>
             </Link>
             <Link
-              to="/cluster/compute/pve"
+              to="/cluster/compute/pve/dashboard"
               className={navLinkTint(location.pathname.startsWith("/cluster/compute/pve"), "violet")}
             >
               <Server
@@ -881,7 +881,7 @@ const Sidebar: React.FC = () => {
               </p>
             </div>
             <Link
-              to="/cluster/network/ikuai"
+              to="/cluster/network/ikuai/dashboard"
               className={navLinkTint(location.pathname.startsWith("/cluster/network/ikuai"), "slate")}
             >
               <Router
@@ -891,7 +891,7 @@ const Sidebar: React.FC = () => {
               <span>iKuai</span>
             </Link>
             <Link
-              to="/cluster/network/openwrt"
+              to="/cluster/network/openwrt/dashboard"
               className={navLinkTint(location.pathname.startsWith("/cluster/network") && !location.pathname.startsWith("/cluster/network/ikuai"), "slate")}
             >
               <Network

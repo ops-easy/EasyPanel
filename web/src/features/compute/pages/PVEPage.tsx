@@ -9,6 +9,7 @@ import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
+import { useAuth } from "@/auth/auth-context";
 
 type PVETarget = {
   id: string;
@@ -55,6 +56,8 @@ function fmtBytes(v: unknown): string {
 
 const PVEPage: React.FC = () => {
   const qc = useQueryClient();
+  const { status } = useAuth();
+  const canWrite = status?.role === "admin";
   const [activeId, setActiveId] = useState("");
   const [form, setForm] = useState({
     name: "PVE",
@@ -178,7 +181,7 @@ const PVEPage: React.FC = () => {
                 <span className="text-slate-700">跳过 TLS 校验</span>
                 <Switch checked={form.skipTls} onCheckedChange={(v) => setForm({ ...form, skipTls: v })} />
               </label>
-              <Button className="w-full gap-2 bg-amber-600 hover:bg-amber-700" disabled={createMut.isPending} onClick={() => createMut.mutate()}>
+              <Button className="w-full gap-2 bg-amber-600 hover:bg-amber-700" disabled={!canWrite || createMut.isPending} onClick={() => createMut.mutate()}>
                 {createMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlugZap className="h-4 w-4" />}
                 保存目标
               </Button>
@@ -235,11 +238,11 @@ const PVEPage: React.FC = () => {
               </div>
               {active ? (
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => probeMut.mutate(active.id)} disabled={probeMut.isPending}>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => probeMut.mutate(active.id)} disabled={!canWrite || probeMut.isPending}>
                     <ShieldCheck className="h-4 w-4" />
                     探测
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-red-700" onClick={() => deleteMut.mutate(active.id)} disabled={deleteMut.isPending}>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-red-700" onClick={() => deleteMut.mutate(active.id)} disabled={!canWrite || deleteMut.isPending}>
                     <Trash2 className="h-4 w-4" />
                     删除
                   </Button>
@@ -294,7 +297,7 @@ const PVEPage: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 gap-1 px-2"
-                                disabled={!activeId || !vmid || !node || powerMut.isPending}
+                                disabled={!canWrite || !activeId || !vmid || !node || powerMut.isPending}
                                 onClick={() => powerMut.mutate({ vmid, node, type, action })}
                               >
                                 <Power className="h-3.5 w-3.5" />
