@@ -122,3 +122,38 @@ func verifyDashboardUserCurrentPassword(db *sql.DB, ctx context.Context, usernam
 func VerifyDashboardUserCurrentPassword(db *sql.DB, ctx context.Context, username, password string) error {
 	return verifyDashboardUserCurrentPassword(db, ctx, username, password)
 }
+
+// ensureInitialDashboardAdminUser 在平台用户表为空时，用静态配置创建首个管理员。
+// 配置里的用户名和密码只承担“初始化种子”职责；用户创建后，后续登录和改密都以 MySQL 中的 password_hash 为准。
+func ensureInitialDashboardAdminUser(db *sql.DB, cfg Config) (bool, error) {
+	if db == nil {
+		return false, nil
+	}
+	username := strings.TrimSpace(cfg.DashboardUser)
+	if username == "" {
+		username = "admin"
+	}
+	password := strings.TrimSpace(cfg.DashboardPassword)
+	if password == "" {
+		return false, nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	var n int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM kubebt_dashboard_users`).Scan(&n); err != nil {
+		return false, err
+	}
+	if n > 0 {
+		return false, nil
+	}
+	hash, err := hashDashboardPassword(password)
+	if err != nil {
+		return false, err
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO kubebt_dashboard_users (username, email, password_hash, role, disabled, permissions_json, allow_multi_ip_login, allowed_login_ips) VALUES (?,?,?,?,0,?,?,?)`,
+		username, "", hash, DashboardRoleAdmin, "", 0, ""); err != nil {
+		return false, err
+	}
+	return true, nil
+}

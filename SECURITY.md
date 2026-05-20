@@ -113,7 +113,7 @@ SSH 凭据目录建议权限为 `0700`，并配合 `KUBEBT_ENCRYPTION_KEY` 加�
 
 ## 已知风险提示
 
-- `runtime-config.json` 可能包含连接信息和敏感配置，必须保护其所在 PVC。
+- MySQL 表 `kubebt_platform_kv` 会保存动态配置和部分敏感配置，必须限制数据库访问权限并做好备份加密。
 - 宝塔、vCenter、Harbor 等管理员凭据只应由可信管理员维护。
 - Pod Exec、Web SSH、SFTP 具有较高运维权限，应开启审计并限制访问角色。
 - 生产环境不建议长期暴露 `/setup` 给公网。

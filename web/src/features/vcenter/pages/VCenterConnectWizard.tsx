@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { apiGetJson, apiPutJson, type RuntimeSettingsDTO } from "@/lib/api";
 
 /**
- * vCenter 未在运行时配置时展示：写入 runtime-config.json 并触发 Reload。
+ * vCenter 未在运行时配置时展示：写入 MySQL 动态配置并触发 Reload。
  */
 const VCenterConnectWizard: React.FC = () => {
   const qc = useQueryClient();

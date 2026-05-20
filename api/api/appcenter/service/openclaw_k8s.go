@@ -527,9 +527,10 @@ func ApplyOpenClawToCluster(ctx context.Context, k8s *kubernetes.Clientset, node
 			ingName = depName + "-ingress"
 		}
 		ingResName = ingName
-		syncKey := "i4t.com/baota-sync"
-		if strings.TrimSpace(opts.BaotaSyncAnnotation) == "kube-bt" {
-			syncKey = "kube-bt-sync.io/baota-sync"
+		syncKey := "kube-bt-sync.io/baota-sync"
+		if strings.TrimSpace(opts.BaotaSyncAnnotation) == "i4t" {
+			// 仅兼容旧版用户手动选择；新建资源默认写入 kube-bt-sync.io 前缀。
+			syncKey = "i4t.com/baota-sync"
 		}
 		ic := "nginx"
 		pt := networkingv1.PathTypePrefix

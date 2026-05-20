@@ -20,7 +20,7 @@ type BaotaTargetEntry struct {
 
 var baotaTargetIDRe = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$`)
 
-// RuntimeBaotaTarget 持久化到 runtime-config.json 的宝塔实例行。
+// RuntimeBaotaTarget 表示配置文件中的宝塔实例行。
 type RuntimeBaotaTarget struct {
 	ID            string `json:"id"`
 	Name          string `json:"name,omitempty"`

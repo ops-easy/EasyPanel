@@ -10,10 +10,12 @@ import (
 	"time"
 )
 
+const defaultDashboardPassword = "admin"
+
 type Config struct {
 	BaotaURL    string
 	BaotaAPIKey string
-	// BaotaTargets 多实例（runtime baotaTargets）；nil 表示仅使用 BaotaURL/BaotaAPIKey。
+	// BaotaTargets 多实例；nil 表示仅使用 BaotaURL/BaotaAPIKey。
 	BaotaTargets       []BaotaTargetEntry `json:"-"`
 	BaotaSkipTLSVerify bool
 	// 默认 true：公网面板下复用连接易陈旧，易导致「awaiting headers」挂满直至 Client.Timeout；设为 false 可省握手。
@@ -43,6 +45,8 @@ type Config struct {
 	// DASHBOARD_ACCESS_LOG：是否记录访问日志（含解析后的客户端 IP，供审计）；默认 true。
 	DashboardAccessLog          bool
 	resolvedDashboardSessionKey []byte
+	// ServeFrontend：是否由后端进程直接托管 React dist；默认关闭，K8s/Helm 由独立前端 Nginx 提供页面。
+	ServeFrontend bool
 	// Prometheus 可选：监控页代理查询（kube-prometheus 等）
 	PrometheusURL        string // 兜底：PROMETHEUS_URL / runtime prometheusUrl
 	PrometheusURLK8s     string // Kubernetes 集群监控专用
@@ -65,7 +69,7 @@ type Config struct {
 	PrometheusTimeout     time.Duration
 	PrometheusSkipTLS     bool
 	PrometheusBearerToken string
-	// iDRAC 带外（单台；Redfish 物理盘；runtime-config idracHost 等）
+	// iDRAC 带外（单台；Redfish 物理盘）
 	IdracHost     string
 	IdracUser     string
 	IdracPassword string
@@ -131,11 +135,11 @@ type Config struct {
 	PlatformPublicURL string
 	// 静态加速根 URL（无尾斜杠），须包含路径前缀如 https://cdn.example.com/cmdb；空则文档公开页、边缘模板、WMKS 前置 jQuery 等走默认公网 CDN
 	AssetsCDNBaseURL string
-	// 控制台标题与外观（可由 runtime-config 覆盖）
+	// 控制台标题与外观。
 	PlatformDisplayName string
 	PlatformLogoURL     string
 	PlatformFaviconURL  string
-	// Web SSH / xterm 字体（runtime-config 或 KUBEBT_SSH_TERMINAL_* 可覆盖）
+	// Web SSH / xterm 字体。
 	SshTerminalFontFamily string
 	SshTerminalFontSize   int // 0 表示前端默认 13
 	// Ingress→宝塔同步：在后台开启后才轮询同步；未开启时不访问 K8s Ingress / 宝塔 API
@@ -160,7 +164,7 @@ type Config struct {
 	CloudHostAutoInstallNodeExporter bool
 	// NODE_EXPORTER_VERSION：自动安装时使用的发布版本号（不含 v 前缀）。
 	NodeExporterVersion string
-	// KUBEBT_RUNTIME_DUAL_WRITE_REDIS：为 true 且能连接 Redis 时，将 runtime-config 与 platform_kv 全量镜像到 Redis（无过期时间），便于在 Redis/运维侧可见与灾备恢复。
+	// KUBEBT_RUNTIME_DUAL_WRITE_REDIS：兼容旧变量名；为 true 且能连接 Redis 时，将 platform_kv 全量镜像到 Redis（无过期时间）。
 	RuntimeDualWriteRedis bool
 	// OIDC（如 Authentik）：与 DASHBOARD_PASSWORD 可并存；四项均配置则启用授权码登录
 	OIDCIssuerURL    string
@@ -192,6 +196,8 @@ type Config struct {
 	CosRegion     string // 如 ap-guangzhou
 	CosPrefix     string // 对象键前缀，如 kubebt-docs
 	CosPublicBase string // 可选 CDN 根，如 https://cdn.example.com（无尾斜杠）；空则用默认桶域名
+
+	configFileRuntime *RuntimeSettings
 }
 
 // CosObjectStorageConfigured 是否启用 COS 上传（密钥与桶、地域齐全）。
@@ -303,7 +309,7 @@ func LoadConfig() Config {
 		BaotaHTTPTimeout:                  time.Duration(timeoutSec) * time.Second,
 		BaotaTCPProbeTimeout:              time.Duration(tcpProbeSec) * time.Second,
 		BaotaCheckMinInterval:             time.Duration(checkMinSec) * time.Second,
-		DDNSHost:                          getEnv("DDNS_HOST", "home.i4t.com"),
+		DDNSHost:                          strings.TrimSpace(getEnv("DDNS_HOST", "")),
 		DefaultPort:                       getEnv("DEFAULT_PORT", "38333"),
 		BaotaUpstreamHost:                 strings.TrimSpace(getEnv("BAOTA_UPSTREAM_HOST", "")),
 		BaotaUpstreamPort:                 strings.TrimSpace(getEnv("BAOTA_UPSTREAM_PORT", "")),
@@ -313,13 +319,14 @@ func LoadConfig() Config {
 		BaotaSSLKeyPath:                   strings.TrimSpace(getEnv("BAOTA_SSL_KEY_PATH", "")),
 		SyncInterval:                      time.Duration(getEnvAsInt("SYNC_INTERVAL_SEC", 30)) * time.Second,
 		DashboardUser:                     getEnv("DASHBOARD_USER", "admin"),
-		DashboardPassword:                 strings.TrimSpace(os.Getenv("DASHBOARD_PASSWORD")),
+		DashboardPassword:                 strings.TrimSpace(getEnv("DASHBOARD_PASSWORD", defaultDashboardPassword)),
 		DashboardSessionSecret:            strings.TrimSpace(os.Getenv("DASHBOARD_SESSION_SECRET")),
 		DashboardSessionDays:              dashDays,
 		DashboardCookieSecure:             getEnvBool("DASHBOARD_COOKIE_SECURE", false),
 		DashboardListenAddr:               normalizeDashboardListenAddr(getEnv("DASHBOARD_HTTP_ADDR", ":8080")),
 		DashboardTrustedProxies:           resolveDashboardTrustedProxies(),
 		DashboardAccessLog:                getEnvBool("DASHBOARD_ACCESS_LOG", true),
+		ServeFrontend:                     getEnvBool("DASHBOARD_SERVE_FRONTEND", false),
 		PrometheusURL:                     strings.TrimSpace(getEnv("PROMETHEUS_URL", "")),
 		PrometheusURLK8s:                  strings.TrimSpace(getEnv("PROMETHEUS_URL_K8S", "")),
 		PrometheusURLVCenter:              strings.TrimSpace(getEnv("PROMETHEUS_URL_VCENTER", "")),
@@ -418,6 +425,16 @@ func LoadConfig() Config {
 		CosPrefix:                         strings.Trim(strings.TrimSpace(getEnv("KUBEBT_COS_PREFIX", "kubebt-docs")), "/"),
 		CosPublicBase:                     strings.TrimRight(strings.TrimSpace(getEnv("KUBEBT_COS_PUBLIC_BASE", "")), "/"),
 	}
+	applyConfigFile(&cfg)
+	finalizeLoadedConfig(&cfg)
+	return cfg
+}
+
+// finalizeLoadedConfig 统一收尾派生字段，静态配置和 MySQL 动态配置叠加后都要调用。
+func finalizeLoadedConfig(cfg *Config) {
+	if cfg == nil {
+		return
+	}
 	if cfg.PerformanceMode && cfg.NamespacesCacheTTLSec <= 0 {
 		cfg.NamespacesCacheTTLSec = 30
 	}
@@ -427,9 +444,8 @@ func LoadConfig() Config {
 	if strings.TrimSpace(cfg.MySQLHost) != "" && cfg.MySQLPort <= 0 {
 		cfg.MySQLPort = 3306
 	}
-	FinalizeConnectionStrings(&cfg)
+	FinalizeConnectionStrings(cfg)
 	cfg.K8sAddonsManifestMirror = K8sAddonsManifestMirrorCanonical(ParseManifestMirrorMode(cfg.K8sAddonsManifestMirror))
-	return cfg
 }
 
 func normalizeDashboardListenAddr(addr string) string {

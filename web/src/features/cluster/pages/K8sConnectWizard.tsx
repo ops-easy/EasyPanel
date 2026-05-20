@@ -18,7 +18,7 @@ import { apiGetJson, apiPutJson, type RuntimeSettingsDTO } from "@/lib/api";
 type K8sMode = "none" | "incluster" | "kubeconfig";
 
 /**
- * 未连接到集群时展示：保存 K8s 连接方式到 runtime-config.json 并触发后端 Reload。
+ * 未连接到集群时展示：保存 K8s 连接方式到 MySQL 动态配置并触发后端 Reload。
  */
 const K8sConnectWizard: React.FC = () => {
   const qc = useQueryClient();

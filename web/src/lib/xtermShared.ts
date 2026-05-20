@@ -29,7 +29,7 @@ export type SshTerminalFontConfig = {
   sshTerminalFontSize?: number;
 };
 
-/** 合并后台 /api/config 或 runtime-config 中的 SSH 终端字体设置 */
+/** 合并后台 /api/config 或 MySQL 动态配置中的 SSH 终端字体设置 */
 export function resolveKubeBtXtermOptions(cfg: SshTerminalFontConfig | null | undefined): ITerminalOptions {
   const o: ITerminalOptions = {
     ...kubeBtXtermOptions,

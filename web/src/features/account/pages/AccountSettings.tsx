@@ -59,8 +59,8 @@ const AccountSettings: React.FC = () => {
       <div className="mb-8">
         <h1 className="mb-2 text-2xl font-bold text-gray-900">账户与平台</h1>
         <p className="text-sm text-gray-500">
-          仅平台层配置（数据库、Redis、登录与 OIDC），与 Kubernetes / vCenter 集群菜单独立。宝塔与 Ingress 请在「宝塔」工作区中配置。保存后写入{" "}
-          <code className="text-xs">runtime-config.json</code> 并热重载。
+          仅平台层配置（Redis、登录与 OIDC），与 Kubernetes / vCenter 集群菜单独立。MySQL 连接来自静态配置；宝塔与 Ingress 请在「宝塔」工作区中配置。保存后写入{" "}
+          <code className="text-xs">MySQL 动态配置</code> 并热重载。
         </p>
         {status?.loggedIn ? (
           <Link

@@ -136,7 +136,7 @@ function DocBody() {
       <P>
         <strong className="text-slate-800">kube-bt-sync</strong> 通常以 <strong>Deployment + Service</strong> 部署在目标集群命名空间（如{" "}
         <Code>kube-bt-sync</Code>），容器监听 <Code>:8080</Code>，健康检查 <Code>GET /api/health</Code>；数据目录挂载{" "}
-        <strong>PVC</strong> 到 <Code>/data</Code>（含 <Code>runtime-config.json</Code>、审计日志、SSH 凭据目录等）。浏览器通过集群{" "}
+        <strong>PVC</strong> 到 <Code>/data</Code>（含审计日志、SSH 凭据目录等）；页面动态配置写入 MySQL。浏览器通过集群{" "}
         <strong>Ingress</strong> 或 <strong>NodePort</strong> 访问控制台；进程使用 <strong>client-go</strong> 以 in-cluster ServiceAccount 或粘贴的{" "}
         <Code>kubeconfig</Code> 访问 <strong>API Server</strong>，<strong>不</strong>在 Pod 内执行 <Code>kubectl</Code> 子进程。
       </P>
@@ -242,7 +242,7 @@ function DocBody() {
 
       <H>四、Kubernetes 工作区</H>
       <P>
-        <strong className="text-slate-800">Kubernetes 数据源</strong>包含：① 用 kubeconfig / in-cluster / 进程环境连接 <strong>Kubernetes API</strong>（侧栏、列表、YAML、exec 等均依赖）；② 配置 <strong>Prometheus</strong>（<Code>prometheusUrlK8s</Code>）作为监控与部分图表的数据源；③（可选）若使用 <strong>VictoriaMetrics</strong>，将 <strong>vmselect</strong> 根地址写入 <Code>vmSelectUrlK8s</Code>（或环境变量 <Code>VM_SELECT_URL_K8S</Code>），监控查询会<strong>优先</strong>走 vmselect，留空则仍用 Prometheus。①～③ 均在 <Code>/cluster/settings</Code>（集群设置）中维护，保存后写入 <Code>runtime-config.json</Code> 并热重载。
+        <strong className="text-slate-800">Kubernetes 数据源</strong>包含：① 用 kubeconfig / in-cluster / 进程环境连接 <strong>Kubernetes API</strong>（侧栏、列表、YAML、exec 等均依赖）；② 配置 <strong>Prometheus</strong>（<Code>prometheusUrlK8s</Code>）作为监控与部分图表的数据源；③（可选）若使用 <strong>VictoriaMetrics</strong>，将 <strong>vmselect</strong> 根地址写入 <Code>vmSelectUrlK8s</Code>（或环境变量 <Code>VM_SELECT_URL_K8S</Code>），监控查询会<strong>优先</strong>走 vmselect，留空则仍用 Prometheus。①～③ 均在 <Code>/cluster/settings</Code>（集群设置）中维护，保存后写入 MySQL 动态配置并热重载。
       </P>
       <P className="font-medium text-slate-800">Kubernetes API、Prometheus 与 VM（vmselect）— 推荐步骤</P>
       <Ol>
@@ -485,7 +485,7 @@ function DocBody() {
       </P>
       <P>
         <strong className="text-slate-800">对外访问</strong>：① <strong>NodePort</strong>——不指定固定端口，由集群在 30000–32767 内<strong>随机分配</strong>，列表展示节点 IP + 端口形式的示例 URL。② <strong>Ingress + 宝塔</strong>——填写域名并选择{" "}
-        <Code>i4t.com/baota-sync</Code> 或 <Code>kube-bt-sync.io/baota-sync</Code>（与宝塔工作区「发布 Ingress」一致），Service 为 ClusterIP，由 Ingress 反代到网关端口 18789；登记中的对外 Base 为 <Code>https|http://域名/v1</Code>。
+        <Code>kube-bt-sync.io/baota-sync</Code>（与宝塔工作区「发布 Ingress」一致），Service 为 ClusterIP，由 Ingress 反代到网关端口 18789；登记中的对外 Base 为 <Code>https|http://域名/v1</Code>。
       </P>
       <P>
         资源包含 PVC、ConfigMap、Secret（固定键名如 <Code>OPENAI_API_KEY</Code> 等）、Deployment、Service、可选 Ingress，以及<strong>集群只读</strong> ClusterRole/Binding；部署时创建 <Code>openclaw-&lt;Deployment&gt;</Code> ServiceAccount 并绑定只读 ClusterRole。可<strong>同步到 AI 巡检</strong>（集群内 <Code>…svc.cluster.local:18789/v1</Code> + 网关 Token）。平台界面时间统一按<strong>东八区</strong>展示。

@@ -435,7 +435,7 @@ func handlePrometheusSource(c *gin.Context, cfg Config) {
 	}
 	SetPrometheusURLOverrideForScope(sc, raw)
 	SetAuditDetail(c, "已设置进程内 Prometheus（scope="+sc+"）→ "+maskPrometheusURL(raw))
-	c.JSON(http.StatusOK, gin.H{"message": "已保存 Prometheus 地址（仅当前进程有效；持久化请写入 runtime-config 对应字段）"})
+	c.JSON(http.StatusOK, gin.H{"message": "已保存 Prometheus 地址（仅当前进程有效；持久化请在系统设置中保存到 MySQL 动态配置，或用环境变量强制覆盖）"})
 }
 
 func prometheusFetchInstant(cfg Config, scope, q string) (body []byte, status int, err error) {

@@ -665,22 +665,30 @@ func KubePrometheusStackAddonStatus(ctx context.Context, k8s *kubernetes.Clients
 	return out
 }
 
-// PatchRuntimePrometheusK8sURL 写入 prometheusUrlK8s 并重载进程配置。
+// PatchRuntimePrometheusK8sURL 将安装得到的 Prometheus 地址写入 MySQL 动态配置。
 func PatchRuntimePrometheusK8sURL(app *ServerApp, promURL string, clearVMSelect bool) error {
 	promURL = strings.TrimSpace(promURL)
 	if err := validatePrometheusBaseURL(promURL); err != nil {
 		return fmt.Errorf("Prometheus URL 无效: %w", err)
 	}
-	path := filepath.Join(app.DataDir(), runtimeConfigFileName)
-	cur, err := LoadRuntimeSettings(path)
-	if err != nil || cur == nil || !cur.Initialized {
-		return fmt.Errorf("运行时未初始化")
+	if app == nil {
+		return fmt.Errorf("应用未初始化")
 	}
-	cur.PrometheusURLK8s = promURL
+	cur := app.Runtime()
+	if cur == nil || !cur.Initialized {
+		return fmt.Errorf("动态配置尚未初始化")
+	}
+	next := *cur
+	next.PrometheusURLK8s = promURL
 	if clearVMSelect {
-		cur.VMSelectURLK8s = ""
+		next.VMSelectURLK8s = ""
 	}
-	if err := SaveRuntimeSettingsUnified(path, app.MySQLDB(), cur); err != nil {
+	restoreMySQLBootstrapRuntime(&next, mysqlBootstrapConfigFrom(app.Cfg()))
+	db := app.MySQLDB()
+	if db == nil {
+		return fmt.Errorf("MySQL 未连接，无法保存动态配置")
+	}
+	if err := SaveRuntimeSettingsToMySQL(db, &next); err != nil {
 		return err
 	}
 	if err := app.Reload(); err != nil {

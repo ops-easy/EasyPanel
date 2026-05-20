@@ -362,23 +362,9 @@ func adminCountEnabled(db *sql.DB, ctx context.Context) (int, error) {
 	return n, err
 }
 
-// runtimeAdminFallbackInEffect 当 expectAdminName 在库中无同名用户时，登录仍会走「运行时单一管理员」口令（见 handleAuthLogin 第二步），
-// 与列表中的「虚拟」行一致；计数「最后一名管理员」时必须算入，否则会误拦对另一名库内 admin 的删除/禁用。
+// runtimeAdminFallbackInEffect 保留旧调用点的语义入口。
+// MySQL 已连接时登录只认平台用户表，因此不存在运行时单一管理员兜底。
 func runtimeAdminFallbackInEffect(db *sql.DB, ctx context.Context, cfg Config) (bool, error) {
-	expect := strings.TrimSpace(expectAdminName(cfg))
-	if expect == "" {
-		expect = "admin"
-	}
-	var tmp string
-	err := db.QueryRowContext(ctx,
-		`SELECT username FROM kubebt_dashboard_users WHERE LOWER(username) = LOWER(?) LIMIT 1`,
-		expect).Scan(&tmp)
-	if errors.Is(err, sql.ErrNoRows) {
-		return true, nil
-	}
-	if err != nil {
-		return false, err
-	}
 	return false, nil
 }
 

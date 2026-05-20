@@ -1120,8 +1120,8 @@ const Sidebar: React.FC = () => {
             </div>
           </div>
           {cfg && (
-            <p className="mt-2 truncate text-[11px] text-gray-500" title={cfg.ddnsHost}>
-              DDNS: {cfg.ddnsHost}
+            <p className="mt-2 truncate text-[11px] text-gray-500" title={cfg.ddnsHost || "未配置"}>
+              DDNS: {cfg.ddnsHost || "未配置"}
             </p>
           )}
           {cfg && (

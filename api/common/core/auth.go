@@ -553,27 +553,6 @@ func handleAuthLogin(c *gin.Context, app *ServerApp) {
 					c.JSON(http.StatusUnauthorized, gin.H{"error": "账号已禁用，请重新登录"})
 					return
 				}
-				// MySQL 中已有该用户但 bcrypt 与所输密码不一致时：若仍配置了 DASHBOARD_USER / DASHBOARD_PASSWORD，
-				// 且登录名与 env 管理员一致、口令与 env 一致，则放行（接入 MySQL 后库内哈希常与历史 env 口令不同，避免「admin/原 env 密码」突然失效）。
-				expectUser := strings.TrimSpace(cfg.DashboardUser)
-				if expectUser == "" {
-					expectUser = "admin"
-				}
-				if isAdminLoginName(cfg, dbUser) && dashboardUsernameMatch(body.Username, expectUser) && dashboardPasswordOk(cfg, body.Password) {
-					role := DashboardRoleAdmin
-					ctxR, cr := context.WithTimeout(context.Background(), 8*time.Second)
-					var r string
-					if err := db.QueryRowContext(ctxR, `SELECT TRIM(role) FROM kubebt_dashboard_users WHERE username=? LIMIT 1`, dbUser).Scan(&r); err == nil {
-						if tr := strings.TrimSpace(r); tr == DashboardRoleAdmin || tr == DashboardRoleViewer {
-							role = tr
-						}
-					}
-					cr()
-					resetLoginFailures(app, ip)
-					log.Printf("login: 用户 %s 使用环境变量 DASHBOARD_PASSWORD 登录（MySQL 口令哈希与所输密码不一致，已按 env 管理员口令放行）", dbUser)
-					respondAfterPasswordOk(c, app, cfg, dbUser, role, ip, "mysql_user_env_password_fallback")
-					return
-				}
 				log.Printf("audit login fail user=%s ip=%s reason=password_or_disabled", dbUser, ip)
 				AppendAuditRecord(app, AuditRecord{
 					Action: "login_fail", IP: ip, User: dbUser, Method: c.Request.Method, Path: c.Request.URL.Path,
@@ -593,9 +572,20 @@ func handleAuthLogin(c *gin.Context, app *ServerApp) {
 			respondAfterPasswordOk(c, app, cfg, dbUser, role, ip, "mysql_user")
 			return
 		}
+		log.Printf("audit login fail user=%s ip=%s reason=mysql_user_not_found", uname, ip)
+		AppendAuditRecord(app, AuditRecord{
+			Action: "login_fail", IP: ip, User: uname, Method: c.Request.Method, Path: c.Request.URL.Path,
+			Status: http.StatusUnauthorized, Detail: "mysql_user_not_found",
+		})
+		RecordLoginFailForStats(ip)
+		if _, alert := recordLoginFailure(app, ip); alert {
+			appendSecurityLoginBruteforceAlert(app, ip)
+		}
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "密码错误"})
+		return
 	}
 
-	// 2) 运行时配置中的单一管理员账号（兼容）
+	// 2) MySQL 不可用时，使用静态初始管理员作为本地兜底。
 	expectUser := strings.TrimSpace(cfg.DashboardUser)
 	if expectUser == "" {
 		expectUser = "admin"

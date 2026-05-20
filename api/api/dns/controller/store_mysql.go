@@ -469,9 +469,9 @@ func dnsScheduledList(ctx context.Context, db *sql.DB) ([]DnsScheduledTask, erro
 
 func dnsScheduledInsert(ctx context.Context, db *sql.DB, t DnsScheduledTask) (int64, error) {
 	res, err := db.ExecContext(ctx, `
-		INSERT INTO dns_scheduled_tasks (name, domain_id, record_id, action, new_value, scheduled_at, created_by)
-		VALUES (?,?,?,?,?,?,?)`,
-		t.Name, t.DomainID, t.RecordID, t.Action, t.NewValue, t.ScheduledAt.Format("2006-01-02 15:04:05"), t.CreatedBy)
+		INSERT INTO dns_scheduled_tasks (name, domain_id, record_id, action, new_value, scheduled_at, message, created_by)
+		VALUES (?,?,?,?,?,?,?,?)`,
+		t.Name, t.DomainID, t.RecordID, t.Action, t.NewValue, t.ScheduledAt.Format("2006-01-02 15:04:05"), t.Message, t.CreatedBy)
 	if err != nil {
 		return 0, err
 	}
@@ -545,9 +545,9 @@ func dnsCertOrderInsert(ctx context.Context, db *sql.DB, o DnsCertOrder) (int64,
 		push = 1
 	}
 	res, err := db.ExecContext(ctx, `
-		INSERT INTO dns_cert_orders (name, account_id, domains, email, auto_renew, baota_site_name, auto_push_baota, created_by)
-		VALUES (?,?,?,?,?,?,?,?)`,
-		o.Name, o.AccountID, domainsJSON, o.Email, o.AutoRenew, strings.TrimSpace(o.BaotaSiteName), push, o.CreatedBy)
+		INSERT INTO dns_cert_orders (name, account_id, domains, email, cert_pem, key_pem, auto_renew, baota_site_name, auto_push_baota, created_by)
+		VALUES (?,?,?,?,?,?,?,?,?,?)`,
+		o.Name, o.AccountID, domainsJSON, o.Email, o.CertPEM, o.KeyPEM, o.AutoRenew, strings.TrimSpace(o.BaotaSiteName), push, o.CreatedBy)
 	if err != nil {
 		return 0, err
 	}

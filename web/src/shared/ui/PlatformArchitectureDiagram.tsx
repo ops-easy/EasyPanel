@@ -86,7 +86,7 @@ export function PlatformArchitectureDiagram() {
           PVC → /data
         </text>
         <text x="360" y="316" textAnchor="middle" fill="#c2410c" fontSize="9">
-          runtime-config、审计、密钥存储等
+          审计、密钥存储等
         </text>
 
         <line x1="360" y1="264" x2="360" y2="278" stroke="#059669" strokeWidth="1.5" />

@@ -163,10 +163,21 @@ func tryServeFileFromFrontendDist(c *gin.Context, frontendDistDir string) bool {
 }
 
 func registerFrontendRoutes(r *gin.Engine, app *ServerApp) {
+	if !app.Cfg().ServeFrontend {
+		r.NoRoute(func(c *gin.Context) {
+			if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+				c.JSON(http.StatusNotFound, gin.H{"error": "API 不存在或未注册，请确认已部署包含该接口的版本"})
+				return
+			}
+			c.JSON(http.StatusNotFound, gin.H{"error": "前端静态托管未启用，请通过独立前端服务访问页面"})
+		})
+		return
+	}
+
 	frontendDistDir := resolveFrontendDistDir()
 	frontendIndex := filepath.Join(frontendDistDir, "index.html")
 
-	// Prefer the React build output if available.
+	// 优先使用 React 构建产物；该模式仅用于单体部署或本地调试。
 	if fileExists(frontendIndex) {
 		r.Static("/assets", filepath.Join(frontendDistDir, "assets"))
 		r.GET("/", func(c *gin.Context) { c.File(frontendIndex) })
@@ -819,21 +830,26 @@ func buildSystemCheckResponse(ctx context.Context, app *ServerApp, role string) 
 
 	baotaStatus, baotaMsg := probeBaotaForSystemCheck(cfg)
 
-	ddnsIPs, _ := net.LookupHost(cfg.DDNSHost)
-	ddnsStatus := "success"
-	ddnsMsg := fmt.Sprintf("默认端口(%s)检查通过", cfg.DefaultPort)
-	if len(ddnsIPs) == 0 {
-		ddnsStatus = "error"
-		ddnsMsg = "域名解析失败"
-	}
-
-	if !isTCPReachable(cfg.DDNSHost, cfg.DefaultPort, 2*time.Second) {
-		ddnsStatus = "warning"
-		ddnsMsg = fmt.Sprintf("默认端口(%s)不可达", cfg.DefaultPort)
-	}
-
 	httpsPort := envOrDefault("HTTPS_PORT", "443")
-	port443 := isTCPReachable(cfg.DDNSHost, httpsPort, 2*time.Second)
+	ddnsHost := strings.TrimSpace(cfg.DDNSHost)
+	ddnsIPs := []string{}
+	ddnsStatus := "not_configured"
+	ddnsMsg := "未配置 DDNS 域名"
+	port443 := false
+	if ddnsHost != "" {
+		ddnsIPs, _ = net.LookupHost(ddnsHost)
+		ddnsStatus = "success"
+		ddnsMsg = fmt.Sprintf("默认端口(%s)检查通过", cfg.DefaultPort)
+		if len(ddnsIPs) == 0 {
+			ddnsStatus = "error"
+			ddnsMsg = "域名解析失败"
+		}
+		if !isTCPReachable(ddnsHost, cfg.DefaultPort, 2*time.Second) {
+			ddnsStatus = "warning"
+			ddnsMsg = fmt.Sprintf("默认端口(%s)不可达", cfg.DefaultPort)
+		}
+		port443 = isTCPReachable(ddnsHost, httpsPort, 2*time.Second)
+	}
 
 	ingressInstalled := false
 	ingressHostNetwork := false
@@ -852,7 +868,7 @@ func buildSystemCheckResponse(ctx context.Context, app *ServerApp, role string) 
 		},
 		"ddns": gin.H{
 			"status":    ddnsStatus,
-			"host":      cfg.DDNSHost,
+			"host":      ddnsHost,
 			"ips":       ddnsIPs,
 			"msg":       ddnsMsg,
 			"port443":   port443,

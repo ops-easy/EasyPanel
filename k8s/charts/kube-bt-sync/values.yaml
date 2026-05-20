@@ -29,12 +29,45 @@ backend:
 
   env:
     KUBEBT_DATA_DIR: "/data"
+    KUBEBT_CONFIG_FILE: "/app/config.yaml"
+
+  # 这里只放启动必需配置；页面可修改的业务配置保存到 MySQL 动态配置。
+  config:
+    server:
+      address: "0.0.0.0:8080"
+      model: release
+      publicUrl: "https://kube-bt-sync.example.com"
+      user: admin
+      # 初始管理员密码；仅在 MySQL 用户表为空时生效，生产请用 Secret 覆盖
+      password: admin
+      sessionSecret: ""
+      sessionDays: 7
+      cookieSecure: true
+      accessLog: true
+      serveFrontend: false
+    db:
+      host: mysql.kube-bt-sync.svc.cluster.local
+      port: 3306
+      db: kube_bt_sync
+      username: kube_bt_sync
+      password: change-me
+    redis:
+      address: redis.kube-bt-sync.svc.cluster.local:6379
+      password: change-me
+      db: 0
+    startup:
+      schedulers:
+        enabled: true
+    performance:
+      mode: release
+      namespacesCacheTtlSec: 30
 
   extraEnv: []
-  #  - name: BAOTA_URL
-  #    value: "http://..."
-  #  - name: DDNS_HOST
-  #    value: "home.example.com"
+  #  - name: DASHBOARD_SESSION_SECRET
+  #    valueFrom:
+  #      secretKeyRef:
+  #        name: kube-bt-sync-secrets
+  #        key: dashboard-session-secret
 
   # 敏感信息建议用 extraEnvFrom
   extraEnvFrom: []

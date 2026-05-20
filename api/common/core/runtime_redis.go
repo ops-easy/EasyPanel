@@ -13,7 +13,7 @@ func redisRuntimeConfigKey(cfg Config) string {
 	} else if !strings.HasSuffix(p, ":") {
 		p += ":"
 	}
-	return p + "runtime-config"
+	return p + "dynamic-config"
 }
 
 func redisPlatformKVKey(cfg Config) string {
@@ -26,7 +26,7 @@ func redisPlatformKVKey(cfg Config) string {
 	return p + "platform-kv"
 }
 
-// MirrorRuntimeSettingsToRedis 将完整运行时配置写入 Redis（无 TTL）。
+// MirrorRuntimeSettingsToRedis 将完整动态配置镜像到 Redis（无 TTL）。
 func MirrorRuntimeSettingsToRedis(ctx context.Context, r *RedisLight, cfg Config, rs *RuntimeSettings) error {
 	if r == nil || rs == nil {
 		return nil
@@ -38,7 +38,7 @@ func MirrorRuntimeSettingsToRedis(ctx context.Context, r *RedisLight, cfg Config
 	return r.SetPersist(ctx, redisRuntimeConfigKey(cfg), b)
 }
 
-// LoadRuntimeSettingsFromRedis 从 Redis 读取运行时配置（用于灾备恢复）。
+// LoadRuntimeSettingsFromRedis 从 Redis 读取动态配置（用于灾备恢复）。
 func LoadRuntimeSettingsFromRedis(ctx context.Context, r *RedisLight, cfg Config) (*RuntimeSettings, error) {
 	s, err := r.Get(ctx, redisRuntimeConfigKey(cfg))
 	if err != nil {

@@ -47,7 +47,7 @@ const Setup: React.FC = () => {
   const [baotaApiKey, setBaotaApiKey] = useState("");
   const [baotaSkipTls, setBaotaSkipTls] = useState(true);
   const [syncIntervalSec, setSyncIntervalSec] = useState(30);
-  const [ddnsHost, setDdnsHost] = useState("home.i4t.com");
+  const [ddnsHost, setDdnsHost] = useState("");
   const [defaultPort, setDefaultPort] = useState("38333");
   const [baotaSslCertName, setBaotaSslCertName] = useState("");
   const [baotaSslPemContent, setBaotaSslPemContent] = useState("");

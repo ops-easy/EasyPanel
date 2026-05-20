@@ -58,7 +58,7 @@ const IngressGraphicalForm: React.FC<IngressGraphicalFormProps> = ({
   const [serviceName, setServiceName] = useState("");
   const [port, setPort] = useState<number>(80);
   const [domain, setDomain] = useState("");
-  const [syncAnnotation, setSyncAnnotation] = useState<"i4t" | "kube-bt">("i4t");
+  const [syncAnnotation, setSyncAnnotation] = useState<"i4t" | "kube-bt">("kube-bt");
   const [baotaSyncEnabled, setBaotaSyncEnabled] = useState(defaultBaotaSyncEnabled);
   const [baotaHttpsEnabled, setBaotaHttpsEnabled] = useState(false);
   const [baotaSslCertName, setBaotaSslCertName] = useState("");
@@ -269,7 +269,6 @@ const IngressGraphicalForm: React.FC<IngressGraphicalFormProps> = ({
               value={syncAnnotation}
               onChange={(e) => setSyncAnnotation(e.target.value === "kube-bt" ? "kube-bt" : "i4t")}
             >
-              <option value="i4t">i4t.com/baota-sync（README 默认）</option>
               <option value="kube-bt">kube-bt-sync.io/baota-sync</option>
             </select>
           </label>

@@ -12,7 +12,7 @@ const ClusterK8sSettings: React.FC = () => {
       <div>
         <h1 className="mb-2 text-2xl font-bold text-gray-900">Cluster settings</h1>
         <p className="text-sm text-gray-500">
-          Kubernetes API、Prometheus、VictoriaMetrics（vmselect）与 VictoriaLogs（VMLog）等。保存至 <code className="text-xs">runtime-config.json</code>。右下角「使用文档」第四节有详细说明。
+          Kubernetes API、Prometheus、VictoriaMetrics（vmselect）与 VictoriaLogs（VMLog）等。保存至 <code className="text-xs">MySQL 动态配置</code>。右下角「使用文档」第四节有详细说明。
         </p>
         <p className="mt-2 text-sm text-gray-500">
           <strong className="font-medium text-gray-700">ingress-nginx（hostNetwork）</strong>：下方卡片会<strong className="text-gray-800">自动检测</strong>

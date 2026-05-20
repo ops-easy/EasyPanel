@@ -126,7 +126,7 @@ function LoginOidcOpsCard({ href, showLocalDivider }: { href: string; showLocalD
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
               SSO · OIDC
             </p>
-            <p className="truncate text-base font-semibold sm:text-lg">使用 i4t SSO 登录</p>
+            <p className="truncate text-base font-semibold sm:text-lg">使用 OIDC SSO 登录</p>
             <p className="truncate text-xs text-slate-500 sm:text-[13px] dark:text-slate-400">跳转授权后返回控制台</p>
           </div>
           <ChevronRight

@@ -7,6 +7,7 @@ resources:
   - namespace.yaml
   - rbac.yaml
   - pvc.yaml
+  - configmap.yaml
   # Secret 请自行创建（见 secret-example.yaml），勿将真实密钥提交仓库
   - deployment.yaml
   - service.yaml

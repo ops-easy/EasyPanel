@@ -50,7 +50,6 @@ func main() {
 		go scheduler.StartSyncer(ctx, app)
 	}
 	scheduler.StartRedisReconnectLoop(ctx, app)
-	scheduler.StartSettingsCrossPodRuntimeSync(ctx, func() *appctx.ServerApp { return app })
 	scheduler.StartSettingsRuntimeStatusRefresher(app)
 	if bg {
 		scheduler.StartSystemHostEgressWatcher(app)

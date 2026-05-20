@@ -510,7 +510,7 @@ const AppCenterOpenClaw: React.FC = () => {
   const [ingressName, setIngressName] = useState("");
   const [ingressHost, setIngressHost] = useState("");
   const [ingressTlsScheme, setIngressTlsScheme] = useState<"https" | "http">("https");
-  const [baotaSyncAnnotation, setBaotaSyncAnnotation] = useState<"i4t" | "kube-bt">("i4t");
+  const [baotaSyncAnnotation, setBaotaSyncAnnotation] = useState<"i4t" | "kube-bt">("kube-bt");
   const [preset, setPreset] = useState<string>("minimax-m2.7");
   const [chatModel, setChatModel] = useState<string>(() => defaultChatModelForPreset("minimax-m2.7"));
   const [openaiKey, setOpenaiKey] = useState("");
@@ -1498,7 +1498,6 @@ const AppCenterOpenClaw: React.FC = () => {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="i4t">i4t.com/baota-sync</SelectItem>
                               <SelectItem value="kube-bt">kube-bt-sync.io/baota-sync</SelectItem>
                             </SelectContent>
                           </Select>

@@ -50,10 +50,5 @@ func (s *ServerApp) TryRedisReconnect(ctx context.Context) {
 				log.Printf("Redis 重连后镜像 platform_kv: %v", err)
 			}
 		}
-		if s.runtime != nil && s.runtime.Initialized {
-			if err := MirrorRuntimeSettingsToRedis(ctx2, rdb, cfg, s.runtime); err != nil {
-				log.Printf("Redis 重连后镜像 runtime: %v", err)
-			}
-		}
 	}
 }

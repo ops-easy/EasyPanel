@@ -142,7 +142,7 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
       void queryClient.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: ["cluster-prometheus-snapshot"] });
       setPromErr(null);
-      toast.success(en ? "Saved to runtime-config." : "已保存并写入运行时配置");
+      toast.success(en ? "Saved to MySQL dynamic config." : "已保存并写入 MySQL 动态配置");
     } catch (e) {
       const m = extractErrorMessage(e);
       setPromErr(m);
@@ -171,7 +171,7 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
       void queryClient.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: ["cluster-prometheus-snapshot"] });
       setDsOpen(false);
-      toast.success(en ? "Saved to runtime-config." : "已保存并写入运行时配置");
+      toast.success(en ? "Saved to MySQL dynamic config." : "已保存并写入 MySQL 动态配置");
     } catch (e) {
       const m = extractErrorMessage(e);
       setPromErr(m);
@@ -296,11 +296,11 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
                 {en ? (
                   <>
                     Scope <code className="text-xs">k8s</code>. Persist writes <code className="text-xs">prometheusUrlK8s</code>{" "}
-                    to runtime-config. Use the button below for optional <code className="text-xs">vmSelectUrlK8s</code>.
+                    to MySQL dynamic config. Use the button below for optional <code className="text-xs">vmSelectUrlK8s</code>.
                   </>
                 ) : (
                   <>
-                    后端 <code className="text-xs">scope=k8s</code>；「保存并写入 runtime」写入{" "}
+                    后端 <code className="text-xs">scope=k8s</code>；「保存并写入动态配置」写入{" "}
                     <code className="text-xs">prometheusUrlK8s</code>。可选的 VictoriaMetrics 请点下方「监控数据源」一并配置{" "}
                     <code className="text-xs">vmSelectUrlK8s</code>。
                   </>
@@ -425,7 +425,7 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
                     variant="default"
                     onClick={() => void persistPrometheusToRuntime()}
                   >
-                    {en ? "Save & persist (runtime-config)" : "保存并写入 runtime-config"}
+                    {en ? "Save & persist (MySQL)" : "保存并写入动态配置"}
                   </Button>
                 )}
                 <Button type="button" size="sm" variant="outline" onClick={() => void clearPrometheus()}>
@@ -490,7 +490,7 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
                   {en ? "Cancel" : "取消"}
                 </Button>
                 <Button type="button" disabled={dsSaving} onClick={() => void saveDatasourceDialog()}>
-                  {dsSaving ? (en ? "Saving…" : "保存中…") : en ? "Save to runtime-config" : "保存到 runtime-config"}
+                  {dsSaving ? (en ? "Saving…" : "保存中…") : en ? "Save to MySQL" : "保存到 MySQL"}
                 </Button>
               </DialogFooter>
             </DialogContent>

@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -43,7 +44,7 @@ func DataDirFromEnv() string {
 	return d
 }
 
-// NewServerApp 从 dataDir/runtime-config.json 合并配置并初始化 K8s / vCenter / SSH 存储。
+// NewServerApp 从环境变量和 config.yaml 加载进程配置，并初始化共享依赖。
 func NewServerApp(dataDir string) (*ServerApp, error) {
 	if dataDir == "" {
 		dataDir = "./data"
@@ -84,7 +85,7 @@ func wirePlatformKVRedisDualWrite(ctx context.Context, kv PlatformKV, redis *Red
 	}
 }
 
-// Reload 重新读盘并替换内存态（POST /api/setup 成功后调用）。
+// Reload 从环境变量和 config.yaml 重新加载进程配置。
 func (s *ServerApp) Reload() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -93,78 +94,75 @@ func (s *ServerApp) Reload() error {
 		_ = s.mysqlDB.Close()
 		s.mysqlDB = nil
 	}
-
-	path := filepath.Join(s.dataDir, runtimeConfigFileName)
-	rs, err := LoadRuntimeSettings(path)
-	if err != nil {
-		return err
+	if s.redis != nil {
+		_ = s.redis.Close()
+		s.redis = nil
 	}
-	env := LoadConfig()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	preMerge := MergeRuntimeConfig(env, rs, s.dataDir)
-	if (rs == nil || !rs.Initialized) && preMerge.RuntimeDualWriteRedis && strings.TrimSpace(preMerge.RedisAddr) != "" {
-		if rdb, err := dialRedisLightWithRetry(preMerge); err == nil && rdb != nil {
-			if rs2, err := LoadRuntimeSettingsFromRedis(ctx, rdb, preMerge); err != nil {
-				log.Printf("Redis 读取 runtime-config 备份: %v", err)
-			} else if rs2 != nil && rs2.Initialized {
-				log.Printf("持久化: 从 Redis 恢复 runtime-config 到本地文件")
-				rs = rs2
-				if err := SaveRuntimeSettingsUnified(path, nil, rs); err != nil {
-					log.Printf("警告: 将 Redis 配置写回文件失败: %v", err)
-				}
-			}
-			_ = rdb.Close()
-		}
-	}
+	cfg := LoadConfig()
 
-	cfgPre := MergeRuntimeConfig(env, rs, s.dataDir)
 	var mysqlDB *sql.DB
 	s.mysqlConnectErr = ""
-	if dsn := strings.TrimSpace(cfgPre.MySQLDSN); dsn != "" {
+	if dsn := strings.TrimSpace(cfg.MySQLDSN); dsn != "" {
 		db, err := openMySQLPoolWithRetry(dsn)
 		if err != nil {
 			log.Printf("MySQL: %v", err)
 			s.mysqlConnectErr = truncateErrMessage(err.Error(), 400)
 		} else {
 			mysqlDB = db
-			// ensure 逐张建表，单表失败不 return；migrate 补列/补索引后再补建仍缺失的表，最后写 app_schema_version。
+			// 逐张建表并迁移补列/索引；任一关键结构失败都直接返回，避免服务带着缺表状态启动。
 			if err := mysqlEnsureSchema(db); err != nil {
 				log.Printf("MySQL 表结构 (ensure): %v", err)
+				_ = db.Close()
+				return fmt.Errorf("MySQL 表结构初始化失败: %w", err)
 			}
 			if err := mysqlMigrateSchema(db); err != nil {
 				log.Printf("MySQL 结构迁移失败: %v", err)
+				_ = db.Close()
+				return fmt.Errorf("MySQL 结构迁移失败: %w", err)
+			}
+			if created, err := ensureInitialDashboardAdminUser(db, cfg); err != nil {
+				log.Printf("MySQL 初始化管理员失败: %v", err)
+				_ = db.Close()
+				return fmt.Errorf("MySQL 初始化管理员失败: %w", err)
+			} else if created {
+				log.Printf("MySQL: 已创建初始控制台管理员 %q，后续密码以 kubebt_dashboard_users 为准", strings.TrimSpace(cfg.DashboardUser))
+				if strings.TrimSpace(cfg.DashboardPassword) == defaultDashboardPassword {
+					log.Println(">>> 安全提示：已使用默认初始密码 admin 创建管理员；生产或公网暴露前请登录后立即修改密码")
+				}
 			}
 			if err := migratePlatformKVFromFileIfMySQLEmpty(db, s.dataDir); err != nil {
 				log.Printf("MySQL 导入 platform_kv: %v", err)
 			}
-			if err := migrateRuntimeFromFileIfMySQLEmpty(db, path); err != nil {
-				log.Printf("MySQL 导入 runtime: %v", err)
-			}
-			if rs2, err := loadRuntimeFromMySQL(db); err != nil {
-				log.Printf("MySQL 读取 runtime: %v", err)
-			} else if rs2 != nil && rs2.Initialized {
-				rs = rs2
-				if err := SaveRuntimeSettings(path, rs); err != nil {
-					log.Printf("警告: MySQL runtime 同步到本地文件失败: %v", err)
-				}
-			}
 		}
 	}
+	if mysqlDB != nil {
+		if err := applyConfigOverrideFromMySQL(mysqlDB, &cfg); err != nil {
+			log.Printf("MySQL 动态配置: %v", err)
+		}
+		finalizeLoadedConfig(&cfg)
+	}
 
-	cfg := MergeRuntimeConfig(env, rs, s.dataDir)
+	applySSHStoreDefaults(&cfg, s.dataDir)
 	cfg = PrepareDashboardAuth(cfg)
+	rs := cfg.configFileRuntime
+	if rs == nil {
+		rs = RuntimeSettingsFromConfig(cfg)
+	}
 
 	k8s, k8sREST, err := InitK8sForApp(rs)
 	if err != nil {
 		log.Printf("K8s 初始化: %v", err)
 		k8s, k8sREST = nil, nil
 	}
-	if k8s == nil && rs != nil && rs.Initialized && K8sRuntimeSkipped(rs) {
+	if k8s == nil {
 		if cs, cfg2, err2 := TryK8sFromEnv(); err2 == nil {
 			k8s, k8sREST = cs, cfg2
-			log.Println("K8s: 已使用进程环境连接（KUBECONFIG / in-cluster），runtime 未配置集群")
+		} else {
+			log.Printf("K8s: 未通过 KUBECONFIG / in-cluster 连接: %v", err2)
 		}
 	}
 
@@ -176,10 +174,6 @@ func (s *ServerApp) Reload() error {
 
 	vc := newVCenterClient(cfg)
 
-	if s.redis != nil {
-		_ = s.redis.Close()
-	}
-	s.redis = nil
 	s.redisDialErr = ""
 	if rdb, err := dialRedisLightWithRetry(cfg); err != nil {
 		log.Printf("Redis 连接: %v", err)
@@ -212,19 +206,13 @@ func (s *ServerApp) Reload() error {
 		s.platformKV = wrapPlatformKVRedisHot(s.platformKV, s.redis, cfg)
 	}
 
-	if s.redis != nil && cfg.RuntimeDualWriteRedis && rs != nil && rs.Initialized {
-		if err := MirrorRuntimeSettingsToRedis(ctx, s.redis, cfg, rs); err != nil {
-			log.Printf("警告: runtime-config 镜像到 Redis 失败: %v", err)
-		}
-	}
-
 	s.cfg = cfg
 	s.k8s = k8s
 	s.k8sREST = k8sREST
 	s.sshStore = sshStore
 	s.vc = vc
 	s.runtime = rs
-	s.initialized = rs != nil && rs.Initialized
+	s.initialized = true
 	return nil
 }
 
@@ -287,7 +275,7 @@ func (s *ServerApp) RedisDialError() string {
 	return s.redisDialErr
 }
 
-// MySQLDB 在配置了 MYSQL_DSN / runtime 中 mysqlDsn 且连接成功时非 nil，用于与 SaveRuntimeSettingsUnified 双写。
+// MySQLDB 在配置了 MySQL 且连接成功时非 nil。
 func (s *ServerApp) MySQLDB() *sql.DB {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

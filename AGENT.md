@@ -6,6 +6,7 @@
 
 - 文本文件统一按 UTF-8 读取和写入。
 - 项目文档必须使用中文，避免出现乱码、机翻残留或半截英文模板。
+- 新增或修改代码注释、配置注释和文档说明时必须使用中文；必要的技术名词、协议名、配置键名和代码符号可保留原文。
 - 如果发现已有中文文本损坏，应在改动相关区域时顺手修复；大范围修复需保持改动目的清晰。
 - 不要把密钥、Token、Cookie、私钥、真实生产密码写入文档、测试或示例清单。
 
@@ -63,7 +64,7 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync --namespace kube-bt-sync --c
 
 ## 架构要点
 
-后端入口为 `api/main.go`，核心代码位于 `api/internal/`。`ServerApp` 负责持有运行时配置、Kubernetes client、MySQL、Redis、vCenter、SSH 凭据存储等共享状态。配置来源包括环境变量和 `/data/runtime-config.json`，Web 初始化向导会写入运行时配置。
+后端入口为 `api/main.go`，核心代码位于 `api/internal/`。`ServerApp` 负责持有运行时配置、Kubernetes client、MySQL、Redis、vCenter、SSH 凭据存储等共享状态。静态配置来自环境变量和 `api/config.yaml`，页面保存的动态配置写入 MySQL 的 `kubebt_platform_kv`，不再读取 `runtime-config.json` 或 PVC 上的动态覆盖文件。
 
 前端入口为 `web/src/main.tsx` 与 `web/src/App.tsx`。路由覆盖工作台、集群、宝塔、应用中心、AI 巡检、vCenter、堡垒机、文档中心、账号设置等页面。前端通过 `/api/` 调用后端，通过 WebSocket 提供终端、日志和实时交互能力。
 
@@ -99,7 +100,7 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync --namespace kube-bt-sync --c
 - 默认 RBAC 权限较高，生产部署时可按需要裁剪。
 - 多副本部署时只允许一个副本启用后台任务。
 - `DASHBOARD_SESSION_SECRET` 与 `KUBEBT_ENCRYPTION_KEY` 多副本必须固定。
-- `runtime-config.json`、SSH 凭据、宝塔 API Key、vCenter 密码等都属于敏感数据。
+- MySQL 动态配置、SSH 凭据、宝塔 API Key、vCenter 密码等都属于敏感数据。
 - Web SSH、Pod Exec、SFTP 和 YAML 编辑相关功能应重点关注权限与审计。
 
 ## 变更建议

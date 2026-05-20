@@ -39,7 +39,9 @@ func mysqlMigrateSchema(db *sql.DB) error {
 	} else {
 		alters = append(alters, a...)
 	}
-	mysqlBootstrapMissingTablesOnly(db)
+	if err := mysqlBootstrapMissingTablesOnly(db); err != nil {
+		return err
+	}
 	if a, err := mysqlMigrateDnsModule(db); err != nil {
 		return err
 	} else {

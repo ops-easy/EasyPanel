@@ -54,7 +54,12 @@ func mysqlPingTimeout() time.Duration {
 	return time.Duration(sec) * time.Second
 }
 
-const runtimeConfigKVKey = "runtime_config_v1"
+const (
+	// dynamicConfigYAMLKVKey 保存页面动态配置的业务分组 YAML。
+	dynamicConfigYAMLKVKey = "config_override_yaml_v1"
+	// runtimeConfigKVKey 仅用于兼容旧版本已经写入 MySQL 的 JSON 配置。
+	runtimeConfigKVKey = "runtime_config_v1"
+)
 
 func openMySQLPool(dsn string) (*sql.DB, error) {
 	return openMySQLPoolInternal(dsn, true)
@@ -113,7 +118,7 @@ func OpenMySQLPoolForRuntimeWrite(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
-// mysqlEnsureSchema 启动时逐张校验/创建 kubebt_* 表（见 mysql_bootstrap.go）；单表失败不阻断，由 migrate 补列与索引。
+// mysqlEnsureSchema 启动时逐张校验/创建 kubebt_* 表（见 mysql_bootstrap.go）；任一表失败都会返回错误，避免缺表运行。
 func mysqlEnsureSchema(db *sql.DB) error {
 	return mysqlApplyBootstrapDDLs(db)
 }
@@ -142,29 +147,6 @@ func migratePlatformKVFromFileIfMySQLEmpty(db *sql.DB, dataDir string) error {
 	return nil
 }
 
-func migrateRuntimeFromFileIfMySQLEmpty(db *sql.DB, path string) error {
-	var n int
-	if err := db.QueryRow(`SELECT COUNT(*) FROM kubebt_platform_kv WHERE k = ?`, runtimeConfigKVKey).Scan(&n); err != nil {
-		return err
-	}
-	if n > 0 {
-		return nil
-	}
-	rs, err := LoadRuntimeSettings(path)
-	if err != nil || rs == nil || !rs.Initialized {
-		return nil
-	}
-	b, err := json.Marshal(rs)
-	if err != nil {
-		return err
-	}
-	if err := mysqlUpsertKV(db, runtimeConfigKVKey, string(b)); err != nil {
-		return err
-	}
-	log.Println("持久化: 已将 runtime-config.json 导入 MySQL")
-	return nil
-}
-
 func mysqlUpsertKV(db *sql.DB, k, v string) error {
 	return platformkv.UpsertMySQL(db, k, v)
 }
@@ -188,23 +170,112 @@ func loadRuntimeFromMySQL(db *sql.DB) (*RuntimeSettings, error) {
 	return &rs, nil
 }
 
-// SaveRuntimeSettingsUnified 写入本地文件，并在 db 非空时写入 MySQL。
-func SaveRuntimeSettingsUnified(path string, db *sql.DB, rs *RuntimeSettings) error {
-	if err := SaveRuntimeSettings(path, rs); err != nil {
-		return err
-	}
+func loadDynamicConfigYAMLFromMySQL(db *sql.DB) ([]byte, bool, error) {
 	if db == nil {
+		return nil, false, nil
+	}
+	var s sql.NullString
+	err := db.QueryRow(`SELECT v FROM kubebt_platform_kv WHERE k=?`, dynamicConfigYAMLKVKey).Scan(&s)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	if !s.Valid || strings.TrimSpace(s.String) == "" {
+		return nil, false, nil
+	}
+	return []byte(s.String), true, nil
+}
+
+// applyConfigOverrideFromMySQL 从 MySQL 读取动态配置并叠加到静态配置。
+func applyConfigOverrideFromMySQL(db *sql.DB, cfg *Config) error {
+	if db == nil || cfg == nil {
 		return nil
 	}
-	b, err := json.Marshal(rs)
+	bootstrap := mysqlBootstrapConfigFrom(*cfg)
+	if raw, ok, err := loadDynamicConfigYAMLFromMySQL(db); err != nil {
+		return err
+	} else if ok {
+		applyConfigYAMLBytes(cfg, raw, "MySQL 动态配置")
+		restoreMySQLBootstrapConfig(cfg, bootstrap)
+		restoreMySQLBootstrapRuntime(cfg.configFileRuntime, bootstrap)
+		return nil
+	}
+	rs, err := loadRuntimeFromMySQL(db)
 	if err != nil {
 		return err
 	}
-	if err := mysqlUpsertKV(db, runtimeConfigKVKey, string(b)); err != nil {
+	if rs == nil || !rs.Initialized {
+		return nil
+	}
+	restoreMySQLBootstrapRuntime(rs, bootstrap)
+	merged := MergeRuntimeConfig(*cfg, rs, "")
+	restoreMySQLBootstrapConfig(&merged, bootstrap)
+	merged.configFileRuntime = rs
+	*cfg = merged
+	log.Println("config: 已按兼容模式加载 MySQL 中的旧 runtime_config_v1")
+	return nil
+}
+
+// SaveRuntimeSettingsToMySQL 将动态配置保存到 MySQL platform_kv，并通知其它副本热重载。
+func SaveRuntimeSettingsToMySQL(db *sql.DB, rs *RuntimeSettings) error {
+	if db == nil {
+		return errors.New("MySQL 未连接，无法保存动态配置")
+	}
+	raw, err := RuntimeSettingsToConfigYAML(rs)
+	if err != nil {
+		return err
+	}
+	if err := mysqlUpsertKV(db, dynamicConfigYAMLKVKey, string(raw)); err != nil {
 		return err
 	}
 	mysqlBumpRuntimeConfigRevision(db)
 	return nil
+}
+
+type mysqlBootstrapConfig struct {
+	DSN      string
+	Host     string
+	Port     int
+	Database string
+	User     string
+	Password string
+}
+
+func mysqlBootstrapConfigFrom(cfg Config) mysqlBootstrapConfig {
+	return mysqlBootstrapConfig{
+		DSN:      cfg.MySQLDSN,
+		Host:     cfg.MySQLHost,
+		Port:     cfg.MySQLPort,
+		Database: cfg.MySQLDatabase,
+		User:     cfg.MySQLUser,
+		Password: cfg.MySQLPassword,
+	}
+}
+
+func restoreMySQLBootstrapConfig(cfg *Config, v mysqlBootstrapConfig) {
+	if cfg == nil {
+		return
+	}
+	cfg.MySQLDSN = v.DSN
+	cfg.MySQLHost = v.Host
+	cfg.MySQLPort = v.Port
+	cfg.MySQLDatabase = v.Database
+	cfg.MySQLUser = v.User
+	cfg.MySQLPassword = v.Password
+}
+
+func restoreMySQLBootstrapRuntime(rs *RuntimeSettings, v mysqlBootstrapConfig) {
+	if rs == nil {
+		return
+	}
+	rs.MySQLDSN = v.DSN
+	rs.MySQLHost = v.Host
+	rs.MySQLPort = v.Port
+	rs.MySQLDatabase = v.Database
+	rs.MySQLUser = v.User
+	rs.MySQLPassword = v.Password
 }
 
 type PlatformKVMySQL = platformkv.MySQLStore
@@ -214,13 +285,3 @@ func newPlatformKVMySQL(db *sql.DB) (*PlatformKVMySQL, error) {
 }
 
 var _ PlatformKV = (*PlatformKVMySQL)(nil)
-
-// LoadRuntimeSettingsForReload 优先从 MySQL 读 runtime（若已初始化），否则读本地文件。
-func LoadRuntimeSettingsForReload(path string, db *sql.DB) (*RuntimeSettings, error) {
-	if db != nil {
-		if rs, err := loadRuntimeFromMySQL(db); err == nil && rs != nil && rs.Initialized {
-			return rs, nil
-		}
-	}
-	return LoadRuntimeSettings(path)
-}

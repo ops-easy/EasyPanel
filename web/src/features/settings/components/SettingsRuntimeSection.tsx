@@ -220,7 +220,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
           <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-5">
             <h2 className="text-base font-bold text-gray-900">宝塔与 Ingress</h2>
             <p className="mt-1 text-xs text-gray-500">
-              平台对外地址、同步开关、面板 API、DDNS 与同步间隔等；保存后写入 runtime-config 并热重载。数据库、Redis 与控制台登录请在「账户与平台」中配置。
+              平台对外地址、同步开关、面板 API、DDNS 与同步间隔等；保存后写入 MySQL 动态配置并热重载。MySQL 静态连接、Redis 与控制台登录请在「账户与平台」中查看或配置。
             </p>
           </div>
           <div className="space-y-6 p-6 text-sm">
@@ -664,11 +664,11 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
           <h2 className="text-base font-bold text-gray-900">
             {v === "k8s" && "Cluster connection"}
             {v === "vcenter" && "vCenter"}
-            {v === "full" && "运行时配置（runtime-config.json）"}
+            {v === "full" && "运行时配置（MySQL 动态配置）"}
           </h2>
           <p className="mt-1 text-xs text-gray-500">
             {v === "full" &&
-              "在此补充 K8s、vCenter 等；必填项（MySQL/Redis/平台 URL）须保持有效。Redis 仅需 IP、端口、密码；密钥类留空表示不修改原值。宝塔与 Ingress 请在「宝塔」工作区 → 宝塔设置中配置。"}
+              "在此补充 K8s、vCenter 等；MySQL 连接来自静态 config.yaml 或环境变量，页面不写入这部分。Redis 仅需 IP、端口、密码；密钥类留空表示不修改原值。宝塔与 Ingress 请在「宝塔」工作区 → 宝塔设置中配置。"}
             {v === "k8s" && "Use in-cluster credentials or paste kubeconfig. Applied after save."}
             {v === "vcenter" && "vCenter 与虚拟机 SSH 默认；保存后热重载。"}
           </p>
@@ -698,6 +698,8 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
             <div className="space-y-2 sm:col-span-2">
               <Label>MySQL 地址</Label>
               <Input
+                readOnly
+                className="bg-gray-50"
                 value={String(form.mysqlHost ?? "")}
                 onChange={(e) => setField("mysqlHost", e.target.value)}
                 placeholder="127.0.0.1"
@@ -709,6 +711,8 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                 type="number"
                 min={1}
                 max={65535}
+                readOnly
+                className="bg-gray-50"
                 value={Number(form.mysqlPort ?? 3306)}
                 onChange={(e) => setField("mysqlPort", Number(e.target.value))}
               />
@@ -716,6 +720,8 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
             <div className="space-y-2">
               <Label>库名</Label>
               <Input
+                readOnly
+                className="bg-gray-50"
                 value={String(form.mysqlDatabase ?? "")}
                 onChange={(e) => setField("mysqlDatabase", e.target.value)}
               />
@@ -723,16 +729,20 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
             <div className="space-y-2">
               <Label>用户</Label>
               <Input
+                readOnly
+                className="bg-gray-50"
                 value={String(form.mysqlUser ?? "")}
                 onChange={(e) => setField("mysqlUser", e.target.value)}
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label>MySQL 密码（留空或 *** 保留原值）</Label>
+              <Label>MySQL 密码（静态配置）</Label>
               <Input
                 type="password"
                 autoComplete="off"
                 spellCheck={false}
+                readOnly
+                className="bg-gray-50"
                 value={String(form.mysqlPassword ?? "")}
                 onChange={(e) => setField("mysqlPassword", e.target.value)}
               />
@@ -990,7 +1000,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                 <div>
                   <p className="text-sm font-semibold text-gray-900">Kubernetes 左侧菜单</p>
                   <p className="mt-1 text-xs leading-relaxed text-gray-600">
-                    配置桌面端 Kubernetes 工作区左侧菜单的顺序、显示名称与隐藏状态。保存后写入 runtime-config，并通过 MySQL / Redis 同步到多副本。
+                    配置桌面端 Kubernetes 工作区左侧菜单的顺序、显示名称与隐藏状态。保存后写入 MySQL 动态配置，并通过 Redis 镜像同步到多副本。
                   </p>
                 </div>
                 <Button type="button" variant="outline" onClick={() => setMenuDialogOpen(true)}>

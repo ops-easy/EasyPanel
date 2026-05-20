@@ -64,6 +64,12 @@ kube-bt-sync/
 - Node.js 20+ 与 npm
 - 可选：kubectl、Helm、Docker
 
+先按本地环境修改后端配置：
+
+```bash
+vim api/config.yaml
+```
+
 启动后端：
 
 ```bash
@@ -126,18 +132,19 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
 - `ghcr.io/ops-easy/kube-bt-sync-web:latest`
 - `ghcr.io/ops-easy/kube-bt-sync-web:<commit-sha>`
 
-后端镜像使用多阶段构建，最终运行镜像基于 `distroless/static-debian12:nonroot`；前端镜像基于 Nginx，并将 `/api/` 与 `/r/` 反向代理到后端 Service。
+后端镜像使用多阶段构建，最终运行镜像基于 `distroless/static-debian12:nonroot`，只包含后端二进制；前端镜像基于 Nginx，并将 `/api/` 与 `/r/` 反向代理到后端 Service。
 
 ## 关键配置
 
-完整配置以 `api/internal/config.go` 中的 `LoadConfig()` 为准。常用变量如下：
+后端配置来源为静态配置 + MySQL 动态配置 + 环境变量；不再从磁盘读取 `runtime-config.json`，也不再使用 PVC 上的 `config.override.yaml`。静态配置默认是 `api/config.yaml`，可用 `KUBEBT_CONFIG_FILE` 指定；默认示例只保留 `server`、`db`、`redis`、`startup`、`performance` 这些启动必需配置。页面保存的业务配置写入 MySQL 表 `kubebt_platform_kv`，键为 `config_override_yaml_v1`。加载优先级为：程序默认值 < 静态配置 < MySQL 动态配置 < 环境变量。MySQL 连接属于启动依赖，必须放在静态 `config.yaml` 或环境变量中。常用变量如下：
 
 | 变量 | 说明 |
 | --- | --- |
 | `DASHBOARD_HTTP_ADDR` | 后端监听地址，默认 `:8080` |
-| `DASHBOARD_USER` / `DASHBOARD_PASSWORD` | 本地登录账号和密码 |
+| `DASHBOARD_USER` / `DASHBOARD_PASSWORD` | 初始管理员账号和密码；仅在 MySQL 用户表为空时创建首个管理员，之后以数据库用户表为准 |
 | `DASHBOARD_SESSION_SECRET` | 会话签名密钥，多副本部署必须固定一致 |
 | `DASHBOARD_COOKIE_SECURE` | HTTPS 部署时建议设为 `true` |
+| `DASHBOARD_SERVE_FRONTEND` | 是否由后端托管 React dist，默认 `false`；常规部署使用独立前端服务 |
 | `DASHBOARD_TRUSTED_PROXIES` | 可信代理 CIDR，用于正确解析客户端 IP |
 | `KUBEBT_DATA_DIR` | 运行数据目录，Kubernetes 中默认挂载到 `/data` |
 | `KUBEBT_ENCRYPTION_KEY` | SSH/SFTP 等敏感凭据的加密密钥 |
@@ -188,8 +195,9 @@ metadata:
 
 | 数据 | 推荐位置 |
 | --- | --- |
-| 运行时配置 | `/data/runtime-config.json` 或 MySQL / Redis 镜像 |
-| 平台 KV | 文件、MySQL 或 Redis |
+| 静态后端配置 | `api/config.yaml`、Kubernetes ConfigMap 或环境变量 |
+| 页面动态业务配置 | MySQL 表 `kubebt_platform_kv`，键 `config_override_yaml_v1` |
+| 平台 KV | MySQL；单机调试可回退文件，Redis 仅做热读或兼容镜像 |
 | 用户、审计、应用实例、文档索引 | MySQL |
 | 文档附件 | 本地 `/data/doc-uploads` 或腾讯云 COS |
 | SSH/SFTP 凭据 | `/data/ssh-settings`，配合 `KUBEBT_ENCRYPTION_KEY` 加密 |

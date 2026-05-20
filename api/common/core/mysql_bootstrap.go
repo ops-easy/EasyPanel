@@ -2,36 +2,39 @@ package core
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"strings"
 )
 
 // mysqlApplyBootstrapDDLs 启动时对 kubebt_* 逐张 CREATE TABLE IF NOT EXISTS。
-// 单表失败只记录日志，不返回错误，其余表与后续 migrate（补列、补索引）仍会继续执行。
+// 单表失败时仍会继续检查后续表，最后统一返回错误，避免服务带着缺表状态假启动成功。
 func mysqlApplyBootstrapDDLs(db *sql.DB) error {
-	var failed []string
+	var failed []mysqlBootstrapFailure
 	for _, d := range mysqlBootstrapTableDDLs {
 		if _, err := db.Exec(d.SQL); err != nil {
 			log.Printf("MySQL 启动核对-建表 %s: %v", d.Label, err)
-			failed = append(failed, d.Label)
+			failed = append(failed, mysqlBootstrapFailure{label: d.Label, err: err})
 		}
 	}
 	if len(failed) > 0 {
-		log.Printf("MySQL 启动核对: %d 张表 ensure 未成功（将继续 migrate 补全）: %s", len(failed), strings.Join(failed, ", "))
-	} else {
-		log.Printf("MySQL 启动核对: 已校验/创建 %d 张 kubebt 业务表", len(mysqlBootstrapTableDDLs))
+		log.Printf("MySQL 启动核对: %d 张表 ensure 未成功: %s", len(failed), mysqlBootstrapFailureLabels(failed))
+		return mysqlBootstrapFailuresError("MySQL 启动核对-建表", failed)
 	}
+	log.Printf("MySQL 启动核对: 已校验/创建 %d 张 kubebt 业务表", len(mysqlBootstrapTableDDLs))
 	return nil
 }
 
 // mysqlBootstrapMissingTablesOnly 在 migrate 修正索引等问题后调用：仅为当前库中不存在的 kubebt 表执行 CREATE。
-func mysqlBootstrapMissingTablesOnly(db *sql.DB) {
+func mysqlBootstrapMissingTablesOnly(db *sql.DB) error {
+	var failed []mysqlBootstrapFailure
 	for _, d := range mysqlBootstrapTableDDLs {
 		var n int
 		if err := db.QueryRow(`
 			SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES
 			WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?`, d.Label).Scan(&n); err != nil {
 			log.Printf("MySQL 补建表-探测 %s: %v", d.Label, err)
+			failed = append(failed, mysqlBootstrapFailure{label: d.Label, err: err})
 			continue
 		}
 		if n > 0 {
@@ -39,10 +42,39 @@ func mysqlBootstrapMissingTablesOnly(db *sql.DB) {
 		}
 		if _, err := db.Exec(d.SQL); err != nil {
 			log.Printf("MySQL 补建表 %s: %v", d.Label, err)
+			failed = append(failed, mysqlBootstrapFailure{label: d.Label, err: err})
 		} else {
 			log.Printf("MySQL 启动核对: 已补建缺失表 %s", d.Label)
 		}
 	}
+	if len(failed) > 0 {
+		return mysqlBootstrapFailuresError("MySQL 补建缺失表", failed)
+	}
+	return nil
+}
+
+type mysqlBootstrapFailure struct {
+	label string
+	err   error
+}
+
+func mysqlBootstrapFailureLabels(failed []mysqlBootstrapFailure) string {
+	labels := make([]string, 0, len(failed))
+	for _, f := range failed {
+		labels = append(labels, f.label)
+	}
+	return strings.Join(labels, ", ")
+}
+
+func mysqlBootstrapFailuresError(stage string, failed []mysqlBootstrapFailure) error {
+	if len(failed) == 0 {
+		return nil
+	}
+	parts := make([]string, 0, len(failed))
+	for _, f := range failed {
+		parts = append(parts, fmt.Sprintf("%s: %v", f.label, f.err))
+	}
+	return fmt.Errorf("%s 失败：%s", stage, strings.Join(parts, "; "))
 }
 
 // mysqlBootstrapTableDDLs 与 mysql_platform 当前期望结构一致；新增表时在此追加并在 migrate 中补列/索引。
@@ -253,7 +285,7 @@ CREATE TABLE IF NOT EXISTS dns_accounts (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   provider VARCHAR(50) NOT NULL,
-  config_json TEXT NOT NULL DEFAULT '{}',
+  config_json TEXT NOT NULL,
   remark VARCHAR(255) NOT NULL DEFAULT '',
   created_by VARCHAR(100) NOT NULL DEFAULT '',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -307,8 +339,8 @@ CREATE TABLE IF NOT EXISTS dns_failover_tasks (
   check_interval INT NOT NULL DEFAULT 60,
   check_timeout INT NOT NULL DEFAULT 10,
   max_errors INT NOT NULL DEFAULT 3,
-  failover_value TEXT NOT NULL DEFAULT '',
-  original_value TEXT NOT NULL DEFAULT '',
+  failover_value TEXT NOT NULL,
+  original_value TEXT NOT NULL,
   status TINYINT NOT NULL DEFAULT 1,
   error_count INT NOT NULL DEFAULT 0,
   last_check_at DATETIME,
@@ -323,9 +355,9 @@ CREATE TABLE IF NOT EXISTS dns_failover_logs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   task_id INT NOT NULL,
   action VARCHAR(50) NOT NULL,
-  old_value TEXT NOT NULL DEFAULT '',
-  new_value TEXT NOT NULL DEFAULT '',
-  message TEXT NOT NULL DEFAULT '',
+  old_value TEXT NOT NULL,
+  new_value TEXT NOT NULL,
+  message TEXT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_dns_failover_logs_task (task_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`},
@@ -337,11 +369,11 @@ CREATE TABLE IF NOT EXISTS dns_scheduled_tasks (
   domain_id INT NOT NULL,
   record_id VARCHAR(200) NOT NULL DEFAULT '',
   action VARCHAR(20) NOT NULL DEFAULT 'modify',
-  new_value TEXT NOT NULL DEFAULT '',
+  new_value TEXT NOT NULL,
   scheduled_at DATETIME NOT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'pending',
   executed_at DATETIME,
-  message TEXT NOT NULL DEFAULT '',
+  message TEXT NOT NULL,
   created_by VARCHAR(100) NOT NULL DEFAULT '',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`},
@@ -351,11 +383,11 @@ CREATE TABLE IF NOT EXISTS dns_cert_orders (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   account_id INT NOT NULL DEFAULT 0,
-  domains TEXT NOT NULL DEFAULT '[]',
+  domains TEXT NOT NULL,
   email VARCHAR(255) NOT NULL DEFAULT '',
   status VARCHAR(20) NOT NULL DEFAULT 'pending',
-  cert_pem MEDIUMTEXT NOT NULL DEFAULT '',
-  key_pem MEDIUMTEXT NOT NULL DEFAULT '',
+  cert_pem MEDIUMTEXT NOT NULL,
+  key_pem MEDIUMTEXT NOT NULL,
   issued_at DATETIME,
   expire_at DATETIME,
   auto_renew TINYINT NOT NULL DEFAULT 1,

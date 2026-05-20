@@ -117,7 +117,7 @@ metadata:
   namespace: ${namespace}
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    i4t.com/baota-sync: "true"
+    kube-bt-sync.io/baota-sync: "true"
 spec:
   ingressClassName: nginx
   rules:

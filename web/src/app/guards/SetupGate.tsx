@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGetJson, type SetupStatus } from "@/lib/api";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 
-/** 未写入 runtime-config.json 时强制进入 /setup；完成后禁止访问 /setup。 */
+/** 静态配置未完成时强制进入 /setup；完成后禁止访问 /setup。 */
 const SetupGate: React.FC = () => {
   const loc = useLocation();
   const q = useQuery({

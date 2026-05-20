@@ -1,17 +1,13 @@
 package core
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 )
-
-const runtimeConfigFileName = "runtime-config.json"
 
 // RuntimeK8s 持久化 K8s 连接方式（Pod 内用 incluster；外部集群粘贴 kubeconfig 全文）。
 type RuntimeK8s struct {
@@ -36,7 +32,7 @@ var defaultRuntimeK8sSidebarMenu = []RuntimeK8sSidebarMenuItem{
 	{Key: "customResources", Label: "自定义资源", Order: 60},
 }
 
-// RuntimeSettings 写入 dataDir/runtime-config.json；Initialized=true 后与 LoadConfig() 合并为进程配置。
+// RuntimeSettings 兼容旧运行时配置结构；现在由 MySQL 动态配置或显式业务配置段映射生成。
 type RuntimeSettings struct {
 	Version     int  `json:"version"`
 	Initialized bool `json:"initialized"`
@@ -65,7 +61,7 @@ type RuntimeSettings struct {
 	SyncIntervalSec           int                  `json:"syncIntervalSec"`
 
 	DashboardUser          string `json:"dashboardUser"`
-	DashboardPassword      string `json:"dashboardPassword,omitempty"` // bcrypt，由 POST /api/setup 写入
+	DashboardPassword      string `json:"dashboardPassword,omitempty"` // 兼容旧配置；新版本账号密码以 MySQL 用户表为准
 	DashboardSessionSecret string `json:"dashboardSessionSecret,omitempty"`
 	DashboardSessionDays   int    `json:"dashboardSessionDays"`
 	DashboardCookieSecure  bool   `json:"dashboardCookieSecure"`
@@ -265,48 +261,6 @@ func RuntimeK8sSidebarMenuEffective(rs *RuntimeSettings) []RuntimeK8sSidebarMenu
 		return fallback
 	}
 	return out
-}
-
-// LoadRuntimeSettings 读取本地 JSON；不存在则返回未初始化空配置。
-func LoadRuntimeSettings(path string) (*RuntimeSettings, error) {
-	b, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return &RuntimeSettings{Version: 1}, nil
-		}
-		return nil, err
-	}
-	var rs RuntimeSettings
-	if err := json.Unmarshal(b, &rs); err != nil {
-		return nil, err
-	}
-	if rs.Version < 1 {
-		rs.Version = 1
-	}
-	return &rs, nil
-}
-
-// SaveRuntimeSettings 原子写入（0600）。
-func SaveRuntimeSettings(path string, rs *RuntimeSettings) error {
-	if rs == nil {
-		return errors.New("runtime settings 为空")
-	}
-	if rs.Version < 1 {
-		rs.Version = 1
-	}
-	b, err := json.MarshalIndent(rs, "", "  ")
-	if err != nil {
-		return err
-	}
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return err
-	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, b, 0600); err != nil {
-		return err
-	}
-	return os.Rename(tmp, path)
 }
 
 // applySSHStoreDefaults 未配置 SSH_SETTINGS_BACKEND 时，若已有加密密钥与数据目录，则默认 file 后端（dataDir/ssh-vm），

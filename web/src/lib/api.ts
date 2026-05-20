@@ -271,7 +271,7 @@ export type AppConfig = {
   permissions?: PlatformPermissions | null;
   /** 是否可管理 MySQL 中的平台用户 */
   usersManagementEnabled?: boolean;
-  /** 是否已写入 dataDir/runtime-config.json */
+  /** 静态配置与 MySQL 动态配置是否已完成初始化 */
   setupInitialized?: boolean;
   /** 是否启用本地密码登录 */
   passwordLoginEnabled?: boolean;
@@ -330,7 +330,7 @@ export type AppConfig = {
   redisConnected?: boolean;
   /** 已配置 Redis 但当前进程连不上时的错误摘要（与 redisConnected 互斥） */
   redisError?: string;
-  /** 为 true 且 Redis 可达时，runtime-config 与 platform_kv 会镜像到 Redis（无 TTL） */
+  /** 为 true 且 Redis 可达时，platform_kv 会镜像到 Redis（无 TTL） */
   runtimeDualWriteRedis?: boolean;
   redisMirrorRuntimeKey?: string;
   redisMirrorPlatformKvKey?: string;

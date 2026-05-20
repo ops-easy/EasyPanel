@@ -2,10 +2,8 @@ package core
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -22,10 +20,6 @@ func maskSecret(s string) string {
 
 func handleGetRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if !app.Initialized() {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "尚未完成初始化"})
-			return
-		}
 		rs := app.Runtime()
 		if rs == nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "未找到配置"})
@@ -107,12 +101,13 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 		incomingBaotaSSLPemContent := body.BaotaSSLPemContent
 		incomingBaotaSSLKeyContent := body.BaotaSSLKeyContent
 		clearBaotaSSLMaterial := body.ClearBaotaSSLMaterial
-		path := filepath.Join(app.DataDir(), runtimeConfigFileName)
-		cur, err := LoadRuntimeSettings(path)
-		if err != nil || cur == nil || !cur.Initialized {
+		cur := app.Runtime()
+		if cur == nil || !cur.Initialized {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "尚未完成初始化"})
 			return
 		}
+		curCopy := *cur
+		cur = &curCopy
 		if body.VictoriaLogsRetentionDays == 0 {
 			if cur.VictoriaLogsRetentionDays > 0 {
 				body.VictoriaLogsRetentionDays = cur.VictoriaLogsRetentionDays
@@ -121,7 +116,7 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 			}
 		}
 		if body.VictoriaLogsRetentionDays < 7 || body.VictoriaLogsRetentionDays > 730 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "victoriaLogsRetentionDays 须在 7–730 之间"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "victoriaLogsRetentionDays 须在 7-730 之间"})
 			return
 		}
 		if body.K8sSidebarMenu == nil {
@@ -146,12 +141,13 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 		body.BaotaSSLPemContent = ""
 		body.BaotaSSLKeyContent = ""
 		body.Version = cur.Version
+		if body.Version <= 0 {
+			body.Version = 1
+		}
 		body.Initialized = true
-		// 未提交 baotaTargets 时沿用磁盘列表；提交空数组 [] 表示关闭多宝塔。
 		if body.BaotaTargets == nil {
 			body.BaotaTargets = cur.BaotaTargets
 		}
-		// 与 GET 掩码一致：未改动时前端仍传 "***"，须恢复为磁盘上的真实值
 		if strings.TrimSpace(body.DashboardPassword) == "" || body.DashboardPassword == "***" {
 			body.DashboardPassword = cur.DashboardPassword
 		}
@@ -183,7 +179,6 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 		if strings.TrimSpace(body.OIDCClientSecret) == "" || body.OIDCClientSecret == "***" {
 			body.OIDCClientSecret = cur.OIDCClientSecret
 		}
-		// 未使用私钥路径时不再保留历史口令（密码登录简化配置）
 		if strings.TrimSpace(body.VCenterVMSshPrivateKeyPath) == "" {
 			body.VCenterVMSshKeyPassphrase = ""
 		}
@@ -201,16 +196,16 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 			body.HarborPassword = cur.HarborPassword
 		}
 		if body.IngressNginxHostHTTPPort != 0 && (body.IngressNginxHostHTTPPort < 1 || body.IngressNginxHostHTTPPort > 65535) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "ingressNginxHostHttpPort 须在 1–65535 之间"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ingressNginxHostHttpPort 须在 1-65535 之间"})
 			return
 		}
 		if body.IngressNginxHostHTTPSPort != 0 && (body.IngressNginxHostHTTPSPort < 1 || body.IngressNginxHostHTTPSPort > 65535) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "ingressNginxHostHttpsPort 须在 1–65535 之间"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ingressNginxHostHttpsPort 须在 1-65535 之间"})
 			return
 		}
 		if body.BaotaUpstreamPort != "" {
 			if n, err := strconv.Atoi(body.BaotaUpstreamPort); err != nil || n < 1 || n > 65535 {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "baotaUpstreamPort 须在 1–65535 之间"})
+				c.JSON(http.StatusBadRequest, gin.H{"error": "baotaUpstreamPort 须在 1-65535 之间"})
 				return
 			}
 		}
@@ -218,6 +213,7 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		restoreMySQLBootstrapRuntime(&body, mysqlBootstrapConfigFrom(app.Cfg()))
 		if strings.TrimSpace(body.IdracHost) == "" {
 			body.IdracUser = ""
 			body.IdracPassword = ""
@@ -240,27 +236,33 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 				return
 			}
 		}
-		env := LoadConfig()
-		tmp := MergeRuntimeConfig(env, &body, app.DataDir())
+		tmp := MergeRuntimeConfig(app.Cfg(), &body, app.DataDir())
 		tmp = PrepareDashboardAuth(tmp)
 		if err := tmp.Validate(); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		var mysqlWrite *sql.DB
-		if dsn := strings.TrimSpace(tmp.MySQLDSN); dsn != "" {
+		saveDB := app.MySQLDB()
+		closeSaveDB := false
+		if saveDB == nil {
+			dsn := strings.TrimSpace(tmp.MySQLDSN)
+			if dsn == "" {
+				c.JSON(http.StatusServiceUnavailable, gin.H{"error": "动态配置需要 MySQL；请先在静态 config.yaml 或环境变量中配置 MySQL"})
+				return
+			}
 			d, err := OpenMySQLPoolForRuntimeWrite(dsn)
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "MySQL 不可用或表结构初始化失败: " + err.Error()})
 				return
 			}
-			if d != nil {
-				defer d.Close()
-				mysqlWrite = d
-			}
+			saveDB = d
+			closeSaveDB = true
 		}
-		if err := SaveRuntimeSettingsUnified(path, mysqlWrite, &body); err != nil {
-			RespondAPIError500(c, err.Error())
+		if closeSaveDB {
+			defer func() { _ = saveDB.Close() }()
+		}
+		if err := SaveRuntimeSettingsToMySQL(saveDB, &body); err != nil {
+			RespondAPIError500(c, "写入 MySQL 动态配置失败: "+err.Error())
 			return
 		}
 		if clearBaotaSSLMaterial {
@@ -277,7 +279,7 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 		if r := app.Redis(); r != nil && tmp.RuntimeDualWriteRedis {
 			ctxM, cancelM := context.WithTimeout(c.Request.Context(), 25*time.Second)
 			if err := MirrorRuntimeSettingsToRedis(ctxM, r, tmp, &body); err != nil {
-				log.Printf("runtime: 保存后镜像 Redis（与 MySQL/文件双写）: %v", err)
+				log.Printf("runtime: 保存后镜像 Redis: %v", err)
 			}
 			cancelM()
 		}
@@ -295,6 +297,6 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 		}(app)
 		SetAuditDetail(c, runtimeSettingsAuditSummary(cur, &body))
 		InvalidateUserConfigAPICache(context.Background(), app, dashboardUsernameFromGin(c))
-		c.JSON(http.StatusOK, gin.H{"ok": true, "message": "已保存并重载"})
+		c.JSON(http.StatusOK, gin.H{"ok": true, "message": "已保存 MySQL 动态配置并重载"})
 	}
 }
