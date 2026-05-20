@@ -766,25 +766,26 @@ func probeBaotaTCPWithRetry(cfg Config) error {
 }
 
 func probeBaotaForSystemCheck(cfg Config) (status string, msg string) {
-	if strings.TrimSpace(cfg.BaotaURL) == "" {
-		return "skipped", "未配置宝塔（可在设置中填写并开启 Ingress↔宝塔同步）"
+	if len(EffectiveBaotaTargets(cfg)) == 0 {
+		return "not_configured", "未配置宝塔面板 API"
 	}
-	okMsg := "TCP 可达（未调用宝塔 HTTP API）"
-	if cfg.BaotaCheckMinInterval <= 0 {
-		if err := probeBaotaTCPWithRetry(cfg); err != nil {
+	probeCfg := ConfigForBaotaTargetID(cfg, "")
+	okMsg := "宝塔 TCP 可达"
+	if probeCfg.BaotaCheckMinInterval <= 0 {
+		if err := probeBaotaTCPWithRetry(probeCfg); err != nil {
 			return "error", err.Error()
 		}
 		return "success", okMsg
 	}
 	baotaProbeCache.mu.Lock()
 	defer baotaProbeCache.mu.Unlock()
-	if !baotaProbeCache.at.IsZero() && time.Since(baotaProbeCache.at) < cfg.BaotaCheckMinInterval {
+	if !baotaProbeCache.at.IsZero() && time.Since(baotaProbeCache.at) < probeCfg.BaotaCheckMinInterval {
 		if baotaProbeCache.ok {
 			return "success", baotaProbeCache.okMsg
 		}
 		return "error", baotaProbeCache.errMsg
 	}
-	err := probeBaotaTCPWithRetry(cfg)
+	err := probeBaotaTCPWithRetry(probeCfg)
 	baotaProbeCache.at = time.Now()
 	if err != nil {
 		baotaProbeCache.ok = false

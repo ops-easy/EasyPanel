@@ -18,6 +18,8 @@ import {
   Bell,
   LineChart,
   FileText,
+  Network,
+  Library,
   ArrowRight,
   CheckCircle2,
   AlertCircle,
@@ -43,6 +45,11 @@ type AiAlertsGet = {
 
 type AiOpenClawGet = {
   openclaw: { enabled: boolean; model?: string; apiKeySet?: boolean };
+};
+
+type NetworkDevice = {
+  id: string;
+  kind: "ikuai" | "openwrt";
 };
 
 function StatusBadge({ ok, loading }: { ok: boolean; loading?: boolean }) {
@@ -207,6 +214,7 @@ const HomeHub: React.FC = () => {
 
   const showK8s = menuItemVisible(perm, "kubernetes", hubRole, moduleVisible(perm, "k8s"));
   const showVc = menuItemVisible(perm, "vcenter", hubRole, moduleVisible(perm, "vcenter"));
+  const showNetwork = menuItemVisible(perm, "network", hubRole, moduleVisible(perm, "vcenter"));
   const showBaota = menuItemVisible(perm, "baota", hubRole, moduleVisible(perm, "baota"));
   const showAppCenter = menuItemVisible(perm, "appcenter", hubRole, moduleVisible(perm, "appcenter"));
   const showBastion = menuItemVisible(
@@ -216,7 +224,20 @@ const HomeHub: React.FC = () => {
     moduleVisible(perm, "vcenter") || moduleVisible(perm, "appcenter")
   );
   const showAiInspect = menuItemVisible(perm, "aiInspect", hubRole, true);
+  const showDocs = menuItemVisible(perm, "docs", hubRole, true);
   const showHub = menuItemVisible(perm, "hub", hubRole, true);
+
+  const networkDevicesQ = useQuery({
+    queryKey: ["network-devices-hub"],
+    queryFn: ({ signal }) => apiGetJson<{ devices: NetworkDevice[] }>("/api/network/devices", { signal }),
+    enabled: loggedIn && showNetwork,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const hubCardClass =
+    "group flex h-[340px] min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md";
+  const hubEntryClass = "mt-auto inline-flex items-center gap-1 pt-3 text-xs font-medium group-hover:underline";
 
   // vCenter aggregated stats（useMemo：避免无关 query 更新时重复 reduce）
   const {
@@ -247,8 +268,10 @@ const HomeHub: React.FC = () => {
 
   const k8sOk = cfg?.k8sConfigured === true;
   const vcOk = cfg?.vcenterConfigured === true;
-  const baotaOk = Boolean(cfg?.hasBaotaApiKey && cfg?.baotaUrl);
+  const baotaTargetOk = cfg?.baotaTargets?.some((t) => Boolean(t.url && t.hasApiKey)) ?? false;
+  const baotaOk = Boolean((cfg?.hasBaotaApiKey && cfg?.baotaUrl) || baotaTargetOk);
   const baotaReachable = check?.baota.status === "success";
+  const baotaEntryTo = baotaOk ? "/cluster/baota/sync" : "/cluster/baota/settings";
 
   const { nRedis, nKafka, nCloudVm, nOpenClaw, nHermes, nOpenSearch, nDomains, appCenterTotal } = useMemo(() => {
     const nr = redisQ.data?.instances?.length ?? 0;
@@ -277,6 +300,11 @@ const HomeHub: React.FC = () => {
     openSearchQ.data?.instances,
     dnsDomainsQ.data?.domains,
   ]);
+
+  const networkDevices = networkDevicesQ.data?.devices ?? [];
+  const nNetworkDevices = networkDevices.length;
+  const nIkuaiDevices = networkDevices.filter((device) => device.kind === "ikuai").length;
+  const nOpenWrtDevices = networkDevices.filter((device) => device.kind === "openwrt").length;
 
   // 堡垒机 / AI 巡检聚合（useMemo：与无关 hub 卡片解耦）
   const {
@@ -344,18 +372,18 @@ const HomeHub: React.FC = () => {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-[1400px] space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">工作台</h1>
         <p className="mt-1 text-sm text-gray-500">各模块接入状态与资源概览，点击卡片进入对应工作区。</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {/* Kubernetes */}
         {showK8s && (
           <Link
             to="/cluster"
-            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 hover:shadow-md"
+            className={cn(hubCardClass, "hover:border-blue-200")}
           >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white">
@@ -373,7 +401,7 @@ const HomeHub: React.FC = () => {
                 <MetricItem label="服务" value={k8sQ.isLoading ? "…" : (k8sQ.data?.serviceCount ?? "—")} />
               </div>
             )}
-            <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-blue-600 group-hover:underline">
+            <span className={cn(hubEntryClass, "text-blue-600")}>
               进入 <ArrowRight size={13} />
             </span>
           </Link>
@@ -383,7 +411,7 @@ const HomeHub: React.FC = () => {
         {showVc && (
           <Link
             to="/cluster/compute/dashboard"
-            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-violet-200 hover:shadow-md"
+            className={cn(hubCardClass, "hover:border-violet-200")}
           >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-violet-700 text-white">
@@ -431,7 +459,58 @@ const HomeHub: React.FC = () => {
                 )}
               </>
             )}
-            <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-violet-600 group-hover:underline">
+            <span className={cn(hubEntryClass, "text-violet-600")}>
+              进入 <ArrowRight size={13} />
+            </span>
+          </Link>
+        )}
+
+        {/* 网络设备 */}
+        {showNetwork && (
+          <Link
+            to="/cluster/network/dashboard"
+            className={cn(hubCardClass, "hover:border-cyan-200")}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-600 to-slate-700 text-white">
+                <Network size={20} strokeWidth={2.2} />
+              </div>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                  networkDevicesQ.isLoading
+                    ? "bg-slate-100 text-slate-400"
+                    : nNetworkDevices > 0
+                      ? "bg-cyan-50 text-cyan-700"
+                      : "bg-slate-100 text-slate-500"
+                )}
+              >
+                {networkDevicesQ.isLoading ? "加载中..." : `${nNetworkDevices} 设备`}
+              </span>
+            </div>
+            <h2 className="mt-4 text-base font-semibold text-gray-900">网络设备</h2>
+            <p className="mt-0.5 text-xs text-gray-400">iKuai、OpenWrt</p>
+            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-gray-100 pt-4">
+              <div className="flex items-center gap-1.5">
+                <Network size={13} className="shrink-0 text-cyan-500" />
+                <div>
+                  <p className="text-[10px] text-gray-400">iKuai</p>
+                  <p className="text-sm font-semibold tabular-nums text-gray-900">
+                    {networkDevicesQ.isLoading ? "..." : nIkuaiDevices}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Globe size={13} className="shrink-0 text-emerald-500" />
+                <div>
+                  <p className="text-[10px] text-gray-400">OpenWrt</p>
+                  <p className="text-sm font-semibold tabular-nums text-gray-900">
+                    {networkDevicesQ.isLoading ? "..." : nOpenWrtDevices}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <span className={cn(hubEntryClass, "text-cyan-700")}>
               进入 <ArrowRight size={13} />
             </span>
           </Link>
@@ -440,8 +519,8 @@ const HomeHub: React.FC = () => {
         {/* 宝塔 */}
         {showBaota && (
           <Link
-            to="/cluster/baota/sync"
-            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-amber-200 hover:shadow-md"
+            to={baotaEntryTo}
+            className={cn(hubCardClass, "hover:border-amber-200")}
           >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-600 to-orange-600 text-white">
@@ -451,7 +530,7 @@ const HomeHub: React.FC = () => {
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">宝塔</h2>
             <p className="mt-0.5 text-xs text-gray-400">Ingress 同步、面板 API 与 DDNS</p>
-            {baotaOk && (
+            {baotaOk ? (
               <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-4">
                 <span
                   className={cn(
@@ -463,9 +542,13 @@ const HomeHub: React.FC = () => {
                   {cfgLoading ? "检查中…" : baotaReachable ? "面板可达" : "面板不可达"}
                 </span>
               </div>
+            ) : (
+              <div className="mt-4 border-t border-gray-100 pt-4 text-xs leading-relaxed text-gray-500">
+                默认地址只是占位；填写宝塔面板地址与 API Key 后才会启用同步。
+              </div>
             )}
-            <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-amber-700 group-hover:underline">
-              进入 <ArrowRight size={13} />
+            <span className={cn(hubEntryClass, "text-amber-700")}>
+              {baotaOk ? "进入" : "去配置"} <ArrowRight size={13} />
             </span>
           </Link>
         )}
@@ -474,7 +557,7 @@ const HomeHub: React.FC = () => {
         {showAppCenter && (
           <Link
             to="/cluster/apps/dashboard"
-            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-200 hover:shadow-md"
+            className={cn(hubCardClass, "hover:border-emerald-200")}
           >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 text-white">
@@ -537,7 +620,7 @@ const HomeHub: React.FC = () => {
                 </div>
               </div>
             </div>
-            <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-emerald-700 group-hover:underline">
+            <span className={cn(hubEntryClass, "text-emerald-700")}>
               进入 <ArrowRight size={13} />
             </span>
           </Link>
@@ -547,7 +630,7 @@ const HomeHub: React.FC = () => {
         {showBastion && (
           <Link
             to="/cluster/bastion"
-            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-teal-200 hover:shadow-md"
+            className={cn(hubCardClass, "hover:border-teal-200")}
           >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-teal-600 to-emerald-800 text-white">
@@ -631,7 +714,7 @@ const HomeHub: React.FC = () => {
               </div>
             </div>
 
-            <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-teal-600 group-hover:underline">
+            <span className={cn(hubEntryClass, "text-teal-600")}>
               进入 <ArrowRight size={13} />
             </span>
           </Link>
@@ -641,7 +724,7 @@ const HomeHub: React.FC = () => {
         {showAiInspect && (
           <Link
             to="/cluster/ai-inspect/dashboard"
-            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-cyan-200 hover:shadow-md"
+            className={cn(hubCardClass, "hover:border-cyan-200")}
           >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-600 to-teal-700 text-white">
@@ -749,7 +832,43 @@ const HomeHub: React.FC = () => {
               )}
             </div>
 
-            <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-cyan-600 group-hover:underline">
+            <span className={cn(hubEntryClass, "text-cyan-600")}>
+              进入 <ArrowRight size={13} />
+            </span>
+          </Link>
+        )}
+
+        {/* 文档仓库 */}
+        {showDocs && (
+          <Link
+            to="/docs"
+            className={cn(hubCardClass, "hover:border-violet-200")}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-700 to-violet-800 text-white">
+                <Library size={20} strokeWidth={2.2} />
+              </div>
+              <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                文档中心
+              </span>
+            </div>
+            <h2 className="mt-4 text-base font-semibold text-gray-900">文档仓库</h2>
+            <p className="mt-0.5 text-xs text-gray-400">Markdown 笔记、版本、媒体</p>
+            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-gray-100 pt-4">
+              <div className="flex items-center gap-1.5">
+                <FileText size={13} className="shrink-0 text-violet-500" />
+                <span className="text-[10px] text-gray-400">Markdown</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Layers size={13} className="shrink-0 text-slate-500" />
+                <span className="text-[10px] text-gray-400">版本</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Library size={13} className="shrink-0 text-zinc-500" />
+                <span className="text-[10px] text-gray-400">媒体</span>
+              </div>
+            </div>
+            <span className={cn(hubEntryClass, "text-violet-700")}>
               进入 <ArrowRight size={13} />
             </span>
           </Link>

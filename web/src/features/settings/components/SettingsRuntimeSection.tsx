@@ -224,6 +224,11 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
             </p>
           </div>
           <div className="space-y-6 p-6 text-sm">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
+              宝塔配置统一在本页维护。系统默认带有占位面板地址
+              <code className="mx-1 rounded bg-white px-1 font-mono text-[11px]">http://127.0.0.1:8888</code>
+              ，但只有保存宝塔面板地址与 API Key，或在多实例列表中保存至少一个完整实例后，宝塔才算已接入。
+            </div>
             <div className="space-y-2">
               <Label>platformPublicUrl</Label>
               <Input
@@ -467,14 +472,18 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
-                <Label>baotaUrl（未使用上方多实例列表时必填）</Label>
+                <Label>宝塔面板地址 baotaUrl（未使用上方多实例列表时必填）</Label>
                 <Input
                   value={String(form.baotaUrl ?? "")}
                   onChange={(e) => setField("baotaUrl", e.target.value)}
+                  placeholder="例如 http://127.0.0.1:8888 或 https://bt.example.com"
                 />
+                <p className="text-[11px] leading-relaxed text-gray-500">
+                  默认地址只是占位值；如果未保存 API Key，页面会继续显示“宝塔未配置”。
+                </p>
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>baotaApiKey（留空保留）</Label>
+                <Label>宝塔 API Key baotaApiKey（留空保留已保存密钥）</Label>
                 <Input
                   type="password"
                   autoComplete="off"

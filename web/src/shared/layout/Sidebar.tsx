@@ -418,6 +418,7 @@ const Sidebar: React.FC = () => {
   const showBaotaNav = menuItemVisible(perm, "baota", navRole, moduleVisible(perm, "baota"));
   const showAppCenterNav = menuItemVisible(perm, "appcenter", navRole, moduleVisible(perm, "appcenter"));
   const showAiInspectNav = menuItemVisible(perm, "aiInspect", navRole, true);
+  const showDocsNav = menuItemVisible(perm, "docs", navRole, true);
   const showBastionNav = menuItemVisible(
     perm,
     "vcenter_bastion",
@@ -431,7 +432,9 @@ const Sidebar: React.FC = () => {
     navRole === "admin" && menuItemVisible(perm, "k8s_settings", navRole, true);
   const showVcSettings =
     navRole === "admin" && menuItemVisible(perm, "vcenter_settings", navRole, true);
-  const ok = check?.baota.status === "success";
+  const baotaTargetConfigured = cfg?.baotaTargets?.some((t) => Boolean(t.url && t.hasApiKey)) ?? false;
+  const baotaConfigured = Boolean((cfg?.hasBaotaApiKey && cfg?.baotaUrl) || baotaTargetConfigured);
+  const ok = baotaConfigured && check?.baota.status === "success";
   const statusLoading = runtimeQ.isLoading;
   const isViewer = cfg?.dashboardRole === "viewer" || cfg?.viewer === true;
   const showPlatformAudit = !isViewer && navRole === "admin";
@@ -648,11 +651,11 @@ const Sidebar: React.FC = () => {
         <div className="flex w-full items-center gap-2 rounded-xl px-2 py-2">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-white p-1 shadow-sm">
             <img
-              src={cfg?.platformLogoUrl?.trim() ? cfg.platformLogoUrl.trim() : "/brand-logo.svg"}
+              src={cfg?.platformLogoUrl?.trim() ? cfg.platformLogoUrl.trim() : "/favicon.svg"}
               alt=""
               width={40}
               height={40}
-              className="max-h-8 w-auto max-w-[40px] object-contain"
+              className="h-8 w-8 object-contain"
             />
           </div>
           <div className="min-w-0 flex-1">
@@ -755,6 +758,12 @@ const Sidebar: React.FC = () => {
               <Link to="/cluster/ai-inspect/dashboard" className={navLinkTint(false, "slate")}>
                 <Sparkles size={20} className="text-gray-400" />
                 <span>AI 巡检</span>
+              </Link>
+            )}
+            {showDocsNav && (
+              <Link to="/docs" className={navLinkTint(false, "violet")}>
+                <Library size={20} className="text-gray-400" />
+                <span>文档仓库</span>
               </Link>
             )}
             {showPlatformAudit && (
@@ -1245,17 +1254,25 @@ const Sidebar: React.FC = () => {
             <div className="flex items-center gap-2">
               <div
                 className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                  runtimeQ.isLoading ? "bg-slate-300" : ok ? "bg-emerald-500" : "bg-amber-500"
+                  runtimeQ.isLoading
+                    ? "bg-slate-300"
+                    : !baotaConfigured
+                      ? "bg-slate-400"
+                      : ok
+                        ? "bg-emerald-500"
+                        : "bg-amber-500"
                 }`}
               />
               <span className="text-xs text-gray-600">
                 {runtimeQ.isLoading
                   ? "宝塔 …"
-                  : ok
-                    ? "宝塔 可达"
-                    : check?.baota.status === "error"
-                      ? "宝塔 不可达"
-                      : "宝塔 待检查"}
+                  : !baotaConfigured
+                    ? "宝塔 未配置"
+                    : ok
+                      ? "宝塔 可达"
+                      : check?.baota.status === "error"
+                        ? "宝塔 不可达"
+                        : "宝塔 待检查"}
               </span>
             </div>
           </div>

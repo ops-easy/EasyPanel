@@ -20,7 +20,7 @@ export function TechBadge({
     <div
       data-cmp="TechBadge"
       className={cn(
-        "flex shrink-0 flex-col items-center gap-1.5 rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50/80 p-3 sm:gap-2 sm:p-5",
+        "flex min-h-[8.75rem] w-full min-w-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50/80 p-3 sm:min-h-[9.5rem] sm:gap-2 sm:p-5",
         floatClass,
         glowClass
       )}

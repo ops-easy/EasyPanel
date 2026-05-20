@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Play, RefreshCw, Shield, Link as LinkIcon, Server } from "lucide-react";
+import { Loader2, Play, RefreshCw, Shield, Link as LinkIcon, Server, Settings } from "lucide-react";
 import { toast } from "sonner";
 import {
   apiGetJson,
@@ -63,9 +63,11 @@ const BaotaSync: React.FC = () => {
   const routes = routesQ.data ?? [];
   const loading = rtQ.isLoading || routesQ.isLoading;
   const err = rtQ.error || routesQ.error;
-  const baotaOk = check?.baota.status === "success";
   const rep = syncStatusQ.data?.report ?? null;
   const cfg = configQ.data;
+  const baotaTargetConfigured = cfg?.baotaTargets?.some((t) => Boolean(t.url && t.hasApiKey)) ?? false;
+  const baotaConfigured = Boolean((cfg?.hasBaotaApiKey && cfg?.baotaUrl) || baotaTargetConfigured);
+  const baotaOk = baotaConfigured && check?.baota.status === "success";
 
   const progressValue = useMemo(() => {
     if (!rep?.running || !rep.domains?.length) return rep?.running ? 10 : 0;
@@ -101,7 +103,7 @@ const BaotaSync: React.FC = () => {
           <Button
             type="button"
             size="sm"
-            disabled={syncMut.isPending || !(cfg?.hasBaotaApiKey || (cfg?.baotaTargets?.some((t) => t.hasApiKey) ?? false))}
+            disabled={syncMut.isPending || !baotaConfigured}
             onClick={() => syncMut.mutate()}
           >
             {syncMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
@@ -109,6 +111,23 @@ const BaotaSync: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {!configQ.isLoading && !baotaConfigured ? (
+        <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-semibold">宝塔尚未配置</p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-900">
+              系统会带一个默认面板地址占位，但必须在页面保存宝塔面板地址与 API Key 后，Ingress 同步才会启用。
+            </p>
+          </div>
+          <Button asChild size="sm" className="shrink-0 bg-amber-700 hover:bg-amber-800">
+            <Link to="/cluster/baota/settings">
+              <Settings className="mr-2 h-4 w-4" />
+              去宝塔设置
+            </Link>
+          </Button>
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader className="pb-2">
@@ -219,9 +238,11 @@ const BaotaSync: React.FC = () => {
         </div>
         <div className="relative z-10">
           <h3 className="text-lg font-bold mb-1">
-            {loading ? "加载中..." : baotaOk ? "宝塔 API 可访问" : "宝塔 API 异常"}
+            {loading ? "加载中..." : !baotaConfigured ? "宝塔未配置" : baotaOk ? "宝塔 API 可访问" : "宝塔 API 异常"}
           </h3>
-          <p className="text-blue-100 text-sm max-w-xl break-all">{check?.baota.msg ?? "—"}</p>
+          <p className="text-blue-100 text-sm max-w-xl break-all">
+            {!baotaConfigured ? "请先在宝塔设置中保存面板地址与 API Key。" : (check?.baota.msg ?? "—")}
+          </p>
         </div>
         <div className="relative z-10 px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/30 text-sm font-semibold">
           Node: {check?.k8s.nodeIP ?? "—"}

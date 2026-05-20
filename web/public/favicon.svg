@@ -1,4 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64 64">
-  <rect width="64" height="64" fill="#ffffff"/>
-  <image href="/brand-logo.svg" x="4" y="22" width="56" height="20" preserveAspectRatio="xMidYMid meet"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Kube-BT-Sync">
+  <defs>
+    <linearGradient id="mark-bg" x1="16" y1="16" x2="144" y2="144" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1A5EC8"/>
+      <stop offset="1" stop-color="#0F8FB1"/>
+    </linearGradient>
+  </defs>
+  <rect x="12" y="12" width="136" height="136" rx="30" fill="url(#mark-bg)"/>
+  <path d="M44 86 C48 48 112 48 116 86" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+  <path d="M44 86 H96" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+  <path d="M87 73 L102 86 L87 99" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="44" cy="86" r="21" fill="#FFFFFF"/>
+  <circle cx="44" cy="86" r="10" fill="#1A5EC8"/>
+  <circle cx="116" cy="86" r="21" fill="#FFFFFF"/>
+  <circle cx="116" cy="86" r="10" fill="#0891B2"/>
 </svg>

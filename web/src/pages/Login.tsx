@@ -3,13 +3,18 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity as ActivityIcon,
+  AppWindow,
+  BookOpen,
   ChevronRight,
   Eye,
   EyeOff,
   Layers,
   LogIn,
+  Monitor,
+  Network,
   Server,
   Shield,
+  Sparkles,
   Terminal,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -19,7 +24,7 @@ import { useAuth } from "@/auth/auth-context";
 import { ApiHttpError, apiPostJson, type SystemCheck } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { TechBadge } from "@/features/auth/components/login/TechBadge";
-import { DockerLogo, GoLogo, K8sLogo, PrometheusLogo, VCenterLogo } from "@/features/auth/components/login/TechLogos";
+import { K8sLogo } from "@/features/auth/components/login/TechLogos";
 import "./Login.css";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
@@ -167,54 +172,114 @@ function LoginSuccessOverlay() {
   );
 }
 
-function shortStatusLabel(status: string): string {
-  const s = (status || "").toLowerCase();
+type PublicStatusSummary = {
+  label: string;
+  hint?: string;
+  tone: "ok" | "warn" | "pending" | "hidden";
+};
+
+function normalizeProbeStatus(status?: string): string {
+  return (status || "").trim().toLowerCase().replaceAll("-", "_").replaceAll(" ", "_");
+}
+
+function isNotConfiguredStatus(status: string): boolean {
+  return status === "" || status === "not_configured" || status === "unconfigured" || status === "skipped";
+}
+
+function shortStatusLabel(status?: string): string {
+  const s = normalizeProbeStatus(status);
   if (s === "success") return "正常";
-  if (s === "skipped") return "跳过";
-  if (s === "warning") return "注意";
+  if (isNotConfiguredStatus(s)) return "未配置";
+  if (s === "warning") return "待检查";
   if (s === "error") return "异常";
-  if (s === "hidden") return "受限";
-  return status || "—";
+  if (s === "hidden") return "未登录受限";
+  if (s === "not_detected") return "未检测";
+  return "待确认";
+}
+
+function serviceStatusSummary(kind: "baota" | "ddns", item: { status?: string } | undefined): PublicStatusSummary {
+  const s = normalizeProbeStatus(item?.status);
+  if (isNotConfiguredStatus(s)) {
+    return {
+      label: "未配置",
+      hint: kind === "baota" ? "未配置宝塔面板 API" : "未配置 DDNS 域名",
+      tone: "pending",
+    };
+  }
+  if (s === "success") {
+    return {
+      label: "正常",
+      hint: kind === "baota" ? "宝塔面板已接入" : "DDNS 解析已接入",
+      tone: "ok",
+    };
+  }
+  if (s === "warning") {
+    return {
+      label: "待检查",
+      hint: kind === "baota" ? "宝塔连通性待确认" : "默认端口待确认",
+      tone: "warn",
+    };
+  }
+  if (s === "error") {
+    return {
+      label: "异常",
+      hint: kind === "baota" ? "宝塔已配置但暂不可达" : "DDNS 已配置但检查异常",
+      tone: "warn",
+    };
+  }
+  if (s === "hidden") {
+    return { label: "未登录受限", hint: "登录后查看详情", tone: "hidden" };
+  }
+  return { label: shortStatusLabel(s), hint: "登录后查看详情", tone: "pending" };
+}
+
+function ingressStatusSummary(k8s: SystemCheck["k8s"] | undefined): PublicStatusSummary {
+  if (k8s?.ingressInstalled) {
+    return {
+      label: "已检测",
+      hint: k8s.ingressHostNetwork ? "HostNetwork 模式" : "控制器就绪",
+      tone: "ok",
+    };
+  }
+  return { label: "未检测", hint: "未检测到 Ingress 控制器", tone: "pending" };
 }
 
 function LoginLeftStatusPanel({ sc, loading }: { sc: SystemCheck | undefined; loading: boolean }) {
   const baota = sc?.baota;
   const ddns = sc?.ddns;
   const k8s = sc?.k8s;
+  const baotaSummary = serviceStatusSummary("baota", baota);
+  const ddnsSummary = serviceStatusSummary("ddns", ddns);
+  const ingressSummary = ingressStatusSummary(k8s);
 
   const metrics = [
     {
       label: "宝塔",
-      value: loading ? "…" : shortStatusLabel(baota?.status ?? ""),
-      sub: !loading && baota?.msg ? baota.msg : undefined,
+      value: loading ? "…" : baotaSummary.label,
+      sub: !loading ? baotaSummary.hint : undefined,
+      tone: baotaSummary.tone,
       icon: <ActivityIcon className="h-3.5 w-3.5" />,
     },
     {
       label: "DDNS",
-      value: loading ? "…" : shortStatusLabel(ddns?.status ?? ""),
-      sub: !loading && ddns?.msg ? ddns.msg : undefined,
+      value: loading ? "…" : ddnsSummary.label,
+      sub: !loading ? ddnsSummary.hint : undefined,
+      tone: ddnsSummary.tone,
       icon: <Server className="h-3.5 w-3.5" />,
     },
     {
       label: "Ingress",
-      value: loading ? "…" : k8s?.ingressInstalled ? "已检测" : "未检测",
-      sub:
-        !loading && k8s?.ingressHostNetwork
-          ? "Ingress 主机网络"
-          : !loading && k8s?.ingressInstalled
-            ? "控制器已就绪"
-            : undefined,
+      value: loading ? "…" : ingressSummary.label,
+      sub: !loading ? ingressSummary.hint : undefined,
+      tone: ingressSummary.tone,
       icon: <Layers className="h-3.5 w-3.5" />,
     },
   ];
 
-  const allOk =
-    !loading &&
-    sc &&
-    (baota?.status === "success" || baota?.status === "skipped") &&
-    ddns?.status === "success";
+  const allOk = !loading && sc && baotaSummary.tone === "ok" && ddnsSummary.tone === "ok";
 
-  const anyErr = !loading && sc && (baota?.status === "error" || ddns?.status === "error");
+  const anyErr = !loading && metrics.some((m) => m.tone === "warn");
+  const hasPending = !loading && metrics.some((m) => m.tone === "pending");
 
   return (
     <div
@@ -236,7 +301,7 @@ function LoginLeftStatusPanel({ sc, loading }: { sc: SystemCheck | undefined; lo
           }
         />
         <span className="text-[11px] font-medium text-slate-600 sm:text-xs dark:text-slate-300">
-          {loading ? "状态加载中…" : anyErr ? "存在告警" : allOk ? "各链路正常" : "部分待确认"}
+          {loading ? "状态加载中…" : anyErr ? "存在告警" : hasPending ? "存在未配置项" : allOk ? "各链路正常" : "部分待确认"}
         </span>
       </div>
       <div className="hidden h-6 w-px shrink-0 bg-slate-200 min-[420px]:block dark:bg-slate-700" />
@@ -260,7 +325,7 @@ function LoginLeftStatusPanel({ sc, loading }: { sc: SystemCheck | undefined; lo
   );
 }
 
-const TECH_ITEMS = [
+const HERO_MODULE_ITEMS = [
   {
     name: "Kubernetes",
     version: "集群",
@@ -270,37 +335,72 @@ const TECH_ITEMS = [
     logo: <K8sLogo size={52} />,
   },
   {
-    name: "Docker",
-    version: "运行时",
-    color: "#0db7ed",
+    name: "虚拟化与主机",
+    version: "vCenter / PVE",
+    color: "#7c3aed",
     floatClass: "login-float-1",
     glowClass: "login-shadow-glow-docker",
-    logo: <DockerLogo size={52} />,
+    logo: <Monitor size={52} strokeWidth={1.8} color="#7c3aed" />,
   },
   {
-    name: "Golang",
-    version: "服务",
-    color: "#00acd7",
+    name: "网络设备",
+    version: "iKuai / OpenWrt",
+    color: "#0e7490",
     floatClass: "login-float-2",
     glowClass: "login-shadow-glow-go",
-    logo: <GoLogo size={52} />,
+    logo: <Network size={52} strokeWidth={1.8} color="#0e7490" />,
   },
   {
-    name: "Prometheus",
-    version: "监控",
-    color: "#e6522c",
+    name: "宝塔",
+    version: "面板 / Ingress",
+    color: "#ea580c",
     floatClass: "login-float-3",
     glowClass: "login-shadow-glow-prom",
-    logo: <PrometheusLogo size={52} />,
+    logo: <Server size={52} strokeWidth={1.8} color="#ea580c" />,
   },
   {
-    name: "vCenter",
-    version: "虚拟化",
-    color: "#6ab04c",
+    name: "应用中心",
+    version: "Redis / Hermes",
+    color: "#059669",
+    floatClass: "login-float-0",
+    glowClass: "login-shadow-glow-vcenter",
+    logo: <AppWindow size={52} strokeWidth={1.8} color="#059669" />,
+  },
+  {
+    name: "堡垒机",
+    version: "SSH / Redis CLI",
+    color: "#047857",
     floatClass: "login-float-1",
     glowClass: "login-shadow-glow-vcenter",
-    logo: <VCenterLogo size={52} />,
+    logo: <Terminal size={52} strokeWidth={1.8} color="#047857" />,
   },
+  {
+    name: "AI 巡检",
+    version: "OpenClaw",
+    color: "#0891b2",
+    floatClass: "login-float-2",
+    glowClass: "login-shadow-glow-go",
+    logo: <Sparkles size={52} strokeWidth={1.8} color="#0891b2" />,
+  },
+  {
+    name: "文档仓库",
+    version: "Markdown",
+    color: "#6d28d9",
+    floatClass: "login-float-3",
+    glowClass: "login-shadow-glow-docker",
+    logo: <BookOpen size={52} strokeWidth={1.8} color="#6d28d9" />,
+  },
+] as const;
+
+const LOGIN_MODULE_CHIPS = [
+  { name: "Kubernetes", color: "#2563eb" },
+  { name: "虚拟化与主机", color: "#7c3aed" },
+  { name: "网络设备", color: "#0e7490" },
+  { name: "宝塔", color: "#ea580c" },
+  { name: "应用中心", color: "#059669" },
+  { name: "堡垒机", color: "#047857" },
+  { name: "AI 巡检", color: "#0891b2" },
+  { name: "文档仓库", color: "#6d28d9" },
 ] as const;
 
 const Login: React.FC = () => {
@@ -533,6 +633,9 @@ const Login: React.FC = () => {
   }
 
   const sc = pubQ.data?.systemCheck;
+  const baotaPublic = serviceStatusSummary("baota", sc?.baota);
+  const ddnsPublic = serviceStatusSummary("ddns", sc?.ddns);
+  const ingressPublic = ingressStatusSummary(sc?.k8s);
 
   return (
     <div className="login-page-v2 relative min-h-[100dvh] min-h-screen w-full overflow-x-hidden overflow-y-auto bg-white lg:overflow-y-hidden dark:bg-slate-950">
@@ -560,10 +663,7 @@ const Login: React.FC = () => {
         <div className="order-2 flex min-h-0 w-full flex-col justify-center border-t border-slate-200/80 pt-8 dark:border-slate-800/80 lg:order-none lg:border-t-0 lg:border-r lg:border-b-0 lg:pt-0 lg:pb-0 lg:pr-10 xl:pr-14">
           <div className="mx-auto flex w-full max-w-xl flex-col space-y-7 sm:space-y-8 lg:mx-0 lg:max-w-[min(100%,46rem)] xl:max-w-[50rem]">
             <div className="login-v2-fade-in-up login-v2-d100 mb-5 flex flex-wrap items-center gap-2 sm:mb-8 sm:gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1a5ec8] shadow-sm">
-                <Shield className="h-5 w-5 text-white" aria-hidden />
-              </div>
-              <img src={BRAND_LOGO} alt="" className="h-9 w-auto max-w-[200px] object-contain sm:h-10" />
+              <img src={BRAND_LOGO} alt="Kube-BT-Sync" className="h-10 w-auto max-w-[220px] object-contain sm:h-11" />
               <span
                 className="rounded-full border px-2 py-0.5 text-xs font-semibold"
                 style={{
@@ -580,15 +680,15 @@ const Login: React.FC = () => {
               <h1 className="mb-2 text-[1.65rem] font-bold leading-[1.2] tracking-tight text-slate-900 sm:mb-3 sm:text-3xl sm:leading-tight md:text-4xl lg:text-[2.65rem] xl:text-5xl dark:text-slate-50">
                 云原生基础设施
                 <br />
-                <span className="text-[#1a5ec8]">管理平台</span>
+                <span className="text-[#1a5ec8]">统一工作台</span>
               </h1>
               <p className="max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-400">
-                统一管理 Kubernetes、容器工作负载、监控与虚拟化等能力；登录后按权限访问各模块。
+                统一管理 Kubernetes、虚拟化与主机、网络设备、宝塔、应用中心、堡垒机、AI 巡检与文档仓库；登录后按权限访问各模块。
               </p>
             </div>
 
-            <div className="login-v2-fade-in-up login-v2-d200 -mx-1 flex gap-3 overflow-x-auto overflow-y-hidden pb-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden md:gap-4">
-              {TECH_ITEMS.map((item) => (
+            <div className="login-v2-fade-in-up login-v2-d200 grid w-full grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4">
+              {HERO_MODULE_ITEMS.map((item) => (
                 <TechBadge
                   key={item.name}
                   name={item.name}
@@ -607,15 +707,14 @@ const Login: React.FC = () => {
               style={{ borderLeft: "3px solid #6ab04c" }}
             >
               <div className="mb-3 flex flex-wrap items-center gap-2 sm:mb-4">
-                <VCenterLogo size={18} />
-                <span className="text-xs font-bold uppercase tracking-wider text-[#4a8c3a]">基础设施探活</span>
+                <ActivityIcon className="h-4 w-4 text-[#4a8c3a]" aria-hidden />
+                <span className="text-xs font-bold uppercase tracking-wider text-[#4a8c3a]">接入状态</span>
                 <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                   未登录可见
                 </span>
               </div>
               <p className="mb-4 text-xs leading-relaxed text-slate-500 sm:text-sm dark:text-slate-400">
-                宝塔仅显示 TCP/状态与说明，<strong className="text-slate-700 dark:text-slate-200">不展示面板地址</strong>
-                ；DDNS 与 Ingress 仅展示状态类摘要（不展示域名与节点地址）。
+                未登录页仅展示模块接入结果，<strong className="text-slate-700 dark:text-slate-200">不展示面板地址、域名、节点 IP 或底层连接日志</strong>。
               </p>
               {pubQ.isError ? (
                 <p className="text-sm text-amber-700 dark:text-amber-300">状态暂不可用（{String(pubQ.error?.message ?? "错误")}）</p>
@@ -624,30 +723,28 @@ const Login: React.FC = () => {
                   <div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">宝塔</p>
                     <p className="mt-0.5 text-base font-semibold text-slate-900 dark:text-slate-100">
-                      {pubQ.isPending ? "…" : shortStatusLabel(sc?.baota?.status ?? "")}
+                      {pubQ.isPending ? "…" : baotaPublic.label}
                     </p>
-                    {sc?.baota?.msg ? (
-                      <p className="mt-2 line-clamp-3 text-xs text-slate-500 dark:text-slate-400">{sc.baota.msg}</p>
+                    {baotaPublic.hint && !pubQ.isPending ? (
+                      <p className="mt-2 line-clamp-3 text-xs text-slate-500 dark:text-slate-400">{baotaPublic.hint}</p>
                     ) : null}
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">DDNS</p>
                     <p className="mt-0.5 text-base font-semibold text-slate-900 dark:text-slate-100">
-                      {pubQ.isPending ? "…" : shortStatusLabel(sc?.ddns?.status ?? "")}
+                      {pubQ.isPending ? "…" : ddnsPublic.label}
                     </p>
-                    {sc?.ddns?.msg ? (
-                      <p className="mt-2 line-clamp-3 text-xs text-slate-500 dark:text-slate-400">{sc.ddns.msg}</p>
+                    {ddnsPublic.hint && !pubQ.isPending ? (
+                      <p className="mt-2 line-clamp-3 text-xs text-slate-500 dark:text-slate-400">{ddnsPublic.hint}</p>
                     ) : null}
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Ingress</p>
                     <p className="mt-0.5 text-base font-semibold text-slate-900 dark:text-slate-100">
-                      {pubQ.isPending ? "…" : sc?.k8s?.ingressInstalled ? "已检测" : "未检测"}
+                      {pubQ.isPending ? "…" : ingressPublic.label}
                     </p>
-                    {sc?.k8s?.ingressHostNetwork ? (
-                      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">主机网络模式</p>
-                    ) : sc?.k8s?.ingressInstalled ? (
-                      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">控制器就绪</p>
+                    {ingressPublic.hint && !pubQ.isPending ? (
+                      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{ingressPublic.hint}</p>
                     ) : null}
                   </div>
                 </div>
@@ -671,9 +768,9 @@ const Login: React.FC = () => {
 
               <div className="mb-6 flex flex-wrap content-start gap-2 rounded-xl border border-slate-200/90 bg-slate-50/90 px-3 py-2.5 sm:mb-8 sm:gap-2.5 sm:px-4 sm:py-3 dark:border-slate-700 dark:bg-slate-800/50">
                 <span className="w-full shrink-0 text-xs font-medium text-slate-500 sm:w-auto dark:text-slate-400">
-                  平台组件
+                  当前模块
                 </span>
-                {TECH_ITEMS.map((t) => (
+                {LOGIN_MODULE_CHIPS.map((t) => (
                   <span
                     key={t.name}
                     className="rounded-md border px-2 py-1 text-xs font-semibold dark:border-slate-600"

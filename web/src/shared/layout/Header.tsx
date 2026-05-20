@@ -66,6 +66,7 @@ const Header: React.FC = () => {
     moduleVisible(perm, "vcenter") || moduleVisible(perm, "appcenter")
   );
   const headerShowAiInspect = menuItemVisible(perm, "aiInspect", navRole, true);
+  const headerShowDocs = menuItemVisible(perm, "docs", navRole, true);
 
   /** 与 MySQL 是否连通无关：管理员应始终看到入口；无库时页面内会提示配置 MySQL */
   const showPlatformUsers =
@@ -269,7 +270,7 @@ const Header: React.FC = () => {
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="font-medium">应用中心</span>
-                <span className="text-xs text-muted-foreground">统一应用入口（建设中）</span>
+                <span className="text-xs text-muted-foreground">Redis · Kafka · OpenClaw · Hermes</span>
               </div>
             </DropdownMenuItem>
             ) : null}
@@ -301,6 +302,7 @@ const Header: React.FC = () => {
               </div>
             </DropdownMenuItem>
             ) : null}
+            {headerShowDocs ? (
             <DropdownMenuItem
               className="cursor-pointer gap-2 py-2.5"
               onSelect={() => navigate("/docs")}
@@ -313,6 +315,7 @@ const Header: React.FC = () => {
                 <span className="text-xs text-muted-foreground">Markdown 笔记 · 版本 · 媒体</span>
               </div>
             </DropdownMenuItem>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
 
