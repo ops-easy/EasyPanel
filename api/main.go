@@ -2,13 +2,6 @@ package main
 
 import (
 	"context"
-	appcentersvc "kube-bt-sync/api/appcenter/service"
-	harborsvc "kube-bt-sync/api/harbor/service"
-	k8ssvc "kube-bt-sync/api/k8s/service"
-	opssvc "kube-bt-sync/api/ops/service"
-	settingssvc "kube-bt-sync/api/settings/service"
-	systemsvc "kube-bt-sync/api/system/service"
-	vcentersvc "kube-bt-sync/api/vcenter/service"
 	"kube-bt-sync/common/appctx"
 	"kube-bt-sync/common/process"
 	"kube-bt-sync/common/server"
@@ -57,23 +50,23 @@ func main() {
 		go scheduler.StartSyncer(ctx, app)
 	}
 	scheduler.StartRedisReconnectLoop(ctx, app)
-	settingssvc.StartCrossPodRuntimeSync(ctx, func() *settingssvc.ServerApp { return app })
-	settingssvc.StartRuntimeStatusRefresher(app)
+	scheduler.StartSettingsCrossPodRuntimeSync(ctx, func() *appctx.ServerApp { return app })
+	scheduler.StartSettingsRuntimeStatusRefresher(app)
 	if bg {
-		systemsvc.StartHostEgressWatcher(app)
-		vcentersvc.StartPrometheusMetricsRefresher(app)
-		k8ssvc.StartKubeSphereChartsCacheWatcher(app)
-		go vcentersvc.BastionNativeSSHReconcileLoop(ctx, func() *vcentersvc.ServerApp { return app })
+		scheduler.StartSystemHostEgressWatcher(app)
+		scheduler.StartVCenterPrometheusMetricsRefresher(app)
+		scheduler.StartKubeSphereChartsCacheWatcher(app)
+		go scheduler.BastionNativeSSHReconcileLoop(ctx, func() *appctx.ServerApp { return app })
 	}
-	vcentersvc.StartSessionKeepalive(func() *vcentersvc.ServerApp { return app })
-	systemsvc.InitLoginSecurityState(app)
+	scheduler.StartVCenterSessionKeepalive(func() *appctx.ServerApp { return app })
+	scheduler.InitSystemLoginSecurityState(app)
 	if bg {
-		opssvc.StartBackground(app)
-		k8ssvc.StartRestartCorrelationWorker(app)
-		appcentersvc.StartOpenClawGatewayHealthWatcher(app)
-		harborsvc.StartHarborImageIndexWorker(app)
-		vcentersvc.StartEventWorker(app)
-		k8ssvc.StartControlPlaneAdvisoryWorker(ctx, app)
+		scheduler.StartOpsBackground(app)
+		scheduler.StartK8sRestartCorrelationWorker(app)
+		scheduler.StartOpenClawGatewayHealthWatcher(app)
+		scheduler.StartHarborImageIndexWorker(app)
+		scheduler.StartVCenterEventWorker(app)
+		scheduler.StartK8sControlPlaneAdvisoryWorker(ctx, app)
 	}
 	server.Start(ctx, app)
 }
