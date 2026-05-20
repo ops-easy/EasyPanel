@@ -10,8 +10,9 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
+
+	"kube-bt-sync/internal/storage/platformkv"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -165,11 +166,7 @@ func migrateRuntimeFromFileIfMySQLEmpty(db *sql.DB, path string) error {
 }
 
 func mysqlUpsertKV(db *sql.DB, k, v string) error {
-	_, err := db.Exec(
-		`INSERT INTO kubebt_platform_kv (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)`,
-		k, v,
-	)
-	return err
+	return platformkv.UpsertMySQL(db, k, v)
 }
 
 func loadRuntimeFromMySQL(db *sql.DB) (*RuntimeSettings, error) {
@@ -210,59 +207,10 @@ func SaveRuntimeSettingsUnified(path string, db *sql.DB, rs *RuntimeSettings) er
 	return nil
 }
 
-// PlatformKVMySQL 基于 MySQL 的 platform_kv。
-type PlatformKVMySQL struct {
-	mu sync.Mutex
-	db *sql.DB
-}
+type PlatformKVMySQL = platformkv.MySQLStore
 
 func newPlatformKVMySQL(db *sql.DB) (*PlatformKVMySQL, error) {
-	if db == nil {
-		return nil, errors.New("mysql db nil")
-	}
-	return &PlatformKVMySQL{db: db}, nil
-}
-
-func (p *PlatformKVMySQL) Get(k string) (string, bool) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	var v sql.NullString
-	err := p.db.QueryRow(`SELECT v FROM kubebt_platform_kv WHERE k=?`, k).Scan(&v)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return "", false
-		}
-		return "", false
-	}
-	if !v.Valid {
-		return "", false
-	}
-	return v.String, true
-}
-
-func (p *PlatformKVMySQL) Set(k, v string) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return mysqlUpsertKV(p.db, k, v)
-}
-
-func (p *PlatformKVMySQL) Snapshot() map[string]string {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	rows, err := p.db.Query(`SELECT k,v FROM kubebt_platform_kv`)
-	if err != nil {
-		return map[string]string{}
-	}
-	defer rows.Close()
-	out := make(map[string]string)
-	for rows.Next() {
-		var k, v string
-		if err := rows.Scan(&k, &v); err != nil {
-			continue
-		}
-		out[k] = v
-	}
-	return out
+	return platformkv.NewMySQL(db)
 }
 
 var _ PlatformKV = (*PlatformKVMySQL)(nil)
