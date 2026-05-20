@@ -7,11 +7,15 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
+	appcentermodel "kube-bt-sync/api/appcenter/model"
+	appcenterprovider "kube-bt-sync/api/appcenter/provider"
+	"kube-bt-sync/common/appctx"
 	sharedaudit "kube-bt-sync/common/audit"
-	core "kube-bt-sync/common/core"
+	"kube-bt-sync/common/authz"
 	sharedcrypto "kube-bt-sync/common/crypto"
-	"kube-bt-sync/common/k8sutil"
+	"kube-bt-sync/common/result"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -21,51 +25,51 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type ServerApp = core.ServerApp
-type Config = core.Config
-type PlatformKV = core.PlatformKV
-type RedisLight = core.RedisLight
-type OpsOpenClawBundle = core.OpsOpenClawBundle
-type OpenClawConfig = core.OpenClawConfig
+type ServerApp = appctx.ServerApp
+type Config = appctx.Config
+type PlatformKV = appctx.PlatformKV
+type RedisLight = appctx.RedisLight
+type OpsOpenClawBundle = appcentermodel.OpsOpenClawBundle
+type OpenClawConfig = appcentermodel.OpenClawConfig
 
 const (
-	DashboardRoleAdmin             = core.DashboardRoleAdmin
-	DashboardRoleViewer            = core.DashboardRoleViewer
-	ModuleAccessNone               = core.ModuleAccessNone
-	ModuleAccessRO                 = core.ModuleAccessRO
-	ModuleAccessRW                 = core.ModuleAccessRW
-	AppCenterRedisScopeFull        = core.AppCenterRedisScopeFull
-	AppCenterRedisScopeReadonly    = core.AppCenterRedisScopeReadonly
-	AppCenterRedisScopeManagedOnly = core.AppCenterRedisScopeManagedOnly
-	APIErrorPermissionDenied       = core.APIErrorPermissionDenied
+	DashboardRoleAdmin             = authz.DashboardRoleAdmin
+	DashboardRoleViewer            = authz.DashboardRoleViewer
+	ModuleAccessNone               = authz.ModuleAccessNone
+	ModuleAccessRO                 = authz.ModuleAccessRO
+	ModuleAccessRW                 = authz.ModuleAccessRW
+	AppCenterRedisScopeFull        = "full"
+	AppCenterRedisScopeReadonly    = "readonly"
+	AppCenterRedisScopeManagedOnly = "managed_only"
+	APIErrorPermissionDenied       = result.APIErrorPermissionDenied
 )
 
 func RespondAPIPermissionDenied(c *gin.Context) {
-	core.RespondAPIPermissionDenied(c)
+	result.PermissionDenied(c)
 }
 
 func RespondAPIError500(c *gin.Context, msg string) {
-	core.RespondAPIError500(c, msg)
+	result.Error500(c, msg)
 }
 
 func RespondAPIErrorMerged(c *gin.Context, status int, msg string, extra gin.H) {
-	core.RespondAPIErrorMerged(c, status, msg, extra)
+	result.ErrorMerged(c, status, msg, extra)
 }
 
 func getDashboardRoleFromGin(c *gin.Context) string {
-	return core.DashboardRoleFromGin(c)
+	return authz.DashboardRoleFromGin(c)
 }
 
-func getEffectiveDashboardPermissionsFromGin(c *gin.Context) *core.EffectiveDashboardPermissions {
-	return core.EffectiveDashboardPermissionsFromGin(c)
+func getEffectiveDashboardPermissionsFromGin(c *gin.Context) *authz.EffectiveDashboardPermissions {
+	return authz.EffectiveDashboardPermissionsFromGin(c)
 }
 
-func appRedisMaskSensitive(eff *core.EffectiveDashboardPermissions) bool {
-	return core.AppRedisMaskSensitive(eff)
+func appRedisMaskSensitive(eff *authz.EffectiveDashboardPermissions) bool {
+	return authz.AppRedisMaskSensitive(eff)
 }
 
 func dashboardUsernameFromGin(c *gin.Context) string {
-	return core.DashboardUsernameFromGin(c)
+	return authz.DashboardUsernameFromGin(c)
 }
 
 func SetAuditDetail(c *gin.Context, detail string) {
@@ -73,11 +77,11 @@ func SetAuditDetail(c *gin.Context, detail string) {
 }
 
 func verifyDashboardUserCurrentPassword(db *sql.DB, ctx context.Context, username, password string) error {
-	return core.VerifyDashboardUserCurrentPassword(db, ctx, username, password)
+	return authz.VerifyDashboardUserCurrentPassword(db, ctx, username, password)
 }
 
 func sshEncryptionKey(cfg Config) ([]byte, error) {
-	return core.SSHEncryptionKey(cfg)
+	return sharedcrypto.DeriveAESKey(cfg.EncryptionKey)
 }
 
 func decryptSecret(key []byte, encoded string) (string, error) {
@@ -89,51 +93,55 @@ func encryptSecret(key []byte, plaintext string) (string, error) {
 }
 
 func mirrorPlatformKVIfDualWrite(app *ServerApp) {
-	core.MirrorPlatformKVIfDualWrite(app)
+	appctx.MirrorPlatformKVIfDualWrite(app)
 }
 
 func GetPrometheusURLForScope(cfg Config, scope string) string {
-	return core.GetPrometheusURLForScope(cfg, scope)
+	return appcenterprovider.GetPrometheusURLForScope(cfg, scope)
 }
 
 func PrometheusPromQLInstantScalar(cfg Config, scope, promQL string) *float64 {
-	return core.PrometheusPromQLInstantScalar(cfg, scope, promQL)
+	return appcenterprovider.PrometheusPromQLInstantScalar(cfg, scope, promQL)
 }
 
 func k8sExpandPVCStorage(ctx context.Context, k8s *kubernetes.Clientset, ns, pvcName, newSize string) error {
-	return core.K8sExpandPVCStorage(ctx, k8s, ns, pvcName, newSize)
+	return appcenterprovider.ExpandPVCStorage(ctx, k8s, ns, pvcName, newSize)
 }
 
 func NowBeijingRFC3339() string {
-	return core.NowBeijingRFC3339()
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		loc = time.UTC
+	}
+	return time.Now().In(loc).Format(time.RFC3339Nano)
 }
 
 func deploymentRolloutLooksReady(dep *appsv1.Deployment) bool {
-	return k8sutil.DeploymentRolloutLooksReady(dep)
+	return appcenterprovider.DeploymentRolloutLooksReady(dep)
 }
 
 func GuardK8s(c *gin.Context, k8s *kubernetes.Clientset) bool {
-	return core.GuardK8s(c, k8s)
+	return appcenterprovider.GuardK8s(c, k8s)
 }
 
 func GuardK8sREST(c *gin.Context, k8s *kubernetes.Clientset, rc *rest.Config) bool {
-	return core.GuardK8sREST(c, k8s, rc)
+	return appcenterprovider.GuardK8sREST(c, k8s, rc)
 }
 
 func StreamK8sPodExecTTY(conn *websocket.Conn, k8s *kubernetes.Clientset, restCfg *rest.Config, ns, podName, container string, command []string, mergeStderr bool) error {
-	return core.StreamK8sPodExecTTY(conn, k8s, restCfg, ns, podName, container, command, mergeStderr)
+	return appcenterprovider.StreamPodExecTTY(conn, k8s, restCfg, ns, podName, container, command, mergeStderr)
 }
 
 func normalizeModuleAccess(s string) string {
-	return core.NormalizeModuleAccess(s)
+	return authz.NormalizeModuleAccess(s)
 }
 
 func shellQuoteSingle(s string) string {
-	return core.ShellQuoteSingle(s)
+	return appcenterprovider.ShellQuoteSingle(s)
 }
 
 func classifyPVCExecEnvironmentError(err error, stderr string) (msg string, code string) {
-	return core.ClassifyPVCExecEnvironmentError(err, stderr)
+	return appcenterprovider.ClassifyPVCExecEnvironmentError(err, stderr)
 }
 
 func truncateErrMessage(s string, max int) string {
@@ -144,18 +152,18 @@ func truncateErrMessage(s string, max int) string {
 }
 
 func opsEncryptionKey(cfg Config) ([]byte, error) {
-	return core.OpsEncryptionKey(cfg)
+	return appcenterprovider.OpsEncryptionKey(cfg)
 }
 
 func loadOpsOpenClawBundle(kv PlatformKV) (OpsOpenClawBundle, error) {
-	return core.LoadOpsOpenClawBundle(kv)
+	return appcenterprovider.LoadOpsOpenClawBundle(kv)
 }
 
 func saveOpsOpenClawBundle(kv PlatformKV, b OpsOpenClawBundle) error {
-	return core.SaveOpsOpenClawBundle(kv, b)
+	return appcenterprovider.SaveOpsOpenClawBundle(kv, b)
 }
 
-var execUpgrader = core.ExecUpgrader
+var execUpgrader = appcenterprovider.ExecUpgrader
 
 func sshSessionApplyTermEnv(sess *ssh.Session, term string) {
 	if sess == nil {
@@ -184,5 +192,5 @@ func (w *wsBinaryWriter) Write(p []byte) (int, error) {
 }
 
 func k8sPodExecRun(ctx context.Context, k8s *kubernetes.Clientset, restCfg *rest.Config, ns, podName, container string, cmd []string, stdin io.Reader) (bytes.Buffer, bytes.Buffer, error) {
-	return core.K8sPodExecRun(ctx, k8s, restCfg, ns, podName, container, cmd, stdin)
+	return appcenterprovider.PodExecRun(ctx, k8s, restCfg, ns, podName, container, cmd, stdin)
 }

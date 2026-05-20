@@ -1,6 +1,9 @@
 package authz
 
 import (
+	"context"
+	"database/sql"
+
 	core "kube-bt-sync/common/core"
 
 	"github.com/gin-gonic/gin"
@@ -26,4 +29,16 @@ func DashboardUsernameFromGin(c *gin.Context) string {
 
 func EffectiveDashboardPermissionsFromGin(c *gin.Context) *EffectiveDashboardPermissions {
 	return core.EffectiveDashboardPermissionsFromGin(c)
+}
+
+func AppRedisMaskSensitive(eff *EffectiveDashboardPermissions) bool {
+	return core.AppRedisMaskSensitive(eff)
+}
+
+func NormalizeModuleAccess(s string) string {
+	return core.NormalizeModuleAccess(s)
+}
+
+func VerifyDashboardUserCurrentPassword(db *sql.DB, ctx context.Context, username, password string) error {
+	return core.VerifyDashboardUserCurrentPassword(db, ctx, username, password)
 }

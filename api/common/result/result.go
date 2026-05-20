@@ -2,9 +2,12 @@ package result
 
 import (
 	core "kube-bt-sync/common/core"
+	"kube-bt-sync/common/transport/httpx"
 
 	"github.com/gin-gonic/gin"
 )
+
+const APIErrorPermissionDenied = httpx.APIErrorPermissionDenied
 
 func PermissionDenied(c *gin.Context) {
 	core.RespondAPIPermissionDenied(c)
