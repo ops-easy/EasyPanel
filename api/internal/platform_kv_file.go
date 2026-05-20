@@ -1,6 +1,6 @@
 package internal
 
-import "kube-bt-sync/internal/storage/platformkv"
+import "kube-bt-sync/pkg/platformkv"
 
 type PlatformKVFile = platformkv.File
 

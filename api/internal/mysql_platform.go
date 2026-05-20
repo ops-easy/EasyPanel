@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"kube-bt-sync/internal/storage/platformkv"
+	"kube-bt-sync/pkg/platformkv"
 
 	_ "github.com/go-sql-driver/mysql"
 )

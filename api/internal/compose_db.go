@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"kube-bt-sync/internal/storage/mysqlconn"
+	mysqlconn "kube-bt-sync/pkg/mysql"
 )
 
 // ComposeMySQLDSN 由主机、端口、库、用户、密码生成 go-sql-driver 兼容 DSN。

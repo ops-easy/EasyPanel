@@ -1,4 +1,4 @@
-package redislight
+package redis
 
 import (
 	"bufio"

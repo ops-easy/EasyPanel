@@ -1,7 +1,7 @@
 package internal
 
 import (
-	redislight "kube-bt-sync/internal/storage/redislight"
+	redislight "kube-bt-sync/pkg/redis"
 )
 
 type RedisLight = redislight.Client

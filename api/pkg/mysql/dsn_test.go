@@ -1,4 +1,4 @@
-package mysqlconn
+package mysql
 
 import "testing"
 
