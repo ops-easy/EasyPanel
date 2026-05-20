@@ -2,12 +2,12 @@ package docs
 
 import (
 	"kube-bt-sync/api/docs/controller"
-	core "kube-bt-sync/internal"
+	"kube-bt-sync/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(r *gin.Engine, api *gin.RouterGroup, app *core.ServerApp) {
+func RegisterRoutes(r *gin.Engine, api *gin.RouterGroup, app *appctx.ServerApp) {
 	ctl := controller.New(app)
 	r.GET("/r/*rp", ctl.PublicRoute)
 	r.POST("/r/*rp", ctl.PublicRoute)
