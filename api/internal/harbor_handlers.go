@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +15,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+func harborClientFromCfg(cfg Config) *harborint.Client {
+	return harborint.NewClient(harborint.ClientConfig{
+		BaseURL:  cfg.HarborBaseURL,
+		Username: cfg.HarborUsername,
+		Password: cfg.HarborPassword,
+		SkipTLS:  cfg.HarborSkipTLS,
+	})
+}
 
 func maskHarborURL(raw string) string {
 	return harborint.MaskURL(raw)
@@ -39,41 +47,16 @@ func harborRepositoryPathSegmentCandidates(repoRelative string) []string {
 }
 
 func harborDoGET404RepoAlt(ctx context.Context, cfg Config, primary, alt string) ([]byte, int, error) {
-	b, code, err := harborDo(ctx, cfg, http.MethodGet, primary, nil)
-	if err != nil || code != http.StatusNotFound || strings.TrimSpace(alt) == "" || alt == primary {
-		return b, code, err
-	}
-	return harborDo(ctx, cfg, http.MethodGet, alt, nil)
+	return harborClientFromCfg(cfg).DoGET404RepoAlt(ctx, primary, alt)
 }
 
 func harborDoMethod404RepoAlt(ctx context.Context, cfg Config, method, primary, alt string, body io.Reader) ([]byte, int, error) {
-	b, code, err := harborDo(ctx, cfg, method, primary, body)
-	if err != nil || code != http.StatusNotFound || strings.TrimSpace(alt) == "" || alt == primary {
-		return b, code, err
-	}
-	return harborDo(ctx, cfg, method, alt, body)
+	return harborClientFromCfg(cfg).DoMethod404RepoAlt(ctx, method, primary, alt, body)
 }
 
 // harborArtifactListRepoPathEsc 对含 / 的仓库探测单重与双重路径编码，避免索引分页时每页先试 404 再重试。
 func harborArtifactListRepoPathEsc(ctx context.Context, cfg Config, projEsc, repoRel string) string {
-	cands := harborRepositoryPathSegmentCandidates(repoRel)
-	if len(cands) == 0 {
-		return ""
-	}
-	if len(cands) == 1 {
-		return cands[0]
-	}
-	p1 := fmt.Sprintf("/projects/%s/repositories/%s/artifacts?page=1&page_size=1", projEsc, cands[0])
-	_, c1, err := harborDo(ctx, cfg, http.MethodGet, p1, nil)
-	if err != nil || c1 != http.StatusNotFound {
-		return cands[0]
-	}
-	p2 := fmt.Sprintf("/projects/%s/repositories/%s/artifacts?page=1&page_size=1", projEsc, cands[1])
-	_, c2, err2 := harborDo(ctx, cfg, http.MethodGet, p2, nil)
-	if err2 == nil && c2 == http.StatusOK {
-		return cands[1]
-	}
-	return cands[0]
+	return harborClientFromCfg(cfg).ArtifactListRepoPathEsc(ctx, projEsc, repoRel)
 }
 
 // harborLooksLikeDockerTag 用于从「仓库名:tag」中剥离 tag，避免 repositories 的 q 含冒号触发 Harbor 400。
@@ -101,17 +84,11 @@ func harborSanitizeRepositoryListQ(raw string) string {
 }
 
 func harborConfiguredFromCfg(cfg Config) bool {
-	return strings.TrimSpace(cfg.HarborBaseURL) != "" &&
-		strings.TrimSpace(cfg.HarborUsername) != "" &&
-		strings.TrimSpace(cfg.HarborPassword) != ""
+	return harborint.Configured(cfg.HarborBaseURL, cfg.HarborUsername, cfg.HarborPassword)
 }
 
 func harborAPIRoot(cfg Config) string {
-	b := strings.TrimSuffix(strings.TrimSpace(cfg.HarborBaseURL), "/")
-	if b == "" {
-		return ""
-	}
-	return b + "/api/v2.0"
+	return harborint.APIRoot(cfg.HarborBaseURL)
 }
 
 // harborResolvePublicUIURL 浏览器可打开的 Harbor 控制台根地址（不含凭据）。
@@ -122,52 +99,15 @@ func harborResolvePublicUIURL(cfg Config, systeminfo map[string]any) string {
 
 // harborFetchSystemInfoMap 拉取 GET /systeminfo 解析为 map（失败返回 nil）。
 func harborFetchSystemInfoMap(ctx context.Context, cfg Config) map[string]any {
-	b, code, err := harborDo(ctx, cfg, http.MethodGet, "/systeminfo", nil)
-	if err != nil || code != http.StatusOK || len(b) == 0 {
-		return nil
-	}
-	var m map[string]any
-	if json.Unmarshal(b, &m) != nil {
-		return nil
-	}
-	return m
-}
-
-func harborHTTPClient(cfg Config) *http.Client {
-	return &http.Client{
-		Timeout: 60 * time.Second,
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: cfg.HarborSkipTLS,
-				MinVersion:         tls.VersionTLS12,
-			},
-		},
-	}
+	return harborClientFromCfg(cfg).FetchSystemInfoMap(ctx)
 }
 
 func harborDo(ctx context.Context, cfg Config, method, pathAndQuery string, body io.Reader) ([]byte, int, error) {
-	root := harborAPIRoot(cfg)
-	if root == "" {
+	b, code, err := harborClientFromCfg(cfg).Do(ctx, method, pathAndQuery, body)
+	if err == harborint.ErrNotConfigured {
 		return nil, 0, errHarborNotConfigured
 	}
-	u := root + pathAndQuery
-	req, err := http.NewRequestWithContext(ctx, method, u, body)
-	if err != nil {
-		return nil, 0, err
-	}
-	req.SetBasicAuth(strings.TrimSpace(cfg.HarborUsername), cfg.HarborPassword)
-	req.Header.Set("Accept", "application/json")
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	resp, err := harborHTTPClient(cfg).Do(req)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer resp.Body.Close()
-	b, err := io.ReadAll(resp.Body)
-	return b, resp.StatusCode, err
+	return b, code, err
 }
 
 // harborAPIErrorItem Harbor v2 常见错误体：{"errors":[{"code":"UNAUTHORIZED","message":"unauthorized"}]}
