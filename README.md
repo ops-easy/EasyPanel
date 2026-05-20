@@ -44,7 +44,7 @@ Kube-BT-Sync 是面向自建 Kubernetes、Homelab 与小型私有云环境的运
 
 ```text
 kube-bt-sync/
-├── api/                         # Go 后端，入口为 api/cmd/kube-bt-sync/main.go
+├── api/                         # Go 后端，入口为 api/main.go
 ├── web/                         # React + Vite 前端
 ├── k8s/backend/                 # 后端 Kubernetes 清单
 ├── k8s/frontend/                # 前端 Kubernetes 清单

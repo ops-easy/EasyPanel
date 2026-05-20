@@ -11,7 +11,7 @@ build-frontend:
 
 build-backend:
 	@echo "Building backend..."
-	@cd $(BACKEND_DIR) && go build -o kube-bt-sync ./cmd/kube-bt-sync
+	@cd $(BACKEND_DIR) && go build -o kube-bt-sync .
 
 start-frontend:
 	@echo "Starting frontend dev server..."
@@ -19,10 +19,10 @@ start-frontend:
 
 start-backend:
 	@echo "Starting backend dev server..."
-	@cd $(BACKEND_DIR) && go run ./cmd/kube-bt-sync
+	@cd $(BACKEND_DIR) && go run .
 
 test:
-	@cd $(BACKEND_DIR) && go test . ./cmd/... ./internal
+	@cd $(BACKEND_DIR) && go test ./...
 
 lint:
 	@cd $(FRONTEND_DIR) && npm run lint

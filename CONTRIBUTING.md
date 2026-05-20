@@ -60,7 +60,7 @@ npm run dev
 
 ```bash
 cd api
-go run ./cmd/kube-bt-sync
+go run .
 ```
 
 ## 项目结构
