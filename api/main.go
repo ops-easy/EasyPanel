@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	appcentersvc "kube-bt-sync/api/appcenter/service"
 	"kube-bt-sync/internal" // 引用模块
-	"kube-bt-sync/internal/modules/appcenter/openclaw"
 	"kube-bt-sync/internal/transport/httpapi"
 	"log"
 	"os"
@@ -62,7 +62,7 @@ func main() {
 	if bg {
 		internal.StartOpsCenterBackground(app)
 		internal.StartK8sRestartCorrelationWorker(app)
-		openclaw.StartOpenClawGatewayHealthWatcher(app)
+		appcentersvc.StartOpenClawGatewayHealthWatcher(app)
 		internal.StartHarborImageIndexWorker(app)
 		internal.StartVCenterEventWorker(app)
 		internal.StartK8sControlPlaneAdvisoryWorker(ctx, app)

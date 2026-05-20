@@ -1,4 +1,4 @@
-package openclaw
+package service
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(api *gin.RouterGroup, app *ServerApp) {
+func RegisterOpenClawRoutes(api *gin.RouterGroup, app *ServerApp) {
 	g := api.Group("/app-center/openclaw")
 	g.GET("/gateway-service-health", func(c *gin.Context) { handleOpenClawGatewayServiceHealthGet(c, app) })
 	g.POST("/gateway-service-health/read", func(c *gin.Context) { handleOpenClawGatewayServiceHealthRead(c, app) })

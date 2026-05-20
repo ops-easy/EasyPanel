@@ -1,4 +1,4 @@
-package openclaw
+package service
 
 // OpenClaw 首次部署时写入 PVC workspace/ 的预置文件（ConfigMap → init 拷贝）。
 // 与 app_openclaw_k8s.go 中 openClawConfigMapData / openClawInitCopyScript 配合使用。
