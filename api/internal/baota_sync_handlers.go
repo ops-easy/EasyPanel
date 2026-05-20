@@ -7,6 +7,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func HandleBaotaIngressSyncStatus(app *ServerApp) gin.HandlerFunc {
+	return handleBaotaIngressSyncStatus(app)
+}
+
+func HandleBaotaIngressSyncRun(app *ServerApp) gin.HandlerFunc {
+	return handleBaotaIngressSyncRun(app)
+}
+
 func handleBaotaIngressSyncStatus(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rep, ok := LoadBaotaIngressSyncReport(app.PlatformKV())

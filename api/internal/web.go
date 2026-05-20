@@ -98,9 +98,6 @@ func RegisterLegacyRoutes(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 		api.GET("/ingress/raw", func(c *gin.Context) { handleGetIngressRaw(c, app.K8s()) })
 		api.POST("/ingress/yaml", func(c *gin.Context) { handleApplyYaml(c, app.K8s()) })
 		api.POST("/ingress/delete", func(c *gin.Context) { handleDeleteIngress(c, app.K8s(), app.Cfg()) })
-		api.GET("/baota/ingress-sync/status", func(c *gin.Context) { handleBaotaIngressSyncStatus(app)(c) })
-		api.POST("/baota/ingress-sync/run", func(c *gin.Context) { handleBaotaIngressSyncRun(app)(c) })
-
 		api.GET("/k8s/summary", func(c *gin.Context) { handleK8sSummary(c, app.K8s()) })
 		// 静态 /k8s/* 须在带 :namespace/:name 的动态路由之前注册，避免部分环境下误匹配导致 404「not found」。
 		api.GET("/k8s/rbac/service-accounts/:namespace/:name", func(c *gin.Context) {
