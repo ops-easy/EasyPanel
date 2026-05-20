@@ -1,4 +1,4 @@
-package cloudvm
+package service
 
 import (
 	"context"
@@ -483,7 +483,7 @@ func ensureNamespace(ctx context.Context, k8s *kubernetes.Clientset, name string
 	return err
 }
 
-func RegisterRoutes(api *gin.RouterGroup, app *ServerApp) {
+func RegisterCloudVMRoutes(api *gin.RouterGroup, app *ServerApp) {
 	g := api.Group("/app-center/cloud-vm")
 	g.GET("/ssh-security-events", func(c *gin.Context) { handleCloudVMSSHSecurityEvents(c, app) })
 	g.GET("/bootstrap", func(c *gin.Context) { handleCloudVMBootstrapGet(c, app) })

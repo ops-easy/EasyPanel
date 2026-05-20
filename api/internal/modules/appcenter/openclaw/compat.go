@@ -5,11 +5,11 @@ import (
 	"context"
 	"io"
 
+	cloudvm "kube-bt-sync/api/appcenter/service"
 	sharedaudit "kube-bt-sync/common/audit"
 	sharedcrypto "kube-bt-sync/common/crypto"
 	"kube-bt-sync/common/k8sutil"
 	core "kube-bt-sync/internal"
-	"kube-bt-sync/internal/modules/appcenter/cloudvm"
 
 	"github.com/gin-gonic/gin"
 	appsv1 "k8s.io/api/apps/v1"
