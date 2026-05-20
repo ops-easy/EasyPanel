@@ -22,7 +22,7 @@ start-backend:
 	@cd $(BACKEND_DIR) && go run .
 
 test:
-	@cd $(BACKEND_DIR) && go test . ./cmd/... ./internal
+	@cd $(BACKEND_DIR) && go test ./...
 
 lint:
 	@cd $(FRONTEND_DIR) && npm run lint

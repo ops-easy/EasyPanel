@@ -36,7 +36,7 @@ COPY api/ ./
 COPY --from=frontend /app/web/dist ./web/dist
 ARG BUILD_VERSION=dev
 RUN GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -trimpath \
-    -ldflags="-s -w -X kube-bt-sync/internal.BuildVersion=${BUILD_VERSION}" \
+    -ldflags="-s -w -X kube-bt-sync/common/core.BuildVersion=${BUILD_VERSION}" \
     -o kube-bt-sync .
 
 # ------------------------------------------------------------------------------

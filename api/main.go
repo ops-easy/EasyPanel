@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
-	"kube-bt-sync/internal" // 引用模块
+	"kube-bt-sync/common/appctx"
+	"kube-bt-sync/common/process"
+	"kube-bt-sync/common/server"
+	"kube-bt-sync/scheduler"
 	"log"
 	"os"
 	"os/signal"
@@ -10,12 +13,12 @@ import (
 )
 
 func main() {
-	internal.ApplyGOMAXProcsFromEnv()
+	process.ApplyGOMAXProcsFromEnv()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	log.Println(">>> 初始化 kube-bt-sync 环境...")
-	app, err := internal.NewServerApp(internal.DataDirFromEnv())
+	app, err := appctx.NewServerApp(appctx.DataDirFromEnv())
 	if err != nil {
 		log.Fatalf("加载应用状态失败: %v", err)
 	}
@@ -44,26 +47,26 @@ func main() {
 		log.Println(">>> KUBEBT_ENABLE_BACKGROUND_JOBS=false：本进程仅作 API/Web 副本，不启动宝塔同步、告警巡检、Pod 重启关联/报告清理、出站监视、vCenter Prom 缓存刷新、审计裁剪定时器（多副本时请保证至少一个 Pod 为 true）")
 	}
 	if bg {
-		go internal.StartSyncer(ctx, app)
+		go scheduler.StartSyncer(ctx, app)
 	}
-	internal.StartRedisReconnectLoop(ctx, app)
-	internal.StartCrossPodRuntimeSync(ctx, func() *internal.ServerApp { return app })
-	internal.StartRuntimeStatusRefresher(app)
+	scheduler.StartRedisReconnectLoop(ctx, app)
+	scheduler.StartSettingsCrossPodRuntimeSync(ctx, func() *appctx.ServerApp { return app })
+	scheduler.StartSettingsRuntimeStatusRefresher(app)
 	if bg {
-		internal.StartHostEgressWatcher(app)
-		internal.StartVCenterPrometheusMetricsRefresher(app)
-		internal.StartK8sKubeSphereChartsCacheWatcher(app)
-		go internal.BastionNativeSSHReconcileLoop(ctx, func() *internal.ServerApp { return app })
+		scheduler.StartSystemHostEgressWatcher(app)
+		scheduler.StartVCenterPrometheusMetricsRefresher(app)
+		scheduler.StartKubeSphereChartsCacheWatcher(app)
+		go scheduler.BastionNativeSSHReconcileLoop(ctx, func() *appctx.ServerApp { return app })
 	}
-	internal.StartVCenterSessionKeepalive(func() *internal.ServerApp { return app })
-	internal.InitLoginSecurityState(app)
+	scheduler.StartVCenterSessionKeepalive(func() *appctx.ServerApp { return app })
+	scheduler.InitSystemLoginSecurityState(app)
 	if bg {
-		internal.StartOpsCenterBackground(app)
-		internal.StartK8sRestartCorrelationWorker(app)
-		internal.StartOpenClawGatewayHealthWatcher(app)
-		internal.StartHarborImageIndexWorker(app)
-		internal.StartVCenterEventWorker(app)
-		internal.StartK8sControlPlaneAdvisoryWorker(ctx, app)
+		scheduler.StartOpsBackground(app)
+		scheduler.StartK8sRestartCorrelationWorker(app)
+		scheduler.StartOpenClawGatewayHealthWatcher(app)
+		scheduler.StartHarborImageIndexWorker(app)
+		scheduler.StartVCenterEventWorker(app)
+		scheduler.StartK8sControlPlaneAdvisoryWorker(ctx, app)
 	}
-	internal.StartWebServer(ctx, app)
+	server.Start(ctx, app)
 }
