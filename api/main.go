@@ -4,6 +4,7 @@ import (
 	"context"
 	appcentersvc "kube-bt-sync/api/appcenter/service"
 	k8ssvc "kube-bt-sync/api/k8s/service"
+	opssvc "kube-bt-sync/api/ops/service"
 	vcentersvc "kube-bt-sync/api/vcenter/service"
 	"kube-bt-sync/internal" // 引用模块
 	"kube-bt-sync/internal/transport/httpapi"
@@ -62,7 +63,7 @@ func main() {
 	vcentersvc.StartSessionKeepalive(func() *vcentersvc.ServerApp { return app })
 	internal.InitLoginSecurityState(app)
 	if bg {
-		internal.StartOpsCenterBackground(app)
+		opssvc.StartBackground(app)
 		k8ssvc.StartRestartCorrelationWorker(app)
 		appcentersvc.StartOpenClawGatewayHealthWatcher(app)
 		internal.StartHarborImageIndexWorker(app)

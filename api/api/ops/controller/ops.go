@@ -1,20 +1,20 @@
 package controller
 
 import (
-	core "kube-bt-sync/internal"
+	"kube-bt-sync/api/ops/service"
+	"kube-bt-sync/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Controller struct {
-	app *core.ServerApp
+	app *appctx.ServerApp
 }
 
-func New(app *core.ServerApp) *Controller {
+func New(app *appctx.ServerApp) *Controller {
 	return &Controller{app: app}
 }
 
 func (ctl *Controller) RegisterRoutes(r *gin.Engine, api *gin.RouterGroup) {
-	core.RegisterOpsPublicRoutes(r, ctl.app)
-	core.RegisterOpsCenterRoutes(api, ctl.app)
+	service.RegisterRoutes(r, api, ctl.app)
 }
