@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
+	sharedaudit "kube-bt-sync/common/audit"
+	"kube-bt-sync/common/k8sutil"
 	core "kube-bt-sync/internal"
-	sharedaudit "kube-bt-sync/internal/shared/audit"
-	"kube-bt-sync/internal/shared/k8sutil"
 
 	"github.com/gin-gonic/gin"
 	appsv1 "k8s.io/api/apps/v1"

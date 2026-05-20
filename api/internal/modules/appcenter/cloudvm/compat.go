@@ -8,10 +8,10 @@ import (
 	"strings"
 	"sync"
 
+	sharedaudit "kube-bt-sync/common/audit"
+	sharedcrypto "kube-bt-sync/common/crypto"
+	"kube-bt-sync/common/k8sutil"
 	core "kube-bt-sync/internal"
-	sharedaudit "kube-bt-sync/internal/shared/audit"
-	sharedcrypto "kube-bt-sync/internal/shared/crypto"
-	"kube-bt-sync/internal/shared/k8sutil"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

@@ -1,9 +1,9 @@
 package redis
 
 import (
+	sharedaudit "kube-bt-sync/common/audit"
+	sharedcrypto "kube-bt-sync/common/crypto"
 	core "kube-bt-sync/internal"
-	sharedaudit "kube-bt-sync/internal/shared/audit"
-	sharedcrypto "kube-bt-sync/internal/shared/crypto"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

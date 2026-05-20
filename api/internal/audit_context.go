@@ -1,7 +1,7 @@
 package internal
 
 import (
-	sharedaudit "kube-bt-sync/internal/shared/audit"
+	sharedaudit "kube-bt-sync/common/audit"
 
 	"github.com/gin-gonic/gin"
 )

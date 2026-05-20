@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"kube-bt-sync/internal/shared/k8sutil"
+	"kube-bt-sync/common/k8sutil"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"

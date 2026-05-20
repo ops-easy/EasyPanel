@@ -1,6 +1,6 @@
 package internal
 
-import sharedcrypto "kube-bt-sync/internal/shared/crypto"
+import sharedcrypto "kube-bt-sync/common/crypto"
 
 func deriveAESKey(raw string) ([]byte, error) {
 	return sharedcrypto.DeriveAESKey(raw)
