@@ -30,6 +30,6 @@ func RegisterRoutes(r *gin.Engine, app *core.ServerApp) {
 	vcenter.RegisterRoutes(api, app)
 	k8s.RegisterRoutes(api, app)
 	ops.RegisterRoutes(r, api, app)
-	system.RegisterRoutes(api, app)
+	system.RegisterRoutes(r, api, app)
 	settings.RegisterRoutes(api, app)
 }

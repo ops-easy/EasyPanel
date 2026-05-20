@@ -61,19 +61,6 @@ func RegisterLegacyRoutes(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 	})
 
 	// 无需登录：探活、初始化向导、登录态
-	r.GET("/api/health", handleHealth(app))
-	r.GET("/api/setup/status", handleSetupStatus(app))
-	r.POST("/api/setup", handleSetupSave(app))
-	r.GET("/api/auth/status", func(c *gin.Context) { handleAuthStatus(c, app) })
-	r.GET("/api/auth/login-challenge", handleAuthLoginChallenge(app))
-	r.GET("/api/login/public-status", handleLoginPublicStatus(app))
-	r.POST("/api/auth/login", func(c *gin.Context) { handleAuthLogin(c, app) })
-	r.POST("/api/auth/login-totp", handleAuthLoginTotp(app))
-	r.GET("/api/auth/totp/setup-provision", handleTotpSetupProvision(app))
-	r.POST("/api/auth/totp/setup-verify", handleTotpSetupVerify(app))
-	r.POST("/api/auth/logout", func(c *gin.Context) { handleAuthLogout(c, app) })
-	r.GET("/api/auth/oidc/login", handleOIDCLogin(app))
-	r.GET("/api/auth/oidc/callback", handleOIDCCallback(app))
 	log.Println("Dashboard: GET /api/health、/api/setup/status、/api/auth/status、/api/login/public-status、OIDC /api/auth/oidc/* 无需登录；未初始化时 POST /api/setup")
 
 	api := r.Group("/api")
@@ -81,9 +68,6 @@ func RegisterLegacyRoutes(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 	api.Use(ViewerRestrictionsMiddleware(app))
 	api.Use(apiResponseCacheMiddleware(app))
 	{
-		api.GET("/config", func(c *gin.Context) { handleGetConfig(c, app) })
-		api.GET("/runtime/status", func(c *gin.Context) { handleGetRuntimeStatus(c, app) })
-		api.GET("/system/check", func(c *gin.Context) { handleSystemCheck(c, app) })
 		api.GET("/namespaces", func(c *gin.Context) { handleGetNamespaces(c, app) })
 		api.GET("/services", func(c *gin.Context) { handleGetServices(c, app.K8s()) })
 		api.GET("/ingresses", func(c *gin.Context) { handleListAllIngresses(c, app.K8s(), app.Cfg()) })
@@ -91,18 +75,6 @@ func RegisterLegacyRoutes(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 		api.GET("/ingress/raw", func(c *gin.Context) { handleGetIngressRaw(c, app.K8s()) })
 		api.POST("/ingress/yaml", func(c *gin.Context) { handleApplyYaml(c, app.K8s()) })
 		api.POST("/ingress/delete", func(c *gin.Context) { handleDeleteIngress(c, app.K8s(), app.Cfg()) })
-		api.GET("/settings/runtime", handleGetRuntimeSettings(app))
-		api.PUT("/settings/runtime", handlePutRuntimeSettings(app))
-		api.GET("/audit/logs", AdminOnlyMiddleware(app), handleGetAuditLogs(app))
-		api.GET("/audit/summary", AdminOnlyMiddleware(app), handleGetAuditSummary(app))
-		api.GET("/audit/site-stats", AdminOnlyMiddleware(app), handleGetSiteStats(app))
-		api.GET("/audit/harbor-dashboard", AdminOnlyMiddleware(app), handleGetHarborAdminDashboard(app))
-		api.GET("/account/oidc/bind/start", handleOIDCBindStart(app))
-		api.GET("/host/egress-notification", handleHostEgressNotification(app))
-		api.POST("/host/egress-notification/read", handleHostEgressNotificationRead(app))
-		api.POST("/host/security-login-alert/read", handleSecurityLoginAlertRead(app))
-		api.POST("/host/remote-login-alert/read", handleRemoteLoginAlertRead(app))
-		api.POST("/host/admin-ip-ban-alert/read", handleAdminIpBanAlertRead(app))
 		api.GET("/prometheus/status", func(c *gin.Context) { handlePrometheusStatus(c, app.Cfg()) })
 		api.GET("/prometheus/discover", func(c *gin.Context) { handlePrometheusDiscover(c, app.K8s()) })
 		api.POST("/prometheus/source", func(c *gin.Context) { handlePrometheusSource(c, app.Cfg()) })
@@ -114,8 +86,6 @@ func RegisterLegacyRoutes(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 		api.GET("/prometheus/vcenter-metrics", func(c *gin.Context) { handleVCenterPrometheusMetrics(c, app) })
 
 		registerCloudHostRoutes(api, app)
-		registerAdminUserRoutes(api, app)
-		registerAccountProfileRoutes(api, app)
 	}
 	log.Println("Dashboard: WebSocket /api/k8s/pods/.../exec/ws、/api/app-center/redis/instances/:id/redis-cli/ws、/api/vcenter/vms/.../console-ws、/api/vcenter/vms/.../ssh/ws、/api/cloud-hosts/:id/ssh/ws、/api/app-center/redis/runtime/ws；GET/DELETE pods；GET summary、namespaces/stats、pods、deployments、statefulsets、daemonsets、pvcs、configmaps、services、nodes；GET/POST prometheus；vCenter API、cloud-hosts")
 
