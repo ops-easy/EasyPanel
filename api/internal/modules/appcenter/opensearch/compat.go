@@ -4,6 +4,7 @@ import (
 	"context"
 
 	core "kube-bt-sync/internal"
+	sharedaudit "kube-bt-sync/internal/shared/audit"
 	"kube-bt-sync/internal/shared/k8sutil"
 
 	"github.com/gin-gonic/gin"
@@ -47,7 +48,7 @@ func dashboardUsernameFromGin(c *gin.Context) string {
 }
 
 func SetAuditDetail(c *gin.Context, detail string) {
-	core.SetAuditDetail(c, detail)
+	sharedaudit.SetDetail(c, detail)
 }
 
 func GuardK8s(c *gin.Context, k8s *kubernetes.Clientset) bool {

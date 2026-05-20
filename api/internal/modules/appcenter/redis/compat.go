@@ -2,6 +2,8 @@ package redis
 
 import (
 	core "kube-bt-sync/internal"
+	sharedaudit "kube-bt-sync/internal/shared/audit"
+	sharedcrypto "kube-bt-sync/internal/shared/crypto"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -51,7 +53,7 @@ func appRedisMaskSensitive(eff *core.EffectiveDashboardPermissions) bool {
 }
 
 func SetAuditDetail(c *gin.Context, detail string) {
-	core.SetAuditDetail(c, detail)
+	sharedaudit.SetDetail(c, detail)
 }
 
 func GuardK8s(c *gin.Context, k8s *kubernetes.Clientset) bool {
@@ -63,11 +65,11 @@ func sshEncryptionKey(cfg Config) ([]byte, error) {
 }
 
 func decryptSecret(key []byte, encoded string) (string, error) {
-	return core.DecryptSecret(key, encoded)
+	return sharedcrypto.DecryptSecret(key, encoded)
 }
 
 func encryptSecret(key []byte, plaintext string) (string, error) {
-	return core.EncryptSecret(key, plaintext)
+	return sharedcrypto.EncryptSecret(key, plaintext)
 }
 
 func GuardK8sREST(c *gin.Context, k8s *kubernetes.Clientset, rc *rest.Config) bool {

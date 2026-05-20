@@ -7,6 +7,8 @@ import (
 
 	core "kube-bt-sync/internal"
 	"kube-bt-sync/internal/modules/appcenter/cloudvm"
+	sharedaudit "kube-bt-sync/internal/shared/audit"
+	sharedcrypto "kube-bt-sync/internal/shared/crypto"
 	"kube-bt-sync/internal/shared/k8sutil"
 
 	"github.com/gin-gonic/gin"
@@ -58,7 +60,7 @@ func dashboardUsernameFromGin(c *gin.Context) string {
 }
 
 func SetAuditDetail(c *gin.Context, detail string) {
-	core.SetAuditDetail(c, detail)
+	sharedaudit.SetDetail(c, detail)
 }
 
 func GuardK8s(c *gin.Context, k8s *kubernetes.Clientset) bool {
@@ -153,11 +155,11 @@ func opsEncryptionKey(cfg Config) ([]byte, error) {
 }
 
 func decryptSecret(key []byte, encoded string) (string, error) {
-	return core.DecryptSecret(key, encoded)
+	return sharedcrypto.DecryptSecret(key, encoded)
 }
 
 func encryptSecret(key []byte, plaintext string) (string, error) {
-	return core.EncryptSecret(key, plaintext)
+	return sharedcrypto.EncryptSecret(key, plaintext)
 }
 
 func loadOpsOpenClawBundle(kv PlatformKV) (OpsOpenClawBundle, error) {
