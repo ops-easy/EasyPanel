@@ -1,4 +1,4 @@
-package toolbox
+package controller
 
 import (
 	core "kube-bt-sync/internal"

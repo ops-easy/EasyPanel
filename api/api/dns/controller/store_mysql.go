@@ -1,4 +1,4 @@
-package dns
+package controller
 
 import (
 	"context"
