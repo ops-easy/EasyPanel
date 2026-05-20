@@ -1,7 +1,8 @@
 package router
 
 import (
-	core "kube-bt-sync/internal"
+	"kube-bt-sync/common/appctx"
+	"kube-bt-sync/common/httpserver"
 	"kube-bt-sync/router/appcenter"
 	"kube-bt-sync/router/baota"
 	"kube-bt-sync/router/dns"
@@ -17,8 +18,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(r *gin.Engine, app *core.ServerApp) {
-	api := core.RegisterLegacyRoutes(r, app)
+func RegisterRoutes(r *gin.Engine, app *appctx.ServerApp) {
+	api := httpserver.RegisterBaseRoutes(r, app)
 
 	appcenter.RegisterRoutes(api, app)
 	tool.RegisterRoutes(api, app)

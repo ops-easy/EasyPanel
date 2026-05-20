@@ -3,13 +3,16 @@ package main
 import (
 	"context"
 	appcentersvc "kube-bt-sync/api/appcenter/service"
+	harborsvc "kube-bt-sync/api/harbor/service"
 	k8ssvc "kube-bt-sync/api/k8s/service"
 	opssvc "kube-bt-sync/api/ops/service"
 	settingssvc "kube-bt-sync/api/settings/service"
 	systemsvc "kube-bt-sync/api/system/service"
 	vcentersvc "kube-bt-sync/api/vcenter/service"
-	"kube-bt-sync/internal" // 引用模块
-	"kube-bt-sync/internal/transport/httpapi"
+	"kube-bt-sync/common/appctx"
+	"kube-bt-sync/common/process"
+	"kube-bt-sync/common/server"
+	"kube-bt-sync/scheduler"
 	"log"
 	"os"
 	"os/signal"
@@ -17,12 +20,12 @@ import (
 )
 
 func main() {
-	internal.ApplyGOMAXProcsFromEnv()
+	process.ApplyGOMAXProcsFromEnv()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	log.Println(">>> 初始化 kube-bt-sync 环境...")
-	app, err := internal.NewServerApp(internal.DataDirFromEnv())
+	app, err := appctx.NewServerApp(appctx.DataDirFromEnv())
 	if err != nil {
 		log.Fatalf("加载应用状态失败: %v", err)
 	}
@@ -51,9 +54,9 @@ func main() {
 		log.Println(">>> KUBEBT_ENABLE_BACKGROUND_JOBS=false：本进程仅作 API/Web 副本，不启动宝塔同步、告警巡检、Pod 重启关联/报告清理、出站监视、vCenter Prom 缓存刷新、审计裁剪定时器（多副本时请保证至少一个 Pod 为 true）")
 	}
 	if bg {
-		go internal.StartSyncer(ctx, app)
+		go scheduler.StartSyncer(ctx, app)
 	}
-	internal.StartRedisReconnectLoop(ctx, app)
+	scheduler.StartRedisReconnectLoop(ctx, app)
 	settingssvc.StartCrossPodRuntimeSync(ctx, func() *settingssvc.ServerApp { return app })
 	settingssvc.StartRuntimeStatusRefresher(app)
 	if bg {
@@ -68,9 +71,9 @@ func main() {
 		opssvc.StartBackground(app)
 		k8ssvc.StartRestartCorrelationWorker(app)
 		appcentersvc.StartOpenClawGatewayHealthWatcher(app)
-		internal.StartHarborImageIndexWorker(app)
+		harborsvc.StartHarborImageIndexWorker(app)
 		vcentersvc.StartEventWorker(app)
 		k8ssvc.StartControlPlaneAdvisoryWorker(ctx, app)
 	}
-	httpapi.StartServer(ctx, app)
+	server.Start(ctx, app)
 }

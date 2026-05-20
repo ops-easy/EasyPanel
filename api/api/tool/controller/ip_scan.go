@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"kube-bt-sync/common/appctx"
 	core "kube-bt-sync/internal"
 
 	"github.com/gin-gonic/gin"
@@ -162,7 +163,7 @@ func runIPScanParallel(ips []string) []ipScanResultRow {
 	return out
 }
 
-func loadToolboxSegments(app *core.ServerApp) ([]string, error) {
+func loadToolboxSegments(app *appctx.ServerApp) ([]string, error) {
 	kv := app.PlatformKV()
 	if kv == nil {
 		return nil, errors.New("platform_kv 不可用")
@@ -185,7 +186,7 @@ func loadToolboxSegments(app *core.ServerApp) ([]string, error) {
 	return out, nil
 }
 
-func saveToolboxSegments(app *core.ServerApp, segments []string) error {
+func saveToolboxSegments(app *appctx.ServerApp, segments []string) error {
 	kv := app.PlatformKV()
 	if kv == nil {
 		return errors.New("platform_kv 不可用")
@@ -202,7 +203,7 @@ func saveToolboxSegments(app *core.ServerApp, segments []string) error {
 	return nil
 }
 
-func loadIPScanHistory(app *core.ServerApp) ([]ipScanRun, error) {
+func loadIPScanHistory(app *appctx.ServerApp) ([]ipScanRun, error) {
 	kv := app.PlatformKV()
 	if kv == nil {
 		return nil, errors.New("platform_kv 不可用")
@@ -218,7 +219,7 @@ func loadIPScanHistory(app *core.ServerApp) ([]ipScanRun, error) {
 	return runs, nil
 }
 
-func appendIPScanHistory(app *core.ServerApp, run ipScanRun) error {
+func appendIPScanHistory(app *appctx.ServerApp, run ipScanRun) error {
 	kv := app.PlatformKV()
 	if kv == nil {
 		return errors.New("platform_kv 不可用")
@@ -242,7 +243,7 @@ func appendIPScanHistory(app *core.ServerApp, run ipScanRun) error {
 	return nil
 }
 
-func handleToolboxIPScanConfigGet(c *gin.Context, app *core.ServerApp) {
+func handleToolboxIPScanConfigGet(c *gin.Context, app *appctx.ServerApp) {
 	segs, err := loadToolboxSegments(app)
 	if err != nil {
 		core.RespondAPIError500(c, err.Error())
@@ -255,7 +256,7 @@ type toolboxIPScanConfigPut struct {
 	Segments []string `json:"segments"`
 }
 
-func handleToolboxIPScanConfigPut(c *gin.Context, app *core.ServerApp) {
+func handleToolboxIPScanConfigPut(c *gin.Context, app *appctx.ServerApp) {
 	var body toolboxIPScanConfigPut
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请求 JSON 无效: " + err.Error()})
@@ -284,7 +285,7 @@ type toolboxIPScanRunBody struct {
 	Segment string `json:"segment"`
 }
 
-func handleToolboxIPScanRun(c *gin.Context, app *core.ServerApp) {
+func handleToolboxIPScanRun(c *gin.Context, app *appctx.ServerApp) {
 	var body toolboxIPScanRunBody
 	_ = c.ShouldBindJSON(&body)
 	seg := strings.TrimSpace(body.Segment)
@@ -342,7 +343,7 @@ func handleToolboxIPScanRun(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"run": run})
 }
 
-func handleToolboxIPScanHistory(c *gin.Context, app *core.ServerApp) {
+func handleToolboxIPScanHistory(c *gin.Context, app *appctx.ServerApp) {
 	runs, err := loadIPScanHistory(app)
 	if err != nil {
 		core.RespondAPIError500(c, err.Error())
@@ -351,7 +352,7 @@ func handleToolboxIPScanHistory(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"runs": runs})
 }
 
-func registerIPScanRoutes(g *gin.RouterGroup, app *core.ServerApp) {
+func registerIPScanRoutes(g *gin.RouterGroup, app *appctx.ServerApp) {
 	g.GET("/ip-scan/config", func(c *gin.Context) { handleToolboxIPScanConfigGet(c, app) })
 	g.PUT("/ip-scan/config", func(c *gin.Context) { handleToolboxIPScanConfigPut(c, app) })
 	g.POST("/ip-scan/run", func(c *gin.Context) { handleToolboxIPScanRun(c, app) })

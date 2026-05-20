@@ -11,6 +11,7 @@ import (
 	"time"
 
 	baotasvc "kube-bt-sync/api/baota/service"
+	"kube-bt-sync/common/appctx"
 	core "kube-bt-sync/internal"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +19,7 @@ import (
 )
 
 // RegisterRoutes registers all /api/dns/* routes.
-func RegisterRoutes(api *gin.RouterGroup, app *core.ServerApp) {
+func RegisterRoutes(api *gin.RouterGroup, app *appctx.ServerApp) {
 	g := api.Group("/dns")
 
 	// Status / dashboard
@@ -92,7 +93,7 @@ func dnsRequireWrite(c *gin.Context) bool {
 	return true
 }
 
-func dnsRequireMySQL(c *gin.Context, app *core.ServerApp) *sql.DB {
+func dnsRequireMySQL(c *gin.Context, app *appctx.ServerApp) *sql.DB {
 	db := app.MySQLDB()
 	if db == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL，请配置 MYSQL_DSN 后重试"})
@@ -103,7 +104,7 @@ func dnsRequireMySQL(c *gin.Context, app *core.ServerApp) *sql.DB {
 
 // ─────────────────────────── status ───────────────────────────
 
-func handleDnsStatus(c *gin.Context, app *core.ServerApp) {
+func handleDnsStatus(c *gin.Context, app *appctx.ServerApp) {
 	db := app.MySQLDB()
 	if db == nil {
 		c.JSON(http.StatusOK, gin.H{"mysqlReachable": false})
@@ -122,7 +123,7 @@ func handleDnsStatus(c *gin.Context, app *core.ServerApp) {
 
 // ─────────────────────────── accounts ───────────────────────────
 
-func handleDnsAccountList(c *gin.Context, app *core.ServerApp) {
+func handleDnsAccountList(c *gin.Context, app *appctx.ServerApp) {
 	db := dnsRequireMySQL(c, app)
 	if db == nil {
 		return
@@ -140,7 +141,7 @@ func handleDnsAccountList(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"accounts": list})
 }
 
-func handleDnsAccountGet(c *gin.Context, app *core.ServerApp) {
+func handleDnsAccountGet(c *gin.Context, app *appctx.ServerApp) {
 	db := dnsRequireMySQL(c, app)
 	if db == nil {
 		return
@@ -176,7 +177,7 @@ func handleDnsAccountGet(c *gin.Context, app *core.ServerApp) {
 	})
 }
 
-func handleDnsAccountCreate(c *gin.Context, app *core.ServerApp) {
+func handleDnsAccountCreate(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -217,7 +218,7 @@ func handleDnsAccountCreate(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"id": id, "message": "账号已创建"})
 }
 
-func handleDnsAccountUpdate(c *gin.Context, app *core.ServerApp) {
+func handleDnsAccountUpdate(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -272,7 +273,7 @@ func handleDnsAccountUpdate(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"message": "账号已更新"})
 }
 
-func handleDnsAccountDelete(c *gin.Context, app *core.ServerApp) {
+func handleDnsAccountDelete(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -294,7 +295,7 @@ func handleDnsAccountDelete(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"message": "账号已删除"})
 }
 
-func handleDnsAccountTest(c *gin.Context, app *core.ServerApp) {
+func handleDnsAccountTest(c *gin.Context, app *appctx.ServerApp) {
 	db := dnsRequireMySQL(c, app)
 	if db == nil {
 		return
@@ -341,7 +342,7 @@ func handleDnsAccountTest(c *gin.Context, app *core.ServerApp) {
 
 // handleDnsAccountSyncDomains pulls the domain list from a provider and upserts
 // them into dns_domains. Existing rows are never overwritten.
-func handleDnsAccountSyncDomains(c *gin.Context, app *core.ServerApp) {
+func handleDnsAccountSyncDomains(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -390,7 +391,7 @@ func handleDnsAccountSyncDomains(c *gin.Context, app *core.ServerApp) {
 
 // ─────────────────────────── domains ───────────────────────────
 
-func handleDnsDomainList(c *gin.Context, app *core.ServerApp) {
+func handleDnsDomainList(c *gin.Context, app *appctx.ServerApp) {
 	db := dnsRequireMySQL(c, app)
 	if db == nil {
 		return
@@ -408,7 +409,7 @@ func handleDnsDomainList(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"domains": list})
 }
 
-func handleDnsDomainGet(c *gin.Context, app *core.ServerApp) {
+func handleDnsDomainGet(c *gin.Context, app *appctx.ServerApp) {
 	db := dnsRequireMySQL(c, app)
 	if db == nil {
 		return
@@ -432,7 +433,7 @@ func handleDnsDomainGet(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, d)
 }
 
-func handleDnsDomainCreate(c *gin.Context, app *core.ServerApp) {
+func handleDnsDomainCreate(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -469,7 +470,7 @@ func handleDnsDomainCreate(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"id": id, "message": "域名已添加"})
 }
 
-func handleDnsDomainUpdate(c *gin.Context, app *core.ServerApp) {
+func handleDnsDomainUpdate(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -502,7 +503,7 @@ func handleDnsDomainUpdate(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"message": "域名已更新"})
 }
 
-func handleDnsDomainDelete(c *gin.Context, app *core.ServerApp) {
+func handleDnsDomainDelete(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -527,7 +528,7 @@ func handleDnsDomainDelete(c *gin.Context, app *core.ServerApp) {
 
 // ─────────────────────────── records ───────────────────────────
 
-func handleDnsRecordList(c *gin.Context, app *core.ServerApp) {
+func handleDnsRecordList(c *gin.Context, app *appctx.ServerApp) {
 	db := dnsRequireMySQL(c, app)
 	if db == nil {
 		return
@@ -551,7 +552,7 @@ func handleDnsRecordList(c *gin.Context, app *core.ServerApp) {
 }
 
 // handleDnsRecordSync pulls records from the DNS provider and saves to DB.
-func handleDnsRecordSync(c *gin.Context, app *core.ServerApp) {
+func handleDnsRecordSync(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -601,7 +602,7 @@ func handleDnsRecordSync(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"message": "同步完成", "count": len(records)})
 }
 
-func handleDnsRecordCreate(c *gin.Context, app *core.ServerApp) {
+func handleDnsRecordCreate(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -666,7 +667,7 @@ func handleDnsRecordCreate(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"id": providerID, "message": "记录已添加"})
 }
 
-func handleDnsRecordUpdate(c *gin.Context, app *core.ServerApp) {
+func handleDnsRecordUpdate(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -726,7 +727,7 @@ func handleDnsRecordUpdate(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"message": "记录已更新"})
 }
 
-func handleDnsRecordDelete(c *gin.Context, app *core.ServerApp) {
+func handleDnsRecordDelete(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -761,7 +762,7 @@ func handleDnsRecordDelete(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"message": "记录已删除"})
 }
 
-func handleDnsRecordSetStatus(c *gin.Context, app *core.ServerApp) {
+func handleDnsRecordSetStatus(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -810,7 +811,7 @@ func handleDnsRecordSetStatus(c *gin.Context, app *core.ServerApp) {
 
 // ─────────────────────────── failover ───────────────────────────
 
-func handleDnsFailoverList(c *gin.Context, app *core.ServerApp) {
+func handleDnsFailoverList(c *gin.Context, app *appctx.ServerApp) {
 	db := dnsRequireMySQL(c, app)
 	if db == nil {
 		return
@@ -828,7 +829,7 @@ func handleDnsFailoverList(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"tasks": list})
 }
 
-func handleDnsFailoverCreate(c *gin.Context, app *core.ServerApp) {
+func handleDnsFailoverCreate(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -862,7 +863,7 @@ func handleDnsFailoverCreate(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"id": id, "message": "监测任务已创建"})
 }
 
-func handleDnsFailoverUpdate(c *gin.Context, app *core.ServerApp) {
+func handleDnsFailoverUpdate(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -890,7 +891,7 @@ func handleDnsFailoverUpdate(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"message": "任务已更新"})
 }
 
-func handleDnsFailoverDelete(c *gin.Context, app *core.ServerApp) {
+func handleDnsFailoverDelete(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -912,7 +913,7 @@ func handleDnsFailoverDelete(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"message": "任务已删除"})
 }
 
-func handleDnsFailoverLogs(c *gin.Context, app *core.ServerApp) {
+func handleDnsFailoverLogs(c *gin.Context, app *appctx.ServerApp) {
 	db := dnsRequireMySQL(c, app)
 	if db == nil {
 		return
@@ -936,7 +937,7 @@ func handleDnsFailoverLogs(c *gin.Context, app *core.ServerApp) {
 }
 
 // handleDnsFailoverCheck performs an immediate health check.
-func handleDnsFailoverCheck(c *gin.Context, app *core.ServerApp) {
+func handleDnsFailoverCheck(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -1012,7 +1013,7 @@ func dnsDoHealthCheck(ctx context.Context, task *DnsFailoverTask) (bool, string)
 
 // ─────────────────────────── scheduled ───────────────────────────
 
-func handleDnsScheduledList(c *gin.Context, app *core.ServerApp) {
+func handleDnsScheduledList(c *gin.Context, app *appctx.ServerApp) {
 	db := dnsRequireMySQL(c, app)
 	if db == nil {
 		return
@@ -1030,7 +1031,7 @@ func handleDnsScheduledList(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"tasks": list})
 }
 
-func handleDnsScheduledCreate(c *gin.Context, app *core.ServerApp) {
+func handleDnsScheduledCreate(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -1075,7 +1076,7 @@ func handleDnsScheduledCreate(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"id": id, "message": "定时任务已创建"})
 }
 
-func handleDnsScheduledDelete(c *gin.Context, app *core.ServerApp) {
+func handleDnsScheduledDelete(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -1099,7 +1100,7 @@ func handleDnsScheduledDelete(c *gin.Context, app *core.ServerApp) {
 
 // ─────────────────────────── SSL certs ───────────────────────────
 
-func handleDnsCertList(c *gin.Context, app *core.ServerApp) {
+func handleDnsCertList(c *gin.Context, app *appctx.ServerApp) {
 	db := dnsRequireMySQL(c, app)
 	if db == nil {
 		return
@@ -1117,7 +1118,7 @@ func handleDnsCertList(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"certs": list})
 }
 
-func handleDnsCertGet(c *gin.Context, app *core.ServerApp) {
+func handleDnsCertGet(c *gin.Context, app *appctx.ServerApp) {
 	db := dnsRequireMySQL(c, app)
 	if db == nil {
 		return
@@ -1141,7 +1142,7 @@ func handleDnsCertGet(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, o)
 }
 
-func handleDnsCertCreate(c *gin.Context, app *core.ServerApp) {
+func handleDnsCertCreate(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -1183,7 +1184,7 @@ func handleDnsCertCreate(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"id": id, "message": "证书申请单已创建，点击「申请」开始签发"})
 }
 
-func handleDnsCertDelete(c *gin.Context, app *core.ServerApp) {
+func handleDnsCertDelete(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -1207,7 +1208,7 @@ func handleDnsCertDelete(c *gin.Context, app *core.ServerApp) {
 
 // handleDnsCertApply triggers the ACME DNS-01 challenge for a cert order.
 // Currently returns guidance for manual DNS-01 challenge via the configured DNS account.
-func handleDnsCertApply(c *gin.Context, app *core.ServerApp) {
+func handleDnsCertApply(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -1241,7 +1242,7 @@ func handleDnsCertApply(c *gin.Context, app *core.ServerApp) {
 	})
 }
 
-func handleDnsCertUpdateBaota(c *gin.Context, app *core.ServerApp) {
+func handleDnsCertUpdateBaota(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}
@@ -1278,7 +1279,7 @@ func handleDnsCertUpdateBaota(c *gin.Context, app *core.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"message": "宝塔关联设置已保存"})
 }
 
-func handleDnsCertPushBaota(c *gin.Context, app *core.ServerApp) {
+func handleDnsCertPushBaota(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
 	}

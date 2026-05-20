@@ -2,16 +2,16 @@ package controller
 
 import (
 	appcentersvc "kube-bt-sync/api/appcenter/service"
-	core "kube-bt-sync/internal"
+	"kube-bt-sync/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Controller struct {
-	app *core.ServerApp
+	app *appctx.ServerApp
 }
 
-func New(app *core.ServerApp) *Controller {
+func New(app *appctx.ServerApp) *Controller {
 	return &Controller{app: app}
 }
 
