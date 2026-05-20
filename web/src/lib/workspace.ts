@@ -4,6 +4,8 @@ export const WORKSPACE_STORAGE_KEY = "kube-bt-sidebar-workspace";
 export type WorkspaceId =
   | "hub"
   | "kubernetes"
+  | "compute"
+  | "network"
   | "vcenter"
   | "baota"
   | "appcenter"
@@ -17,6 +19,8 @@ export function workspaceFromPathname(pathname: string): WorkspaceId {
   if (pathname.startsWith("/account") || pathname === "/settings") return "hub";
   if (pathname.startsWith("/docs")) return "docs";
   if (pathname.startsWith("/cluster/baota")) return "baota";
+  if (pathname.startsWith("/cluster/compute")) return "compute";
+  if (pathname.startsWith("/cluster/network")) return "network";
   if (pathname.startsWith("/cluster/apps")) return "appcenter";
   if (pathname.startsWith("/cluster/bastion")) return "bastion";
   if (pathname.startsWith("/cluster/ai-inspect")) return "aiinspect";

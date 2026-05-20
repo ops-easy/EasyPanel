@@ -34,6 +34,7 @@ const AppCenterOpenClawBootstrap = lazy(
 const AppCenterOpenClawDetail = lazy(
   () => import("@/features/app-center/openclaw/pages/AppCenterOpenClawDetail")
 );
+const AppCenterHermes = lazy(() => import("@/features/app-center/hermes/pages/AppCenterHermes"));
 
 export function appCenterRoutes(): ReactNode {
   return (
@@ -133,6 +134,14 @@ export function appCenterRoutes(): ReactNode {
         element={
           <RouteSuspense>
             <AppCenterOpenClaw />
+          </RouteSuspense>
+        }
+      />
+      <Route
+        path="hermes"
+        element={
+          <RouteSuspense>
+            <AppCenterHermes />
           </RouteSuspense>
         }
       />

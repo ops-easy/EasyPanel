@@ -13,7 +13,6 @@ import VCenterGpuDashboard from "@/features/vcenter/pages/VCenterGpuDashboard";
 import VCenterHostDetail from "@/features/vcenter/pages/VCenterHostDetail";
 import VCenterHosts from "@/features/vcenter/pages/VCenterHosts";
 import VCenterHubDashboard from "@/features/vcenter/pages/VCenterHubDashboard";
-import VCenterIkuaiRouterPage from "@/features/vcenter/pages/VCenterIkuaiRouterPage";
 import VCenterList from "@/features/vcenter/pages/VCenterList";
 import VCenterSettings from "@/features/vcenter/pages/VCenterSettings";
 
@@ -80,7 +79,7 @@ export function vcenterRoutes(): ReactNode {
           </ViewerRedirect>
         }
       />
-      <Route path="vcenter/router" element={<VCenterIkuaiRouterPage />} />
+      <Route path="vcenter/router" element={<Navigate to="/cluster/network/ikuai" replace />} />
       <Route path="vcenter" element={<VCenterList />} />
       <Route
         path="vcenter/:moref"

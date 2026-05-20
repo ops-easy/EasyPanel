@@ -142,6 +142,11 @@ const HomeHub: React.FC = () => {
     queryFn: ({ signal }) =>
       apiGetJson<{ instances: unknown[] }>("/api/app-center/openclaw/instances", { signal }),
   });
+  const hermesQ = useQuery({
+    queryKey: ["app-center-hermes-instances-hub"],
+    queryFn: ({ signal }) =>
+      apiGetJson<{ instances: unknown[] }>("/api/app-center/hermes/instances", { signal }),
+  });
   const openSearchQ = useQuery({
     queryKey: ["app-center-opensearch-instances-hub"],
     queryFn: ({ signal }) =>
@@ -245,11 +250,12 @@ const HomeHub: React.FC = () => {
   const baotaOk = Boolean(cfg?.hasBaotaApiKey && cfg?.baotaUrl);
   const baotaReachable = check?.baota.status === "success";
 
-  const { nRedis, nKafka, nCloudVm, nOpenClaw, nOpenSearch, nDomains, appCenterTotal } = useMemo(() => {
+  const { nRedis, nKafka, nCloudVm, nOpenClaw, nHermes, nOpenSearch, nDomains, appCenterTotal } = useMemo(() => {
     const nr = redisQ.data?.instances?.length ?? 0;
     const nk = kafkaQ.data?.instances?.length ?? 0;
     const nc = cloudVmQ.data?.instances?.length ?? 0;
     const no = openClawQ.data?.instances?.length ?? 0;
+    const nh = hermesQ.data?.instances?.length ?? 0;
     const nos = openSearchQ.data?.instances?.length ?? 0;
     const nd = dnsDomainsQ.data?.domains?.length ?? 0;
     return {
@@ -257,15 +263,17 @@ const HomeHub: React.FC = () => {
       nKafka: nk,
       nCloudVm: nc,
       nOpenClaw: no,
+      nHermes: nh,
       nOpenSearch: nos,
       nDomains: nd,
-      appCenterTotal: nr + nk + nc + no + nos,
+      appCenterTotal: nr + nk + nc + no + nh + nos,
     };
   }, [
     redisQ.data?.instances,
     kafkaQ.data?.instances,
     cloudVmQ.data?.instances,
     openClawQ.data?.instances,
+    hermesQ.data?.instances,
     openSearchQ.data?.instances,
     dnsDomainsQ.data?.domains,
   ]);
@@ -371,10 +379,10 @@ const HomeHub: React.FC = () => {
           </Link>
         )}
 
-        {/* vCenter */}
+        {/* 虚拟化与主机 */}
         {showVc && (
           <Link
-            to="/cluster/vcenter/dashboard"
+            to="/cluster/compute"
             className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-violet-200 hover:shadow-md"
           >
             <div className="flex items-center justify-between">
@@ -383,8 +391,8 @@ const HomeHub: React.FC = () => {
               </div>
               <StatusBadge ok={vcOk} loading={cfgLoading} />
             </div>
-            <h2 className="mt-4 text-base font-semibold text-gray-900">vCenter</h2>
-            <p className="mt-0.5 text-xs text-gray-400">虚拟机、宿主机与控制台</p>
+            <h2 className="mt-4 text-base font-semibold text-gray-900">虚拟化与主机</h2>
+            <p className="mt-0.5 text-xs text-gray-400">vCenter、PVE、公有云与堡垒机</p>
             {vcOk && (
               <>
                 <div className="mt-4 flex gap-5 border-t border-gray-100 pt-4">
@@ -477,7 +485,7 @@ const HomeHub: React.FC = () => {
               </span>
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">应用中心</h2>
-            <p className="mt-0.5 text-xs text-gray-400">Redis、Kafka、云主机、OpenClaw、OpenSearch、DNS</p>
+            <p className="mt-0.5 text-xs text-gray-400">Redis、Kafka、云主机、OpenClaw、Hermes、OpenSearch、DNS</p>
             <div className="mt-4 grid grid-cols-3 gap-3 border-t border-gray-100 pt-4">
               <div className="flex items-center gap-1.5">
                 <Database size={13} className="shrink-0 text-slate-400" />
@@ -505,6 +513,13 @@ const HomeHub: React.FC = () => {
                 <div>
                   <p className="text-[10px] text-gray-400">OpenClaw</p>
                   <p className="text-sm font-semibold tabular-nums text-gray-900">{nOpenClaw}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Sparkles size={13} className="shrink-0 text-fuchsia-400" />
+                <div>
+                  <p className="text-[10px] text-gray-400">Hermes</p>
+                  <p className="text-sm font-semibold tabular-nums text-gray-900">{nHermes}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5">

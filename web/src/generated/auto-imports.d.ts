@@ -136,10 +136,14 @@ declare global {
   const PencilLine: typeof import('lucide-react').PencilLine
   const PieChart: typeof import('lucide-react').PieChart
   const Play: typeof import('lucide-react').Play
+  const PlugZap: typeof import('lucide-react').PlugZap
   const Plus: typeof import('lucide-react').Plus
+  const Power: typeof import('lucide-react').Power
   const Radar: typeof import('lucide-react').Radar
   const Radio: typeof import('lucide-react').Radio
+  const RadioTower: typeof import('lucide-react').RadioTower
   const RefreshCw: typeof import('lucide-react').RefreshCw
+  const Rocket: typeof import('lucide-react').Rocket
   const RotateCcw: typeof import('lucide-react').RotateCcw
   const Route: typeof import('lucide-react').Route
   const Router: typeof import('lucide-react').Router
@@ -182,6 +186,7 @@ declare global {
   const Users: typeof import('lucide-react').Users
   const View: typeof import('lucide-react').View
   const Webhook: typeof import('lucide-react').Webhook
+  const Wifi: typeof import('lucide-react').Wifi
   const WifiOff: typeof import('lucide-react').WifiOff
   const Wrench: typeof import('lucide-react').Wrench
   const X: typeof import('lucide-react').X

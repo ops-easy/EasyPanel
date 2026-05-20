@@ -52,6 +52,9 @@ function apiMutationLabel(method: string, path: string): string {
   if (path.includes("/api/app-center/opensearch/")) return apiOpenSearchMutationLabel(method, path);
   if (path.includes("/api/app-center/kafka/")) return apiKafkaMutationLabel(method, path);
   if (path.includes("/api/app-center/redis/")) return apiRedisMutationLabel(method, path);
+  if (path.includes("/api/app-center/hermes/")) return "应用中心 Hermes 操作";
+  if (path.includes("/api/pve/")) return "PVE 纳管操作";
+  if (path.includes("/api/network/")) return "网络设备操作";
   if (path.includes("/api/vcenter/") && method === "PUT") return "更新 vCenter 相关配置或虚拟机";
   if (path.includes("/api/vcenter/") && method === "POST") return "vCenter 操作（电源/控制台等）";
   if (path.includes("/sftp/upload")) return "云主机 SFTP 上传";

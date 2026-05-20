@@ -9,7 +9,9 @@ import (
 	"kube-bt-sync/router/docs"
 	"kube-bt-sync/router/harbor"
 	"kube-bt-sync/router/k8s"
+	"kube-bt-sync/router/network"
 	"kube-bt-sync/router/ops"
+	"kube-bt-sync/router/pve"
 	"kube-bt-sync/router/settings"
 	"kube-bt-sync/router/system"
 	"kube-bt-sync/router/tool"
@@ -29,6 +31,8 @@ func RegisterRoutes(r *gin.Engine, app *appctx.ServerApp) {
 	baota.RegisterRoutes(api, app)
 	docs.RegisterRoutes(r, api, app)
 	vcenter.RegisterRoutes(api, app)
+	pve.RegisterRoutes(api, app)
+	network.RegisterRoutes(api, app)
 	k8s.RegisterRoutes(api, app)
 	ops.RegisterRoutes(r, api, app)
 	system.RegisterRoutes(r, api, app)

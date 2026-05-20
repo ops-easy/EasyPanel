@@ -12,6 +12,7 @@ import {
   Layers,
   LayoutDashboard,
   Search,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { apiGetJson } from "@/lib/api";
@@ -55,6 +56,15 @@ export default function AppCenterDashboard() {
       , { signal }),
   });
 
+  const hermesQ = useQuery({
+    queryKey: ["app-center-hermes-instances"],
+    queryFn: ({ signal }) =>
+      apiGetJson<{ instances: { id: string; displayName?: string; namespace?: string; deploymentName?: string }[] }>(
+        "/api/app-center/hermes/instances",
+        { signal }
+      ),
+  });
+
   const kafkaQ = useQuery({
     queryKey: ["app-center-kafka-instances-dash"],
     queryFn: ({ signal }) => apiGetJson<{ instances: unknown[] }>("/api/app-center/kafka/instances", { signal }),
@@ -81,6 +91,7 @@ export default function AppCenterDashboard() {
   const nInst = listQ.data?.instances?.length ?? 0;
   const nCloudVm = cloudVmQ.data?.instances?.length ?? 0;
   const nOpenClaw = openClawQ.data?.instances?.length ?? 0;
+  const nHermes = hermesQ.data?.instances?.length ?? 0;
   const nKafka = kafkaQ.data?.instances?.length ?? 0;
   const nOpenSearch = openSearchQ.data?.instances?.length ?? 0;
   const nDnsAccounts = dnsAccountsQ.data?.accounts?.length ?? 0;
@@ -100,7 +111,7 @@ export default function AppCenterDashboard() {
               Dashboard
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
-              纳管 Redis、Kafka、云主机、OpenClaw 等实例数量与全局依赖（MySQL、加密、Redis 双写）；点下方卡片进入各子模块。
+              纳管 Redis、Kafka、云主机、OpenClaw、Hermes 等实例数量与全局依赖（MySQL、加密、Redis 双写）；点下方卡片进入各子模块。
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -141,6 +152,16 @@ export default function AppCenterDashboard() {
             >
               <Link to="/cluster/apps/openclaw">
                 OpenClaw
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="secondary"
+              className="h-10 shrink-0 gap-1.5 border-fuchsia-200/80 bg-fuchsia-50/80 shadow-sm hover:bg-fuchsia-100/80"
+            >
+              <Link to="/cluster/apps/hermes">
+                Hermes
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -190,6 +211,24 @@ export default function AppCenterDashboard() {
             <div>
               <p className="text-xs font-medium text-slate-500">Kafka 实例</p>
               <p className="text-2xl font-semibold tabular-nums text-slate-900">{nKafka}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-fuchsia-100 bg-white p-4 shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-slate-500">Hermes Agent</p>
+              <p className="text-2xl font-semibold tabular-nums text-slate-900">{nHermes}</p>
+              {hermesQ.data?.instances && hermesQ.data.instances.length > 0 ? (
+                <p className="mt-1 truncate text-[11px] text-slate-500" title={hermesQ.data.instances.map((i) => i.displayName || i.deploymentName).join(" · ")}>
+                  {hermesQ.data.instances
+                    .slice(0, 2)
+                    .map((i) => i.displayName || i.deploymentName || i.id)
+                    .join(" · ")}
+                  {hermesQ.data.instances.length > 2 ? ` 等 ${hermesQ.data.instances.length} 套` : ""}
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">

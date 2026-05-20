@@ -2,6 +2,8 @@ import { lazy, type ReactNode } from "react";
 import { Navigate, Outlet, Route } from "react-router-dom";
 import { RouteSuspense } from "@/app/route-fallback";
 import { appCenterRoutes } from "@/app/routes/app-center-routes";
+import { computeRoutes } from "@/app/routes/compute-routes";
+import { networkRoutes } from "@/app/routes/network-routes";
 import { opsRoutes } from "@/app/routes/ops-routes";
 import { vcenterRoutes } from "@/app/routes/vcenter-routes";
 import ViewerRedirect from "@/app/guards/ViewerRedirect";
@@ -227,6 +229,8 @@ export function clusterRoutes(): ReactNode {
         </Route>
         <Route path="settings" element={<ClusterK8sSettings />} />
         <Route path="tools/ip-scan" element={<Navigate to="/cluster/vcenter/tools/ip-scan" replace />} />
+        {computeRoutes()}
+        {networkRoutes()}
         {appCenterRoutes()}
         {opsRoutes()}
         {vcenterRoutes()}

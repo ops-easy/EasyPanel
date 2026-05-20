@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LogOut,
   Monitor,
+  Network,
   Server,
   Sparkles,
   Settings,
@@ -39,6 +40,8 @@ const Header: React.FC = () => {
   const workspace = workspaceFromPathname(location.pathname);
   const isHub = workspace === "hub";
   const isK8s = workspace === "kubernetes";
+  const isCompute = workspace === "compute";
+  const isNetwork = workspace === "network";
   const isVcenter = workspace === "vcenter";
   const isBaota = workspace === "baota";
   const isAppcenter = workspace === "appcenter";
@@ -52,7 +55,8 @@ const Header: React.FC = () => {
   const navRole = status?.role;
   const isViewer = cfg?.dashboardRole === "viewer" || cfg?.viewer === true;
   const headerShowK8s = menuItemVisible(perm, "kubernetes", navRole, moduleVisible(perm, "k8s"));
-  const headerShowVc = menuItemVisible(perm, "vcenter", navRole, moduleVisible(perm, "vcenter"));
+  const headerShowCompute = menuItemVisible(perm, "compute", navRole, moduleVisible(perm, "vcenter"));
+  const headerShowNetwork = menuItemVisible(perm, "network", navRole, moduleVisible(perm, "vcenter"));
   const headerShowBaota = menuItemVisible(perm, "baota", navRole, moduleVisible(perm, "baota"));
   const headerShowApp = menuItemVisible(perm, "appcenter", navRole, moduleVisible(perm, "appcenter"));
   const headerShowBastion = menuItemVisible(
@@ -126,7 +130,7 @@ const Header: React.FC = () => {
                 "border-slate-200 bg-slate-50/90 text-slate-800 hover:bg-slate-100",
                 "focus-visible:ring-2 focus-visible:ring-blue-500/30"
               )}
-              aria-label="切换工作区：Kubernetes、vCenter、宝塔、应用中心、堡垒机、AI 巡检、文档仓库"
+              aria-label="切换工作区：Kubernetes、虚拟化与主机、网络设备、宝塔、应用中心、堡垒机、AI 巡检、文档仓库"
             >
               <span
                 className={cn(
@@ -137,6 +141,10 @@ const Header: React.FC = () => {
                       ? "from-zinc-700 to-violet-800"
                       : isK8s
                         ? "from-blue-600 to-blue-700"
+                        : isCompute
+                          ? "from-violet-600 to-violet-700"
+                          : isNetwork
+                            ? "from-cyan-600 to-slate-700"
                         : isVcenter
                           ? "from-violet-600 to-violet-700"
                           : isBaota
@@ -154,6 +162,10 @@ const Header: React.FC = () => {
                   <Library size={17} strokeWidth={2.25} />
                 ) : isK8s ? (
                   <Hexagon size={18} strokeWidth={2.5} />
+                ) : isCompute ? (
+                  <Monitor size={18} strokeWidth={2.25} />
+                ) : isNetwork ? (
+                  <Network size={18} strokeWidth={2.25} />
                 ) : isVcenter ? (
                   <Monitor size={18} strokeWidth={2.25} />
                 ) : isBaota ? (
@@ -173,6 +185,10 @@ const Header: React.FC = () => {
                     ? "文档仓库"
                     : isK8s
                       ? "Kubernetes"
+                      : isCompute
+                        ? "虚拟化与主机"
+                        : isNetwork
+                          ? "网络设备"
                       : isVcenter
                         ? "vCenter"
                         : isBaota
@@ -201,17 +217,31 @@ const Header: React.FC = () => {
               </div>
             </DropdownMenuItem>
             ) : null}
-            {headerShowVc ? (
+            {headerShowCompute ? (
             <DropdownMenuItem
               className="cursor-pointer gap-2 py-2.5"
-              onSelect={() => navigate("/cluster/vcenter/dashboard")}
+              onSelect={() => navigate("/cluster/compute")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600">
                 <Monitor className="text-white" size={17} strokeWidth={2.25} />
               </div>
               <div className="flex flex-col gap-0.5">
-                <span className="font-medium">vCenter</span>
-                <span className="text-xs text-muted-foreground">虚拟机与控制台</span>
+                <span className="font-medium">虚拟化与主机</span>
+                <span className="text-xs text-muted-foreground">vCenter · PVE · 云主机</span>
+              </div>
+            </DropdownMenuItem>
+            ) : null}
+            {headerShowNetwork ? (
+            <DropdownMenuItem
+              className="cursor-pointer gap-2 py-2.5"
+              onSelect={() => navigate("/cluster/network")}
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-600">
+                <Network className="text-white" size={17} strokeWidth={2.25} />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="font-medium">网络设备</span>
+                <span className="text-xs text-muted-foreground">iKuai · OpenWrt</span>
               </div>
             </DropdownMenuItem>
             ) : null}

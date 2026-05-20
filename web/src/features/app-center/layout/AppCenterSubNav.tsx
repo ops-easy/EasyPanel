@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Bot, Database, Globe, HardDrive, LayoutDashboard, Layers, Search } from "lucide-react";
+import { Bot, Database, Globe, HardDrive, LayoutDashboard, Layers, Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -11,6 +11,7 @@ const links = [
   { to: "/cluster/apps/dns", label: "DNS 管理", icon: Globe },
   { to: "/cluster/apps/cloud-vm", label: "云主机", icon: HardDrive },
   { to: "/cluster/apps/openclaw", label: "OpenClaw", icon: Bot },
+  { to: "/cluster/apps/hermes", label: "Hermes", icon: Sparkles },
 ] as const;
 
 const AppCenterSubNav: React.FC = () => {
