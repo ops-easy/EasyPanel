@@ -1,4 +1,4 @@
-package internal
+package service
 
 import (
 	"context"
@@ -177,6 +177,34 @@ type harborConfigError struct{}
 
 func (e *harborConfigError) Error() string {
 	return "Harbor 未配置（请在运行时配置 harborBaseUrl、harborUsername、harborPassword）"
+}
+
+func HandleHarborStatus(app *ServerApp) gin.HandlerFunc {
+	return handleHarborStatus(app)
+}
+
+func HandleHarborStatistics(app *ServerApp) gin.HandlerFunc {
+	return handleHarborStatistics(app)
+}
+
+func HandleHarborProjects(app *ServerApp) gin.HandlerFunc {
+	return handleHarborProjects(app)
+}
+
+func HandleHarborRepositories(app *ServerApp) gin.HandlerFunc {
+	return handleHarborRepositories(app)
+}
+
+func HandleHarborArtifactAddition(app *ServerApp) gin.HandlerFunc {
+	return handleHarborArtifactAddition(app)
+}
+
+func HandleHarborArtifacts(app *ServerApp) gin.HandlerFunc {
+	return handleHarborArtifacts(app)
+}
+
+func HandleHarborDeleteArtifact(app *ServerApp) gin.HandlerFunc {
+	return handleHarborDeleteArtifact(app)
 }
 
 func handleHarborStatus(app *ServerApp) gin.HandlerFunc {

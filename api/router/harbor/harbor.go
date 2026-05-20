@@ -2,13 +2,13 @@ package harbor
 
 import (
 	"kube-bt-sync/api/harbor/controller"
-	core "kube-bt-sync/internal"
+	"kube-bt-sync/common/appctx"
 	"kube-bt-sync/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(api *gin.RouterGroup, app *core.ServerApp) {
+func RegisterRoutes(api *gin.RouterGroup, app *appctx.ServerApp) {
 	ctl := controller.New(app)
 	api.GET("/harbor/status", ctl.Status)
 	api.GET("/harbor/statistics", ctl.Statistics)

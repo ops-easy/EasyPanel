@@ -1,4 +1,4 @@
-package internal
+package service
 
 import (
 	"context"
@@ -10,6 +10,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+func HandleHarborIndexStatus(app *ServerApp) gin.HandlerFunc {
+	return handleHarborIndexStatus(app)
+}
+
+func HandleHarborIndexSync(app *ServerApp) gin.HandlerFunc {
+	return handleHarborIndexSync(app)
+}
+
+func HandleHarborIndexSearch(app *ServerApp) gin.HandlerFunc {
+	return handleHarborIndexSearch(app)
+}
 
 func handleHarborIndexStatus(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
