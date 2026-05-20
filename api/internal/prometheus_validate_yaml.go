@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"strings"
 
+	prometheusint "kube-bt-sync/internal/integrations/prometheus"
+
 	"github.com/gin-gonic/gin"
-	"gopkg.in/yaml.v3"
 )
 
 // handlePrometheusConfigYAMLValidate POST /api/prometheus/validate-config-yaml
@@ -23,8 +24,7 @@ func handlePrometheusConfigYAMLValidate(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"ok": true, "message": "empty"})
 		return
 	}
-	var v interface{}
-	if err := yaml.Unmarshal([]byte(s), &v); err != nil {
+	if err := prometheusint.ValidateConfigYAML(s); err != nil {
 		c.JSON(http.StatusOK, gin.H{"ok": false, "error": err.Error()})
 		return
 	}
