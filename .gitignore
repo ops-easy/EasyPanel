@@ -16,6 +16,10 @@ coverage.out
 data/
 !data/.gitkeep
 
+# 本地静态启动配置，可能包含数据库、Redis、会话密钥等敏感信息
+/api/config.yaml
+!/api/config.example.yaml
+
 # 代理/助手生成的内部计划
 docs/superpowers/
 

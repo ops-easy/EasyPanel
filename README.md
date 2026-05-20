@@ -64,9 +64,10 @@ kube-bt-sync/
 - Node.js 20+ 与 npm
 - 可选：kubectl、Helm、Docker
 
-先按本地环境修改后端配置：
+先复制示例配置，再按本地环境修改后端配置。`api/config.yaml` 可能包含数据库密码和会话密钥，默认不会提交到 Git：
 
 ```bash
+cp api/config.example.yaml api/config.yaml
 vim api/config.yaml
 ```
 
@@ -136,7 +137,7 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
 
 ## 关键配置
 
-后端配置来源为静态配置 + MySQL 动态配置 + 环境变量；不再从磁盘读取 `runtime-config.json`，也不再使用 PVC 上的 `config.override.yaml`。静态配置默认是 `api/config.yaml`，可用 `KUBEBT_CONFIG_FILE` 指定；默认示例只保留 `server`、`db`、`redis`、`startup`、`performance` 这些启动必需配置。页面保存的业务配置写入 MySQL 表 `kubebt_platform_kv`，键为 `config_override_yaml_v1`。加载优先级为：程序默认值 < 静态配置 < MySQL 动态配置 < 环境变量。MySQL 连接属于启动依赖，必须放在静态 `config.yaml` 或环境变量中。常用变量如下：
+后端配置来源为静态配置 + MySQL 动态配置 + 环境变量；不再从磁盘读取 `runtime-config.json`，也不再使用 PVC 上的 `config.override.yaml`。静态配置默认是本地 `api/config.yaml`，可从 `api/config.example.yaml` 复制生成，也可用 `KUBEBT_CONFIG_FILE` 指定其它路径；默认示例只保留 `server`、`db`、`redis`、`startup`、`performance` 这些启动必需配置。页面保存的业务配置写入 MySQL 表 `kubebt_platform_kv`，键为 `config_override_yaml_v1`。加载优先级为：程序默认值 < 静态配置 < MySQL 动态配置 < 环境变量。MySQL 连接属于启动依赖，必须放在静态 `config.yaml` 或环境变量中。常用变量如下：
 
 | 变量 | 说明 |
 | --- | --- |
