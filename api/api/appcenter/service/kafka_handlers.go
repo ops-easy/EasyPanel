@@ -1,4 +1,4 @@
-package kafka
+package service
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 
 var errKafkaNoBootstrap = errors.New("实例未配置 bootstrapBrokers")
 
-func RegisterRoutes(api *gin.RouterGroup, app *ServerApp) {
+func RegisterKafkaRoutes(api *gin.RouterGroup, app *ServerApp) {
 	g := api.Group("/app-center/kafka")
 	g.GET("/status", func(c *gin.Context) { handleKafkaStatus(c, app) })
 	g.GET("/instances", func(c *gin.Context) { handleKafkaInstanceList(c, app) })
