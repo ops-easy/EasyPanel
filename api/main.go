@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	appcentersvc "kube-bt-sync/api/appcenter/service"
+	k8ssvc "kube-bt-sync/api/k8s/service"
 	vcentersvc "kube-bt-sync/api/vcenter/service"
 	"kube-bt-sync/internal" // 引用模块
 	"kube-bt-sync/internal/transport/httpapi"
@@ -55,18 +56,18 @@ func main() {
 	if bg {
 		internal.StartHostEgressWatcher(app)
 		vcentersvc.StartPrometheusMetricsRefresher(app)
-		internal.StartK8sKubeSphereChartsCacheWatcher(app)
+		k8ssvc.StartKubeSphereChartsCacheWatcher(app)
 		go vcentersvc.BastionNativeSSHReconcileLoop(ctx, func() *vcentersvc.ServerApp { return app })
 	}
 	vcentersvc.StartSessionKeepalive(func() *vcentersvc.ServerApp { return app })
 	internal.InitLoginSecurityState(app)
 	if bg {
 		internal.StartOpsCenterBackground(app)
-		internal.StartK8sRestartCorrelationWorker(app)
+		k8ssvc.StartRestartCorrelationWorker(app)
 		appcentersvc.StartOpenClawGatewayHealthWatcher(app)
 		internal.StartHarborImageIndexWorker(app)
 		vcentersvc.StartEventWorker(app)
-		internal.StartK8sControlPlaneAdvisoryWorker(ctx, app)
+		k8ssvc.StartControlPlaneAdvisoryWorker(ctx, app)
 	}
 	httpapi.StartServer(ctx, app)
 }

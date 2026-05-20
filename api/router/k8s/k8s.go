@@ -2,11 +2,11 @@ package k8s
 
 import (
 	"kube-bt-sync/api/k8s/controller"
-	core "kube-bt-sync/internal"
+	"kube-bt-sync/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(api *gin.RouterGroup, app *core.ServerApp) {
+func RegisterRoutes(api *gin.RouterGroup, app *appctx.ServerApp) {
 	controller.New(app).RegisterRoutes(api)
 }
