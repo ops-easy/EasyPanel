@@ -634,7 +634,6 @@ func handleVCenterVMNetPerf(c *gin.Context, app *ServerApp) {
 	c.JSON(http.StatusOK, out)
 }
 
-
 func quickStatsJSON(qs types.VirtualMachineQuickStats) gin.H {
 	return gin.H{
 		"cpuUsageMHz":        qs.OverallCpuUsage,
@@ -729,12 +728,17 @@ func hostRowFromMO(m *mo.HostSystem, ref string) gin.H {
 		esxi = strings.TrimSpace(m.Summary.Config.Product.FullName)
 	}
 	row := gin.H{
-		"moref":              ref,
-		"name":               name,
-		"connectionState":    string(m.Runtime.ConnectionState),
-		"overallStatus":      string(m.Summary.OverallStatus),
-		"cpuCores":           numCores,
-		"cpuMhzPerCore":      func() int32 { if hw != nil { return hw.CpuMhz }; return 0 }(),
+		"moref":           ref,
+		"name":            name,
+		"connectionState": string(m.Runtime.ConnectionState),
+		"overallStatus":   string(m.Summary.OverallStatus),
+		"cpuCores":        numCores,
+		"cpuMhzPerCore": func() int32 {
+			if hw != nil {
+				return hw.CpuMhz
+			}
+			return 0
+		}(),
 		"cpuUsageMHz":        qs.OverallCpuUsage,
 		"cpuCapacityMHz":     cpuMHzTotal,
 		"cpuUsagePercent":    roundPct1(cpuPct),
@@ -1009,6 +1013,10 @@ func registerVCenterRoutes(api *gin.RouterGroup, app *ServerApp) {
 	api.POST("/vcenter/vms/:moref/disk/expand", func(c *gin.Context) { handleVCenterVMDiskExpand(c, app) })
 	api.GET("/vcenter/vms/:moref", func(c *gin.Context) { handleVCenterVMDetail(c, app) })
 	api.GET("/vcenter/events", func(c *gin.Context) { handleGetVCenterVMEvents(c, app) })
+}
+
+func RegisterVCenterRoutes(api *gin.RouterGroup, app *ServerApp) {
+	registerVCenterRoutes(api, app)
 }
 
 // handleGetVCenterVMEvents 返回后台采集的 VM 电源与配置变更事件列表。

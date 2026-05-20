@@ -224,7 +224,6 @@ func RegisterLegacyRoutes(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 		api.POST("/prometheus/validate-config-yaml", func(c *gin.Context) { handlePrometheusConfigYAMLValidate(c) })
 		api.GET("/prometheus/vcenter-metrics", func(c *gin.Context) { handleVCenterPrometheusMetrics(c, app) })
 
-		registerVCenterRoutes(api, app)
 		registerCloudHostRoutes(api, app)
 		registerAdminUserRoutes(api, app)
 		registerAccountProfileRoutes(api, app)
