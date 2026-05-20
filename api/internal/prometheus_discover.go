@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	prometheusint "kube-bt-sync/internal/integrations/prometheus"
+	prometheusint "kube-bt-sync/api/k8s/provider"
 
 	"github.com/gin-gonic/gin"
 	corev1 "k8s.io/api/core/v1"

@@ -1,4 +1,4 @@
-package idrac
+package provider
 
 import (
 	"crypto/tls"

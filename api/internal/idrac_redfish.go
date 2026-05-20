@@ -1,6 +1,6 @@
 package internal
 
-import idracint "kube-bt-sync/internal/integrations/idrac"
+import idracint "kube-bt-sync/api/ops/provider"
 
 // IdracHostConfig iDRAC Redfish 连接参数（BaseURL 为 https:// 根地址）。
 type IdracHostConfig = idracint.IdracHostConfig

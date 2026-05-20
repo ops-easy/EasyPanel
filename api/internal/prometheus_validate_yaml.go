@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	prometheusint "kube-bt-sync/internal/integrations/prometheus"
+	prometheusint "kube-bt-sync/api/k8s/provider"
 
 	"github.com/gin-gonic/gin"
 )
