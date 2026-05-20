@@ -146,6 +146,10 @@ func configureGinTrustedProxies(r *gin.Engine, cfg Config) {
 	}
 }
 
+func ConfigureGinTrustedProxies(r *gin.Engine, cfg Config) {
+	configureGinTrustedProxies(r, cfg)
+}
+
 // shouldPersistAPIAudit 仅将「写操作」写入 audit.jsonl，避免把大量 GET 查询刷满文件。
 // 登录/登出/登录失败仍由 auth 等处理器单独 AppendAuditRecord。
 func shouldPersistAPIAudit(c *gin.Context) bool {
@@ -217,6 +221,10 @@ func auditAccessLogMiddleware(app *ServerApp) gin.HandlerFunc {
 			go AppendAuditRecord(app, rec)
 		}
 	}
+}
+
+func AuditAccessLogMiddleware(app *ServerApp) gin.HandlerFunc {
+	return auditAccessLogMiddleware(app)
 }
 
 func auditSecurityProbeIfNeeded(c *gin.Context, app *ServerApp) {

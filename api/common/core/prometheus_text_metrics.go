@@ -32,3 +32,7 @@ func handlePrometheusMetrics(w http.ResponseWriter, _ *http.Request) {
 	})
 	_, _ = w.Write([]byte(body))
 }
+
+func ServePrometheusMetrics(w http.ResponseWriter, r *http.Request) {
+	handlePrometheusMetrics(w, r)
+}

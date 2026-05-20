@@ -163,3 +163,7 @@ func apiResponseCacheMiddleware(app *ServerApp) gin.HandlerFunc {
 		_ = rdb.Set(stashCtx, key, buf.Bytes(), ttl)
 	}
 }
+
+func APIResponseCacheMiddleware(app *ServerApp) gin.HandlerFunc {
+	return apiResponseCacheMiddleware(app)
+}

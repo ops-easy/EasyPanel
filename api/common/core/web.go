@@ -41,12 +41,12 @@ type DeleteIngressRequest struct {
 // NewRouter 构造 Dashboard HTTP 路由，供服务启动和路由护栏测试复用。
 func NewRouter(app *ServerApp) *gin.Engine {
 	r := gin.New()
-	RegisterLegacyRoutes(r, app)
+	attachLegacyRoutesForCoreRouter(r, app)
 	return r
 }
 
-// RegisterLegacyRoutes 注册迁移期仍留在 package core 的 Dashboard 路由，并返回带鉴权中间件的 /api 路由组。
-func RegisterLegacyRoutes(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
+// attachLegacyRoutesForCoreRouter keeps the old core-local router available for tests.
+func attachLegacyRoutesForCoreRouter(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 	r.Use(gin.Recovery())
 	cfg := app.Cfg()
 	if cfg.PerformanceMode {
