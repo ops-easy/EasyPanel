@@ -1,13 +1,13 @@
 package service
 
-import core "kube-bt-sync/internal"
+import "kube-bt-sync/common/legacy"
 
-type TargetEntry = core.BaotaTargetEntry
+type TargetEntry = legacy.BaotaTargetEntry
 
 func EffectiveTargets(cfg Config) []TargetEntry {
-	return core.EffectiveBaotaTargets(cfg)
+	return legacy.EffectiveBaotaTargets(cfg)
 }
 
 func DeploySiteSSLPEM(cfg Config, siteName, certPEM, keyPEM string) error {
-	return core.DeployBaotaSiteSSLPEM(cfg, siteName, certPEM, keyPEM)
+	return legacy.DeployBaotaSiteSSLPEM(cfg, siteName, certPEM, keyPEM)
 }
