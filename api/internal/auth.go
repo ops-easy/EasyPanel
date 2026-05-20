@@ -2,11 +2,11 @@ package internal
 
 import (
 	"context"
-	"database/sql"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
+	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -17,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"kube-bt-sync/internal/transport/authz"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -45,6 +47,14 @@ const (
 	DashboardRoleAdmin  = "admin"
 	DashboardRoleViewer = "viewer"
 )
+
+func DashboardUsernameFromGin(c *gin.Context) string {
+	return authz.DashboardUser(c)
+}
+
+func DashboardRoleFromGin(c *gin.Context) string {
+	return authz.DashboardRole(c)
+}
 
 // PrepareDashboardAuth 在启用登录时解析或生成会话 HMAC 密钥。
 func PrepareDashboardAuth(cfg Config) Config {
@@ -239,8 +249,8 @@ func DashboardAuthMiddleware(app *ServerApp) gin.HandlerFunc {
 			if u == "" {
 				u = "admin"
 			}
-			c.Set("dashboardUser", u)
-			c.Set("dashboardRole", DashboardRoleAdmin)
+			c.Set(authz.GinKeyDashboardUser, u)
+			c.Set(authz.GinKeyDashboardRole, DashboardRoleAdmin)
 			setDashboardPermissionsGin(c, defaultEffectiveAdmin())
 			c.Next()
 			return
@@ -268,8 +278,8 @@ func DashboardAuthMiddleware(app *ServerApp) gin.HandlerFunc {
 				return
 			}
 		}
-		c.Set("dashboardUser", u)
-		c.Set("dashboardRole", role)
+		c.Set(authz.GinKeyDashboardUser, u)
+		c.Set(authz.GinKeyDashboardRole, role)
 		pctx, pcancel := context.WithTimeout(context.Background(), dashboardAuthMySQLTimeout())
 		eff := LoadEffectiveDashboardPermissionsCached(pctx, app, app.MySQLDB(), u, role)
 		pcancel()
@@ -363,10 +373,10 @@ func mysqlStatusFields(app *ServerApp, cfg Config) map[string]interface{} {
 }
 
 type loginBody struct {
-	Username        string `json:"username"`
-	Password        string `json:"password"`
-	CaptchaId       string `json:"captchaId"`
-	CaptchaAnswer   string `json:"captchaAnswer"`
+	Username      string `json:"username"`
+	Password      string `json:"password"`
+	CaptchaId     string `json:"captchaId"`
+	CaptchaAnswer string `json:"captchaAnswer"`
 }
 
 func finalizePasswordLoginSession(c *gin.Context, app *ServerApp, cfg Config, username, role, ip, auditDetail string) {
@@ -414,7 +424,7 @@ func respondAfterPasswordOk(c *gin.Context, app *ServerApp, cfg Config, uname, r
 		ok, err := DashboardUserClientIPAllowed(db, ctx, uname, ip)
 		cancel()
 		if err != nil {
-			RespondAPIError500(c, "校验登录 IP 策略失败: " + err.Error())
+			RespondAPIError500(c, "校验登录 IP 策略失败: "+err.Error())
 			return
 		}
 		if !ok {

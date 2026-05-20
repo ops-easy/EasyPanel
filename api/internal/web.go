@@ -15,6 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"kube-bt-sync/internal/transport/authz"
+
 	"github.com/gin-gonic/gin"
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,9 +38,15 @@ type DeleteIngressRequest struct {
 	DeleteBaota bool   `json:"deleteBaota"`
 }
 
-// StartWebServer 阻塞至 ctx 取消（SIGINT/SIGTERM），随后优雅关闭 HTTP 服务。
-func StartWebServer(ctx context.Context, app *ServerApp) {
+// NewRouter 构造 Dashboard HTTP 路由，供服务启动和路由护栏测试复用。
+func NewRouter(app *ServerApp) *gin.Engine {
 	r := gin.New()
+	RegisterLegacyRoutes(r, app)
+	return r
+}
+
+// RegisterLegacyRoutes 注册迁移期仍留在 package internal 的 Dashboard 路由，并返回带鉴权中间件的 /api 路由组。
+func RegisterLegacyRoutes(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 	r.Use(gin.Recovery())
 	cfg := app.Cfg()
 	if cfg.PerformanceMode {
@@ -236,9 +244,6 @@ func StartWebServer(ctx context.Context, app *ServerApp) {
 
 		registerVCenterRoutes(api, app)
 		registerCloudHostRoutes(api, app)
-		registerToolboxRoutes(api, app)
-		registerAppCenterRoutes(api, app)
-		registerAppCloudVMRoutes(api, app)
 		registerAdminUserRoutes(api, app)
 		registerAccountProfileRoutes(api, app)
 		registerOpsCenterRoutes(api, app)
@@ -251,39 +256,7 @@ func StartWebServer(ctx context.Context, app *ServerApp) {
 	if app.Cfg().EnableBackgroundJobs {
 		StartAuditRetentionPruner(app)
 	}
-
-	addr := strings.TrimSpace(cfg.DashboardListenAddr)
-	if addr == "" {
-		addr = ":8080"
-	}
-	srv := &http.Server{
-		Addr:              addr,
-		Handler:           r,
-		ReadHeaderTimeout: 10 * time.Second,
-		ReadTimeout:       2 * time.Minute,
-		WriteTimeout:      5 * time.Minute,
-	}
-
-	log.Printf("kube-bt-sync Dashboard 已启动，监听 %s", addr)
-	errCh := make(chan error, 1)
-	go func() {
-		err := srv.ListenAndServe()
-		errCh <- err
-	}()
-	select {
-	case <-ctx.Done():
-		shCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		if err := srv.Shutdown(shCtx); err != nil {
-			log.Printf("Dashboard: Shutdown: %v", err)
-		} else {
-			log.Println("Dashboard: HTTP 服务已优雅关闭")
-		}
-	case err := <-errCh:
-		if err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Web 服务异常退出: %v", err)
-		}
-	}
+	return api
 }
 
 // resolveFrontendDistDir 查找 Vite 构建产物：环境变量 DASHBOARD_STATIC_DIR、当前目录、可执行文件旁 web/dist。
@@ -537,11 +510,7 @@ func handleGetServices(c *gin.Context, k8sClient *kubernetes.Clientset) {
 }
 
 func getDashboardRoleFromGin(c *gin.Context) string {
-	if v, ok := c.Get("dashboardRole"); ok {
-		s, _ := v.(string)
-		return s
-	}
-	return ""
+	return authz.DashboardRole(c)
 }
 
 func handleGetConfig(c *gin.Context, app *ServerApp) {

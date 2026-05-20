@@ -25,6 +25,8 @@ var execUpgrader = websocket.Upgrader{
 	},
 }
 
+var ExecUpgrader = execUpgrader
+
 type terminalSizeQueue struct {
 	ch chan *remotecommand.TerminalSize
 }

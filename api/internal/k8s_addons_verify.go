@@ -77,6 +77,10 @@ func deploymentRolloutLooksReady(dep *appsv1.Deployment) bool {
 	return true
 }
 
+func DeploymentRolloutLooksReady(dep *appsv1.Deployment) bool {
+	return deploymentRolloutLooksReady(dep)
+}
+
 // deploymentRolloutLooksReadyRelaxed 在 Ready/Available 已达期望副本时视为就绪，容忍 ObservedGeneration、UpdatedReplicas 的短暂滞后（长名 Deployment 滚动后 API 常见）。
 func deploymentRolloutLooksReadyRelaxed(dep *appsv1.Deployment) bool {
 	if dep == nil {

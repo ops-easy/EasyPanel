@@ -58,14 +58,14 @@ type EffectiveDashboardPermissions struct {
 	AppCenterRedis string
 	// AppCenterCloudVm: full | readonly | managed_only（空表示与 AppCenterRedis 相同）
 	AppCenterCloudVm string
-	MaskSensitive  bool
+	MaskSensitive    bool
 	// LegacyViewer 为 true 时保留原有 viewer 路径黑名单（与自定义 JSON 互斥）。
 	LegacyViewer bool
 	K8sPodExec   bool
 	K8sPodDelete bool
 	// AppCenterCloudVmHysteriaReveal 验证平台密码后可查看 Hysteria2 客户端敏感配置；admin 恒为 true。
 	AppCenterCloudVmHysteriaReveal bool
-	Menu         map[string]bool
+	Menu                           map[string]bool
 }
 
 const ginKeyDashboardPermissions = "dashboardPermissions"
@@ -80,16 +80,20 @@ func normalizeModuleAccess(s string) string {
 	}
 }
 
+func NormalizeModuleAccess(s string) string {
+	return normalizeModuleAccess(s)
+}
+
 func defaultEffectiveAdmin() *EffectiveDashboardPermissions {
 	return &EffectiveDashboardPermissions{
-		K8s:            ModuleAccessRW,
-		VCenter:        ModuleAccessRW,
-		Baota:          ModuleAccessRW,
-		AppCenter:        ModuleAccessRW,
-		AppCenterRedis:   AppCenterRedisScopeFull,
-		AppCenterCloudVm: AppCenterRedisScopeFull,
-		MaskSensitive:  false,
-		LegacyViewer:   false,
+		K8s:                            ModuleAccessRW,
+		VCenter:                        ModuleAccessRW,
+		Baota:                          ModuleAccessRW,
+		AppCenter:                      ModuleAccessRW,
+		AppCenterRedis:                 AppCenterRedisScopeFull,
+		AppCenterCloudVm:               AppCenterRedisScopeFull,
+		MaskSensitive:                  false,
+		LegacyViewer:                   false,
 		K8sPodExec:                     true,
 		K8sPodDelete:                   true,
 		AppCenterCloudVmHysteriaReveal: true,
@@ -99,14 +103,14 @@ func defaultEffectiveAdmin() *EffectiveDashboardPermissions {
 
 func defaultEffectiveLegacyViewer() *EffectiveDashboardPermissions {
 	return &EffectiveDashboardPermissions{
-		K8s:            ModuleAccessRO,
-		VCenter:        ModuleAccessRO,
-		Baota:          ModuleAccessRO,
-		AppCenter:        ModuleAccessRO,
-		AppCenterRedis:   AppCenterRedisScopeFull,
-		AppCenterCloudVm: AppCenterRedisScopeFull,
-		MaskSensitive:  true,
-		LegacyViewer:   true,
+		K8s:                            ModuleAccessRO,
+		VCenter:                        ModuleAccessRO,
+		Baota:                          ModuleAccessRO,
+		AppCenter:                      ModuleAccessRO,
+		AppCenterRedis:                 AppCenterRedisScopeFull,
+		AppCenterCloudVm:               AppCenterRedisScopeFull,
+		MaskSensitive:                  true,
+		LegacyViewer:                   true,
 		K8sPodExec:                     false,
 		K8sPodDelete:                   false,
 		AppCenterCloudVmHysteriaReveal: false,
@@ -148,18 +152,18 @@ func effectivePermissionsFromJSON(role string, raw string) *EffectiveDashboardPe
 		hyReveal = true
 	}
 	out := &EffectiveDashboardPermissions{
-		K8s:              k8sAcc,
-		VCenter:          normalizeModuleAccess(j.VCenter),
-		Baota:            normalizeModuleAccess(j.Baota),
-		AppCenter:        normalizeModuleAccess(j.AppCenter),
-		AppCenterRedis:   redisScope,
-		AppCenterCloudVm: cloudVmScope,
-		MaskSensitive:    mask,
-		LegacyViewer:     false,
-		K8sPodExec:       resolveK8sPodBool(j.K8sPodExec, k8sAcc, true),
-		K8sPodDelete:     resolveK8sPodBool(j.K8sPodDelete, k8sAcc, true),
+		K8s:                            k8sAcc,
+		VCenter:                        normalizeModuleAccess(j.VCenter),
+		Baota:                          normalizeModuleAccess(j.Baota),
+		AppCenter:                      normalizeModuleAccess(j.AppCenter),
+		AppCenterRedis:                 redisScope,
+		AppCenterCloudVm:               cloudVmScope,
+		MaskSensitive:                  mask,
+		LegacyViewer:                   false,
+		K8sPodExec:                     resolveK8sPodBool(j.K8sPodExec, k8sAcc, true),
+		K8sPodDelete:                   resolveK8sPodBool(j.K8sPodDelete, k8sAcc, true),
 		AppCenterCloudVmHysteriaReveal: hyReveal,
-		Menu:             j.Menu,
+		Menu:                           j.Menu,
 	}
 	if role == DashboardRoleAdmin {
 		return defaultEffectiveAdmin()
@@ -203,6 +207,10 @@ func setDashboardPermissionsGin(c *gin.Context, p *EffectiveDashboardPermissions
 	c.Set(ginKeyDashboardPermissions, p)
 }
 
+func SetDashboardPermissionsGin(c *gin.Context, p *EffectiveDashboardPermissions) {
+	setDashboardPermissionsGin(c, p)
+}
+
 func getEffectiveDashboardPermissionsFromGin(c *gin.Context) *EffectiveDashboardPermissions {
 	v, ok := c.Get(ginKeyDashboardPermissions)
 	if !ok {
@@ -213,6 +221,10 @@ func getEffectiveDashboardPermissionsFromGin(c *gin.Context) *EffectiveDashboard
 		return defaultEffectiveLegacyViewer()
 	}
 	return p
+}
+
+func EffectiveDashboardPermissionsFromGin(c *gin.Context) *EffectiveDashboardPermissions {
+	return getEffectiveDashboardPermissionsFromGin(c)
 }
 
 func httpMethodIsMutating(m string) bool {
@@ -470,6 +482,10 @@ func appRedisMaskSensitive(eff *EffectiveDashboardPermissions) bool {
 	return false
 }
 
+func AppRedisMaskSensitive(eff *EffectiveDashboardPermissions) bool {
+	return appRedisMaskSensitive(eff)
+}
+
 func appRedisPathIsSensitiveRead(path, method string) bool {
 	if method != http.MethodGet {
 		return false
@@ -525,16 +541,16 @@ func EffectivePermissionsToPublic(eff *EffectiveDashboardPermissions) gin.H {
 		eff = defaultEffectiveLegacyViewer()
 	}
 	out := gin.H{
-		"k8s":               eff.K8s,
-		"vcenter":           eff.VCenter,
-		"baota":             eff.Baota,
-		"appcenter":          eff.AppCenter,
-		"appcenterRedis":     eff.AppCenterRedis,
-		"appcenterCloudVm":   eff.AppCenterCloudVm,
-		"maskSensitiveData": eff.MaskSensitive,
-		"legacyViewer":      eff.LegacyViewer,
-		"k8sPodExec":                       eff.K8sPodExec,
-		"k8sPodDelete":                     eff.K8sPodDelete,
+		"k8s":                            eff.K8s,
+		"vcenter":                        eff.VCenter,
+		"baota":                          eff.Baota,
+		"appcenter":                      eff.AppCenter,
+		"appcenterRedis":                 eff.AppCenterRedis,
+		"appcenterCloudVm":               eff.AppCenterCloudVm,
+		"maskSensitiveData":              eff.MaskSensitive,
+		"legacyViewer":                   eff.LegacyViewer,
+		"k8sPodExec":                     eff.K8sPodExec,
+		"k8sPodDelete":                   eff.K8sPodDelete,
 		"appcenterCloudVmHysteriaReveal": eff.AppCenterCloudVmHysteriaReveal,
 	}
 	if len(eff.Menu) > 0 {

@@ -12,6 +12,10 @@ func sshEncryptionKey(cfg Config) ([]byte, error) {
 	return deriveAESKey(cfg.EncryptionKey)
 }
 
+func SSHEncryptionKey(cfg Config) ([]byte, error) {
+	return sshEncryptionKey(cfg)
+}
+
 // sshEffectiveReady 是否可建立 SSH：环境变量已配全，或存储中有该 VM 的完整凭据。
 func sshEffectiveReady(ctx context.Context, cfg Config, store SSHSettingsStore, moref string, key []byte) bool {
 	if cfg.vCenterVMSshConfigured() {

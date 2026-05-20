@@ -118,3 +118,7 @@ func verifyDashboardUserCurrentPassword(db *sql.DB, ctx context.Context, usernam
 	}
 	return nil
 }
+
+func VerifyDashboardUserCurrentPassword(db *sql.DB, ctx context.Context, username, password string) error {
+	return verifyDashboardUserCurrentPassword(db, ctx, username, password)
+}

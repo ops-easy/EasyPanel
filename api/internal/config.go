@@ -11,10 +11,10 @@ import (
 )
 
 type Config struct {
-	BaotaURL           string
-	BaotaAPIKey        string
+	BaotaURL    string
+	BaotaAPIKey string
 	// BaotaTargets 多实例（runtime baotaTargets）；nil 表示仅使用 BaotaURL/BaotaAPIKey。
-	BaotaTargets []BaotaTargetEntry `json:"-"`
+	BaotaTargets       []BaotaTargetEntry `json:"-"`
 	BaotaSkipTLSVerify bool
 	// 默认 true：公网面板下复用连接易陈旧，易导致「awaiting headers」挂满直至 Client.Timeout；设为 false 可省握手。
 	BaotaDisableHTTPKeepAlive bool

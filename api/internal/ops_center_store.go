@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	kvKeyOpsOpenClaw       = "kubebt_ops_openclaw_v1"
-	kvKeyOpsGrafanaMeta    = "kubebt_ops_grafana_meta_v1"
-	kvKeyOpsAlertCenter    = "kubebt_ops_alert_center_v1"
-	kvKeyOpsAlertState     = "kubebt_ops_alert_state_v1"
+	kvKeyOpsOpenClaw         = "kubebt_ops_openclaw_v1"
+	kvKeyOpsGrafanaMeta      = "kubebt_ops_grafana_meta_v1"
+	kvKeyOpsAlertCenter      = "kubebt_ops_alert_center_v1"
+	kvKeyOpsAlertState       = "kubebt_ops_alert_state_v1"
 	kvKeyOpsInspectReports   = "kubebt_ops_inspect_reports_v1"
 	kvKeyOpsInspectCron      = "kubebt_ops_inspect_cron_v1"
 	kvKeyOpsMonitoringPanels = "kubebt_ops_monitoring_panels_v1"
@@ -20,11 +20,11 @@ const (
 // OpenClawConfig OpenClaw / 兼容 OpenAI 接口的巡检对话端点。
 type OpenClawConfig struct {
 	Enabled       bool   `json:"enabled"`
-	BaseURL       string `json:"baseUrl"`       // 如 https://api.openai.com/v1 或自建网关
-	APIKeyEnc     string `json:"apiKeyEnc"`     // AES 加密
-	Model         string `json:"model"`         // 默认模型
-	SystemPrompt  string `json:"systemPrompt"`  // 系统提示
-	UserTemplate  string `json:"userTemplate"`  // 用户消息模板，{{report}} 占位
+	BaseURL       string `json:"baseUrl"`      // 如 https://api.openai.com/v1 或自建网关
+	APIKeyEnc     string `json:"apiKeyEnc"`    // AES 加密
+	Model         string `json:"model"`        // 默认模型
+	SystemPrompt  string `json:"systemPrompt"` // 系统提示
+	UserTemplate  string `json:"userTemplate"` // 用户消息模板，{{report}} 占位
 	TimeoutSec    int    `json:"timeoutSec"`
 	SkipTLSVerify bool   `json:"skipTlsVerify"`
 	// EndpointSource：custom=使用 BaseURL；appInstance=使用应用中心登记的 OpenClaw（填 AppInstanceID）。
@@ -34,27 +34,27 @@ type OpenClawConfig struct {
 
 // OpsAIModelExtra 模型相关扩展（温度、最大 token 等）。
 type OpsAIModelExtra struct {
-	Temperature     float64 `json:"temperature"`
-	MaxTokens       int     `json:"maxTokens"`
-	TopP            float64 `json:"topP"`
+	Temperature      float64 `json:"temperature"`
+	MaxTokens        int     `json:"maxTokens"`
+	TopP             float64 `json:"topP"`
 	FrequencyPenalty float64 `json:"frequencyPenalty"`
 }
 
 // OpsAIInspectConfig 巡检与调度。
 type OpsAIInspectConfig struct {
-	DailyReportHour   int  `json:"dailyReportHour"`   // 0-23，默认 8；调度按 Asia/Shanghai
-	DailyReportMinute int  `json:"dailyReportMinute"` // 0-59；与 DailyReportHour 同为东八区
-	InspectK8s        bool `json:"inspectK8s"`
-	InspectVCenter    bool `json:"inspectVCenter"`
-	InspectVCenterEvents bool `json:"inspectVCenterEvents"` // vCenter VM 事件与告警巡检
-	InspectPrometheus bool `json:"inspectPrometheus,omitempty"` // 兼容旧配置：读到后会同步到 k8s / vcenter 两项
-	InspectPrometheusK8s bool `json:"inspectPrometheusK8s"`
-	InspectPrometheusVCenter bool `json:"inspectPrometheusVcenter"`
-	InspectVMLog       bool `json:"inspectVmLog"`
-	InspectRedis      bool `json:"inspectRedis"`
-	InspectSSH        bool `json:"inspectSSH"`
-	InspectCloudVm    bool `json:"inspectCloudVm"`
-	ModelExtra        OpsAIModelExtra `json:"modelExtra"`
+	DailyReportHour          int             `json:"dailyReportHour"`   // 0-23，默认 8；调度按 Asia/Shanghai
+	DailyReportMinute        int             `json:"dailyReportMinute"` // 0-59；与 DailyReportHour 同为东八区
+	InspectK8s               bool            `json:"inspectK8s"`
+	InspectVCenter           bool            `json:"inspectVCenter"`
+	InspectVCenterEvents     bool            `json:"inspectVCenterEvents"`        // vCenter VM 事件与告警巡检
+	InspectPrometheus        bool            `json:"inspectPrometheus,omitempty"` // 兼容旧配置：读到后会同步到 k8s / vcenter 两项
+	InspectPrometheusK8s     bool            `json:"inspectPrometheusK8s"`
+	InspectPrometheusVCenter bool            `json:"inspectPrometheusVcenter"`
+	InspectVMLog             bool            `json:"inspectVmLog"`
+	InspectRedis             bool            `json:"inspectRedis"`
+	InspectSSH               bool            `json:"inspectSSH"`
+	InspectCloudVm           bool            `json:"inspectCloudVm"`
+	ModelExtra               OpsAIModelExtra `json:"modelExtra"`
 }
 
 func normalizeOpsAIInspectConfig(ai *OpsAIInspectConfig) {
@@ -87,7 +87,7 @@ type OpsMonitoringCustomPanel struct {
 	Title     string   `json:"title"`
 	Category  string   `json:"category"`
 	PromQL    string   `json:"promql"`
-	Scope     string   `json:"scope"` // k8s | vcenter | inherit（inherit 表示跟随页面所选数据源）
+	Scope     string   `json:"scope"`   // k8s | vcenter | inherit（inherit 表示跟随页面所选数据源）
 	Display   string   `json:"display"` // single | matrix
 	LabelKeys []string `json:"labelKeys,omitempty"`
 }
@@ -124,8 +124,8 @@ type OpsAlertRule struct {
 
 // OpsAlertChannel 告警媒介。
 type OpsAlertChannel struct {
-	ID         string `json:"id"`
-	Type       string `json:"type"` // email | wecom | wecom_app
+	ID   string `json:"id"`
+	Type string `json:"type"` // email | wecom | wecom_app
 	// email
 	SMTPHost    string `json:"smtpHost"`
 	SMTPPort    int    `json:"smtpPort"`
@@ -137,10 +137,10 @@ type OpsAlertChannel struct {
 	// wecom 群机器人 webhook
 	WeComWebhook string `json:"wecomWebhook"`
 	// wecom_app 企业微信「自建应用」API（非 webhook）
-	WeComCorpID       string `json:"wecomCorpId"`
-	WeComAgentID      int    `json:"wecomAgentId"`
+	WeComCorpID        string `json:"wecomCorpId"`
+	WeComAgentID       int    `json:"wecomAgentId"`
 	WeComCorpSecretEnc string `json:"wecomCorpSecretEnc"`
-	WeComToUser       string `json:"wecomToUser"` // 多个 userid 用 | 分隔，或 @all
+	WeComToUser        string `json:"wecomToUser"` // 多个 userid 用 | 分隔，或 @all
 }
 
 // OpsAlertSilence 告警抑制（标签全匹配则静默至 Until）。
@@ -166,8 +166,8 @@ type OpsAlertCenterBundle struct {
 // OpsAlertPendingState 规则待触发计时（内存+KV 简化：仅存 pendingSince key）。
 type OpsAlertPendingState struct {
 	PendingSince map[string]int64 `json:"pendingSince"` // ruleId -> unix
-	LastFiring   map[string]bool    `json:"lastFiring"`
-	LastNotifyAt map[string]int64   `json:"lastNotifyAt"`
+	LastFiring   map[string]bool  `json:"lastFiring"`
+	LastNotifyAt map[string]int64 `json:"lastNotifyAt"`
 }
 
 // InspectionReportItem 一项检查结果。
@@ -229,6 +229,10 @@ func loadOpsOpenClawBundle(kv PlatformKV) (OpsOpenClawBundle, error) {
 	return out, nil
 }
 
+func LoadOpsOpenClawBundle(kv PlatformKV) (OpsOpenClawBundle, error) {
+	return loadOpsOpenClawBundle(kv)
+}
+
 func saveOpsOpenClawBundle(kv PlatformKV, b OpsOpenClawBundle) error {
 	if kv == nil {
 		return errors.New("kv nil")
@@ -240,6 +244,10 @@ func saveOpsOpenClawBundle(kv PlatformKV, b OpsOpenClawBundle) error {
 		return err
 	}
 	return kv.Set(kvKeyOpsOpenClaw, string(js))
+}
+
+func SaveOpsOpenClawBundle(kv PlatformKV, b OpsOpenClawBundle) error {
+	return saveOpsOpenClawBundle(kv, b)
 }
 
 func loadOpsGrafanaMeta(kv PlatformKV) (OpsGrafanaMeta, error) {
@@ -397,6 +405,10 @@ func appendInspectReport(kv PlatformKV, rep InspectionReport, max int) error {
 
 func opsEncryptionKey(cfg Config) ([]byte, error) {
 	return totpEncryptionKey(cfg)
+}
+
+func OpsEncryptionKey(cfg Config) ([]byte, error) {
+	return opsEncryptionKey(cfg)
 }
 
 func opsNowRFC3339() string {

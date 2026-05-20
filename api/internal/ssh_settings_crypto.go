@@ -39,6 +39,10 @@ func encryptSecret(key []byte, plaintext string) (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
+func EncryptSecret(key []byte, plaintext string) (string, error) {
+	return encryptSecret(key, plaintext)
+}
+
 func decryptSecret(key []byte, encoded string) (string, error) {
 	if strings.TrimSpace(encoded) == "" {
 		return "", nil
@@ -52,6 +56,10 @@ func decryptSecret(key []byte, encoded string) (string, error) {
 		return "", err
 	}
 	return string(out), nil
+}
+
+func DecryptSecret(key []byte, encoded string) (string, error) {
+	return decryptSecret(key, encoded)
 }
 
 func aesEncrypt(key, plain []byte) ([]byte, error) {

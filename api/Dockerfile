@@ -37,7 +37,7 @@ COPY --from=frontend /app/web/dist ./web/dist
 ARG BUILD_VERSION=dev
 RUN GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -trimpath \
     -ldflags="-s -w -X kube-bt-sync/internal.BuildVersion=${BUILD_VERSION}" \
-    -o kube-bt-sync .
+    -o kube-bt-sync ./cmd/kube-bt-sync
 
 # ------------------------------------------------------------------------------
 # 阶段 3：最小运行时镜像（无 shell、无包管理器，攻击面小）

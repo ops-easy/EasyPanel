@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"kube-bt-sync/internal/transport/authz"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -235,12 +237,11 @@ func ViewerRestrictionsMiddleware(app *ServerApp) gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		roleVal, ok := c.Get("dashboardRole")
-		if !ok {
+		role := authz.DashboardRole(c)
+		if role == "" {
 			c.Next()
 			return
 		}
-		role, _ := roleVal.(string)
 		if role == DashboardRoleAdmin {
 			c.Next()
 			return
