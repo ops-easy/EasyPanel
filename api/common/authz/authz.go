@@ -20,6 +20,10 @@ func DashboardRoleFromGin(c *gin.Context) string {
 	return core.DashboardRoleFromGin(c)
 }
 
+func DashboardUsernameFromGin(c *gin.Context) string {
+	return core.DashboardUsernameFromGin(c)
+}
+
 func EffectiveDashboardPermissionsFromGin(c *gin.Context) *EffectiveDashboardPermissions {
 	return core.EffectiveDashboardPermissionsFromGin(c)
 }

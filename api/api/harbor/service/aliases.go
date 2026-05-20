@@ -1,19 +1,21 @@
 package service
 
 import (
-	core "kube-bt-sync/internal"
+	"kube-bt-sync/common/appctx"
+	"kube-bt-sync/common/authz"
+	"kube-bt-sync/common/request"
 
 	"github.com/gin-gonic/gin"
 )
 
-type Config = core.Config
-type RedisLight = core.RedisLight
-type ServerApp = core.ServerApp
+type Config = appctx.Config
+type RedisLight = appctx.RedisLight
+type ServerApp = appctx.ServerApp
 
 func AuditClientIP(c *gin.Context, cfg Config) string {
-	return core.AuditClientIP(c, cfg)
+	return request.AuditClientIP(c, cfg)
 }
 
 func dashboardUsernameFromGin(c *gin.Context) string {
-	return core.DashboardUsernameFromGin(c)
+	return authz.DashboardUsernameFromGin(c)
 }
