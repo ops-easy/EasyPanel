@@ -1,4 +1,4 @@
-package baota
+package provider
 
 import (
 	"crypto/md5"
