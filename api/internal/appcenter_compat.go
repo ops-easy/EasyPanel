@@ -3,18 +3,15 @@ package internal
 import (
 	"context"
 	"errors"
-	"fmt"
-	"regexp"
 	"strings"
 	"time"
+
+	"kube-bt-sync/internal/shared/k8sutil"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -29,7 +26,7 @@ func nullIfEmpty(s string) interface{} {
 	return s
 }
 
-func int32Ptr(i int32) *int32 { return &i }
+func int32Ptr(i int32) *int32 { return k8sutil.Int32Ptr(i) }
 
 type AppRedisMode string
 
@@ -214,179 +211,46 @@ func AppRedisRuntimeSnapshot(ctx context.Context, rdb redis.Cmdable) (map[string
 	}, nil
 }
 
-var k8sDNSLabelRe = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
-
 func ValidateK8sNamespaceName(ns string) error {
-	ns = strings.TrimSpace(ns)
-	if ns == "" {
-		return errors.New("命名空间不能为空")
-	}
-	if len(ns) > 63 {
-		return errors.New("命名空间名称长度不能超过 63")
-	}
-	if !k8sDNSLabelRe.MatchString(ns) {
-		return errors.New("命名空间格式无效（须为小写字母、数字与连字符组成的 DNS 标签）")
-	}
-	return nil
+	return k8sutil.ValidateNamespaceName(ns)
 }
 
 func ValidateK8sDeploymentName(name string) error {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		return errors.New("Deployment 名称不能为空")
-	}
-	if len(name) > 63 {
-		return errors.New("Deployment 名称长度不能超过 63")
-	}
-	if !k8sDNSLabelRe.MatchString(name) {
-		return errors.New("Deployment 名称格式无效（须为小写字母、数字与连字符组成的 DNS 标签）")
-	}
-	return nil
+	return k8sutil.ValidateDeploymentName(name)
 }
 
 func ValidateOptionalK8sNodePort(field string, p int32) error {
-	if p == 0 {
-		return nil
-	}
-	if p < 30000 || p > 32767 {
-		return fmt.Errorf("%s 须为 0（自动）或 30000–32767", field)
-	}
-	return nil
+	return k8sutil.ValidateOptionalNodePort(field, p)
 }
 
 func ensureNamespace(ctx context.Context, k8s *kubernetes.Clientset, name string) error {
-	_, err := k8s.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
-	if err == nil {
-		return nil
-	}
-	if !apierrors.IsNotFound(err) {
-		return err
-	}
-	_, err = k8s.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
-	}, metav1.CreateOptions{})
-	return err
+	return k8sutil.EnsureNamespace(ctx, k8s, name)
 }
 
 func firstNonEmpty(a, b string) string {
-	if strings.TrimSpace(a) != "" {
-		return strings.TrimSpace(a)
-	}
-	return strings.TrimSpace(b)
+	return k8sutil.FirstNonEmpty(a, b)
 }
 
 func ResolveRedisK8sStorageClass(ctx context.Context, k8s *kubernetes.Clientset, userOrCfg string) (string, error) {
-	if strings.TrimSpace(userOrCfg) != "" {
-		return strings.TrimSpace(userOrCfg), nil
-	}
-	return pickDefaultStorageClassName(ctx, k8s)
-}
-
-func pickDefaultStorageClassName(ctx context.Context, k8s *kubernetes.Clientset) (string, error) {
-	list, err := k8s.StorageV1().StorageClasses().List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return "", err
-	}
-	for i := range list.Items {
-		sc := &list.Items[i]
-		if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
-			return sc.Name, nil
-		}
-	}
-	if len(list.Items) == 0 {
-		return "", fmt.Errorf("集群中无 StorageClass，请在部署时指定或创建默认 StorageClass")
-	}
-	return list.Items[0].Name, nil
-}
-
-func parseStorageSize(s string) (resource.Quantity, error) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		s = "10Gi"
-	}
-	return resource.ParseQuantity(s)
+	return k8sutil.ResolveStorageClass(ctx, k8s, userOrCfg)
 }
 
 func buildRedisPVC(ns, name string, storageClassName string, size string, labels map[string]string) (*corev1.PersistentVolumeClaim, error) {
-	qty, err := parseStorageSize(size)
-	if err != nil {
-		return nil, err
-	}
-	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns, Labels: labels},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{corev1.ResourceStorage: qty},
-			},
-		},
-	}
-	if strings.TrimSpace(storageClassName) != "" {
-		sc := strings.TrimSpace(storageClassName)
-		pvc.Spec.StorageClassName = &sc
-	}
-	return pvc, nil
+	return k8sutil.BuildRWOPVC(ns, name, storageClassName, size, labels)
 }
 
 func applyPVC(ctx context.Context, k8s *kubernetes.Clientset, pvc *corev1.PersistentVolumeClaim) error {
-	cli := k8s.CoreV1().PersistentVolumeClaims(pvc.Namespace)
-	_, err := cli.Get(ctx, pvc.Name, metav1.GetOptions{})
-	if err == nil {
-		return nil
-	}
-	if !apierrors.IsNotFound(err) {
-		return err
-	}
-	_, err = cli.Create(ctx, pvc, metav1.CreateOptions{})
-	return err
+	return k8sutil.ApplyPVC(ctx, k8s, pvc)
 }
 
 func upsertService(ctx context.Context, k8s *kubernetes.Clientset, svc *corev1.Service) error {
-	ns := svc.Namespace
-	scli := k8s.CoreV1().Services(ns)
-	exS, err := scli.Get(ctx, svc.Name, metav1.GetOptions{})
-	if err == nil {
-		svc.ResourceVersion = exS.ResourceVersion
-		svc.Spec.ClusterIP = exS.Spec.ClusterIP
-		svc.Spec.ClusterIPs = exS.Spec.ClusterIPs
-		_, err = scli.Update(ctx, svc, metav1.UpdateOptions{})
-		return err
-	}
-	if apierrors.IsNotFound(err) {
-		_, err = scli.Create(ctx, svc, metav1.CreateOptions{})
-		return err
-	}
-	return err
+	return k8sutil.UpsertService(ctx, k8s, svc)
 }
 
 func upsertDeployment(ctx context.Context, k8s *kubernetes.Clientset, dep *appsv1.Deployment) error {
-	ns := dep.Namespace
-	dcli := k8s.AppsV1().Deployments(ns)
-	exD, err := dcli.Get(ctx, dep.Name, metav1.GetOptions{})
-	if err == nil {
-		dep.ResourceVersion = exD.ResourceVersion
-		_, err = dcli.Update(ctx, dep, metav1.UpdateOptions{})
-		return err
-	}
-	if apierrors.IsNotFound(err) {
-		_, err = dcli.Create(ctx, dep, metav1.CreateOptions{})
-		return err
-	}
-	return err
+	return k8sutil.UpsertDeployment(ctx, k8s, dep)
 }
 
 func upsertStatefulSet(ctx context.Context, k8s *kubernetes.Clientset, sts *appsv1.StatefulSet) error {
-	ns := sts.Namespace
-	cli := k8s.AppsV1().StatefulSets(ns)
-	ex, err := cli.Get(ctx, sts.Name, metav1.GetOptions{})
-	if err == nil {
-		sts.ResourceVersion = ex.ResourceVersion
-		_, err = cli.Update(ctx, sts, metav1.UpdateOptions{})
-		return err
-	}
-	if apierrors.IsNotFound(err) {
-		_, err = cli.Create(ctx, sts, metav1.CreateOptions{})
-		return err
-	}
-	return err
+	return k8sutil.UpsertStatefulSet(ctx, k8s, sts)
 }

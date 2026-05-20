@@ -4,16 +4,14 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"strings"
 
 	core "kube-bt-sync/internal"
 	"kube-bt-sync/internal/modules/appcenter/cloudvm"
+	"kube-bt-sync/internal/shared/k8sutil"
 
 	"github.com/gin-gonic/gin"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -72,11 +70,11 @@ func GuardK8sREST(c *gin.Context, k8s *kubernetes.Clientset, rc *rest.Config) bo
 }
 
 func ValidateOptionalK8sNodePort(field string, p int32) error {
-	return core.ValidateOptionalK8sNodePort(field, p)
+	return k8sutil.ValidateOptionalNodePort(field, p)
 }
 
 func ValidateK8sDeploymentName(name string) error {
-	return core.ValidateK8sDeploymentName(name)
+	return k8sutil.ValidateDeploymentName(name)
 }
 
 func NowBeijingRFC3339() string {
@@ -84,21 +82,11 @@ func NowBeijingRFC3339() string {
 }
 
 func deploymentRolloutLooksReady(dep *appsv1.Deployment) bool {
-	return core.DeploymentRolloutLooksReady(dep)
+	return k8sutil.DeploymentRolloutLooksReady(dep)
 }
 
 func ensureNamespace(ctx context.Context, k8s *kubernetes.Clientset, name string) error {
-	_, err := k8s.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
-	if err == nil {
-		return nil
-	}
-	if !apierrors.IsNotFound(err) {
-		return err
-	}
-	_, err = k8s.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
-	}, metav1.CreateOptions{})
-	return err
+	return k8sutil.EnsureNamespace(ctx, k8s, name)
 }
 
 func CloudVMHysteria2ClusterEndpoint(ns, depName string, port int) string {
@@ -185,38 +173,13 @@ func loadCloudVMBootstrap(kv PlatformKV) *CloudVMBootstrap {
 }
 
 func firstNodeAccessIP(ctx context.Context, k8s *kubernetes.Clientset) string {
-	nodes, err := k8s.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-	if err != nil || len(nodes.Items) == 0 {
-		return ""
-	}
-	return nodePrimaryIP(&nodes.Items[0])
+	return k8sutil.FirstNodeAccessIP(ctx, k8s)
 }
 
 func nodePrimaryIP(n *corev1.Node) string {
-	if n == nil {
-		return ""
-	}
-	for _, a := range n.Status.Addresses {
-		if a.Type == corev1.NodeExternalIP && a.Address != "" {
-			return a.Address
-		}
-	}
-	for _, a := range n.Status.Addresses {
-		if a.Type == corev1.NodeInternalIP && a.Address != "" {
-			return a.Address
-		}
-	}
-	return ""
+	return k8sutil.NodePrimaryIP(n)
 }
 
 func nodeAccessIPForNodeName(ctx context.Context, k8s *kubernetes.Clientset, name string) string {
-	name = strings.TrimSpace(name)
-	if name == "" || k8s == nil {
-		return ""
-	}
-	n, err := k8s.CoreV1().Nodes().Get(ctx, name, metav1.GetOptions{})
-	if err != nil || n == nil {
-		return ""
-	}
-	return nodePrimaryIP(n)
+	return k8sutil.NodeAccessIPForNodeName(ctx, k8s, name)
 }
