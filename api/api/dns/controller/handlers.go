@@ -12,7 +12,8 @@ import (
 
 	baotasvc "kube-bt-sync/api/baota/service"
 	"kube-bt-sync/common/appctx"
-	core "kube-bt-sync/internal"
+	"kube-bt-sync/common/authz"
+	"kube-bt-sync/common/result"
 
 	"github.com/gin-gonic/gin"
 	mysql "github.com/go-sql-driver/mysql"
@@ -75,19 +76,19 @@ func RegisterRoutes(api *gin.RouterGroup, app *appctx.ServerApp) {
 // ─────────────────────────── permission helpers ───────────────────────────
 
 func dnsWriteDenied(c *gin.Context) bool {
-	if core.DashboardRoleFromGin(c) == core.DashboardRoleAdmin {
+	if authz.DashboardRoleFromGin(c) == authz.DashboardRoleAdmin {
 		return false
 	}
-	eff := core.EffectiveDashboardPermissionsFromGin(c)
+	eff := authz.EffectiveDashboardPermissionsFromGin(c)
 	if eff.LegacyViewer {
 		return true
 	}
-	return eff.AppCenter == core.ModuleAccessNone || eff.AppCenter == core.ModuleAccessRO
+	return eff.AppCenter == authz.ModuleAccessNone || eff.AppCenter == authz.ModuleAccessRO
 }
 
 func dnsRequireWrite(c *gin.Context) bool {
 	if dnsWriteDenied(c) {
-		core.RespondAPIPermissionDenied(c)
+		result.PermissionDenied(c)
 		return false
 	}
 	return true
@@ -132,7 +133,7 @@ func handleDnsAccountList(c *gin.Context, app *appctx.ServerApp) {
 	defer cancel()
 	list, err := dnsAccountList(ctx, db)
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	if list == nil {
@@ -159,7 +160,7 @@ func handleDnsAccountGet(c *gin.Context, app *appctx.ServerApp) {
 		return
 	}
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	// Parse config to mask secrets
@@ -212,7 +213,7 @@ func handleDnsAccountCreate(c *gin.Context, app *appctx.ServerApp) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "账号名称已存在"})
 			return
 		}
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": id, "message": "账号已创建"})
@@ -253,7 +254,7 @@ func handleDnsAccountUpdate(c *gin.Context, app *appctx.ServerApp) {
 		return
 	}
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	var oldCfg map[string]string
@@ -267,7 +268,7 @@ func handleDnsAccountUpdate(c *gin.Context, app *appctx.ServerApp) {
 	}
 	cfgJSON, _ := json.Marshal(body.Config)
 	if err := dnsAccountUpdate(ctx, db, id, body.Name, body.Provider, string(cfgJSON), body.Remark); err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "账号已更新"})
@@ -289,7 +290,7 @@ func handleDnsAccountDelete(c *gin.Context, app *appctx.ServerApp) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 	if err := dnsAccountDelete(ctx, db, id); err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "账号已删除"})
@@ -400,7 +401,7 @@ func handleDnsDomainList(c *gin.Context, app *appctx.ServerApp) {
 	defer cancel()
 	list, err := dnsDomainList(ctx, db)
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	if list == nil {
@@ -427,7 +428,7 @@ func handleDnsDomainGet(c *gin.Context, app *appctx.ServerApp) {
 		return
 	}
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, d)
@@ -464,7 +465,7 @@ func handleDnsDomainCreate(c *gin.Context, app *appctx.ServerApp) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "该域名已在此账号下添加"})
 			return
 		}
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": id, "message": "域名已添加"})
@@ -497,7 +498,7 @@ func handleDnsDomainUpdate(c *gin.Context, app *appctx.ServerApp) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 	if err := dnsDomainUpdate(ctx, db, id, body.Name, body.AccountID, body.IcpBeian, body.ExpireAt, body.Remark); err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "域名已更新"})
@@ -520,7 +521,7 @@ func handleDnsDomainDelete(c *gin.Context, app *appctx.ServerApp) {
 	defer cancel()
 	_ = dnsRecordDeleteAllByDomain(ctx, db, id)
 	if err := dnsDomainDelete(ctx, db, id); err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "域名及其解析记录已删除"})
@@ -542,7 +543,7 @@ func handleDnsRecordList(c *gin.Context, app *appctx.ServerApp) {
 	defer cancel()
 	list, err := dnsRecordListByDomain(ctx, db, domainID)
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	if list == nil {
@@ -573,12 +574,12 @@ func handleDnsRecordSync(c *gin.Context, app *appctx.ServerApp) {
 		return
 	}
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	acc, err := dnsAccountGet(ctx, db, domain.AccountID)
 	if err != nil {
-		core.RespondAPIError500(c, "获取账号信息失败: "+err.Error())
+		result.Error500(c, "获取账号信息失败: "+err.Error())
 		return
 	}
 	client, err := newDnsProviderClient(acc.Provider, acc.ConfigJSON)
@@ -661,7 +662,7 @@ func handleDnsRecordCreate(c *gin.Context, app *appctx.ServerApp) {
 		MxPriority: body.MxPriority, Status: 1, Remark: body.Remark,
 	}
 	if err := dnsRecordUpsert(ctx, db, r); err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": providerID, "message": "记录已添加"})
@@ -721,7 +722,7 @@ func handleDnsRecordUpdate(c *gin.Context, app *appctx.ServerApp) {
 		MxPriority: body.MxPriority, Status: 1, Remark: body.Remark,
 	}
 	if err := dnsRecordUpsert(ctx, db, r); err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "记录已更新"})
@@ -756,7 +757,7 @@ func handleDnsRecordDelete(c *gin.Context, app *appctx.ServerApp) {
 		}
 	}
 	if err := dnsRecordDelete(ctx, db, recordID, domainID); err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "记录已删除"})
@@ -803,7 +804,7 @@ func handleDnsRecordSetStatus(c *gin.Context, app *appctx.ServerApp) {
 	}
 	_, err = db.ExecContext(ctx, `UPDATE dns_records SET status=? WHERE id=? AND domain_id=?`, status, recordID, domainID)
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "状态已更新"})
@@ -820,7 +821,7 @@ func handleDnsFailoverList(c *gin.Context, app *appctx.ServerApp) {
 	defer cancel()
 	list, err := dnsFailoverList(ctx, db)
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	if list == nil {
@@ -857,7 +858,7 @@ func handleDnsFailoverCreate(c *gin.Context, app *appctx.ServerApp) {
 	defer cancel()
 	id, err := dnsFailoverInsert(ctx, db, body)
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": id, "message": "监测任务已创建"})
@@ -885,7 +886,7 @@ func handleDnsFailoverUpdate(c *gin.Context, app *appctx.ServerApp) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 	if err := dnsFailoverUpdate(ctx, db, body); err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "任务已更新"})
@@ -907,7 +908,7 @@ func handleDnsFailoverDelete(c *gin.Context, app *appctx.ServerApp) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 	if err := dnsFailoverDelete(ctx, db, id); err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "任务已删除"})
@@ -927,7 +928,7 @@ func handleDnsFailoverLogs(c *gin.Context, app *appctx.ServerApp) {
 	defer cancel()
 	logs, err := dnsFailoverLogList(ctx, db, id)
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	if logs == nil {
@@ -954,7 +955,7 @@ func handleDnsFailoverCheck(c *gin.Context, app *appctx.ServerApp) {
 	defer cancel()
 	tasks, err := dnsFailoverList(ctx, db)
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	var task *DnsFailoverTask
@@ -1022,7 +1023,7 @@ func handleDnsScheduledList(c *gin.Context, app *appctx.ServerApp) {
 	defer cancel()
 	list, err := dnsScheduledList(ctx, db)
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	if list == nil {
@@ -1070,7 +1071,7 @@ func handleDnsScheduledCreate(c *gin.Context, app *appctx.ServerApp) {
 	defer cancel()
 	id, err := dnsScheduledInsert(ctx, db, task)
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": id, "message": "定时任务已创建"})
@@ -1092,7 +1093,7 @@ func handleDnsScheduledDelete(c *gin.Context, app *appctx.ServerApp) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 	if err := dnsScheduledDelete(ctx, db, id); err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "定时任务已删除"})
@@ -1109,7 +1110,7 @@ func handleDnsCertList(c *gin.Context, app *appctx.ServerApp) {
 	defer cancel()
 	list, err := dnsCertOrderList(ctx, db)
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	if list == nil {
@@ -1136,7 +1137,7 @@ func handleDnsCertGet(c *gin.Context, app *appctx.ServerApp) {
 		return
 	}
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, o)
@@ -1178,7 +1179,7 @@ func handleDnsCertCreate(c *gin.Context, app *appctx.ServerApp) {
 	defer cancel()
 	id, err := dnsCertOrderInsert(ctx, db, order)
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": id, "message": "证书申请单已创建，点击「申请」开始签发"})
@@ -1200,7 +1201,7 @@ func handleDnsCertDelete(c *gin.Context, app *appctx.ServerApp) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 	if err := dnsCertOrderDelete(ctx, db, id); err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "证书记录已删除"})
@@ -1229,7 +1230,7 @@ func handleDnsCertApply(c *gin.Context, app *appctx.ServerApp) {
 		return
 	}
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	// Mark as in-progress
@@ -1269,11 +1270,11 @@ func handleDnsCertUpdateBaota(c *gin.Context, app *appctx.ServerApp) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "证书不存在"})
 		return
 	} else if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	if err := dnsCertOrderUpdateBaota(ctx, db, id, body.BaotaSiteName, body.AutoPushBaota); err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "宝塔关联设置已保存"})
@@ -1309,7 +1310,7 @@ func handleDnsCertPushBaota(c *gin.Context, app *appctx.ServerApp) {
 		return
 	}
 	if err != nil {
-		core.RespondAPIError500(c, err.Error())
+		result.Error500(c, err.Error())
 		return
 	}
 	if order.Status != "issued" {
