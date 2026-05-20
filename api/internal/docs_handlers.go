@@ -42,6 +42,10 @@ func docsMySQLOpContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), time.Duration(sec)*time.Second)
 }
 
+func RegisterDocsRoutes(api *gin.RouterGroup, app *ServerApp) {
+	registerDocsRoutes(api, app)
+}
+
 func registerDocsRoutes(api *gin.RouterGroup, app *ServerApp) {
 	g := api.Group("/docs")
 	g.GET("/attachment-storage", AdminOnlyMiddleware(app), func(c *gin.Context) { docsAttachmentStorageInfo(c, app) })
@@ -104,7 +108,7 @@ func docsAttachmentStorageInfo(c *gin.Context, app *ServerApp) {
 			"secretIdMasked": maskDocsSecretID(eff.SecretID),
 			"secretKeySet":   eff.UseCOS && strings.TrimSpace(eff.SecretKey) != "",
 		},
-		"canManageKv": canKV,
+		"canManageKv":   canKV,
 		"configureHint": "在「媒体与附件」页图形化配置腾讯云 COS（写入平台存储）；若未配置完整则使用环境变量 KUBEBT_COS_*；均未配置时附件保存在服务器本地目录。",
 	})
 }
@@ -661,7 +665,7 @@ func docsGet(c *gin.Context, app *ServerApp) {
 	out := gin.H{
 		"id": id, "title": title, "bodyMarkdown": body, "author": author, "published": pub != 0,
 		"contentKind": docsNormalizeContentKind(contentKind),
-		"createdAt": created.Format(time.RFC3339), "updatedAt": updated.Format(time.RFC3339),
+		"createdAt":   created.Format(time.RFC3339), "updatedAt": updated.Format(time.RFC3339),
 		"tagNames": tags, "previewUrl": fmt.Sprintf("/r/%d.html", id),
 		"hasSharePassword": shareHash.Valid && strings.TrimSpace(shareHash.String) != "",
 	}

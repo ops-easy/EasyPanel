@@ -62,10 +62,6 @@ func RegisterLegacyRoutes(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 
 	// 无需登录：探活、初始化向导、登录态
 	r.GET("/api/health", handleHealth(app))
-	// 文档中心：公开预览与附件直链（无需登录）
-	r.GET("/r/*rp", func(c *gin.Context) { HandleDocPublicRoute(c, app) })
-	r.POST("/r/*rp", func(c *gin.Context) { HandleDocPublicRoute(c, app) })
-	r.GET("/d/:token", func(c *gin.Context) { HandleDocPublicMedia(c, app) })
 	r.GET("/api/setup/status", handleSetupStatus(app))
 	r.POST("/api/setup", handleSetupSave(app))
 	r.GET("/api/auth/status", func(c *gin.Context) { handleAuthStatus(c, app) })
@@ -233,7 +229,6 @@ func RegisterLegacyRoutes(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 		registerAdminUserRoutes(api, app)
 		registerAccountProfileRoutes(api, app)
 		registerOpsCenterRoutes(api, app)
-		registerDocsRoutes(api, app)
 	}
 	log.Println("Dashboard: WebSocket /api/k8s/pods/.../exec/ws、/api/app-center/redis/instances/:id/redis-cli/ws、/api/vcenter/vms/.../console-ws、/api/vcenter/vms/.../ssh/ws、/api/cloud-hosts/:id/ssh/ws、/api/app-center/redis/runtime/ws；GET/DELETE pods；GET summary、namespaces/stats、pods、deployments、statefulsets、daemonsets、pvcs、configmaps、services、nodes；GET/POST prometheus；vCenter API、cloud-hosts")
 
