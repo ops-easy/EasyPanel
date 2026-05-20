@@ -5,6 +5,8 @@ import (
 	appcentersvc "kube-bt-sync/api/appcenter/service"
 	k8ssvc "kube-bt-sync/api/k8s/service"
 	opssvc "kube-bt-sync/api/ops/service"
+	settingssvc "kube-bt-sync/api/settings/service"
+	systemsvc "kube-bt-sync/api/system/service"
 	vcentersvc "kube-bt-sync/api/vcenter/service"
 	"kube-bt-sync/internal" // 引用模块
 	"kube-bt-sync/internal/transport/httpapi"
@@ -52,16 +54,16 @@ func main() {
 		go internal.StartSyncer(ctx, app)
 	}
 	internal.StartRedisReconnectLoop(ctx, app)
-	internal.StartCrossPodRuntimeSync(ctx, func() *internal.ServerApp { return app })
-	internal.StartRuntimeStatusRefresher(app)
+	settingssvc.StartCrossPodRuntimeSync(ctx, func() *settingssvc.ServerApp { return app })
+	settingssvc.StartRuntimeStatusRefresher(app)
 	if bg {
-		internal.StartHostEgressWatcher(app)
+		systemsvc.StartHostEgressWatcher(app)
 		vcentersvc.StartPrometheusMetricsRefresher(app)
 		k8ssvc.StartKubeSphereChartsCacheWatcher(app)
 		go vcentersvc.BastionNativeSSHReconcileLoop(ctx, func() *vcentersvc.ServerApp { return app })
 	}
 	vcentersvc.StartSessionKeepalive(func() *vcentersvc.ServerApp { return app })
-	internal.InitLoginSecurityState(app)
+	systemsvc.InitLoginSecurityState(app)
 	if bg {
 		opssvc.StartBackground(app)
 		k8ssvc.StartRestartCorrelationWorker(app)
