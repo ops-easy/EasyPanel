@@ -76,9 +76,6 @@ func RegisterLegacyRoutes(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 	r.GET("/api/auth/oidc/callback", handleOIDCCallback(app))
 	log.Println("Dashboard: GET /api/health、/api/setup/status、/api/auth/status、/api/login/public-status、OIDC /api/auth/oidc/* 无需登录；未初始化时 POST /api/setup")
 
-	// Alertmanager → 平台告警中心（凭 query token，无需登录）
-	r.POST("/api/hooks/alertmanager", handleAlertmanagerWebhook(app))
-
 	api := r.Group("/api")
 	api.Use(DashboardAuthMiddleware(app))
 	api.Use(ViewerRestrictionsMiddleware(app))
@@ -119,7 +116,6 @@ func RegisterLegacyRoutes(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 		registerCloudHostRoutes(api, app)
 		registerAdminUserRoutes(api, app)
 		registerAccountProfileRoutes(api, app)
-		registerOpsCenterRoutes(api, app)
 	}
 	log.Println("Dashboard: WebSocket /api/k8s/pods/.../exec/ws、/api/app-center/redis/instances/:id/redis-cli/ws、/api/vcenter/vms/.../console-ws、/api/vcenter/vms/.../ssh/ws、/api/cloud-hosts/:id/ssh/ws、/api/app-center/redis/runtime/ws；GET/DELETE pods；GET summary、namespaces/stats、pods、deployments、statefulsets、daemonsets、pvcs、configmaps、services、nodes；GET/POST prometheus；vCenter API、cloud-hosts")
 
