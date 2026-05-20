@@ -5,18 +5,18 @@ import (
 	"strings"
 
 	"kube-bt-sync/common/appctx"
-	"kube-bt-sync/common/legacy"
+	baotacore "kube-bt-sync/common/core"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ServerApp = appctx.ServerApp
 type Config = appctx.Config
-type BaotaIngressSyncReport = legacy.BaotaIngressSyncReport
+type BaotaIngressSyncReport = baotacore.BaotaIngressSyncReport
 
 func IngressSyncStatus(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		rep, ok := legacy.LoadBaotaIngressSyncReport(app.PlatformKV())
+		rep, ok := baotacore.LoadBaotaIngressSyncReport(app.PlatformKV())
 		if !ok || rep == nil {
 			c.JSON(http.StatusOK, gin.H{
 				"ok":     true,
@@ -40,7 +40,7 @@ func IngressSyncRun(app *ServerApp) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "未配置宝塔 URL 或 API Key"})
 			return
 		}
-		rep := legacy.RunBaotaIngressSync(c.Request.Context(), app, "manual")
+		rep := baotacore.RunBaotaIngressSync(c.Request.Context(), app, "manual")
 		if rep.Skipped && strings.Contains(rep.SkipReason, "已有同步任务") {
 			c.JSON(http.StatusConflict, gin.H{"ok": false, "report": rep, "error": rep.SkipReason})
 			return
