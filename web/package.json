@@ -6,6 +6,7 @@
   "scripts": {
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "check:text": "node --test tests/compute-network-text-encoding.test.mjs",
     "dev": "vite",
     "lint": "eslint .",
     "preview": "vite preview"
