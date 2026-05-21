@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	kvKeyOpsOpenClaw         = "kubebt_ops_openclaw_v1"
+	kvKeyOpsAIProvider       = "kubebt_ops_ai_provider_v1"
 	kvKeyOpsGrafanaMeta      = "kubebt_ops_grafana_meta_v1"
 	kvKeyOpsAlertCenter      = "kubebt_ops_alert_center_v1"
 	kvKeyOpsAlertState       = "kubebt_ops_alert_state_v1"
@@ -17,19 +17,28 @@ const (
 	kvKeyOpsMonitoringPanels = "kubebt_ops_monitoring_panels_v1"
 )
 
-// OpenClawConfig OpenClaw / 兼容 OpenAI 接口的巡检对话端点。
-type OpenClawConfig struct {
+const (
+	OpsAIProviderKindCustom   = "custom"
+	OpsAIProviderKindOpenClaw = "openclaw"
+	OpsAIProviderKindHermes   = "hermes"
+
+	OpsAIProviderSourceCustom    = "custom"
+	OpsAIProviderSourceAppCenter = "appCenter"
+)
+
+// OpsAIProviderEndpoint 是 AI 巡检使用的 OpenAI-compatible 模型端点配置。
+type OpsAIProviderEndpoint struct {
 	Enabled       bool   `json:"enabled"`
-	BaseURL       string `json:"baseUrl"`      // 如 https://api.openai.com/v1 或自建网关
-	APIKeyEnc     string `json:"apiKeyEnc"`    // AES 加密
-	Model         string `json:"model"`        // 默认模型
-	SystemPrompt  string `json:"systemPrompt"` // 系统提示
-	UserTemplate  string `json:"userTemplate"` // 用户消息模板，{{report}} 占位
+	Provider      string `json:"provider"`
+	Source        string `json:"source"`
+	InstanceID    string `json:"instanceId"`
+	BaseURL       string `json:"baseUrl"`
+	APIKeyEnc     string `json:"apiKeyEnc"`
+	Model         string `json:"model"`
+	SystemPrompt  string `json:"systemPrompt"`
+	UserTemplate  string `json:"userTemplate"`
 	TimeoutSec    int    `json:"timeoutSec"`
 	SkipTLSVerify bool   `json:"skipTlsVerify"`
-	// EndpointSource：custom=使用 BaseURL；appInstance=使用应用中心登记的 OpenClaw（填 AppInstanceID）。
-	EndpointSource string `json:"endpointSource"`
-	AppInstanceID  string `json:"appInstanceId"`
 }
 
 // OpsAIModelExtra 模型相关扩展（温度、最大 token 等）。
@@ -67,12 +76,54 @@ func normalizeOpsAIInspectConfig(ai *OpsAIInspectConfig) {
 	}
 }
 
-// OpsOpenClawBundle 合并保存。
-type OpsOpenClawBundle struct {
-	OpenClaw OpenClawConfig `json:"openclaw"`
-	// OpenClawProfiles 可选：按场景覆盖 OpenClaw（键见 OpsOpenClawRole*）；未配置或未填写 Base URL / 应用中心实例时回退到 OpenClaw。
-	OpenClawProfiles map[string]OpenClawConfig `json:"openclawProfiles,omitempty"`
-	AI               OpsAIInspectConfig        `json:"ai"`
+func normalizeOpsAIProviderEndpoint(ep *OpsAIProviderEndpoint) {
+	if ep == nil {
+		return
+	}
+	ep.Provider = strings.ToLower(strings.TrimSpace(ep.Provider))
+	ep.Source = strings.TrimSpace(ep.Source)
+	ep.InstanceID = strings.TrimSpace(ep.InstanceID)
+	ep.BaseURL = strings.TrimSpace(ep.BaseURL)
+	ep.Model = strings.TrimSpace(ep.Model)
+	if ep.Provider == "" {
+		ep.Provider = OpsAIProviderKindCustom
+	}
+	switch ep.Provider {
+	case OpsAIProviderKindOpenClaw, OpsAIProviderKindHermes:
+	default:
+		ep.Provider = OpsAIProviderKindCustom
+	}
+	if ep.Provider == OpsAIProviderKindCustom {
+		ep.Source = OpsAIProviderSourceCustom
+		ep.InstanceID = ""
+	}
+	if ep.Source != OpsAIProviderSourceAppCenter {
+		ep.Source = OpsAIProviderSourceCustom
+	}
+	if ep.TimeoutSec <= 0 {
+		ep.TimeoutSec = 120
+	}
+}
+
+func normalizeOpsAIProviderBundle(b *OpsAIProviderBundle) {
+	if b == nil {
+		return
+	}
+	normalizeOpsAIProviderEndpoint(&b.Endpoint)
+	if b.ProviderProfiles != nil {
+		for role, ep := range b.ProviderProfiles {
+			normalizeOpsAIProviderEndpoint(&ep)
+			b.ProviderProfiles[role] = ep
+		}
+	}
+	normalizeOpsAIInspectConfig(&b.AI)
+}
+
+// OpsAIProviderBundle 合并保存 AI 巡检模型端点与巡检调度配置。
+type OpsAIProviderBundle struct {
+	Endpoint         OpsAIProviderEndpoint            `json:"endpoint"`
+	ProviderProfiles map[string]OpsAIProviderEndpoint `json:"providerProfiles,omitempty"`
+	AI               OpsAIInspectConfig               `json:"ai"`
 }
 
 type grafanaDashboardRef struct {
@@ -213,41 +264,42 @@ type inspectReportsPayload struct {
 	Reports []InspectionReport `json:"reports"`
 }
 
-func loadOpsOpenClawBundle(kv PlatformKV) (OpsOpenClawBundle, error) {
-	var out OpsOpenClawBundle
+func loadOpsAIProviderBundle(kv PlatformKV) (OpsAIProviderBundle, error) {
+	var out OpsAIProviderBundle
 	if kv == nil {
 		return out, errors.New("kv nil")
 	}
-	raw, ok := kv.Get(kvKeyOpsOpenClaw)
+	raw, ok := kv.Get(kvKeyOpsAIProvider)
 	if !ok || strings.TrimSpace(raw) == "" {
+		normalizeOpsAIProviderBundle(&out)
 		return out, nil
 	}
 	if err := json.Unmarshal([]byte(raw), &out); err != nil {
 		return out, err
 	}
-	normalizeOpsAIInspectConfig(&out.AI)
+	normalizeOpsAIProviderBundle(&out)
 	return out, nil
 }
 
-func LoadOpsOpenClawBundle(kv PlatformKV) (OpsOpenClawBundle, error) {
-	return loadOpsOpenClawBundle(kv)
+func LoadOpsAIProviderBundle(kv PlatformKV) (OpsAIProviderBundle, error) {
+	return loadOpsAIProviderBundle(kv)
 }
 
-func saveOpsOpenClawBundle(kv PlatformKV, b OpsOpenClawBundle) error {
+func saveOpsAIProviderBundle(kv PlatformKV, b OpsAIProviderBundle) error {
 	if kv == nil {
 		return errors.New("kv nil")
 	}
-	normalizeOpsAIInspectConfig(&b.AI)
+	normalizeOpsAIProviderBundle(&b)
 	b.AI.InspectPrometheus = false
 	js, err := json.Marshal(b)
 	if err != nil {
 		return err
 	}
-	return kv.Set(kvKeyOpsOpenClaw, string(js))
+	return kv.Set(kvKeyOpsAIProvider, string(js))
 }
 
-func SaveOpsOpenClawBundle(kv PlatformKV, b OpsOpenClawBundle) error {
-	return saveOpsOpenClawBundle(kv, b)
+func SaveOpsAIProviderBundle(kv PlatformKV, b OpsAIProviderBundle) error {
+	return saveOpsAIProviderBundle(kv, b)
 }
 
 func loadOpsGrafanaMeta(kv PlatformKV) (OpsGrafanaMeta, error) {

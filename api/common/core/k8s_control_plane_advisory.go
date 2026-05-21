@@ -221,14 +221,14 @@ func RunK8sControlPlaneAdvisoryOnce(ctx context.Context, app *ServerApp) {
 		return
 	}
 	cfg := app.Cfg()
-	bundle, err := loadOpsOpenClawBundle(kv)
+	bundle, err := loadOpsAIProviderBundle(kv)
 	if err != nil {
 		return
 	}
-	if !openClawEnabledForRole(bundle, OpsOpenClawRoleClusterAdvisory) {
+	if !aiProviderEnabledForRole(bundle, OpsAIProviderRoleClusterAdvisory) {
 		return
 	}
-	work, err := opsOpenClawBundleForLLMRole(app, cfg, bundle, OpsOpenClawRoleClusterAdvisory)
+	work, err := opsAIProviderBundleForLLMRole(app, cfg, bundle, OpsAIProviderRoleClusterAdvisory)
 	if err != nil {
 		log.Printf("k8s-control-plane-advisory: resolve openclaw profile: %v", err)
 		return
@@ -317,11 +317,11 @@ func RunK8sControlPlaneAdvisoryOnce(ctx context.Context, app *ServerApp) {
 		strings.TrimSpace(logB.String()),
 	)
 
-	to := work.OpenClaw.TimeoutSec
+	to := work.Endpoint.TimeoutSec
 	if to < 60 {
 		to = 180
 	}
-	md, _, err := opsOpenClawChatAPI(cfg, app, work.OpenClaw, work.AI, sys, user, to, 0)
+	md, _, err := opsAIProviderChatAPI(cfg, app, work.Endpoint, work.AI, sys, user, to, 0)
 	if err != nil {
 		_ = mergeAdvisoryError(kv, err.Error())
 		log.Printf("k8s-control-plane-advisory: openclaw: %v", err)

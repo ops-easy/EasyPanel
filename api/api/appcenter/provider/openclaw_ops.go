@@ -10,10 +10,10 @@ func OpsEncryptionKey(cfg appctx.Config) ([]byte, error) {
 	return core.OpsEncryptionKey(cfg)
 }
 
-func LoadOpsOpenClawBundle(kv appctx.PlatformKV) (model.OpsOpenClawBundle, error) {
-	return core.LoadOpsOpenClawBundle(kv)
+func LoadOpsAIProviderBundle(kv appctx.PlatformKV) (model.OpsAIProviderBundle, error) {
+	return core.LoadOpsAIProviderBundle(kv)
 }
 
-func SaveOpsOpenClawBundle(kv appctx.PlatformKV, b model.OpsOpenClawBundle) error {
-	return core.SaveOpsOpenClawBundle(kv, b)
+func SaveOpsAIProviderBundle(kv appctx.PlatformKV, b model.OpsAIProviderBundle) error {
+	return core.SaveOpsAIProviderBundle(kv, b)
 }

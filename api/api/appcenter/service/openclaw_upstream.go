@@ -157,8 +157,8 @@ func openClawApplyGatewayModelRouting(model string) (bodyModel string, xOpenclaw
 	return cands[0].bodyModel, cands[0].headerModel
 }
 
-func opsUseOpenClawGatewayModelRouting(oc OpenClawConfig) bool {
-	if strings.TrimSpace(oc.EndpointSource) == "appInstance" {
+func opsUseOpenClawGatewayModelRouting(oc OpsAIProviderEndpoint) bool {
+	if strings.TrimSpace(oc.Provider) == "openclaw" && strings.TrimSpace(oc.Source) == "appCenter" {
 		return true
 	}
 	return shouldUseOpenClawGatewayHTTPContract(oc.BaseURL)

@@ -1208,6 +1208,114 @@ func inspectCollectCloudVmSection(ctx context.Context, app *ServerApp, ai OpsAII
 	return sec
 }
 
+func inspectCollectAIProviderSection(ctx context.Context, app *ServerApp, cfg Config, bundle OpsAIProviderBundle, ai OpsAIInspectConfig) InspectionSection {
+	sec := InspectionSection{ID: "ai-provider", Title: "AI Provider"}
+	work := bundle
+	if b2, err := opsAIProviderBundleForLLMRole(app, cfg, bundle, OpsAIProviderRoleInspectProbe); err == nil {
+		work = b2
+	} else {
+		sec.Status = "warn"
+		sec.Markdown = "AI Provider 配置解析失败：" + inspectMdEscape(err.Error())
+		return sec
+	}
+	ep := work.Endpoint
+	normalizeOpsAIProviderEndpoint(&ep)
+	if !ep.Enabled {
+		sec.Status = "skip"
+		sec.Markdown = "AI Provider 未启用。"
+		return sec
+	}
+
+	apiKeySet := strings.TrimSpace(ep.APIKeyEnc) != "" || ep.Source == OpsAIProviderSourceAppCenter
+	base := strings.TrimSpace(ep.BaseURL)
+	var b strings.Builder
+	b.WriteString("### 当前模型端点\n\n")
+	b.WriteString("| Provider | 来源 | 实例 | Base URL | 模型 | API Key |\n")
+	b.WriteString("| --- | --- | --- | --- | --- | --- |\n")
+	keyText := "未配置"
+	if apiKeySet {
+		keyText = "已配置"
+	}
+	b.WriteString(fmt.Sprintf("| %s | %s | %s | %s | %s | %s |\n",
+		inspectMdEscape(ep.Provider),
+		inspectMdEscape(ep.Source),
+		inspectMdEscape(ep.InstanceID),
+		inspectMdEscape(base),
+		inspectMdEscape(ep.Model),
+		keyText,
+	))
+
+	if base == "" || !apiKeySet {
+		sec.Status = "warn"
+		b.WriteString("\n> AI Provider 缺少 Base URL 或 API Key，模型探针与 AI 摘要会被跳过或失败。\n")
+	}
+
+	if ep.Source == OpsAIProviderSourceAppCenter {
+		switch ep.Provider {
+		case OpsAIProviderKindOpenClaw:
+			list, err := loadAppOpenClawInstances(app.PlatformKV())
+			if err != nil {
+				sec.Status = "warn"
+				b.WriteString("\nOpenClaw 实例读取失败：" + inspectMdEscape(err.Error()) + "\n")
+				break
+			}
+			inst := findAppOpenClawInstance(list, ep.InstanceID)
+			if inst == nil {
+				sec.Status = "warn"
+				b.WriteString("\n未找到已选择的 OpenClaw 应用中心实例。\n")
+				break
+			}
+			phase := "未检查"
+			if app.K8s() != nil && ai.InspectK8s {
+				st := openClawK8sStatus(ctx, app.K8s(), inst.Namespace, inst.DeploymentName, inst.Image)
+				if p, ok := st["phase"].(string); ok {
+					phase = p
+				}
+				if phase != "ready" && phase != "ok" {
+					sec.Status = "warn"
+				}
+			}
+			b.WriteString(fmt.Sprintf("\nOpenClaw 应用中心实例：`%s`，命名空间 `%s`，Deployment `%s`，K8s 阶段 `%s`。\n",
+				inspectMdEscape(inst.DisplayName), inspectMdEscape(inst.Namespace), inspectMdEscape(inst.DeploymentName), inspectMdEscape(phase)))
+		case OpsAIProviderKindHermes:
+			list, err := loadAppHermesInstances(app.PlatformKV())
+			if err != nil {
+				sec.Status = "warn"
+				b.WriteString("\nHermes 实例读取失败：" + inspectMdEscape(err.Error()) + "\n")
+				break
+			}
+			inst := findAppHermesInstance(list, ep.InstanceID)
+			if inst == nil {
+				sec.Status = "warn"
+				b.WriteString("\n未找到已选择的 Hermes 应用中心实例。\n")
+				break
+			}
+			mode := "gateway 可用"
+			if !appHermesGatewayModeReady(inst) {
+				mode = "未启用 gateway"
+				sec.Status = "warn"
+			}
+			secret := "未检查"
+			if app.K8s() != nil {
+				if _, err := readHermesGatewayToken(ctx, app.K8s(), inst); err != nil {
+					secret = "读取失败：" + inspectMdEscape(err.Error())
+					sec.Status = "warn"
+				} else {
+					secret = "已读取"
+				}
+			}
+			b.WriteString(fmt.Sprintf("\nHermes 应用中心实例：`%s`，命名空间 `%s`，Service `%s`，模式 `%s`，网关 Secret `%s`。\n",
+				inspectMdEscape(inst.DisplayName), inspectMdEscape(inst.Namespace), inspectMdEscape(inst.ServiceName), inspectMdEscape(mode), secret))
+		}
+	}
+
+	if sec.Status == "" {
+		sec.Status = "ok"
+	}
+	sec.Markdown = b.String()
+	return sec
+}
+
 func inspectCollectOpenClawSection(ctx context.Context, app *ServerApp, cfg Config, ai OpsAIInspectConfig) InspectionSection {
 	sec := InspectionSection{ID: "openclaw", Title: "OpenClaw 网关"}
 	sec.Status = "ok"

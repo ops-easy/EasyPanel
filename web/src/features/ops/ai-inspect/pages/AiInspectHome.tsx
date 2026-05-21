@@ -38,16 +38,17 @@ const INSPECT_MODEL_QUICK_PRESETS: { id: string; model: string }[] = [
   { id: "kimi-8k", model: "moonshot-v1-8k" },
 ];
 
-const OPS_OPENCLAW_SCENARIOS: { role: string; title: string; hint: string }[] = [
+const OPS_AI_PROVIDER_SCENARIOS: { role: string; title: string; hint: string }[] = [
   { role: "inspect_summary", title: "巡检报告 · AI 总摘要", hint: "平台巡检完成后生成 Markdown 总评（与上方系统/用户模板一致，可用不同网关与模型）。" },
   { role: "inspect_probe", title: "巡检内 · 连通性探针（pong）", hint: "巡检流程中的大模型 ping；可与摘要使用不同 OpenClaw/模型。" },
   { role: "vmlog_analyze", title: "VictoriaLogs · 日志智能分析", hint: "日志查询页「OpenClaw 分析」与单行分析接口。" },
   { role: "cluster_advisory", title: "kube-system · 控制平面周期建议", hint: "Dashboard 控制面 AI 建议后台任务。" },
 ];
 
-function emptyOpenClawProfile(): OpenClawEndpointForm {
+function emptyAIProviderProfile(): AIProviderEndpointForm {
   return {
     enabled: false,
+    provider: "custom",
     baseUrl: "",
     apiKeySet: false,
     model: "",
@@ -55,13 +56,14 @@ function emptyOpenClawProfile(): OpenClawEndpointForm {
     userTemplate: "",
     timeoutSec: 120,
     skipTlsVerify: false,
-    endpointSource: "custom",
-    appInstanceId: "",
+    source: "custom",
+    instanceId: "",
   };
 }
 
-type OpenClawEndpointForm = {
+type AIProviderEndpointForm = {
   enabled: boolean;
+  provider?: "custom" | "openclaw" | "hermes" | string;
   baseUrl: string;
   apiKeySet?: boolean;
   model: string;
@@ -69,14 +71,14 @@ type OpenClawEndpointForm = {
   userTemplate: string;
   timeoutSec: number;
   skipTlsVerify: boolean;
-  endpointSource?: string;
-  appInstanceId?: string;
+  source?: string;
+  instanceId?: string;
 };
 
-type OpenClawGet = {
-  openclaw: OpenClawEndpointForm;
+type AIProviderGet = {
+  endpoint: AIProviderEndpointForm;
   /** 分场景覆盖：inspect_summary / inspect_probe / vmlog_analyze / cluster_advisory */
-  openclawProfiles?: Record<string, OpenClawEndpointForm>;
+  providerProfiles?: Record<string, AIProviderEndpointForm>;
   ai: {
     dailyReportHour: number;
     dailyReportMinute: number;
@@ -143,8 +145,8 @@ const AiInspectHome: React.FC = () => {
   const { status } = useAuth();
   const isAdmin = status?.role === "admin";
   const q = useQuery({
-    queryKey: ["ops-openclaw"],
-    queryFn: ({ signal }) => apiGetJson<OpenClawGet>("/api/ops/openclaw", { signal }),
+    queryKey: ["ops-ai-provider"],
+    queryFn: ({ signal }) => apiGetJson<AIProviderGet>("/api/ops/ai-provider", { signal }),
     enabled: isAdmin,
   });
   const [inspectTaskId, setInspectTaskId] = useState("");
@@ -174,6 +176,23 @@ const AiInspectHome: React.FC = () => {
     enabled: isAdmin,
   });
 
+  const hermesInstQ = useQuery({
+    queryKey: ["app-hermes-instances"],
+    queryFn: ({ signal }) =>
+      apiGetJson<{
+        instances: {
+          id: string;
+          displayName: string;
+          deploymentName: string;
+          serviceName: string;
+          namespace: string;
+          mode: string;
+          modelName?: string;
+        }[];
+      }>("/api/app-center/hermes/instances", { signal }),
+    enabled: isAdmin,
+  });
+
   const ocK8sQ = useQuery({
     queryKey: ["app-openclaw-k8s-status"],
     queryFn: ({ signal }) => apiGetJson<OpenClawK8sStatusBatch>("/api/app-center/openclaw/instances/k8s-status", { signal }),
@@ -181,7 +200,7 @@ const AiInspectHome: React.FC = () => {
     refetchInterval: isAdmin ? 30000 : false,
   });
 
-  const [draft, setDraft] = useState<OpenClawGet | null>(null);
+  const [draft, setDraft] = useState<AIProviderGet | null>(null);
   const [apiKey, setApiKey] = useState("");
   const [profileApiKeys, setProfileApiKeys] = useState<Record<string, string>>({});
 
@@ -196,25 +215,27 @@ const AiInspectHome: React.FC = () => {
 
   useEffect(() => {
     if (!q.data) return;
-    const prof: Record<string, OpenClawEndpointForm> = {};
-    for (const { role } of OPS_OPENCLAW_SCENARIOS) {
-      const src = q.data.openclawProfiles?.[role];
+    const prof: Record<string, AIProviderEndpointForm> = {};
+    for (const { role } of OPS_AI_PROVIDER_SCENARIOS) {
+      const src = q.data.providerProfiles?.[role];
       prof[role] = src
         ? {
-            ...emptyOpenClawProfile(),
+            ...emptyAIProviderProfile(),
             ...src,
-            endpointSource: src.endpointSource || (src.appInstanceId ? "appInstance" : "custom"),
+            provider: src.provider || "custom",
+            source: src.source || (src.instanceId ? "appCenter" : "custom"),
           }
-        : emptyOpenClawProfile();
+        : emptyAIProviderProfile();
     }
     setDraft({
       ...q.data,
-      openclawProfiles: prof,
-      openclaw: {
-        ...q.data.openclaw,
-        endpointSource:
-          q.data.openclaw.endpointSource ||
-          (q.data.openclaw.appInstanceId ? "appInstance" : "custom"),
+      providerProfiles: prof,
+      endpoint: {
+        ...q.data.endpoint,
+        provider: q.data.endpoint.provider || "custom",
+        source:
+          q.data.endpoint.source ||
+          (q.data.endpoint.instanceId ? "appCenter" : "custom"),
       },
       ai: {
         ...q.data.ai,
@@ -228,10 +249,10 @@ const AiInspectHome: React.FC = () => {
   }, [q.data]);
 
   const saveMut = useMutation({
-    mutationFn: (body: Record<string, unknown>) => apiPutJson("/api/ops/openclaw", body),
+    mutationFn: (body: Record<string, unknown>) => apiPutJson("/api/ops/ai-provider", body),
     onSuccess: () => {
       toast.success("已保存");
-      void qc.invalidateQueries({ queryKey: ["ops-openclaw"] });
+      void qc.invalidateQueries({ queryKey: ["ops-ai-provider"] });
       setApiKey("");
       setProfileApiKeys({});
     },
@@ -285,42 +306,49 @@ const AiInspectHome: React.FC = () => {
   }
 
   const putBody = () => {
-    const src = draft.openclaw.endpointSource === "appInstance" ? "appInstance" : "custom";
-    const openclawProfiles: Record<string, Record<string, unknown>> = {};
-    for (const { role } of OPS_OPENCLAW_SCENARIOS) {
-      const p = draft.openclawProfiles?.[role] ?? emptyOpenClawProfile();
-      const psrc = p.endpointSource === "appInstance" ? "appInstance" : "custom";
-      openclawProfiles[role] = {
+    const provider = draft.endpoint.provider || "custom";
+    const src = provider === "custom" ? "custom" : draft.endpoint.source === "appCenter" ? "appCenter" : "custom";
+    const providerProfiles: Record<string, Record<string, unknown>> = {};
+    for (const { role } of OPS_AI_PROVIDER_SCENARIOS) {
+      const p = draft.providerProfiles?.[role] ?? emptyAIProviderProfile();
+      const pprovider = p.provider || "custom";
+      const psrc = pprovider === "custom" ? "custom" : p.source === "appCenter" ? "appCenter" : "custom";
+      providerProfiles[role] = {
         enabled: p.enabled,
+        provider: pprovider,
         baseUrl: p.baseUrl,
         apiKey: psrc === "custom" ? profileApiKeys[role]?.trim() || undefined : undefined,
-        model: psrc === "appInstance" ? "" : p.model,
+        model: psrc === "appCenter" ? "" : p.model,
         systemPrompt: p.systemPrompt,
         userTemplate: p.userTemplate,
         timeoutSec: p.timeoutSec || 120,
         skipTlsVerify: p.skipTlsVerify,
-        endpointSource: psrc,
-        appInstanceId: psrc === "appInstance" ? (p.appInstanceId || "").trim() : "",
+        source: psrc,
+        instanceId: psrc === "appCenter" ? (p.instanceId || "").trim() : "",
       };
     }
     return {
-      openclaw: {
-        enabled: draft.openclaw.enabled,
-        baseUrl: draft.openclaw.baseUrl,
+      endpoint: {
+        enabled: draft.endpoint.enabled,
+        provider,
+        baseUrl: draft.endpoint.baseUrl,
         apiKey: src === "custom" ? apiKey.trim() || undefined : undefined,
         // 应用中心实例：模型由登记实例的预设/对话模型推导，服务端 Resolve 填充；勿写巡检页草稿
-        model: src === "appInstance" ? "" : draft.openclaw.model,
-        systemPrompt: draft.openclaw.systemPrompt,
-        userTemplate: draft.openclaw.userTemplate,
-        timeoutSec: draft.openclaw.timeoutSec || 120,
-        skipTlsVerify: draft.openclaw.skipTlsVerify,
-        endpointSource: src,
-        appInstanceId: src === "appInstance" ? (draft.openclaw.appInstanceId || "").trim() : "",
+        model: src === "appCenter" ? "" : draft.endpoint.model,
+        systemPrompt: draft.endpoint.systemPrompt,
+        userTemplate: draft.endpoint.userTemplate,
+        timeoutSec: draft.endpoint.timeoutSec || 120,
+        skipTlsVerify: draft.endpoint.skipTlsVerify,
+        source: src,
+        instanceId: src === "appCenter" ? (draft.endpoint.instanceId || "").trim() : "",
       },
-      openclawProfiles,
+      providerProfiles,
       ai: draft.ai,
     };
   };
+
+  const endpointProvider = draft.endpoint.provider || "custom";
+  const endpointSource = endpointProvider === "custom" ? "custom" : draft.endpoint.source === "appCenter" ? "appCenter" : "custom";
 
   return (
     <div className="space-y-8">
@@ -430,20 +458,53 @@ const AiInspectHome: React.FC = () => {
         </CollapsibleManual>
         <div className="mt-4 space-y-3 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-3">
           <div className="space-y-2">
-            <Label>巡检使用的 OpenClaw 来源</Label>
+            <Label>AI Provider</Label>
             <Select
-              value={draft.openclaw.endpointSource === "appInstance" ? "appInstance" : "custom"}
+              value={endpointProvider}
               onValueChange={(v) =>
                 setDraft((d) =>
                   d
                     ? {
                         ...d,
-                        openclaw: {
-                          ...d.openclaw,
-                          endpointSource: v,
-                          appInstanceId: v === "appInstance" ? d.openclaw.appInstanceId : "",
+                        endpoint: {
+                          ...d.endpoint,
+                          provider: v,
+                          source: v === "custom" ? "custom" : d.endpoint.source === "appCenter" ? "appCenter" : "custom",
+                          instanceId: v === d.endpoint.provider ? d.endpoint.instanceId : "",
+                          baseUrl: v === "custom" ? d.endpoint.baseUrl : d.endpoint.source === "appCenter" ? "" : d.endpoint.baseUrl,
+                          model: v === "custom" ? d.endpoint.model : d.endpoint.source === "appCenter" ? "" : d.endpoint.model,
+                        },
+                      }
+                    : d
+                )
+              }
+            >
+              <SelectTrigger className="max-w-lg">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="custom">Custom / OpenAI compatible</SelectItem>
+                <SelectItem value="openclaw">OpenClaw</SelectItem>
+                <SelectItem value="hermes">Hermes</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>巡检使用的 OpenClaw 来源</Label>
+            <Select
+              value={endpointSource}
+              disabled={endpointProvider === "custom"}
+              onValueChange={(v) =>
+                setDraft((d) =>
+                  d
+                    ? {
+                        ...d,
+                        endpoint: {
+                          ...d.endpoint,
+                          source: v,
+                          instanceId: v === "appCenter" ? d.endpoint.instanceId : "",
                           // 切回集群内实例时不再使用巡检页上的远端模型字段，避免误保存旧值
-                          model: v === "appInstance" ? "" : d.openclaw.model,
+                          model: v === "appCenter" ? "" : d.endpoint.model,
                         },
                       }
                     : d
@@ -455,48 +516,58 @@ const AiInspectHome: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="custom">手动填写 Base URL（任意远端 OpenAI 兼容地址）</SelectItem>
-                <SelectItem value="appInstance">应用中心已登记的 OpenClaw（集群内 Service 地址）</SelectItem>
+                <SelectItem value="appCenter">应用中心实例（集群内 Service 地址）</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          {draft.openclaw.endpointSource === "appInstance" ? (
+          {endpointSource === "appCenter" ? (
             <div className="space-y-2">
               <Label>选择本地实例（仅运行中）</Label>
-              {ocK8sQ.isLoading ? (
+              {endpointProvider === "openclaw" && ocK8sQ.isLoading ? (
                 <p className="text-xs text-slate-500">正在拉取各实例运行状态…</p>
               ) : null}
-              {ocK8sQ.isError ? (
+              {endpointProvider === "openclaw" && ocK8sQ.isError ? (
                 <p className="text-xs text-amber-800">无法获取 OpenClaw 运行状态，请稍后刷新页面；就绪实例列表可能为空。</p>
               ) : null}
               <Select
-                value={draft.openclaw.appInstanceId || ""}
-                disabled={ocK8sQ.isLoading}
+                value={draft.endpoint.instanceId || ""}
+                disabled={endpointProvider === "openclaw" ? ocK8sQ.isLoading : hermesInstQ.isLoading}
                 onValueChange={(id) =>
                   setDraft((d) => {
                     if (!d) return d;
-                    const row = ocInstQ.data?.instances?.find((x) => x.id === id);
+                    const ocRow = ocInstQ.data?.instances?.find((x) => x.id === id);
+                    const hermesRow = hermesInstQ.data?.instances?.find((x) => x.id === id);
                     return {
                       ...d,
-                      openclaw: {
-                        ...d.openclaw,
-                        appInstanceId: id,
-                        baseUrl: row?.clusterV1BaseUrl || d.openclaw.baseUrl,
+                      endpoint: {
+                        ...d.endpoint,
+                        instanceId: id,
+                        baseUrl: endpointProvider === "openclaw" ? ocRow?.clusterV1BaseUrl || d.endpoint.baseUrl : "",
+                        model: endpointProvider === "hermes" ? hermesRow?.modelName || d.endpoint.model : d.endpoint.model,
                       },
                     };
                   })
                 }
               >
                 <SelectTrigger className="max-w-lg">
-                  <SelectValue placeholder={ocK8sQ.isLoading ? "加载中…" : "选择实例"} />
+                  <SelectValue placeholder={(endpointProvider === "openclaw" ? ocK8sQ.isLoading : hermesInstQ.isLoading) ? "加载中…" : "选择实例"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {(ocInstQ.data?.instances ?? [])
-                    .filter((x) => (ocK8sQ.data?.statuses?.[x.id]?.phase ?? "") === "ready")
-                    .map((x) => (
-                      <SelectItem key={x.id} value={x.id}>
-                        {x.displayName || x.deploymentName || x.id} · {x.clusterV1BaseUrl}
-                      </SelectItem>
-                    ))}
+                  {endpointProvider === "hermes"
+                    ? (hermesInstQ.data?.instances ?? [])
+                        .filter((x) => (x.mode || "").includes("gateway"))
+                        .map((x) => (
+                          <SelectItem key={x.id} value={x.id}>
+                            {x.displayName || x.deploymentName || x.id} · {x.serviceName}
+                          </SelectItem>
+                        ))
+                    : (ocInstQ.data?.instances ?? [])
+                        .filter((x) => (ocK8sQ.data?.statuses?.[x.id]?.phase ?? "") === "ready")
+                        .map((x) => (
+                          <SelectItem key={x.id} value={x.id}>
+                            {x.displayName || x.deploymentName || x.id} · {x.clusterV1BaseUrl}
+                          </SelectItem>
+                        ))}
                 </SelectContent>
               </Select>
               <p className="text-[12px] text-slate-500">
@@ -509,9 +580,9 @@ const AiInspectHome: React.FC = () => {
         <div className="mt-4 space-y-4">
           <div className="flex items-center gap-3">
             <Switch
-              checked={draft.openclaw.enabled}
+              checked={draft.endpoint.enabled}
               onCheckedChange={(v) =>
-                setDraft((d) => (d ? { ...d, openclaw: { ...d.openclaw, enabled: v } } : d))
+                setDraft((d) => (d ? { ...d, endpoint: { ...d.endpoint, enabled: v } } : d))
               }
             />
             <Label>启用巡检后调用大模型生成摘要</Label>
@@ -520,28 +591,28 @@ const AiInspectHome: React.FC = () => {
             <div className="space-y-2">
               <Label>Base URL</Label>
               <Input
-                value={draft.openclaw.baseUrl}
+                value={draft.endpoint.baseUrl}
                 onChange={(e) =>
                   setDraft((d) =>
-                    d ? { ...d, openclaw: { ...d.openclaw, baseUrl: e.target.value } } : d
+                    d ? { ...d, endpoint: { ...d.endpoint, baseUrl: e.target.value } } : d
                   )
                 }
                 placeholder="https://api.openai.com/v1"
-                disabled={draft.openclaw.endpointSource === "appInstance"}
+                disabled={endpointSource === "appCenter"}
               />
             </div>
             <div className="space-y-2">
               <Label>超时（秒）</Label>
               <Input
                 type="number"
-                value={draft.openclaw.timeoutSec || 120}
+                value={draft.endpoint.timeoutSec || 120}
                 onChange={(e) =>
                   setDraft((d) =>
                     d
                       ? {
                           ...d,
-                          openclaw: {
-                            ...d.openclaw,
+                          endpoint: {
+                            ...d.endpoint,
                             timeoutSec: parseInt(e.target.value, 10) || 120,
                           },
                         }
@@ -551,7 +622,7 @@ const AiInspectHome: React.FC = () => {
               />
             </div>
           </div>
-          {draft.openclaw.endpointSource === "custom" ? (
+          {endpointSource === "custom" ? (
             <Collapsible defaultOpen={false} className="rounded-lg border border-slate-200 bg-slate-50/90">
               <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm font-medium text-slate-800 hover:bg-slate-100/80 [&[data-state=open]_svg]:rotate-180">
                 <span>远端 OpenClaw / OpenAI 兼容：API Key 与模型（默认折叠）</span>
@@ -563,7 +634,7 @@ const AiInspectHome: React.FC = () => {
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2 sm:col-span-2">
-                    <Label>API Key {draft.openclaw.apiKeySet ? "（已设置，留空保留）" : ""}</Label>
+                    <Label>API Key {draft.endpoint.apiKeySet ? "（已设置，留空保留）" : ""}</Label>
                     <Input
                       type="password"
                       value={apiKey}
@@ -584,7 +655,7 @@ const AiInspectHome: React.FC = () => {
                           className="h-8 text-xs"
                           onClick={() =>
                             setDraft((d) =>
-                              d ? { ...d, openclaw: { ...d.openclaw, model: p.model } } : d
+                              d ? { ...d, endpoint: { ...d.endpoint, model: p.model } } : d
                             )
                           }
                         >
@@ -593,10 +664,10 @@ const AiInspectHome: React.FC = () => {
                       ))}
                     </div>
                     <Input
-                      value={draft.openclaw.model}
+                      value={draft.endpoint.model}
                       onChange={(e) =>
                         setDraft((d) =>
-                          d ? { ...d, openclaw: { ...d.openclaw, model: e.target.value } } : d
+                          d ? { ...d, endpoint: { ...d.endpoint, model: e.target.value } } : d
                         )
                       }
                       placeholder="如 MiniMax-M2.7、glm-4.7"
@@ -612,9 +683,9 @@ const AiInspectHome: React.FC = () => {
           )}
           <div className="flex items-center gap-3">
             <Switch
-              checked={draft.openclaw.skipTlsVerify}
+              checked={draft.endpoint.skipTlsVerify}
               onCheckedChange={(v) =>
-                setDraft((d) => (d ? { ...d, openclaw: { ...d.openclaw, skipTlsVerify: v } } : d))
+                setDraft((d) => (d ? { ...d, endpoint: { ...d.endpoint, skipTlsVerify: v } } : d))
               }
             />
             <Label>跳过 TLS 校验（自签证书）</Label>
@@ -686,10 +757,10 @@ const AiInspectHome: React.FC = () => {
             </p>
             <Textarea
               rows={3}
-              value={draft.openclaw.systemPrompt}
+              value={draft.endpoint.systemPrompt}
               onChange={(e) =>
                 setDraft((d) =>
-                  d ? { ...d, openclaw: { ...d.openclaw, systemPrompt: e.target.value } } : d
+                  d ? { ...d, endpoint: { ...d.endpoint, systemPrompt: e.target.value } } : d
                 )
               }
             />
@@ -702,10 +773,10 @@ const AiInspectHome: React.FC = () => {
             </p>
             <Textarea
               rows={3}
-              value={draft.openclaw.userTemplate}
+              value={draft.endpoint.userTemplate}
               onChange={(e) =>
                 setDraft((d) =>
-                  d ? { ...d, openclaw: { ...d.openclaw, userTemplate: e.target.value } } : d
+                  d ? { ...d, endpoint: { ...d.endpoint, userTemplate: e.target.value } } : d
                 )
               }
             />
@@ -719,20 +790,21 @@ const AiInspectHome: React.FC = () => {
           下列能力默认走上方「OpenClaw / 对话接口」；若需<strong>不同应用中心实例或远端模型</strong>，在对应折叠中开启并填写。保存时与主配置一并提交。
         </p>
         <div className="mt-4 space-y-3">
-          {OPS_OPENCLAW_SCENARIOS.map(({ role, title, hint }) => {
-            const p = draft.openclawProfiles?.[role] ?? emptyOpenClawProfile();
-            const psrc = p.endpointSource === "appInstance" ? "appInstance" : "custom";
-            const patchP = (patch: Partial<OpenClawEndpointForm>) =>
+          {OPS_AI_PROVIDER_SCENARIOS.map(({ role, title, hint }) => {
+            const p = draft.providerProfiles?.[role] ?? emptyAIProviderProfile();
+            const pprovider = p.provider || "custom";
+            const psrc = pprovider === "custom" ? "custom" : p.source === "appCenter" ? "appCenter" : "custom";
+            const patchP = (patch: Partial<AIProviderEndpointForm>) =>
               setDraft((d) => {
                 if (!d) return d;
-                const base: Record<string, OpenClawEndpointForm> = { ...(d.openclawProfiles ?? {}) };
-                for (const { role: r } of OPS_OPENCLAW_SCENARIOS) {
-                  if (!base[r]) base[r] = emptyOpenClawProfile();
+                const base: Record<string, AIProviderEndpointForm> = { ...(d.providerProfiles ?? {}) };
+                for (const { role: r } of OPS_AI_PROVIDER_SCENARIOS) {
+                  if (!base[r]) base[r] = emptyAIProviderProfile();
                 }
-                const cur = base[role] ?? emptyOpenClawProfile();
+                const cur = base[role] ?? emptyAIProviderProfile();
                 return {
                   ...d,
-                  openclawProfiles: { ...base, [role]: { ...cur, ...patch } },
+                  providerProfiles: { ...base, [role]: { ...cur, ...patch } },
                 };
               });
             return (
@@ -752,13 +824,38 @@ const AiInspectHome: React.FC = () => {
                   {p.enabled ? (
                     <div className="space-y-3 rounded-md border border-slate-100 bg-slate-50/60 p-3">
                       <div className="space-y-2">
+                        <Label className="text-xs">AI Provider</Label>
+                        <Select
+                          value={pprovider}
+                          onValueChange={(v) =>
+                            patchP({
+                              provider: v,
+                              source: v === "custom" ? "custom" : p.source === "appCenter" ? "appCenter" : "custom",
+                              instanceId: v === p.provider ? p.instanceId : "",
+                              baseUrl: v === "custom" ? p.baseUrl : p.source === "appCenter" ? "" : p.baseUrl,
+                              model: v === "custom" ? p.model : p.source === "appCenter" ? "" : p.model,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="max-w-lg">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="custom">Custom / OpenAI compatible</SelectItem>
+                            <SelectItem value="openclaw">OpenClaw</SelectItem>
+                            <SelectItem value="hermes">Hermes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
                         <Label className="text-xs">来源</Label>
                         <Select
                           value={psrc}
+                          disabled={pprovider === "custom"}
                           onValueChange={(v) =>
                             patchP({
-                              endpointSource: v,
-                              appInstanceId: v === "appInstance" ? p.appInstanceId : "",
+                              source: v,
+                              instanceId: v === "appCenter" ? p.instanceId : "",
                             })
                           }
                         >
@@ -767,21 +864,23 @@ const AiInspectHome: React.FC = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="custom">手动 Base URL</SelectItem>
-                            <SelectItem value="appInstance">应用中心 OpenClaw 实例</SelectItem>
+                            <SelectItem value="appCenter">应用中心实例</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-                      {psrc === "appInstance" ? (
+                      {psrc === "appCenter" ? (
                         <div className="space-y-2">
                           <Label className="text-xs">实例（就绪）</Label>
                           <Select
-                            value={p.appInstanceId || ""}
-                            disabled={ocK8sQ.isLoading}
+                            value={p.instanceId || ""}
+                            disabled={pprovider === "openclaw" ? ocK8sQ.isLoading : hermesInstQ.isLoading}
                             onValueChange={(id) => {
-                              const row = ocInstQ.data?.instances?.find((x) => x.id === id);
+                              const ocRow = ocInstQ.data?.instances?.find((x) => x.id === id);
+                              const hermesRow = hermesInstQ.data?.instances?.find((x) => x.id === id);
                               patchP({
-                                appInstanceId: id,
-                                baseUrl: row?.clusterV1BaseUrl || p.baseUrl,
+                                instanceId: id,
+                                baseUrl: pprovider === "openclaw" ? ocRow?.clusterV1BaseUrl || p.baseUrl : "",
+                                model: pprovider === "hermes" ? hermesRow?.modelName || p.model : p.model,
                               });
                             }}
                           >
@@ -789,13 +888,21 @@ const AiInspectHome: React.FC = () => {
                               <SelectValue placeholder="选择实例" />
                             </SelectTrigger>
                             <SelectContent>
-                              {(ocInstQ.data?.instances ?? [])
-                                .filter((x) => (ocK8sQ.data?.statuses?.[x.id]?.phase ?? "") === "ready")
-                                .map((x) => (
-                                  <SelectItem key={x.id} value={x.id}>
-                                    {x.displayName || x.deploymentName || x.id}
-                                  </SelectItem>
-                                ))}
+                              {pprovider === "hermes"
+                                ? (hermesInstQ.data?.instances ?? [])
+                                    .filter((x) => (x.mode || "").includes("gateway"))
+                                    .map((x) => (
+                                      <SelectItem key={x.id} value={x.id}>
+                                        {x.displayName || x.deploymentName || x.id}
+                                      </SelectItem>
+                                    ))
+                                : (ocInstQ.data?.instances ?? [])
+                                    .filter((x) => (ocK8sQ.data?.statuses?.[x.id]?.phase ?? "") === "ready")
+                                    .map((x) => (
+                                      <SelectItem key={x.id} value={x.id}>
+                                        {x.displayName || x.deploymentName || x.id}
+                                      </SelectItem>
+                                    ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -805,7 +912,7 @@ const AiInspectHome: React.FC = () => {
                           <Label className="text-xs">Base URL</Label>
                           <Input
                             value={p.baseUrl}
-                            disabled={psrc === "appInstance"}
+                            disabled={psrc === "appCenter"}
                             onChange={(e) => patchP({ baseUrl: e.target.value })}
                             placeholder="https://…/v1"
                           />
@@ -953,7 +1060,7 @@ const AiInspectHome: React.FC = () => {
                     d
                       ? {
                           ...d,
-                          ai: { ...d.ai, [k]: v } as OpenClawGet["ai"],
+                          ai: { ...d.ai, [k]: v } as AIProviderGet["ai"],
                         }
                       : d
                   )

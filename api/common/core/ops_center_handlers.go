@@ -12,8 +12,8 @@ import (
 )
 
 func registerOpsCenterRoutes(api *gin.RouterGroup, app *ServerApp) {
-	api.GET("/ops/openclaw", AdminOnlyMiddleware(app), handleOpsOpenClawGet(app))
-	api.PUT("/ops/openclaw", AdminOnlyMiddleware(app), handleOpsOpenClawPut(app))
+	api.GET("/ops/ai-provider", AdminOnlyMiddleware(app), handleOpsAIProviderGet(app))
+	api.PUT("/ops/ai-provider", AdminOnlyMiddleware(app), handleOpsAIProviderPut(app))
 	api.POST("/ops/inspect/run", AdminOnlyMiddleware(app), handleOpsInspectRun(app))
 	api.GET("/ops/inspect/reports", AdminOnlyMiddleware(app), handleOpsInspectReports(app))
 	api.GET("/ops/inspect/tasks", AdminOnlyMiddleware(app), handleOpsInspectTaskList(app))
@@ -41,8 +41,8 @@ func registerOpsCenterRoutes(api *gin.RouterGroup, app *ServerApp) {
 	api.POST("/ops/vmlog/details", handleOpsVmLogDetails(app))
 	api.POST("/ops/vmlog/query", handleOpsVmLogQuery(app))
 	api.POST("/ops/vmlog/stats", handleOpsVmLogStats(app))
-	api.POST("/ops/vmlog/openclaw-analyze", handleOpsVmLogOpenclawAnalyze(app))
-	api.POST("/ops/vmlog/openclaw-analyze-row", handleOpsVmLogOpenclawAnalyzeRow(app))
+	api.POST("/ops/vmlog/ai-analyze", handleOpsVmLogAIAnalyze(app))
+	api.POST("/ops/vmlog/ai-analyze-row", handleOpsVmLogAIAnalyzeRow(app))
 	api.POST("/ops/vmlog/vm-shipper/script", handleOpsVmLogVmShipperScript(app))
 	api.POST("/ops/vmlog/vm-shipper/inspect", AdminOnlyMiddleware(app), handleOpsVmLogVmShipperInspect(app))
 	api.POST("/ops/vmlog/vm-shipper/apply", AdminOnlyMiddleware(app), handleOpsVmLogVmShipperApply(app))
@@ -55,159 +55,147 @@ func registerOpsCenterRoutes(api *gin.RouterGroup, app *ServerApp) {
 	api.POST("/ops/cluster-advisory/run", AdminOnlyMiddleware(app), handleOpsClusterAdvisoryRun(app))
 }
 
-func handleOpsOpenClawGet(app *ServerApp) gin.HandlerFunc {
+func handleOpsAIProviderGet(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		b, err := loadOpsOpenClawBundle(app.PlatformKV())
+		b, err := loadOpsAIProviderBundle(app.PlatformKV())
 		if err != nil {
 			RespondAPIError500(c, err.Error())
 			return
 		}
 		out := gin.H{
-			"openclaw": gin.H{
-				"enabled":        b.OpenClaw.Enabled,
-				"baseUrl":        b.OpenClaw.BaseURL,
-				"apiKeySet":      strings.TrimSpace(b.OpenClaw.APIKeyEnc) != "",
-				"model":          b.OpenClaw.Model,
-				"systemPrompt":   b.OpenClaw.SystemPrompt,
-				"userTemplate":   b.OpenClaw.UserTemplate,
-				"timeoutSec":     b.OpenClaw.TimeoutSec,
-				"skipTlsVerify":  b.OpenClaw.SkipTLSVerify,
-				"endpointSource": b.OpenClaw.EndpointSource,
-				"appInstanceId":  b.OpenClaw.AppInstanceID,
-			},
-			"ai": b.AI,
+			"endpoint": opsAIProviderEndpointOut(b.Endpoint),
+			"ai":       b.AI,
 		}
-		if len(b.OpenClawProfiles) > 0 {
+		if len(b.ProviderProfiles) > 0 {
 			pm := gin.H{}
-			for k, p := range b.OpenClawProfiles {
-				pm[k] = gin.H{
-					"enabled":        p.Enabled,
-					"baseUrl":        p.BaseURL,
-					"apiKeySet":      strings.TrimSpace(p.APIKeyEnc) != "",
-					"model":          p.Model,
-					"systemPrompt":   p.SystemPrompt,
-					"userTemplate":   p.UserTemplate,
-					"timeoutSec":     p.TimeoutSec,
-					"skipTlsVerify":  p.SkipTLSVerify,
-					"endpointSource": p.EndpointSource,
-					"appInstanceId":  p.AppInstanceID,
-				}
+			for k, p := range b.ProviderProfiles {
+				pm[k] = opsAIProviderEndpointOut(p)
 			}
-			out["openclawProfiles"] = pm
+			out["providerProfiles"] = pm
 		}
 		c.JSON(http.StatusOK, out)
 	}
 }
 
-type opsOpenClawPutOpenClawBody struct {
-	Enabled        bool   `json:"enabled"`
-	BaseURL        string `json:"baseUrl"`
-	APIKey         string `json:"apiKey"` // 明文；空表示不改
-	Model          string `json:"model"`
-	SystemPrompt   string `json:"systemPrompt"`
-	UserTemplate   string `json:"userTemplate"`
-	TimeoutSec     int    `json:"timeoutSec"`
-	SkipTLSVerify  bool   `json:"skipTlsVerify"`
-	EndpointSource string `json:"endpointSource"`
-	AppInstanceID  string `json:"appInstanceId"`
+func opsAIProviderEndpointOut(ep OpsAIProviderEndpoint) gin.H {
+	normalizeOpsAIProviderEndpoint(&ep)
+	return gin.H{
+		"enabled":       ep.Enabled,
+		"provider":      ep.Provider,
+		"source":        ep.Source,
+		"instanceId":    ep.InstanceID,
+		"baseUrl":       ep.BaseURL,
+		"apiKeySet":     strings.TrimSpace(ep.APIKeyEnc) != "" || ep.Source == OpsAIProviderSourceAppCenter,
+		"model":         ep.Model,
+		"systemPrompt":  ep.SystemPrompt,
+		"userTemplate":  ep.UserTemplate,
+		"timeoutSec":    ep.TimeoutSec,
+		"skipTlsVerify": ep.SkipTLSVerify,
+	}
 }
 
-type opsOpenClawPutBody struct {
-	OpenClaw struct {
-		Enabled        bool   `json:"enabled"`
-		BaseURL        string `json:"baseUrl"`
-		APIKey         string `json:"apiKey"` // 明文；空表示不改
-		Model          string `json:"model"`
-		SystemPrompt   string `json:"systemPrompt"`
-		UserTemplate   string `json:"userTemplate"`
-		TimeoutSec     int    `json:"timeoutSec"`
-		SkipTLSVerify  bool   `json:"skipTlsVerify"`
-		EndpointSource string `json:"endpointSource"`
-		AppInstanceID  string `json:"appInstanceId"`
-	} `json:"openclaw"`
-	OpenClawProfiles map[string]opsOpenClawPutOpenClawBody `json:"openclawProfiles"`
-	AI               OpsAIInspectConfig                    `json:"ai"`
+type opsAIProviderPutEndpointBody struct {
+	Enabled       bool   `json:"enabled"`
+	Provider      string `json:"provider"`
+	Source        string `json:"source"`
+	InstanceID    string `json:"instanceId"`
+	BaseURL       string `json:"baseUrl"`
+	APIKey        string `json:"apiKey"` // 明文；空表示不改
+	Model         string `json:"model"`
+	SystemPrompt  string `json:"systemPrompt"`
+	UserTemplate  string `json:"userTemplate"`
+	TimeoutSec    int    `json:"timeoutSec"`
+	SkipTLSVerify bool   `json:"skipTlsVerify"`
 }
 
-func handleOpsOpenClawPut(app *ServerApp) gin.HandlerFunc {
+type opsAIProviderPutBody struct {
+	Endpoint         opsAIProviderPutEndpointBody            `json:"endpoint"`
+	ProviderProfiles map[string]opsAIProviderPutEndpointBody `json:"providerProfiles"`
+	AI               OpsAIInspectConfig                      `json:"ai"`
+}
+
+func applyOpsAIProviderEndpointPut(cfg Config, cur OpsAIProviderEndpoint, body opsAIProviderPutEndpointBody) (OpsAIProviderEndpoint, error) {
+	cur.Enabled = body.Enabled
+	cur.Provider = strings.TrimSpace(body.Provider)
+	cur.Source = strings.TrimSpace(body.Source)
+	cur.InstanceID = strings.TrimSpace(body.InstanceID)
+	cur.BaseURL = strings.TrimSpace(body.BaseURL)
+	cur.Model = strings.TrimSpace(body.Model)
+	cur.SystemPrompt = body.SystemPrompt
+	cur.UserTemplate = body.UserTemplate
+	cur.TimeoutSec = body.TimeoutSec
+	cur.SkipTLSVerify = body.SkipTLSVerify
+	normalizeOpsAIProviderEndpoint(&cur)
+	if cur.Source == OpsAIProviderSourceCustom && strings.TrimSpace(body.APIKey) != "" {
+		key, err := opsEncryptionKey(cfg)
+		if err != nil {
+			return cur, err
+		}
+		enc, err := encryptSecret(key, strings.TrimSpace(body.APIKey))
+		if err != nil {
+			return cur, err
+		}
+		cur.APIKeyEnc = enc
+	}
+	if cur.Source == OpsAIProviderSourceAppCenter {
+		cur.APIKeyEnc = ""
+	}
+	return cur, nil
+}
+
+func handleOpsAIProviderPut(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var body opsOpenClawPutBody
+		var body opsAIProviderPutBody
 		if err := c.ShouldBindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "参数无效"})
 			return
 		}
 		cfg := app.Cfg()
-		key, err := opsEncryptionKey(cfg)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		cur, err := loadOpsOpenClawBundle(app.PlatformKV())
+		cur, err := loadOpsAIProviderBundle(app.PlatformKV())
 		if err != nil {
 			RespondAPIError500(c, err.Error())
 			return
 		}
-		cur.OpenClaw.Enabled = body.OpenClaw.Enabled
-		cur.OpenClaw.BaseURL = strings.TrimSpace(body.OpenClaw.BaseURL)
-		cur.OpenClaw.Model = strings.TrimSpace(body.OpenClaw.Model)
-		cur.OpenClaw.SystemPrompt = body.OpenClaw.SystemPrompt
-		cur.OpenClaw.UserTemplate = body.OpenClaw.UserTemplate
-		cur.OpenClaw.TimeoutSec = body.OpenClaw.TimeoutSec
-		cur.OpenClaw.SkipTLSVerify = body.OpenClaw.SkipTLSVerify
-		cur.OpenClaw.EndpointSource = strings.TrimSpace(body.OpenClaw.EndpointSource)
-		cur.OpenClaw.AppInstanceID = strings.TrimSpace(body.OpenClaw.AppInstanceID)
-		if strings.TrimSpace(body.OpenClaw.APIKey) != "" {
-			enc, err := encryptSecret(key, strings.TrimSpace(body.OpenClaw.APIKey))
-			if err != nil {
-				RespondAPIError500(c, err.Error())
-				return
-			}
-			cur.OpenClaw.APIKeyEnc = enc
-		} else if strings.TrimSpace(cur.OpenClaw.EndpointSource) == "appInstance" {
-			if err := ResolveOpsOpenClawEndpoint(app, cfg, &cur); err != nil {
+		cur.Endpoint, err = applyOpsAIProviderEndpointPut(cfg, cur.Endpoint, body.Endpoint)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if cur.Endpoint.Source == OpsAIProviderSourceAppCenter {
+			tmp := OpsAIProviderBundle{Endpoint: cur.Endpoint}
+			if err := ResolveOpsAIProviderEndpoint(app, cfg, &tmp); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return
 			}
+			cur.Endpoint = tmp.Endpoint
 		}
 		cur.AI = body.AI
-		if body.OpenClawProfiles != nil {
-			if cur.OpenClawProfiles == nil {
-				cur.OpenClawProfiles = map[string]OpenClawConfig{}
+		if body.ProviderProfiles != nil {
+			if cur.ProviderProfiles == nil {
+				cur.ProviderProfiles = map[string]OpsAIProviderEndpoint{}
 			}
-			for role, pb := range body.OpenClawProfiles {
+			for role, pb := range body.ProviderProfiles {
 				role = strings.TrimSpace(role)
 				if role == "" {
 					continue
 				}
-				oc := cur.OpenClawProfiles[role]
-				oc.Enabled = pb.Enabled
-				oc.BaseURL = strings.TrimSpace(pb.BaseURL)
-				oc.Model = strings.TrimSpace(pb.Model)
-				oc.SystemPrompt = pb.SystemPrompt
-				oc.UserTemplate = pb.UserTemplate
-				oc.TimeoutSec = pb.TimeoutSec
-				oc.SkipTLSVerify = pb.SkipTLSVerify
-				oc.EndpointSource = strings.TrimSpace(pb.EndpointSource)
-				oc.AppInstanceID = strings.TrimSpace(pb.AppInstanceID)
-				if strings.TrimSpace(pb.APIKey) != "" {
-					enc, err := encryptSecret(key, strings.TrimSpace(pb.APIKey))
-					if err != nil {
-						RespondAPIError500(c, err.Error())
-						return
-					}
-					oc.APIKeyEnc = enc
-				} else if strings.TrimSpace(oc.EndpointSource) == "appInstance" {
-					tmp := OpsOpenClawBundle{OpenClaw: oc}
-					if err := ResolveOpsOpenClawEndpoint(app, cfg, &tmp); err != nil {
+				ep, err := applyOpsAIProviderEndpointPut(cfg, cur.ProviderProfiles[role], pb)
+				if err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("分场景 %s: %v", role, err)})
+					return
+				}
+				if ep.Source == OpsAIProviderSourceAppCenter {
+					tmp := OpsAIProviderBundle{Endpoint: ep}
+					if err := ResolveOpsAIProviderEndpoint(app, cfg, &tmp); err != nil {
 						c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("分场景 %s: %v", role, err)})
 						return
 					}
-					oc = tmp.OpenClaw
+					ep = tmp.Endpoint
 				}
-				cur.OpenClawProfiles[role] = oc
+				cur.ProviderProfiles[role] = ep
 			}
 		}
-		if err := saveOpsOpenClawBundle(app.PlatformKV(), cur); err != nil {
+		if err := saveOpsAIProviderBundle(app.PlatformKV(), cur); err != nil {
 			RespondAPIError500(c, err.Error())
 			return
 		}
@@ -218,14 +206,14 @@ func handleOpsOpenClawPut(app *ServerApp) gin.HandlerFunc {
 func handleOpsInspectRun(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cfg := app.Cfg()
-		bundle, err := loadOpsOpenClawBundle(app.PlatformKV())
+		bundle, err := loadOpsAIProviderBundle(app.PlatformKV())
 		if err != nil {
 			RespondAPIError500(c, err.Error())
 			return
 		}
 		task := newOpsInspectTask()
 		opsInspectTaskStore.Store(task.ID, task)
-		go func(task *opsInspectTask, cfg Config, bundle OpsOpenClawBundle) {
+		go func(task *opsInspectTask, cfg Config, bundle OpsAIProviderBundle) {
 			rep, err := RunPlatformInspection(app, cfg, bundle, func(progress int, stage, message string) {
 				task.setProgress(progress, stage, message)
 			})

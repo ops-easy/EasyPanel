@@ -91,49 +91,6 @@ func findAppOpenClawInstance(list []AppOpenClawInstance, id string) *AppOpenClaw
 	return nil
 }
 
-func ResolveOpsOpenClawEndpoint(app *ServerApp, cfg Config, b *OpsOpenClawBundle) error {
-	if b == nil {
-		return nil
-	}
-	src := strings.TrimSpace(b.OpenClaw.EndpointSource)
-	if src != "appInstance" {
-		return nil
-	}
-	id := strings.TrimSpace(b.OpenClaw.AppInstanceID)
-	if id == "" {
-		return fmt.Errorf("未选择应用中心 OpenClaw 实例")
-	}
-	list, err := loadAppOpenClawInstances(app.PlatformKV())
-	if err != nil {
-		return err
-	}
-	inst := findAppOpenClawInstance(list, id)
-	if inst == nil {
-		return fmt.Errorf("OpenClaw 实例不存在")
-	}
-	key, err := opsEncryptionKey(cfg)
-	if err != nil {
-		return err
-	}
-	tok, err := decryptSecret(key, inst.GatewayTokenEnc)
-	if err != nil || strings.TrimSpace(tok) == "" {
-		return fmt.Errorf("无法解密网关 Token，请重新同步应用中心实例")
-	}
-	b.OpenClaw.BaseURL = strings.TrimSpace(inst.ClusterV1BaseURL)
-	if b.OpenClaw.BaseURL == "" {
-		return fmt.Errorf("实例缺少集群内 Base URL")
-	}
-	enc, err := encryptSecret(key, strings.TrimSpace(tok))
-	if err != nil {
-		return err
-	}
-	b.OpenClaw.APIKeyEnc = enc
-	if strings.TrimSpace(b.OpenClaw.Model) == "" {
-		b.OpenClaw.Model = MapOpenClawInstanceGatewayModelRef(inst)
-	}
-	return nil
-}
-
 func MapOpenClawInstanceChatModel(inst *AppOpenClawInstance) string {
 	if inst == nil {
 		return ""
@@ -296,11 +253,14 @@ func openClawApplyGatewayModelRouting(model string) (bodyModel string, xOpenclaw
 	return cands[0].bodyModel, cands[0].headerModel
 }
 
-func opsUseOpenClawGatewayModelRouting(oc OpenClawConfig) bool {
-	if strings.TrimSpace(oc.EndpointSource) == "appInstance" {
+func opsUseOpenClawGatewayModelRouting(ep OpsAIProviderEndpoint) bool {
+	if strings.TrimSpace(ep.Provider) != OpsAIProviderKindOpenClaw {
+		return false
+	}
+	if strings.TrimSpace(ep.Source) == OpsAIProviderSourceAppCenter {
 		return true
 	}
-	return shouldUseOpenClawGatewayHTTPContract(oc.BaseURL)
+	return shouldUseOpenClawGatewayHTTPContract(ep.BaseURL)
 }
 
 func openClawPickLatestPod(items []corev1.Pod) *corev1.Pod {

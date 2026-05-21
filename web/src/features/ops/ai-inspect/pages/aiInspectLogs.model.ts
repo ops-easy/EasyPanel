@@ -409,7 +409,7 @@ export const VM_LOG_MAIN_TABS: { id: LogOverviewScope; label: string; short: str
   },
 ];
 
-export type VmLogOpenClawAnalyzeRes = {
+export type VmLogAIAnalyzeRes = {
   ok?: boolean;
   message?: string;
   summaryMarkdown?: string;
@@ -431,7 +431,7 @@ export type VmLogOpenClawAnalyzeRes = {
   scanWarning?: string;
 };
 
-export type VmLogOpenClawAnalyzeRowRes = {
+export type VmLogAIAnalyzeRowRes = {
   ok?: boolean;
   summaryMarkdown?: string;
   latencyMs?: number;

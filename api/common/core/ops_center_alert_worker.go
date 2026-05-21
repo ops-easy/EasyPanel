@@ -62,7 +62,7 @@ func StartOpsCenterBackground(app *ServerApp) {
 }
 
 func opsTickDailyInspect(app *ServerApp, cfg Config) {
-	bundle, err := loadOpsOpenClawBundle(app.PlatformKV())
+	bundle, err := loadOpsAIProviderBundle(app.PlatformKV())
 	if err != nil {
 		return
 	}

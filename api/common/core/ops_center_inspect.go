@@ -173,8 +173,8 @@ func opsInspectTaskList(limit int) []map[string]any {
 }
 
 // RunPlatformInspection 聚合平台各模块健康摘要与分项 Markdown 报告。
-func RunPlatformInspection(app *ServerApp, cfg Config, bundle OpsOpenClawBundle, onProgress func(progress int, stage, message string)) (InspectionReport, error) {
-	_ = ResolveOpsOpenClawEndpoint(app, cfg, &bundle)
+func RunPlatformInspection(app *ServerApp, cfg Config, bundle OpsAIProviderBundle, onProgress func(progress int, stage, message string)) (InspectionReport, error) {
+	_ = ResolveOpsAIProviderEndpoint(app, cfg, &bundle)
 	ai := bundle.AI
 	var items []InspectionReportItem
 	okN, warnN, failN := 0, 0, 0
@@ -325,8 +325,8 @@ func RunPlatformInspection(app *ServerApp, cfg Config, bundle OpsOpenClawBundle,
 	sections = append(sections, inspectCollectRedisSection(colCtx, app, cfg, ai))
 	reportProgress(78, "云主机", "采集云主机巡检数据")
 	sections = append(sections, inspectCollectCloudVmSection(colCtx, app, ai))
-	reportProgress(84, "OpenClaw", "采集 OpenClaw 网关状态")
-	sections = append(sections, inspectCollectOpenClawSection(colCtx, app, cfg, ai))
+	reportProgress(84, "AI Provider", "采集 AI Provider 模型端点状态")
+	sections = append(sections, inspectCollectAIProviderSection(colCtx, app, cfg, bundle, ai))
 	reportProgress(86, "Pod 关联", "读取整点异常 Pod 关联与重启分析缓存")
 	sections = append(sections, InspectCollectK8sRestartCorrelationSection(app, ai))
 	reportProgress(88, "SSH", "采集 SSH 凭据存储状态")
@@ -334,10 +334,10 @@ func RunPlatformInspection(app *ServerApp, cfg Config, bundle OpsOpenClawBundle,
 
 	reportProgress(92, "模型探针", "执行大模型连通性探针")
 	probeBundle := bundle
-	if b2, err := opsOpenClawBundleForLLMRole(app, cfg, bundle, OpsOpenClawRoleInspectProbe); err == nil {
+	if b2, err := opsAIProviderBundleForLLMRole(app, cfg, bundle, OpsAIProviderRoleInspectProbe); err == nil {
 		probeBundle = b2
 	}
-	llmProbe := opsProbeOpenClawLLM(app, cfg, probeBundle)
+	llmProbe := opsProbeAIProviderLLM(app, cfg, probeBundle)
 
 	summary := fmt.Sprintf("巡检完成：正常 %d，警告 %d，异常 %d · 分项报告 %d 段", okN, warnN, failN, len(sections))
 	if llmProbe != nil {
@@ -348,7 +348,7 @@ func RunPlatformInspection(app *ServerApp, cfg Config, bundle OpsOpenClawBundle,
 		}
 	}
 	ts := NowBeijingRFC3339()
-	modelLabel := strings.TrimSpace(probeBundle.OpenClaw.Model)
+	modelLabel := strings.TrimSpace(probeBundle.Endpoint.Model)
 	if modelLabel == "" {
 		modelLabel = "未指定"
 	}
@@ -364,17 +364,17 @@ func RunPlatformInspection(app *ServerApp, cfg Config, bundle OpsOpenClawBundle,
 	}
 
 	sumBundle := bundle
-	if b2, err := opsOpenClawBundleForLLMRole(app, cfg, bundle, OpsOpenClawRoleInspectSummary); err == nil {
+	if b2, err := opsAIProviderBundleForLLMRole(app, cfg, bundle, OpsAIProviderRoleInspectSummary); err == nil {
 		sumBundle = b2
 	}
-	summaryLLMEnabled := openClawEnabledForRole(bundle, OpsOpenClawRoleInspectSummary)
-	if summaryLLMEnabled && strings.TrimSpace(sumBundle.OpenClaw.BaseURL) != "" {
+	summaryLLMEnabled := aiProviderEnabledForRole(bundle, OpsAIProviderRoleInspectSummary)
+	if summaryLLMEnabled && strings.TrimSpace(sumBundle.Endpoint.BaseURL) != "" {
 		reportProgress(96, "AI 摘要", "调用大模型生成巡检摘要")
-		aiText, err := opsCallOpenClawSummary(app, cfg, sumBundle, rep)
+		aiText, err := opsCallAIProviderSummary(app, cfg, sumBundle, rep)
 		if err == nil && strings.TrimSpace(aiText) != "" {
 			rep.AISummary = aiText
 		} else if err != nil {
-			short, detail := opsOpenClawFailureDiagnosis(app, sumBundle, err, sumBundle.OpenClaw.TimeoutSec)
+			short, detail := opsAIProviderFailureDiagnosis(app, sumBundle, err, sumBundle.Endpoint.TimeoutSec)
 			rep.AISummaryError = short
 			rep.AISummaryErrorDetail = detail
 		}
@@ -400,7 +400,7 @@ func opsInspectReportForAI(rep InspectionReport) map[string]interface{} {
 	return out
 }
 
-func opsOpenClawErrorLooksLikeTransportIssue(raw string) bool {
+func opsAIProviderErrorLooksLikeTransportIssue(raw string) bool {
 	low := strings.ToLower(strings.TrimSpace(raw))
 	for _, needle := range []string{
 		"connection refused",
@@ -425,7 +425,7 @@ func opsOpenClawErrorLooksLikeTransportIssue(raw string) bool {
 	return false
 }
 
-func opsOpenClawErrorLooksLikeModelIssue(raw string) bool {
+func opsAIProviderErrorLooksLikeModelIssue(raw string) bool {
 	low := strings.ToLower(strings.TrimSpace(raw))
 	for _, needle := range []string{
 		"unknown model",
@@ -451,22 +451,22 @@ func opsOpenClawErrorLooksLikeModelIssue(raw string) bool {
 			return true
 		}
 	}
-	return strings.Contains(low, "[上游模型接入层") && !opsOpenClawErrorLooksLikeTransportIssue(low)
+	return strings.Contains(low, "[上游模型接入层") && !opsAIProviderErrorLooksLikeTransportIssue(low)
 }
 
-func opsOpenClawFailureK8sHint(app *ServerApp, bundle OpsOpenClawBundle) (string, string) {
+func opsAIProviderFailureK8sHint(app *ServerApp, bundle OpsAIProviderBundle) (string, string) {
 	if app == nil || app.K8s() == nil || app.PlatformKV() == nil {
 		return "", ""
 	}
-	oc := bundle.OpenClaw
-	if strings.TrimSpace(oc.EndpointSource) != "appInstance" || strings.TrimSpace(oc.AppInstanceID) == "" {
+	oc := bundle.Endpoint
+	if strings.TrimSpace(oc.Provider) != OpsAIProviderKindOpenClaw || strings.TrimSpace(oc.Source) != OpsAIProviderSourceAppCenter || strings.TrimSpace(oc.InstanceID) == "" {
 		return "", ""
 	}
 	list, err := loadAppOpenClawInstances(app.PlatformKV())
 	if err != nil {
 		return "", ""
 	}
-	inst := findAppOpenClawInstance(list, oc.AppInstanceID)
+	inst := findAppOpenClawInstance(list, oc.InstanceID)
 	if inst == nil {
 		return "", ""
 	}
@@ -485,7 +485,7 @@ func opsOpenClawFailureK8sHint(app *ServerApp, bundle OpsOpenClawBundle) (string
 	}
 }
 
-func opsOpenClawFailureDiagnosis(app *ServerApp, bundle OpsOpenClawBundle, err error, timeoutSec int) (string, string) {
+func opsAIProviderFailureDiagnosis(app *ServerApp, bundle OpsAIProviderBundle, err error, timeoutSec int) (string, string) {
 	if err == nil {
 		return "", ""
 	}
@@ -493,17 +493,17 @@ func opsOpenClawFailureDiagnosis(app *ServerApp, bundle OpsOpenClawBundle, err e
 	if raw == "" {
 		raw = "大模型调用失败"
 	}
-	if opsOpenClawErrorLooksLikeModelIssue(raw) {
+	if opsAIProviderErrorLooksLikeModelIssue(raw) {
 		return "更像模型 / 上游配置问题，不是 Pod 挂了。优先检查模型名、provider、OPENAI_BASE_URL、API Key。", opsTruncateStr(raw, 900)
 	}
-	if short, k8sMsg := opsOpenClawFailureK8sHint(app, bundle); short != "" {
+	if short, k8sMsg := opsAIProviderFailureK8sHint(app, bundle); short != "" {
 		detail := raw
 		if k8sMsg != "" {
 			detail = "K8s 状态：" + k8sMsg + "\n\n原始错误：" + raw
 		}
 		return short, opsTruncateStr(detail, 900)
 	}
-	if opsOpenClawErrorLooksLikeTransportIssue(raw) {
+	if opsAIProviderErrorLooksLikeTransportIssue(raw) {
 		if timeoutSec <= 0 {
 			timeoutSec = 45
 		}
@@ -516,7 +516,7 @@ func opsOpenClawFailureDiagnosis(app *ServerApp, bundle OpsOpenClawBundle, err e
 	return "更像模型 / 上游配置问题，不是 Pod 挂了。优先检查模型名、provider、OPENAI_BASE_URL、API Key。", opsTruncateStr(raw, 900)
 }
 
-func opsOpenClawChatAPI(cfg Config, app *ServerApp, oc OpenClawConfig, ai OpsAIInspectConfig, systemPrompt, userMsg string, timeoutSec int, maxTokensOverride int) (content string, latencyMs int64, err error) {
+func opsAIProviderChatAPI(cfg Config, app *ServerApp, oc OpsAIProviderEndpoint, ai OpsAIInspectConfig, systemPrompt, userMsg string, timeoutSec int, maxTokensOverride int) (content string, latencyMs int64, err error) {
 	if timeoutSec <= 0 {
 		timeoutSec = 120
 	}
@@ -541,8 +541,8 @@ func opsOpenClawChatAPI(cfg Config, app *ServerApp, oc OpenClawConfig, ai OpsAII
 	}
 
 	var directErr error
-	if app != nil && app.K8s() != nil && app.PlatformKV() != nil && strings.TrimSpace(oc.EndpointSource) == "appInstance" {
-		id := strings.TrimSpace(oc.AppInstanceID)
+	if app != nil && app.K8s() != nil && app.PlatformKV() != nil && strings.TrimSpace(oc.Provider) == OpsAIProviderKindOpenClaw && strings.TrimSpace(oc.Source) == OpsAIProviderSourceAppCenter {
+		id := strings.TrimSpace(oc.InstanceID)
 		if id != "" {
 			list, lerr := loadAppOpenClawInstances(app.PlatformKV())
 			if lerr == nil {
@@ -590,7 +590,7 @@ func opsOpenClawChatAPI(cfg Config, app *ServerApp, oc OpenClawConfig, ai OpsAII
 		return "", 0, fmt.Errorf("未配置 Base URL")
 	}
 	body := map[string]interface{}{
-		"model": oc.Model,
+		"model": model,
 		"messages": []map[string]string{
 			{"role": "system", "content": strings.TrimSpace(systemPrompt)},
 			{"role": "user", "content": userMsg},
@@ -604,7 +604,7 @@ func opsOpenClawChatAPI(cfg Config, app *ServerApp, oc OpenClawConfig, ai OpsAII
 	}
 	xoHdr := ""
 	if opsUseOpenClawGatewayModelRouting(oc) {
-		bm, xo := openClawApplyGatewayModelRouting(strings.TrimSpace(oc.Model))
+		bm, xo := openClawApplyGatewayModelRouting(strings.TrimSpace(model))
 		body["model"] = bm
 		xoHdr = xo
 	}
@@ -671,35 +671,35 @@ func opsOpenClawChatAPI(cfg Config, app *ServerApp, oc OpenClawConfig, ai OpsAII
 	return strings.TrimSpace(wrap.Choices[0].Message.Content), latencyMs, nil
 }
 
-func opsCallOpenClawSummary(app *ServerApp, cfg Config, bundle OpsOpenClawBundle, rep InspectionReport) (string, error) {
+func opsCallAIProviderSummary(app *ServerApp, cfg Config, bundle OpsAIProviderBundle, rep InspectionReport) (string, error) {
 	slim := opsInspectReportForAI(rep)
 	reportJSON, _ := json.Marshal(slim)
-	userMsg := strings.TrimSpace(bundle.OpenClaw.UserTemplate)
+	userMsg := strings.TrimSpace(bundle.Endpoint.UserTemplate)
 	if userMsg == "" {
 		userMsg = "请根据以下巡检 JSON（含各分项状态摘要）输出**完整**中文巡检结论：先总评，再按模块给出建议，可使用 Markdown 标题与列表。\n{{report}}"
 	}
 	userMsg = strings.ReplaceAll(userMsg, "{{report}}", string(reportJSON))
-	timeout := bundle.OpenClaw.TimeoutSec
+	timeout := bundle.Endpoint.TimeoutSec
 	if timeout <= 0 {
 		timeout = 120
 	}
-	text, _, err := opsOpenClawChatAPI(cfg, app, bundle.OpenClaw, bundle.AI, strings.TrimSpace(bundle.OpenClaw.SystemPrompt), userMsg, timeout, 0)
+	text, _, err := opsAIProviderChatAPI(cfg, app, bundle.Endpoint, bundle.AI, strings.TrimSpace(bundle.Endpoint.SystemPrompt), userMsg, timeout, 0)
 	return text, err
 }
 
-func opsProbeOpenClawLLM(app *ServerApp, cfg Config, bundle OpsOpenClawBundle) *InspectionLLMProbe {
+func opsProbeAIProviderLLM(app *ServerApp, cfg Config, bundle OpsAIProviderBundle) *InspectionLLMProbe {
 	b := bundle
-	_ = ResolveOpsOpenClawEndpoint(app, cfg, &b)
+	_ = ResolveOpsAIProviderEndpoint(app, cfg, &b)
 	key, err := opsEncryptionKey(cfg)
 	if err != nil {
 		return &InspectionLLMProbe{OK: false, Message: "无法读取 OpenClaw 凭据配置", Detail: err.Error()}
 	}
-	apiKey, _ := decryptSecret(key, b.OpenClaw.APIKeyEnc)
-	base := strings.TrimRight(strings.TrimSpace(b.OpenClaw.BaseURL), "/")
+	apiKey, _ := decryptSecret(key, b.Endpoint.APIKeyEnc)
+	base := strings.TrimRight(strings.TrimSpace(b.Endpoint.BaseURL), "/")
 	if base == "" || strings.TrimSpace(apiKey) == "" {
 		return &InspectionLLMProbe{OK: false, Message: "未配置 Base URL 或 API Key，已跳过大模型探针", Detail: "请在 AI 巡检配置中填写 OpenClaw Base URL / API Key，或选择应用中心实例。"}
 	}
-	to := b.OpenClaw.TimeoutSec
+	to := b.Endpoint.TimeoutSec
 	if to <= 0 {
 		to = 45
 	}
@@ -708,15 +708,15 @@ func opsProbeOpenClawLLM(app *ServerApp, cfg Config, bundle OpsOpenClawBundle) *
 	}
 	user := "请只回复一小行：单词 pong（小写），不要其它内容。"
 	sys := "你是 API 连通性测试，只输出所需单词。"
-	content, ms, err := opsOpenClawChatAPI(cfg, app, b.OpenClaw, b.AI, sys, user, to, 32)
+	content, ms, err := opsAIProviderChatAPI(cfg, app, b.Endpoint, b.AI, sys, user, to, 32)
 	preview := opsTruncateStr(content, 800)
 	probe := &InspectionLLMProbe{
-		Model:           b.OpenClaw.Model,
+		Model:           b.Endpoint.Model,
 		LatencyMs:       ms,
 		ResponsePreview: preview,
 	}
 	if err != nil {
-		short, detail := opsOpenClawFailureDiagnosis(app, b, err, to)
+		short, detail := opsAIProviderFailureDiagnosis(app, b, err, to)
 		probe.Message = short
 		probe.Detail = detail
 		return probe

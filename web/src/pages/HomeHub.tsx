@@ -33,8 +33,8 @@ type AiAlertsGet = {
   channels: unknown[];
 };
 
-type AiOpenClawGet = {
-  openclaw: { enabled: boolean; model?: string; apiKeySet?: boolean };
+type AiAIProviderGet = {
+  endpoint: { enabled: boolean; provider?: string; model?: string; apiKeySet?: boolean };
 };
 
 type NetworkDevice = {
@@ -259,8 +259,8 @@ const HomeHub: React.FC = () => {
     enabled: loggedIn && isAdmin,
   });
   const aiOpenClawQ = useQuery({
-    queryKey: ["ops-openclaw-hub"],
-    queryFn: ({ signal }) => apiGetJson<AiOpenClawGet>("/api/ops/openclaw", { signal }),
+    queryKey: ["ops-ai-provider-hub"],
+    queryFn: ({ signal }) => apiGetJson<AiAIProviderGet>("/api/ops/ai-provider", { signal }),
     enabled: loggedIn && isAdmin,
   });
   const aiReportsQ = useQuery({
@@ -406,8 +406,8 @@ const HomeHub: React.FC = () => {
       aiChannels: aiAlertsQ.data?.channels?.length ?? 0,
       aiReports: aiReportsQ.data?.reports?.length ?? 0,
       aiPanels: aiPanelsQ.data?.panels?.length ?? 0,
-      aiOcEnabled: aiOpenClawQ.data?.openclaw?.enabled ?? false,
-      aiOcModel: aiOpenClawQ.data?.openclaw?.model,
+      aiOcEnabled: aiOpenClawQ.data?.endpoint?.enabled ?? false,
+      aiOcModel: aiOpenClawQ.data?.endpoint?.model,
       aiPromK8s: aiPromQ.data?.scopes?.k8s?.configured ?? false,
       aiPromVc: aiPromQ.data?.scopes?.vcenter?.configured ?? false,
       aiLoading: aiAlertsQ.isLoading || aiOpenClawQ.isLoading || aiPanelsQ.isLoading,
@@ -420,7 +420,7 @@ const HomeHub: React.FC = () => {
     aiAlertsQ.data?.channels,
     aiReportsQ.data?.reports,
     aiPanelsQ.data?.panels,
-    aiOpenClawQ.data?.openclaw,
+    aiOpenClawQ.data?.endpoint,
     aiPromQ.data?.scopes,
     aiAlertsQ.isLoading,
     aiOpenClawQ.isLoading,

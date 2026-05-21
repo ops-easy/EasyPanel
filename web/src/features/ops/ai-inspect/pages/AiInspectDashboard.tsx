@@ -16,8 +16,8 @@ type AlertsGet = {
   channels: unknown[];
 };
 
-type OpenClawGet = {
-  openclaw: { enabled: boolean; baseUrl: string; apiKeySet: boolean; model: string };
+type AIProviderGet = {
+  endpoint: { enabled: boolean; provider?: string; baseUrl: string; apiKeySet: boolean; model: string };
 };
 
 function SummaryCard(props: {
@@ -75,8 +75,8 @@ const AiInspectDashboard: React.FC = () => {
     enabled: loggedIn && isAdmin,
   });
   const openclawQ = useQuery({
-    queryKey: ["ops-openclaw"],
-    queryFn: ({ signal }) => apiGetJson<OpenClawGet>("/api/ops/openclaw", { signal }),
+    queryKey: ["ops-ai-provider"],
+    queryFn: ({ signal }) => apiGetJson<AIProviderGet>("/api/ops/ai-provider", { signal }),
     enabled: loggedIn && isAdmin,
   });
   const repQ = useQuery({
@@ -126,7 +126,7 @@ const AiInspectDashboard: React.FC = () => {
   const rulesTotal = alertsQ.data?.rules?.length ?? 0;
   const chCount = alertsQ.data?.channels?.length ?? 0;
 
-  const oc = openclawQ.data?.openclaw;
+  const oc = openclawQ.data?.endpoint;
   const repN = repQ.data?.total ?? repQ.data?.reports?.length ?? 0;
 
   return (
