@@ -566,6 +566,7 @@ export default function MdEditorPage() {
         exportDisabled={contentKind === "excalidraw"}
         showExternalPromo={false}
         showCreateButtons={!isGuideMode}
+        guideMode={isGuideMode}
         modeTitle={isGuideMode ? "页面指南" : "文档文库"}
         modeDescription={
           isGuideMode

@@ -7,6 +7,7 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const guideSheetSource = read("../src/shared/layout/UserGuideSheet.tsx");
 const editorSource = read("../src/md-editor/EditorContainer.tsx");
 const listSource = read("../src/md-editor/DocumentsList.tsx");
+const toolbarSource = read("../src/md-editor/Toolbar.tsx");
 const routesSource = read("../src/app/routes/docs-routes.tsx");
 const sidebarSource = read("../src/shared/layout/Sidebar.tsx");
 
@@ -26,8 +27,11 @@ test("document center separates regular docs from system page guides", () => {
   assert.ok(editorSource.includes("/api/docs?scope=${docsScope}"));
   assert.ok(editorSource.includes("mode={isGuideMode ? \"guides\" : \"regular\"}"));
   assert.ok(editorSource.includes("allowDelete={!isGuideMode}"));
+  assert.ok(editorSource.includes("guideMode={isGuideMode}"));
 
   assert.ok(listSource.includes("\u9875\u9762\u6307\u5357"));
+  assert.ok(toolbarSource.includes("\u9875\u9762\u6307\u5357"));
+  assert.ok(toolbarSource.includes("/docs/guides"));
   assert.ok(routesSource.includes('withBase(basePath, "guides")'));
   assert.ok(routesSource.includes('withBase(basePath, "guides/doc/:docId")'));
   assert.ok(sidebarSource.includes("/docs/guides"));

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FilePlus2, ImageIcon, PenLine, Save, Share2, Download } from "lucide-react";
+import { ClipboardList, Download, FilePlus2, ImageIcon, Library, PenLine, Save, Share2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,8 @@ interface ToolbarProps {
   exportDisabled?: boolean;
   showExternalPromo?: boolean;
   mediaHref?: string;
+  guideHref?: string;
+  guideMode?: boolean;
   modeTitle?: string;
   modeDescription?: string;
   showCreateButtons?: boolean;
@@ -35,6 +37,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   exportDisabled = false,
   showExternalPromo = false,
   mediaHref = "/docs/media",
+  guideHref = "/docs/guides",
+  guideMode = false,
   modeTitle = "文档文库",
   modeDescription = "Markdown 与 Excalidraw 画布；保存入库，可发布分享页；Ctrl+S 保存",
   showCreateButtons = true,
@@ -85,6 +89,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         >
           <Download className="h-3.5 w-3.5 opacity-90" aria-hidden />
           导出 .md
+        </Button>
+
+        <Button variant="outline" size="sm" className="h-9 gap-1.5" asChild>
+          <Link to={guideMode ? "/docs" : guideHref}>
+            {guideMode ? (
+              <Library className="h-3.5 w-3.5 opacity-90" aria-hidden />
+            ) : (
+              <ClipboardList className="h-3.5 w-3.5 opacity-90" aria-hidden />
+            )}
+            {guideMode ? "文档库" : "页面指南"}
+          </Link>
         </Button>
 
         <Button variant="outline" size="sm" className="h-9 gap-1.5" asChild>
