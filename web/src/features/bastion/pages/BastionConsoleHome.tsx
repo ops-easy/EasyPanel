@@ -29,6 +29,7 @@ type BastionTargetRow = {
  */
 const BastionConsoleHome: React.FC = () => {
   const { status: auth } = useAuth();
+  const isAdmin = auth?.role === "admin";
   const cfgQ = useAppConfig();
   const perm = cfgQ.data?.permissions;
   const showApp = menuItemVisible(
@@ -133,7 +134,7 @@ const BastionConsoleHome: React.FC = () => {
                 主机公钥 SHA256: {nativeSshQ.data.hostKeyFingerprint}
               </p>
             ) : null}
-            {auth?.role === "admin" ? (
+            {isAdmin ? (
               <p className="mt-2 text-[11px] text-amber-600/90">
                 在「策略与分组」中可启停与修改端口。多副本时仅后台任务 Pod
                 会监听；需将 Service / NodePort 或 hostPort 暴露到可访问的地址。
@@ -225,27 +226,127 @@ const BastionConsoleHome: React.FC = () => {
         </div>
 
         <div className="rounded-2xl border border-slate-800 bg-[#10151b] p-5 text-left">
-          <p className="text-sm font-medium text-slate-200">SSH 与终端设置归属</p>
-          <div className="mt-4 grid gap-3 text-xs leading-relaxed text-slate-400 sm:grid-cols-2">
-            <p>
-              <span className="font-medium text-slate-200">vCenter VM 全局 SSH：</span>
-              在 vCenter 设置中维护默认凭据，适用于未单独保存凭据的 vCenter 虚拟机。
-            </p>
-            <p>
-              <span className="font-medium text-slate-200">PVE VM/CT：选中目标后在右上角打开 SSH 设置</span>
-              ，可单独覆盖 Host、端口、用户和密钥。
-            </p>
-            <p>
-              <span className="font-medium text-slate-200">额外主机：在「策略与分组」里配置地址、凭据与 RDP</span>
-              ，适合物理机、跳板机等。
-            </p>
-            <p>
-              <span className="font-medium text-slate-200">云主机：在云主机详情中维护 SSH</span>
-              ；堡垒机侧栏只是快捷打开。
-            </p>
-            <p>
-              <span className="font-medium text-slate-200">Redis CLI：使用实例连接信息，不走 SSH 凭据</span>。
-            </p>
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-100">配置入口与凭据归属</p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                不同来源的终端不共用一个设置页；下面按目标类型直接进入对应配置位置。
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="flex min-h-[148px] flex-col rounded-xl border border-slate-800 bg-[#121922] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-slate-200">
+                  <Monitor className="h-4 w-4 text-sky-300" />
+                  <span className="text-sm font-medium">vCenter VM</span>
+                </div>
+                <span className="rounded-full bg-sky-500/10 px-2 py-0.5 text-[11px] font-medium text-sky-200">
+                  全局默认
+                </span>
+              </div>
+              <p className="mt-3 flex-1 text-xs leading-relaxed text-slate-400">
+                vCenter VM 全局 SSH：在 vCenter 设置中维护默认凭据，适用于未单独保存凭据的 vCenter 虚拟机。
+              </p>
+              <Link
+                to="/cluster/compute/vcenter/settings"
+                className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-sky-300 hover:text-sky-200"
+              >
+                打开 vCenter 设置 <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            <div className="flex min-h-[148px] flex-col rounded-xl border border-emerald-900/60 bg-emerald-950/20 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-slate-200">
+                  <Server className="h-4 w-4 text-emerald-300" />
+                  <span className="text-sm font-medium">PVE VM / CT</span>
+                </div>
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-200">
+                  单目标
+                </span>
+              </div>
+              <p className="mt-3 flex-1 text-xs leading-relaxed text-slate-400">
+                PVE VM/CT：选中目标后在右上角打开 SSH 设置，可单独覆盖 Host、端口、用户和密钥。
+              </p>
+              <Link
+                to="/cluster/bastion/session"
+                className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-emerald-300 hover:text-emerald-200"
+              >
+                去选择 PVE 目标 <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            <div className="flex min-h-[148px] flex-col rounded-xl border border-slate-800 bg-[#121922] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-slate-200">
+                  <HardDrive className="h-4 w-4 text-amber-300" />
+                  <span className="text-sm font-medium">额外主机</span>
+                </div>
+                <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-200">
+                  策略配置
+                </span>
+              </div>
+              <p className="mt-3 flex-1 text-xs leading-relaxed text-slate-400">
+                额外主机：在「策略与分组」里配置地址、凭据与 RDP，适合物理机、跳板机等。
+              </p>
+              {isAdmin ? (
+                <Link
+                  to="/cluster/bastion/admin"
+                  className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-amber-300 hover:text-amber-200"
+                >
+                  打开策略与额外主机 <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              ) : (
+                <span className="mt-4 text-xs text-slate-500">需要管理员维护策略</span>
+              )}
+            </div>
+
+            {showApp ? (
+              <>
+                <div className="flex min-h-[148px] flex-col rounded-xl border border-slate-800 bg-[#121922] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-slate-200">
+                      <Cloud className="h-4 w-4 text-cyan-300" />
+                      <span className="text-sm font-medium">云主机</span>
+                    </div>
+                    <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[11px] font-medium text-cyan-200">
+                      实例详情
+                    </span>
+                  </div>
+                  <p className="mt-3 flex-1 text-xs leading-relaxed text-slate-400">
+                    云主机：在云主机详情中维护 SSH；堡垒机侧栏只是快捷打开。
+                  </p>
+                  <Link
+                    to="/cluster/apps/cloud-vm"
+                    className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-cyan-300 hover:text-cyan-200"
+                  >
+                    打开云主机 <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+
+                <div className="flex min-h-[148px] flex-col rounded-xl border border-slate-800 bg-[#121922] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-slate-200">
+                      <Database className="h-4 w-4 text-violet-300" />
+                      <span className="text-sm font-medium">Redis CLI</span>
+                    </div>
+                    <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-200">
+                      非 SSH
+                    </span>
+                  </div>
+                  <p className="mt-3 flex-1 text-xs leading-relaxed text-slate-400">
+                    Redis CLI：使用实例连接信息，不走 SSH 凭据；在 Redis 实例列表里打开 redis-cli。
+                  </p>
+                  <Link
+                    to="/cluster/apps/redis"
+                    className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-violet-300 hover:text-violet-200"
+                  >
+                    打开 Redis <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
 
@@ -256,7 +357,7 @@ const BastionConsoleHome: React.FC = () => {
           >
             进入主机与终端
           </Link>
-          {auth?.role === "admin" ? (
+          {isAdmin ? (
             <Link
               to="/cluster/bastion/admin"
               className="rounded-lg border border-slate-700 px-4 py-2 text-slate-400 hover:bg-slate-900/50 hover:text-slate-200"

@@ -14,6 +14,12 @@ test("bastion home explains ssh settings per target type instead of implying vCe
   assert.match(homeSource, /额外主机：在「策略与分组」里配置地址、凭据与 RDP/);
   assert.match(homeSource, /云主机：在云主机详情中维护 SSH/);
   assert.match(homeSource, /Redis CLI：使用实例连接信息，不走 SSH 凭据/);
+  assert.match(homeSource, /配置入口与凭据归属/);
+  assert.match(homeSource, /打开 vCenter 设置/);
+  assert.match(homeSource, /去选择 PVE 目标/);
+  assert.match(homeSource, /打开策略与额外主机/);
+  assert.match(homeSource, /打开云主机/);
+  assert.match(homeSource, /打开 Redis/);
   assert.doesNotMatch(homeSource, /请确认 vCenter 已配置/);
 });
 
