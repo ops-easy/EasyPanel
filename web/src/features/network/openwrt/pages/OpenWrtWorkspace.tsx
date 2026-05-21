@@ -7,6 +7,7 @@ import { Button } from "@/shared/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
+import NetworkDeviceSetupPanel from "@/features/network/components/NetworkDeviceSetupPanel";
 import OpenWrtActionPanel from "./OpenWrtActionPanel";
 import OpenWrtTargetPanel, { type OpenWrtTargetForm } from "./OpenWrtTargetPanel";
 
@@ -177,6 +178,8 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
   });
 
   const openWrtDevices = useMemo(() => (devicesQ.data?.devices ?? []).filter((x) => x.kind === "openwrt"), [devicesQ.data]);
+  const openWrtTargetsInitialLoading = devicesQ.isLoading && !devicesQ.data;
+  const openWrtNeedsSetup = !openWrtTargetsInitialLoading && openWrtDevices.length === 0;
 
   useEffect(() => {
     if (activeId && openWrtDevices.some((x) => x.id === activeId)) return;
@@ -287,57 +290,92 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
         </div>
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
-        <div className="space-y-5">
-          <OpenWrtTargetPanel
-            devices={openWrtDevices}
-            activeId={activeId}
-            canWrite={canWrite}
-            loading={devicesQ.isLoading}
-            probeEndpoint={OPENWRT_PROBE_ENDPOINT}
-            creating={createTarget.isPending}
-            probing={probeTarget.isPending}
-            deletingId={deleteTarget.variables}
-            onActiveChange={setActiveId}
-            onCreate={(body) => createTarget.mutate(body)}
-            onProbe={(body) => probeTarget.mutate(body)}
-            onDelete={(id) => deleteTarget.mutate(id)}
-          />
-          <OpenWrtActionPanel
-            target={active}
-            canWrite={canWrite}
-            running={runAction.isPending}
-            onAction={(action, confirm) => runAction.mutate({ action, confirm })}
-          />
-        </div>
+      {openWrtTargetsInitialLoading ? (
+        <OpenWrtTargetsLoadingPanel />
+      ) : (
+        <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
+          <div className="space-y-5">
+            {openWrtNeedsSetup ? <OpenWrtSetupPanel /> : null}
+            <OpenWrtTargetPanel
+              devices={openWrtDevices}
+              activeId={activeId}
+              canWrite={canWrite}
+              loading={devicesQ.isLoading}
+              probeEndpoint={OPENWRT_PROBE_ENDPOINT}
+              creating={createTarget.isPending}
+              probing={probeTarget.isPending}
+              deletingId={deleteTarget.variables}
+              onActiveChange={setActiveId}
+              onCreate={(body) => createTarget.mutate(body)}
+              onProbe={(body) => probeTarget.mutate(body)}
+              onDelete={(id) => deleteTarget.mutate(id)}
+            />
+            {!openWrtNeedsSetup ? (
+              <OpenWrtActionPanel
+                target={active}
+                canWrite={canWrite}
+                running={runAction.isPending}
+                onAction={(action, confirm) => runAction.mutate({ action, confirm })}
+              />
+            ) : null}
+          </div>
 
-        <div className="space-y-5">
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="grid gap-3 md:grid-cols-4">
-              <Metric label="当前目标" value={active?.name || "未选择"} hint={active?.host || active?.apiUrl || "-"} />
-              <Metric label="受管目标" value={openWrtDevices.length} hint="OpenWrt" />
-              <Metric label="SSH 凭据" value={active?.passwordSet || active?.privateKeySet ? "已保存" : "未保存"} hint={active?.username || "root"} />
-              <Metric label="监控指标族" value={`${readyFamilies}/5`} hint="Prometheus 增强" />
-            </div>
-          </section>
-
-          {!active ? (
-            <section className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-              请先在左侧新增 OpenWrt 目标。
+          <div className="space-y-5">
+            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="grid gap-3 md:grid-cols-4">
+                <Metric label="当前目标" value={active?.name || "未选择"} hint={active?.host || active?.apiUrl || "-"} />
+                <Metric label="受管目标" value={openWrtDevices.length} hint="OpenWrt" />
+                <Metric label="SSH 凭据" value={active?.passwordSet || active?.privateKeySet ? "已保存" : "未保存"} hint={active?.username || "root"} />
+                <Metric label="监控指标族" value={`${readyFamilies}/5`} hint="Prometheus 增强" />
+              </div>
             </section>
-          ) : null}
 
-          {active && view === "dashboard" ? <DashboardPanel data={overviewQ.data} loading={overviewQ.isLoading} /> : null}
-          {active && view === "interfaces" ? <InterfacesPanel data={interfacesQ.data} loading={interfacesQ.isLoading} /> : null}
-          {active && view === "clients" ? <ClientsPanel data={clientsQ.data} loading={clientsQ.isLoading} /> : null}
-          {active && view === "connections" ? <FirewallPanel data={firewallQ.data} loading={firewallQ.isLoading} /> : null}
-          {active && view === "wireless" ? <WirelessPanel data={wirelessQ.data} loading={wirelessQ.isLoading} /> : null}
-          {active && view === "exporter" ? (
-            <ExporterPanel data={exporterQ.data} loading={exporterQ.isLoading} families={families} hints={missingHints} metricNames={metricNames} />
-          ) : null}
+            {!active ? (
+              <section className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+                请先在左侧新增 OpenWrt 目标。
+              </section>
+            ) : null}
+
+            {active && view === "dashboard" ? <DashboardPanel data={overviewQ.data} loading={overviewQ.isLoading} /> : null}
+            {active && view === "interfaces" ? <InterfacesPanel data={interfacesQ.data} loading={interfacesQ.isLoading} /> : null}
+            {active && view === "clients" ? <ClientsPanel data={clientsQ.data} loading={clientsQ.isLoading} /> : null}
+            {active && view === "connections" ? <FirewallPanel data={firewallQ.data} loading={firewallQ.isLoading} /> : null}
+            {active && view === "wireless" ? <WirelessPanel data={wirelessQ.data} loading={wirelessQ.isLoading} /> : null}
+            {active && view === "exporter" ? (
+              <ExporterPanel data={exporterQ.data} loading={exporterQ.isLoading} families={families} hints={missingHints} metricNames={metricNames} />
+            ) : null}
+          </div>
         </div>
-      </div>
+      )}
     </div>
+  );
+}
+
+function OpenWrtTargetsLoadingPanel() {
+  return (
+    <NetworkDeviceSetupPanel
+      kind="openwrt"
+      mode="missing-device"
+      title="正在读取 OpenWrt 目标"
+      description="正在确认是否已有 OpenWrt 管理目标，完成后会显示目标工作区或新增表单。"
+    >
+      <div className="flex items-center gap-2 text-sm text-slate-600">
+        <Loader2 className="h-4 w-4 animate-spin text-cyan-700" />
+        加载中...
+      </div>
+    </NetworkDeviceSetupPanel>
+  );
+}
+
+function OpenWrtSetupPanel() {
+  return (
+    <NetworkDeviceSetupPanel
+      kind="openwrt"
+      mode="missing-device"
+      title="请先登记 OpenWrt 目标"
+      description="OpenWrt 页面需要先保存 SSH 管理地址、root 凭据和可选 Prometheus 标签。保存后，接口、客户端、无线和防火墙页面会切换到该目标的数据视图。"
+      compact
+    />
   );
 }
 

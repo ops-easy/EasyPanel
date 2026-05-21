@@ -201,6 +201,8 @@ const AiInspectHome: React.FC = () => {
           namespace: string;
           mode: string;
           modelName?: string;
+          ready?: boolean;
+          lastProbeError?: string;
         }[];
       }>("/api/app-center/hermes/instances", { signal }),
     enabled: isAdmin,
@@ -568,7 +570,7 @@ const AiInspectHome: React.FC = () => {
                 <SelectContent>
                   {endpointProvider === "hermes"
                     ? (hermesInstQ.data?.instances ?? [])
-                        .filter((x) => (x.mode || "").includes("gateway"))
+                        .filter((x) => (x.mode || "").includes("gateway") && x.ready === true)
                         .map((x) => (
                           <SelectItem key={x.id} value={x.id}>
                             {x.displayName || x.deploymentName || x.id} · {x.serviceName}
@@ -903,7 +905,7 @@ const AiInspectHome: React.FC = () => {
                             <SelectContent>
                               {pprovider === "hermes"
                                 ? (hermesInstQ.data?.instances ?? [])
-                                    .filter((x) => (x.mode || "").includes("gateway"))
+                                    .filter((x) => (x.mode || "").includes("gateway") && x.ready === true)
                                     .map((x) => (
                                       <SelectItem key={x.id} value={x.id}>
                                         {x.displayName || x.deploymentName || x.id}

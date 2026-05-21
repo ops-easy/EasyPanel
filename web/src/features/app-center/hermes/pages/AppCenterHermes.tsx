@@ -37,7 +37,13 @@ type HermesInstance = {
   homePvcName: string;
   secretName: string;
   configMapName: string;
+  exposeMode?: string;
+  ingressHost?: string;
   publicUrl?: string;
+  nodePort?: number;
+  replicas?: number;
+  ready?: boolean;
+  lastProbeError?: string;
   createdAt?: string;
 };
 
@@ -50,7 +56,8 @@ type HermesStatus = {
   podName?: string;
   podPhase?: string;
   message?: string;
-  ports?: { name?: string; port?: number; targetPort?: string }[];
+  serviceType?: string;
+  ports?: { name?: string; port?: number; targetPort?: string; nodePort?: number }[];
 };
 
 const MODE_LABEL: Record<string, string> = {
@@ -58,6 +65,8 @@ const MODE_LABEL: Record<string, string> = {
   dashboard: "Dashboard",
   "gateway-dashboard": "Gateway + Dashboard",
 };
+
+const EXPOSE_MODES = ["clusterIP", "nodePort", "loadBalancer", "ingress"] as const;
 
 export type HermesPageTab = "list" | "create" | "bootstrap";
 
@@ -97,6 +106,11 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
     storageSize: "10Gi",
     modelProvider: "openrouter",
     modelName: "anthropic/claude-sonnet-4.5",
+    exposeMode: "clusterIP",
+    ingressHost: "",
+    publicUrl: "",
+    nodePort: "",
+    replicas: "1",
   });
 
   React.useEffect(() => {
@@ -118,7 +132,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
 
   const rows = useMemo(() => listQ.data?.instances ?? [], [listQ.data?.instances]);
   const readyCount = useMemo(
-    () => rows.filter((x) => statusQ.data?.statuses?.[x.id]?.ready).length,
+    () => rows.filter((x) => x.ready || statusQ.data?.statuses?.[x.id]?.ready).length,
     [rows, statusQ.data?.statuses]
   );
 
@@ -145,6 +159,8 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
     mutationFn: () =>
       apiPostJson<{ instance: HermesInstance; apiServerKey?: string }>("/api/app-center/hermes/k8s-deploy", {
         ...form,
+        nodePort: Number(form.nodePort) || 0,
+        replicas: Number(form.replicas) || 1,
         secretPlaintext: {
           API_SERVER_KEY: apiKey,
         },
@@ -240,7 +256,9 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
                   <TableRow>
                     <TableHead>实例</TableHead>
                     <TableHead>K8s</TableHead>
+                    <TableHead>运行时</TableHead>
                     <TableHead>模式</TableHead>
+                    <TableHead>暴露</TableHead>
                     <TableHead>镜像</TableHead>
                     <TableHead>端口</TableHead>
                     <TableHead className="text-right">操作</TableHead>
@@ -249,14 +267,16 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
                 <TableBody>
                   {listQ.isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-10 text-center text-sm text-slate-500">加载中…</TableCell>
+                      <TableCell colSpan={8} className="py-10 text-center text-sm text-slate-500">加载中…</TableCell>
                     </TableRow>
                   ) : rows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-10 text-center text-sm text-slate-500">暂无 Hermes 实例</TableCell>
+                      <TableCell colSpan={8} className="py-10 text-center text-sm text-slate-500">暂无 Hermes 实例</TableCell>
                     </TableRow>
                   ) : rows.map((row) => {
                     const st = statusQ.data?.statuses?.[row.id];
+                    const runtimeReady = row.ready === true;
+                    const publicEntry = row.publicUrl || (row.ingressHost ? `https://${row.ingressHost}` : "");
                     return (
                       <TableRow key={row.id}>
                         <TableCell>
@@ -267,10 +287,18 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
                           <Badge variant={st?.ready ? "default" : "outline"}>{st?.ready ? "就绪" : st?.message || "等待状态"}</Badge>
                           {st?.podName ? <p className="mt-1 font-mono text-[11px] text-slate-500">{st.podName} · {st.podPhase}</p> : null}
                         </TableCell>
+                        <TableCell>
+                          <Badge variant={runtimeReady ? "default" : "outline"}>{runtimeReady ? "可管" : "待探测"}</Badge>
+                          {row.lastProbeError ? <p className="mt-1 max-w-[180px] truncate text-[11px] text-amber-700" title={row.lastProbeError}>{row.lastProbeError}</p> : null}
+                        </TableCell>
                         <TableCell>{MODE_LABEL[row.mode] || row.mode}</TableCell>
+                        <TableCell>
+                          <p className="font-mono text-xs">{row.exposeMode || st?.serviceType || "clusterIP"}</p>
+                          {publicEntry ? <p className="mt-1 max-w-[180px] truncate text-[11px] text-slate-500" title={publicEntry}>{publicEntry}</p> : null}
+                        </TableCell>
                         <TableCell className="max-w-[260px] truncate font-mono text-xs" title={row.image}>{row.image}</TableCell>
                         <TableCell className="font-mono text-xs">
-                          {(st?.ports ?? []).map((p) => `${p.name}:${p.port}`).join(" / ") || "-"}
+                          {(st?.ports ?? []).map((p) => `${p.name}:${p.port}${p.nodePort ? `/${p.nodePort}` : ""}`).join(" / ") || "-"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
@@ -322,6 +350,29 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
             </div>
             <Field label="模型提供方" value={form.modelProvider} onChange={(v) => setForm({ ...form, modelProvider: v })} mono />
             <Field label="模型名" value={form.modelName} onChange={(v) => setForm({ ...form, modelName: v })} mono />
+            <div className="space-y-1.5 lg:col-span-2">
+              <Label>暴露方式</Label>
+              <div className="grid gap-2 sm:grid-cols-4">
+                {EXPOSE_MODES.map((mode) => (
+                  <button
+                    type="button"
+                    key={mode}
+                    onClick={() => setForm({ ...form, exposeMode: mode })}
+                    className={`rounded-lg border px-3 py-2 text-sm font-medium ${
+                      form.exposeMode === mode
+                        ? "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-900"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Field label="副本数" value={form.replicas} onChange={(v) => setForm({ ...form, replicas: v })} mono />
+            <Field label="NodePort" value={form.nodePort} onChange={(v) => setForm({ ...form, nodePort: v })} mono />
+            <Field label="Ingress Host" value={form.ingressHost} onChange={(v) => setForm({ ...form, ingressHost: v })} mono />
+            <Field label="Public URL" value={form.publicUrl} onChange={(v) => setForm({ ...form, publicUrl: v })} mono />
             <div className="space-y-1.5 lg:col-span-2">
               <Label>API_SERVER_KEY（可空，平台自动生成并写入 Secret）</Label>
               <Input type="password" autoComplete="off" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />

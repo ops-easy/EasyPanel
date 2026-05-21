@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Play, RefreshCw, RotateCcw, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Play, RefreshCw, RotateCcw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -10,32 +10,48 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { apiDelete, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import { cloudVmAppCenterCanWrite } from "@/lib/platform-permissions";
+import HermesExposurePanel from "./HermesExposurePanel";
+import HermesLogsEventsPanel from "./HermesLogsEventsPanel";
+import HermesProbePanel from "./HermesProbePanel";
+import HermesUpgradeDialog from "./HermesUpgradeDialog";
 
-type HermesInstance = {
+export type HermesInstance = {
   id: string;
   displayName: string;
   namespace: string;
   deploymentName: string;
   serviceName: string;
   image: string;
+  previousImage?: string;
   mode: string;
   modelProvider?: string;
   modelName?: string;
   homePvcName: string;
   secretName: string;
   configMapName: string;
+  exposeMode?: string;
+  ingressHost?: string;
+  ingressName?: string;
   publicUrl?: string;
+  nodePort?: number;
+  replicas?: number;
+  ready?: boolean;
+  lastProbeAt?: string;
+  lastProbeError?: string;
 };
 
-type HermesStatus = {
+export type HermesStatus = {
   ready?: boolean;
   message?: string;
   podName?: string;
   podPhase?: string;
   readyReplicas?: number;
   desiredReplicas?: number;
-  containerStatuses?: Array<{ name?: string; ready?: boolean; state?: string; reason?: string }>;
-  ports?: Array<{ name?: string; port?: number; targetPort?: string }>;
+  serviceType?: string;
+  ingressFound?: boolean;
+  ingressHost?: string;
+  ports?: Array<{ name?: string; port?: number; targetPort?: string; nodePort?: number }>;
+  containerStatuses?: Array<{ name?: string; ready?: boolean; state?: string; reason?: string; message?: string }>;
 };
 
 type HermesCommandResult = {
@@ -60,8 +76,7 @@ const AppCenterHermesDetail: React.FC = () => {
 
   const instQ = useQuery({
     queryKey: ["app-hermes-instance", id],
-    queryFn: ({ signal }) =>
-      apiGetJson<{ instance: HermesInstance }>(`/api/app-center/hermes/instances/${encodeURIComponent(id)}`, { signal }),
+    queryFn: ({ signal }) => apiGetJson<{ instance: HermesInstance }>(`/api/app-center/hermes/instances/${encodeURIComponent(id)}`, { signal }),
     enabled: Boolean(id),
   });
 
@@ -74,8 +89,7 @@ const AppCenterHermesDetail: React.FC = () => {
 
   const fileQ = useQuery({
     queryKey: ["app-hermes-file", id],
-    queryFn: ({ signal }) =>
-      apiGetJson<{ content?: string; config?: Record<string, string> }>(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/file`, { signal }),
+    queryFn: ({ signal }) => apiGetJson<{ content?: string; config?: Record<string, string> }>(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/file`, { signal }),
     enabled: Boolean(id),
     retry: false,
   });
@@ -86,6 +100,7 @@ const AppCenterHermesDetail: React.FC = () => {
 
   const inst = instQ.data?.instance;
   const st = statusQ.data?.statuses?.[id];
+  const runtimeReady = inst?.ready === true;
   const rows = useMemo(
     () => [
       ["命名空间", inst?.namespace],
@@ -97,25 +112,17 @@ const AppCenterHermesDetail: React.FC = () => {
       ["PVC", inst?.homePvcName],
       ["Secret", inst?.secretName],
       ["ConfigMap", inst?.configMapName],
-      ["公网地址", inst?.publicUrl],
+      ["暴露方式", inst?.exposeMode || "clusterIP"],
+      ["公开地址", inst?.publicUrl],
+      ["上次探测", inst?.lastProbeAt],
     ],
     [inst]
   );
 
-  const probeMut = useMutation({
-    mutationFn: () => apiPostJson<HermesCommandResult>(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/probe`, {}),
-    onSuccess: (res) => {
-      setLastResult(res);
-      toast.success(res.message || "Hermes 探测完成");
-      void statusQ.refetch();
-    },
-    onError: (e) => toast.error(String(e)),
-  });
-
   const restartMut = useMutation({
     mutationFn: () => apiPostJson(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/restart`, {}),
     onSuccess: () => {
-      toast.success("已触发滚动重启");
+      toast.success("已触发 Hermes 滚动重启");
       void statusQ.refetch();
     },
     onError: (e) => toast.error(String(e)),
@@ -137,10 +144,7 @@ const AppCenterHermesDetail: React.FC = () => {
   });
 
   const migrateMut = useMutation({
-    mutationFn: () =>
-      apiPostJson<HermesCommandResult>(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/migrate-openclaw`, {
-        preset: "user-data",
-      }),
+    mutationFn: () => apiPostJson<HermesCommandResult>(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/migrate-openclaw`, { preset: "user-data" }),
     onSuccess: (res) => setLastResult(res),
     onError: (e) => toast.error(String(e)),
   });
@@ -156,7 +160,7 @@ const AppCenterHermesDetail: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+      <section className="rounded-lg border border-slate-200 bg-white px-5 py-5 shadow-sm">
         <Button asChild variant="ghost" size="sm" className="mb-3 gap-1.5 px-0">
           <Link to="/cluster/apps/hermes">
             <ArrowLeft className="h-4 w-4" />
@@ -168,12 +172,15 @@ const AppCenterHermesDetail: React.FC = () => {
             <h1 className="text-2xl font-semibold tracking-tight text-slate-950">{inst?.displayName || "Hermes 实例"}</h1>
             <p className="mt-2 font-mono text-xs text-slate-500">{inst ? `${inst.namespace}/${inst.deploymentName}` : id}</p>
           </div>
-          <Badge variant={st?.ready ? "default" : "outline"}>{st?.ready ? "Ready" : st?.message || "等待状态"}</Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant={st?.ready ? "default" : "outline"}>{st?.ready ? "K8s Ready" : st?.message || "等待状态"}</Badge>
+            <Badge variant={runtimeReady ? "default" : "outline"}>{runtimeReady ? "Runtime Ready" : inst?.lastProbeError || "未通过运行时探测"}</Badge>
+          </div>
         </div>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <h2 className="mb-3 text-sm font-semibold text-slate-950">实例信息</h2>
           <Table>
             <TableHeader>
@@ -186,7 +193,7 @@ const AppCenterHermesDetail: React.FC = () => {
               {rows.map(([k, v]) => (
                 <TableRow key={String(k)}>
                   <TableCell className="w-40 text-slate-500">{k}</TableCell>
-                  <TableCell className="break-all font-mono text-xs">{v || "-"}</TableCell>
+                  <TableCell className="break-all font-mono text-xs">{String(v || "-")}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -194,7 +201,7 @@ const AppCenterHermesDetail: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-950">K8s 状态</h2>
             <p className="mt-2 text-sm text-slate-600">
               {st?.readyReplicas ?? 0}/{st?.desiredReplicas ?? 1} 副本就绪，Pod {st?.podName || "-"} {st?.podPhase || ""}
@@ -209,16 +216,12 @@ const AppCenterHermesDetail: React.FC = () => {
             </div>
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-950">操作</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => statusQ.refetch()} disabled={statusQ.isFetching}>
                 <RefreshCw className="h-4 w-4" />
                 刷新
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => probeMut.mutate()} disabled={probeMut.isPending}>
-                <Play className="h-4 w-4" />
-                探测
               </Button>
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => restartMut.mutate()} disabled={!canWrite || restartMut.isPending}>
                 <RotateCcw className="h-4 w-4" />
@@ -233,7 +236,14 @@ const AppCenterHermesDetail: React.FC = () => {
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="grid gap-4 xl:grid-cols-2">
+        <HermesProbePanel instance={inst} status={st} canWrite={canWrite} onChanged={() => void qc.invalidateQueries({ queryKey: ["app-hermes-instance", id] })} />
+        <HermesExposurePanel instance={inst} status={st} canWrite={canWrite} onChanged={() => void qc.invalidateQueries({ queryKey: ["app-hermes-instance", id] })} />
+        <HermesUpgradeDialog instance={inst} canWrite={canWrite} onChanged={() => void qc.invalidateQueries({ queryKey: ["app-hermes-instance", id] })} />
+        <HermesLogsEventsPanel instanceId={id} />
+      </div>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-sm font-semibold text-slate-950">配置备注</h2>
@@ -248,7 +258,7 @@ const AppCenterHermesDetail: React.FC = () => {
         {fileQ.isError ? <p className="mt-2 text-xs text-amber-700">当前无法读取 ConfigMap，K8s 未连接或资源尚未创建。</p> : null}
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-sm font-semibold text-slate-950">OpenClaw 迁移</h2>
@@ -259,6 +269,7 @@ const AppCenterHermesDetail: React.FC = () => {
               Dry-run
             </Button>
             <Button size="sm" onClick={() => migrateMut.mutate()} disabled={!canWrite || migrateMut.isPending}>
+              <Play className="mr-2 h-4 w-4" />
               执行迁移
             </Button>
           </div>

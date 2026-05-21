@@ -139,6 +139,7 @@ declare global {
   const PencilLine: typeof import('lucide-react').PencilLine
   const PieChart: typeof import('lucide-react').PieChart
   const Play: typeof import('lucide-react').Play
+  const Plug: typeof import('lucide-react').Plug
   const PlugZap: typeof import('lucide-react').PlugZap
   const Plus: typeof import('lucide-react').Plus
   const Power: typeof import('lucide-react').Power
@@ -186,6 +187,7 @@ declare global {
   const Trash2: typeof import('lucide-react').Trash2
   const TriangleAlertIcon: typeof import('lucide-react').TriangleAlertIcon
   const Upload: typeof import('lucide-react').Upload
+  const UploadCloud: typeof import('lucide-react').UploadCloud
   const User: typeof import('lucide-react').User
   const UserCircle: typeof import('lucide-react').UserCircle
   const UserRound: typeof import('lucide-react').UserRound
