@@ -233,6 +233,8 @@ func PruneAuditLogToRetention(dataDir string) error {
 	if strings.TrimSpace(dataDir) == "" {
 		return nil
 	}
+	auditMu.Lock()
+	defer auditMu.Unlock()
 	path := auditFilePath(dataDir)
 	fi, err := os.Stat(path)
 	if err != nil {
@@ -249,7 +251,6 @@ func PruneAuditLogToRetention(dataDir string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 	sc := bufio.NewScanner(f)
 	const maxScan = 1024 * 1024
 	buf := make([]byte, 0, 64*1024)
@@ -269,8 +270,13 @@ func PruneAuditLogToRetention(dataDir string) error {
 			kept = append(kept, line)
 		}
 	}
-	if err := sc.Err(); err != nil {
-		return err
+	scanErr := sc.Err()
+	closeErr := f.Close()
+	if scanErr != nil {
+		return scanErr
+	}
+	if closeErr != nil {
+		return closeErr
 	}
 	if len(kept) == 0 {
 		_ = os.Remove(path)
