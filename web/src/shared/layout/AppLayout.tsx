@@ -16,7 +16,11 @@ const AppLayout: React.FC = () => {
   if (isMobile) return <AppLayoutMobile />;
   const isDocsShell = pathname === "/docs" || pathname.startsWith("/docs/");
   /** 仅 Markdown/画布编辑器占满主区域高度；/docs/media 等仍需主区域滚动 */
-  const isDocsEditorViewport = pathname === "/docs" || pathname.startsWith("/docs/doc/");
+  const isDocsEditorViewport =
+    pathname === "/docs" ||
+    pathname.startsWith("/docs/doc/") ||
+    pathname === "/docs/guides" ||
+    pathname.startsWith("/docs/guides/doc/");
   /** 堡垒机整段路由：无平台侧栏/顶栏，视口交给堡垒机页面（含 console 嵌入页） */
   const isBastionFullBleed =
     pathname === "/cluster/bastion" ||

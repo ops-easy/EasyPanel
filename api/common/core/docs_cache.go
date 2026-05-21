@@ -26,8 +26,8 @@ func docsListRevRedisKey(cfg Config) string {
 	return docsRedisKeyPrefix(cfg) + "docs:v1:listRev"
 }
 
-func docsListCacheRedisKey(cfg Config, listRev int64, categoryID, tag, q string) string {
-	h := sha256.Sum256([]byte(categoryID + "\x1e" + tag + "\x1e" + q))
+func docsListCacheRedisKey(cfg Config, listRev int64, scope, categoryID, tag, q string) string {
+	h := sha256.Sum256([]byte(scope + "\x1e" + categoryID + "\x1e" + tag + "\x1e" + q))
 	return docsRedisKeyPrefix(cfg) + "docs:v1:l:" + strconv.FormatInt(listRev, 10) + ":" + hex.EncodeToString(h[:8])
 }
 
@@ -82,12 +82,12 @@ func docsStoreDetailCache(ctx context.Context, app *ServerApp, docID uint64, jso
 	_ = rdb.Set(ctx, docsDetailCacheRedisKey(app.Cfg(), docID), jsonBytes, docsAPICacheTTL())
 }
 
-func docsTryListCache(ctx context.Context, app *ServerApp, listRev int64, categoryID, tag, q string) []byte {
+func docsTryListCache(ctx context.Context, app *ServerApp, listRev int64, scope, categoryID, tag, q string) []byte {
 	rdb := app.Redis()
 	if rdb == nil {
 		return nil
 	}
-	key := docsListCacheRedisKey(app.Cfg(), listRev, categoryID, tag, q)
+	key := docsListCacheRedisKey(app.Cfg(), listRev, scope, categoryID, tag, q)
 	raw, err := rdb.Get(ctx, key)
 	if err != nil || strings.TrimSpace(raw) == "" {
 		return nil
@@ -95,12 +95,12 @@ func docsTryListCache(ctx context.Context, app *ServerApp, listRev int64, catego
 	return []byte(raw)
 }
 
-func docsStoreListCache(ctx context.Context, app *ServerApp, listRev int64, categoryID, tag, q string, jsonBytes []byte) {
+func docsStoreListCache(ctx context.Context, app *ServerApp, listRev int64, scope, categoryID, tag, q string, jsonBytes []byte) {
 	rdb := app.Redis()
 	if rdb == nil || len(jsonBytes) == 0 {
 		return
 	}
-	key := docsListCacheRedisKey(app.Cfg(), listRev, categoryID, tag, q)
+	key := docsListCacheRedisKey(app.Cfg(), listRev, scope, categoryID, tag, q)
 	_ = rdb.Set(ctx, key, jsonBytes, docsAPICacheTTL())
 }
 

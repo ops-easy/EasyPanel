@@ -17,6 +17,9 @@ interface ToolbarProps {
   exportDisabled?: boolean;
   showExternalPromo?: boolean;
   mediaHref?: string;
+  modeTitle?: string;
+  modeDescription?: string;
+  showCreateButtons?: boolean;
   /** Markdown 图片/附件：COS 或本地及配置说明 */
   attachmentStorageSummary?: { line: string; hint?: string } | null;
 }
@@ -32,6 +35,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   exportDisabled = false,
   showExternalPromo = false,
   mediaHref = "/docs/media",
+  modeTitle = "文档文库",
+  modeDescription = "Markdown 与 Excalidraw 画布；保存入库，可发布分享页；Ctrl+S 保存",
+  showCreateButtons = true,
   attachmentStorageSummary = null,
 }) => {
   return (
@@ -41,8 +47,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-900">文档仓库</p>
-        <p className="truncate text-xs text-slate-500">Markdown 与 Excalidraw 画布；保存入库，可发布飞书风分享页 · Ctrl+S 保存</p>
+        <p className="truncate text-sm font-semibold text-slate-900">{modeTitle}</p>
+        <p className="truncate text-xs text-slate-500">{modeDescription}</p>
         {attachmentStorageSummary ? (
           <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate-500" title={attachmentStorageSummary.hint}>
             {attachmentStorageSummary.line}
@@ -51,14 +57,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       </div>
 
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button type="button" variant="outline" size="sm" className="h-9 gap-1.5" onClick={onNewMarkdown}>
-          <FilePlus2 className="h-3.5 w-3.5 opacity-90" aria-hidden />
-          Markdown
-        </Button>
-        <Button type="button" variant="outline" size="sm" className="h-9 gap-1.5" onClick={onNewExcalidraw}>
-          <PenLine className="h-3.5 w-3.5 opacity-90" aria-hidden />
-          画布
-        </Button>
+        {showCreateButtons ? (
+          <>
+            <Button type="button" variant="outline" size="sm" className="h-9 gap-1.5" onClick={onNewMarkdown}>
+              <FilePlus2 className="h-3.5 w-3.5 opacity-90" aria-hidden />
+              Markdown
+            </Button>
+            <Button type="button" variant="outline" size="sm" className="h-9 gap-1.5" onClick={onNewExcalidraw}>
+              <PenLine className="h-3.5 w-3.5 opacity-90" aria-hidden />
+              画布
+            </Button>
+          </>
+        ) : null}
 
         <Button type="button" size="sm" className="h-9 gap-1.5 bg-violet-600 hover:bg-violet-700" onClick={onSave} disabled={disabled}>
           <Save className="h-3.5 w-3.5 opacity-90" aria-hidden />

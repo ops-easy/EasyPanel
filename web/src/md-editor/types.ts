@@ -7,4 +7,11 @@ export type EduMdDocument = {
   updated: number;
   /** 列表项展示用；来自 API contentKind */
   contentKind?: "markdown" | "excalidraw";
+  guide?: {
+    guideKey: string;
+    routePattern: string;
+    matchType: string;
+    enabled: boolean;
+    sortOrder?: number;
+  };
 };

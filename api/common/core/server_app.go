@@ -124,6 +124,11 @@ func (s *ServerApp) Reload() error {
 				_ = db.Close()
 				return fmt.Errorf("MySQL 结构迁移失败: %w", err)
 			}
+			if err := ensureDefaultDocGuides(db); err != nil {
+				log.Printf("MySQL 初始化页面指南失败: %v", err)
+				_ = db.Close()
+				return fmt.Errorf("MySQL 初始化页面指南失败: %w", err)
+			}
 			if created, err := ensureInitialDashboardAdminUser(db, cfg); err != nil {
 				log.Printf("MySQL 初始化管理员失败: %v", err)
 				_ = db.Close()

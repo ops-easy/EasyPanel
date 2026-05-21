@@ -24,6 +24,8 @@ export function docsRoutes(): ReactNode {
   return (
     <>
       <Route path="docs/media" element={<DocsMedia />} />
+      <Route path="docs/guides" element={<DocsEditorLazy />} />
+      <Route path="docs/guides/doc/:docId" element={<DocsEditorLazy />} />
       <Route path="docs/new" element={<Navigate to="/docs" replace />} />
       <Route path="docs/:docId/edit" element={<DocsLegacyEditRedirect />} />
       <Route path="docs/doc/:docId" element={<DocsEditorLazy />} />

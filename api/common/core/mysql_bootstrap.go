@@ -261,6 +261,22 @@ CREATE TABLE IF NOT EXISTS kubebt_doc_versions (
   UNIQUE KEY uq_doc_ver (doc_id, version_no),
   INDEX idx_doc_versions_doc (doc_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
+	{"kubebt_doc_guides", `
+CREATE TABLE IF NOT EXISTS kubebt_doc_guides (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  guide_key VARCHAR(128) NOT NULL,
+  route_pattern VARCHAR(255) NOT NULL,
+  match_type VARCHAR(16) NOT NULL DEFAULT 'prefix',
+  doc_id BIGINT UNSIGNED NOT NULL,
+  enabled TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_doc_guides_key (guide_key),
+  UNIQUE KEY uq_doc_guides_route (route_pattern, match_type),
+  INDEX idx_doc_guides_doc (doc_id),
+  INDEX idx_doc_guides_enabled (enabled, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
 	{"kubebt_doc_media", `
 CREATE TABLE IF NOT EXISTS kubebt_doc_media (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,

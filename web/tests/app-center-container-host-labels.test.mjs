@@ -14,6 +14,7 @@ const terminalSource = read("../src/features/app-center/cloudvm/components/Cloud
 const openClawSource = read("../src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx");
 const openClawDetailSource = read("../src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx");
 const guideSource = read("../src/shared/layout/UserGuideSheet.tsx");
+const cloudVmGuideSource = read("../../api/common/core/default_guides/cloud-vm.md");
 
 const CONTAINER_HOST = "\u5bb9\u5668\u4e3b\u673a";
 const CLOUD_HOST = "\u4e91\u4e3b\u673a";
@@ -71,7 +72,10 @@ test("app center Cloud VM user-facing name is consistently container host", () =
     "openclaw detail"
   );
 
-  assert.ok(guideSource.includes(`\u5e94\u7528\u4e2d\u5fc3 \u00b7 ${CONTAINER_HOST}\u4e0e OpenClaw`));
+  assert.ok(guideSource.includes("/api/docs/guides/resolve?path="));
+  assert.ok(guideSource.includes("OpenClawChatMarkdown"));
+  assert.ok(cloudVmGuideSource.includes(CONTAINER_HOST));
+  assert.ok(!cloudVmGuideSource.includes(CLOUD_HOST));
   assertDoesNotIncludeAny(
     guideSource,
     [
