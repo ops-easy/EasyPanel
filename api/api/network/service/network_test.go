@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	networkmodel "kube-bt-sync/api/network/model"
 	core "kube-bt-sync/common/core"
 	transportauthz "kube-bt-sync/common/transport/authz"
 
@@ -120,5 +121,49 @@ func TestIkuaiQueryCatalogCoversModernAndLegacyExporters(t *testing.T) {
 	}
 	if len(ikuaiClientDownloadByIPQueries) == 0 || len(ikuaiClientUploadByIPQueries) == 0 {
 		t.Fatalf("legacy iKuai query lists must not be empty")
+	}
+}
+
+func TestOpenWrtDeviceDefaultsRootSSH(t *testing.T) {
+	got := normalizeNetworkDeviceInput(networkmodel.Device{
+		Kind:   "openwrt",
+		Name:   "home",
+		APIURL: "https://router.lan",
+	})
+	if got.Host != "router.lan" || got.Port != 22 || got.Username != "root" || got.AuthType != "ssh-password" {
+		t.Fatalf("unexpected OpenWrt defaults: %+v", got)
+	}
+}
+
+func TestOpenWrtManagementRoutesAreRegistered(t *testing.T) {
+	router := gin.New()
+	api := router.Group("/api")
+	RegisterRoutes(api, nil)
+
+	want := []struct {
+		method string
+		path   string
+	}{
+		{"POST", "/api/network/devices/openwrt/probe"},
+		{"GET", "/api/network/devices/:id/openwrt/overview"},
+		{"GET", "/api/network/devices/:id/openwrt/interfaces"},
+		{"GET", "/api/network/devices/:id/openwrt/clients"},
+		{"GET", "/api/network/devices/:id/openwrt/wireless"},
+		{"GET", "/api/network/devices/:id/openwrt/firewall"},
+		{"POST", "/api/network/devices/:id/openwrt/actions"},
+		{"POST", "/api/network/devices/:id/openwrt/config/dry-run"},
+		{"POST", "/api/network/devices/:id/openwrt/config/apply"},
+	}
+	for _, route := range want {
+		found := false
+		for _, got := range router.Routes() {
+			if got.Method == route.method && got.Path == route.path {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("missing route %s %s", route.method, route.path)
+		}
 	}
 }

@@ -4,6 +4,36 @@ type Device struct {
 	ID              string `json:"id"`
 	Kind            string `json:"kind"`
 	Name            string `json:"name"`
+	APIURL          string `json:"apiUrl,omitempty"`
+	Host            string `json:"host,omitempty"`
+	Port            int    `json:"port,omitempty"`
+	AuthType        string `json:"authType,omitempty"`
+	Username        string `json:"username,omitempty"`
+	PasswordEnc     string `json:"passwordEnc,omitempty"`
+	PrivateKeyEnc   string `json:"privateKeyEnc,omitempty"`
+	Password        string `json:"-"`
+	PrivateKey      string `json:"-"`
+	SkipTLSVerify   bool   `json:"skipTlsVerify,omitempty"`
+	PrometheusScope string `json:"prometheusScope"`
+	InstanceLabel   string `json:"instanceLabel"`
+	JobLabel        string `json:"jobLabel,omitempty"`
+	Notes           string `json:"notes,omitempty"`
+	CreatedAt       string `json:"createdAt"`
+	UpdatedAt       string `json:"updatedAt"`
+}
+
+type DeviceListItem struct {
+	ID              string `json:"id"`
+	Kind            string `json:"kind"`
+	Name            string `json:"name"`
+	APIURL          string `json:"apiUrl,omitempty"`
+	Host            string `json:"host,omitempty"`
+	Port            int    `json:"port,omitempty"`
+	AuthType        string `json:"authType,omitempty"`
+	Username        string `json:"username,omitempty"`
+	PasswordSet     bool   `json:"passwordSet,omitempty"`
+	PrivateKeySet   bool   `json:"privateKeySet,omitempty"`
+	SkipTLSVerify   bool   `json:"skipTlsVerify,omitempty"`
 	PrometheusScope string `json:"prometheusScope"`
 	InstanceLabel   string `json:"instanceLabel"`
 	JobLabel        string `json:"jobLabel,omitempty"`

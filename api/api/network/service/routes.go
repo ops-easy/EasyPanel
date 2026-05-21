@@ -29,13 +29,24 @@ func RegisterRoutes(api *gin.RouterGroup, app *appctx.ServerApp) {
 	g.GET("/devices/:id/clients", func(c *gin.Context) { handleNetworkDeviceClients(c, app) })
 	g.GET("/devices/:id/traffic", func(c *gin.Context) { handleNetworkDeviceTraffic(c, app) })
 	g.GET("/devices/:id/exporter-status", func(c *gin.Context) { handleOpenWrtExporterStatus(c, app) })
+
+	g.POST("/devices/openwrt/probe", func(c *gin.Context) { handleOpenWrtProbe(c, app) })
+	g.GET("/devices/:id/openwrt/overview", func(c *gin.Context) { handleOpenWrtOverview(c, app) })
+	g.GET("/devices/:id/openwrt/interfaces", func(c *gin.Context) { handleOpenWrtInterfaces(c, app) })
+	g.GET("/devices/:id/openwrt/clients", func(c *gin.Context) { handleOpenWrtClients(c, app) })
+	g.GET("/devices/:id/openwrt/wireless", func(c *gin.Context) { handleOpenWrtWireless(c, app) })
+	g.GET("/devices/:id/openwrt/firewall", func(c *gin.Context) { handleOpenWrtFirewall(c, app) })
+	g.POST("/devices/:id/openwrt/actions", func(c *gin.Context) { handleOpenWrtAction(c, app) })
+	g.POST("/devices/:id/openwrt/config/dry-run", func(c *gin.Context) { handleOpenWrtConfigDryRun(c, app) })
+	g.POST("/devices/:id/openwrt/config/apply", func(c *gin.Context) { handleOpenWrtConfigApply(c, app) })
+
 	g.GET("/ikuai-client-stream", func(c *gin.Context) { handleNetworkIkuaiClientStream(c, app) })
-	g.GET("/vm-mapping", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"mappings": []gin.H{}}) })
+	g.GET("/vm-mapping", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"mappings": []gin.H{}, "source": "not-configured"}) })
 }
 
 func handleNetworkDiscover(c *gin.Context, app *ServerApp) {
 	c.JSON(http.StatusOK, gin.H{
 		"devices": []gin.H{},
-		"note":    "可手动登记 Prometheus instance；自动发现会根据 iKuai/OpenWrt 指标族逐步补全。",
+		"note":    "请在 OpenWrt 或 iKuai 目标页保存设备连接信息；自动发现会在接入真实扫描源后启用。",
 	})
 }
