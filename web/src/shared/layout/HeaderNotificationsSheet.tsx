@@ -24,7 +24,7 @@ import {
   isOpenClawGatewayChatNoHttpStatus,
   OPENCLAW_GATEWAY_HEALTH_INTERVAL_SEC_DEFAULT,
 } from "@/lib/openclaw-gateway-health";
-import { menuItemVisible, moduleVisible } from "@/lib/platform-permissions";
+import { workspaceMenuVisible } from "@/lib/platform-permissions";
 
 type HostEgressNotification = {
   checkEnabled: boolean;
@@ -88,8 +88,8 @@ const HeaderNotificationsSheet: React.FC = () => {
   const perm = cfg?.permissions;
   const navRole = status?.role;
   const isViewer = cfg?.dashboardRole === "viewer" || cfg?.viewer === true;
-  const headerShowApp = menuItemVisible(perm, "appcenter", navRole, moduleVisible(perm, "appcenter"));
-  const headerShowAiInspect = menuItemVisible(perm, "aiInspect", navRole, true);
+  const headerShowApp = workspaceMenuVisible(perm, "appcenter", navRole);
+  const headerShowAiInspect = workspaceMenuVisible(perm, "aiinspect", navRole);
   const showPlatformUsers =
     !isViewer && (status?.role === "admin" || cfg?.dashboardRole === "admin");
 

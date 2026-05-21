@@ -4,32 +4,30 @@ import Sidebar from "./Sidebar";
 import Header from "./Header";
 import RedisStatusBanner from "@/features/app-center/redis/components/RedisStatusBanner";
 import PlatformVersionBanner from "./PlatformVersionBanner";
-import UserGuideSheet from "./UserGuideSheet";
 import AppLayoutMobile from "./AppLayoutMobile";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const UserGuideSheet = React.lazy(() => import("./UserGuideSheet"));
 
 const AppLayout: React.FC = () => {
   const isMobile = useIsMobile();
   const { pathname } = useLocation();
 
   if (isMobile) return <AppLayoutMobile />;
+
   const isDocsShell = pathname === "/docs" || pathname.startsWith("/docs/");
-  /** 仅 Markdown/画布编辑器占满主区域高度；/docs/media 等仍需主区域滚动 */
   const isDocsEditorViewport =
     pathname === "/docs" ||
     pathname.startsWith("/docs/doc/") ||
     pathname === "/docs/guides" ||
     pathname.startsWith("/docs/guides/doc/");
-  /** 堡垒机整段路由：无平台侧栏/顶栏，视口交给堡垒机页面（含 console 嵌入页） */
   const isBastionFullBleed =
     pathname === "/cluster/bastion" ||
     pathname.startsWith("/cluster/bastion/") ||
     pathname === "/cluster/vcenter/bastion" ||
     pathname.startsWith("/cluster/vcenter/bastion/");
-  /** Pod Web 终端全屏页：无平台侧栏/顶栏，与 Orion Visor 独占视口一致 */
-  const isPodTerminalShell =
-    /\/cluster\/ns\/[^/]+\/pods\/[^/]+\/terminal\/?$/.test(pathname);
+  const isPodTerminalShell = /\/cluster\/ns\/[^/]+\/pods\/[^/]+\/terminal\/?$/.test(pathname);
   const hideAppChrome = isPodTerminalShell || isBastionFullBleed;
 
   return (
@@ -80,7 +78,9 @@ const AppLayout: React.FC = () => {
           </main>
         </div>
       </div>
-      <UserGuideSheet />
+      <React.Suspense fallback={null}>
+        <UserGuideSheet />
+      </React.Suspense>
     </div>
   );
 };

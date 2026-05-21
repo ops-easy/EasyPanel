@@ -40,6 +40,49 @@ export function menuItemVisible(
   return moduleFallback;
 }
 
+export type PlatformWorkspaceMenuKey =
+  | "hub"
+  | "kubernetes"
+  | "compute"
+  | "network"
+  | "baota"
+  | "appcenter"
+  | "bastion"
+  | "aiinspect"
+  | "docs";
+
+export function workspaceMenuVisible(
+  p: PlatformPermissions | undefined | null,
+  key: PlatformWorkspaceMenuKey,
+  role: string | undefined
+): boolean {
+  switch (key) {
+    case "hub":
+      return menuItemVisible(p, "hub", role, true);
+    case "kubernetes":
+      return menuItemVisible(p, "kubernetes", role, moduleVisible(p, "k8s"));
+    case "compute":
+      return menuItemVisible(p, "compute", role, moduleVisible(p, "compute"));
+    case "network":
+      return menuItemVisible(p, "network", role, moduleVisible(p, "network"));
+    case "baota":
+      return menuItemVisible(p, "baota", role, moduleVisible(p, "baota"));
+    case "appcenter":
+      return menuItemVisible(p, "appcenter", role, moduleVisible(p, "appcenter"));
+    case "bastion":
+      return menuItemVisible(
+        p,
+        "vcenter_bastion",
+        role,
+        moduleVisible(p, "compute") || moduleVisible(p, "appcenter")
+      );
+    case "aiinspect":
+      return menuItemVisible(p, "aiInspect", role, true);
+    case "docs":
+      return menuItemVisible(p, "docs", role, true);
+  }
+}
+
 export function k8sPodExecAllowed(
   role: string | undefined,
   p: PlatformPermissions | undefined | null

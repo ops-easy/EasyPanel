@@ -7,12 +7,8 @@ import AutoImport from "unplugin-auto-import/vite";
 import checker from "vite-plugin-checker";
 import * as lucideIcons from "lucide-react";
 
-// 获取所有 lucide-react 导出的符号名
-const allLucideExports = Object.keys(lucideIcons).filter(
-  (key) => key !== "default"
-);
+const allLucideExports = Object.keys(lucideIcons).filter((key) => key !== "default");
 
-// 扫描 src 目录，找出实际使用的 lucide 图标
 function getUsedLucideIcons() {
   const usedIcons = new Set<string>();
   const srcPath = path.resolve(__dirname, "./src");
@@ -30,9 +26,7 @@ function getUsedLucideIcons() {
       } else if (/\.(tsx?|jsx?)$/.test(file)) {
         const content = fs.readFileSync(filePath, "utf-8");
 
-        // 匹配 JSX 标签和标识符使用
         for (const icon of allLucideExports) {
-          // 匹配: <IconName、{IconName、= IconName、: IconName 等
           const patterns = [
             new RegExp(`<${icon}[\\s/>]`, "g"),
             new RegExp(`[{\\s,=:]${icon}[\\s,})]`, "g"),
@@ -52,73 +46,96 @@ function getUsedLucideIcons() {
 
 const usedLucideIcons = getUsedLucideIcons();
 
-// https://vite.dev/config/
-// 本地若 Go 监听非 8080（如 DASHBOARD_HTTP_ADDR=:18080），在 web/.env 设 VITE_DEV_API_TARGET=http://127.0.0.1:18080
+function vendorChunkName(id: string): string | undefined {
+  const normalizedId = id.replace(/\\/g, "/");
+
+  if (
+    normalizedId.includes("/src/lib/utils.ts") ||
+    normalizedId.includes("node_modules/clsx") ||
+    normalizedId.includes("node_modules/tailwind-merge")
+  ) {
+    return "ui-utils";
+  }
+  if (normalizedId.includes("/src/shared/ui/chart.tsx")) return "chart-ui";
+  if (normalizedId.includes("node_modules/elkjs")) return "elkjs";
+  if (normalizedId.includes("node_modules/cytoscape")) return "cytoscape";
+  if (normalizedId.includes("node_modules/highlight.js/lib")) return "highlight-limited";
+  if (
+    normalizedId.includes("node_modules/@uiw/react-codemirror") ||
+    normalizedId.includes("node_modules/@codemirror/") ||
+    normalizedId.includes("node_modules/codemirror") ||
+    normalizedId.includes("node_modules/@lezer/")
+  ) {
+    return "codemirror";
+  }
+  if (normalizedId.includes("node_modules/react-dom/") || normalizedId.includes("node_modules/react/")) {
+    return "react-vendor";
+  }
+  if (normalizedId.includes("node_modules/react-router")) return "router";
+  if (normalizedId.includes("node_modules/@tanstack/react-query")) return "react-query";
+  if (normalizedId.includes("node_modules/@babel/runtime")) return "babel-runtime";
+  if (normalizedId.includes("node_modules/recharts")) return "recharts";
+  if (normalizedId.includes("node_modules/@xterm/")) return "xterm";
+  return undefined;
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const apiTarget = env.VITE_DEV_API_TARGET || "http://127.0.0.1:8080";
   const uiBuildVersion = (env.VITE_UI_BUILD_VERSION || "").trim() || "dev";
+
   return {
-  define: {
-    __KUBEBT_UI_BUILD_VERSION__: JSON.stringify(uiBuildVersion),
-  },
-  server: {
-    proxy: {
-      "/api": {
-        target: apiTarget,
-        changeOrigin: true,
-        ws: true,
-      },
-      "/r": { target: apiTarget, changeOrigin: true },
-      "/d": { target: apiTarget, changeOrigin: true },
+    define: {
+      __KUBEBT_UI_BUILD_VERSION__: JSON.stringify(uiBuildVersion),
     },
-  },
-  plugins: [
-    react(),
-    tailwindcss(),
-    AutoImport({
-      dts: "src/generated/auto-imports.d.ts",
-      include: [/\.[tj]sx?$/],
-      ignore: ["Activity"],
-      imports: [
-        "react",
-        {
-          "lucide-react": usedLucideIcons,
+    server: {
+      proxy: {
+        "/api": {
+          target: apiTarget,
+          changeOrigin: true,
+          ws: true,
         },
-      ],
-      eslintrc: {
-        enabled: false,
+        "/r": { target: apiTarget, changeOrigin: true },
+        "/d": { target: apiTarget, changeOrigin: true },
       },
-    }),
-    checker({
-      typescript: {
-        tsconfigPath: "tsconfig.app.json",
-      },
-      enableBuild: true,
-    }),
-  ],
-  resolve: {
-    dedupe: ["react", "react-dom"],
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
     },
-  },
-  build: {
-    chunkSizeWarningLimit: 3000,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes("node_modules/react-dom/") || id.includes("node_modules/react/")) {
-            return "react-vendor";
-          }
-          if (id.includes("node_modules/react-router")) return "router";
-          if (id.includes("node_modules/@tanstack/react-query")) return "react-query";
-          if (id.includes("node_modules/recharts")) return "recharts";
-          if (id.includes("node_modules/@xterm/")) return "xterm";
-          return undefined;
+    plugins: [
+      react(),
+      tailwindcss(),
+      AutoImport({
+        dts: "src/generated/auto-imports.d.ts",
+        include: [/\.[tj]sx?$/],
+        ignore: ["Activity"],
+        imports: [
+          "react",
+          {
+            "lucide-react": usedLucideIcons,
+          },
+        ],
+        eslintrc: {
+          enabled: false,
+        },
+      }),
+      checker({
+        typescript: {
+          tsconfigPath: "tsconfig.app.json",
+        },
+        enableBuild: true,
+      }),
+    ],
+    resolve: {
+      dedupe: ["react", "react-dom"],
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+    },
+    build: {
+      chunkSizeWarningLimit: 3000,
+      rollupOptions: {
+        output: {
+          manualChunks: vendorChunkName,
         },
       },
     },
-  },
   };
 });

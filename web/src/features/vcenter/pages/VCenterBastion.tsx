@@ -150,6 +150,7 @@ type BastionTargetSSHForm = {
 
 const EMPTY_VMS: VMRow[] = [];
 const EMPTY_EXTRAS: ExtraHostRow[] = [];
+const EMPTY_BASTION_TARGETS: BastionTargetRow[] = [];
 const EMPTY_TARGET_SSH_FORM: BastionTargetSSHForm = {
   sshHost: "",
   user: "",
@@ -310,7 +311,10 @@ const VCenterBastion: React.FC = () => {
     refetchInterval: (q) => (q.state.data?.folderPathPending ? 5000 : 1000 * 60 * 10),
   });
 
-  const bastionTargets = vmsQ.data?.targets ?? [];
+  const bastionTargets = useMemo(
+    () => vmsQ.data?.targets ?? EMPTY_BASTION_TARGETS,
+    [vmsQ.data?.targets]
+  );
   const vms = useMemo(
     () =>
       bastionTargets

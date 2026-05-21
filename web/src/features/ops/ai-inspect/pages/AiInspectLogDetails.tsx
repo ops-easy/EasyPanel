@@ -771,7 +771,7 @@ const AiInspectLogDetails: React.FC = () => {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <Sparkles className="h-4 w-4 text-violet-600" />
-                OpenClaw 日志智能分析
+                AI Provider 日志智能分析
               </CardTitle>
               <CardDescription className="text-[11px] leading-relaxed">
                 使用当前标签与筛选条件，对样本日志做聚合分析并给出处置建议。
@@ -799,7 +799,7 @@ const AiInspectLogDetails: React.FC = () => {
                     variant="outline"
                     disabled={clearVmlogDedupeMut.isPending}
                     onClick={() => {
-                      if (!window.confirm("清除当前筛选条件下已登记的 OpenClaw 问题指纹？下次分析将重新视为新问题。")) return;
+                      if (!window.confirm("清除当前筛选条件下已登记的 AI 问题指纹？下次分析将重新视为新问题。")) return;
                       clearVmlogDedupeMut.mutate();
                     }}
                   >
@@ -833,7 +833,7 @@ const AiInspectLogDetails: React.FC = () => {
                 AI 建议 · 集群控制平面上下文
               </CardTitle>
               <CardDescription className="text-[11px] leading-relaxed">
-                与上方「OpenClaw 日志智能分析」并列：此处展示平台周期生成的 kube-system
+                与上方「AI Provider 日志智能分析」并列：此处展示平台周期生成的 kube-system
                 控制平面建议，便于对照 VictoriaLogs 明细排查 apiserver/etcd 等频繁重启问题。
               </CardDescription>
             </CardHeader>
@@ -1171,7 +1171,7 @@ const AiInspectLogDetails: React.FC = () => {
               <div className="rounded-lg border border-violet-200/70 bg-gradient-to-br from-violet-50/60 via-white to-slate-50/90 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">OpenClaw AI 分析</p>
+                    <p className="text-sm font-semibold text-slate-900">AI Provider 分析</p>
                     <p className="mt-1 text-[11px] leading-relaxed text-slate-600">解释这条日志大概是什么问题，并给出排查思路。</p>
                   </div>
                   <Button

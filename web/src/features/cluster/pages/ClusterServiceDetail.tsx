@@ -18,7 +18,7 @@ import { apiGetJson, apiPostJson } from "@/lib/api";
 import type { SvcRow } from "./types";
 import { K8sObjectRevisionTriggerButton } from "@/features/cluster/components/K8sObjectRevisionDialog";
 import { K8sRelationsCard } from "./K8sRelationsCard";
-import { K8sGraphicEditDialog } from "./k8s/K8sGraphicEditDialog";
+import { K8sGraphicEditDialogLazy } from "./k8s/K8sGraphicEditDialogLazy";
 import { normalizePortEntries, ServicePortsDetailTable } from "./servicePortsDisplay";
 
 const TAB_QUERY = "tab";
@@ -306,7 +306,7 @@ const ClusterServiceDetail: React.FC = () => {
         </Tabs>
       )}
 
-      <K8sGraphicEditDialog
+      <K8sGraphicEditDialogLazy
         open={graphicOpen}
         onOpenChange={setGraphicOpen}
         kind="Service"

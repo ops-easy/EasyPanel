@@ -78,8 +78,8 @@ function apiVmLogMutationLabel(method: string, path: string): string {
   if (path.includes("/api/ops/vmlog/overview")) return "查看 VictoriaLogs 日志总览";
   if (path.includes("/api/ops/vmlog/details")) return "查看 VictoriaLogs 日志详情";
   if (path.includes("/api/ops/vmlog/stats")) return "统计 VictoriaLogs 日志";
-  if (path.includes("/api/ops/vmlog/openclaw-analyze-row")) return "OpenClaw 分析单条日志";
-  if (path.includes("/api/ops/vmlog/openclaw-analyze")) return "OpenClaw 分析日志";
+  if (path.includes("/api/ops/vmlog/ai-analyze-row")) return "AI Provider 分析单条日志";
+  if (path.includes("/api/ops/vmlog/ai-analyze")) return "AI Provider 分析日志";
   if (path.includes("/api/ops/vmlog/vm-shipper/script")) return "生成日志采集器脚本";
   if (path.includes("/api/ops/vmlog/vm-shipper/inspect")) return "检查日志采集器配置";
   if (path.includes("/api/ops/vmlog/vm-shipper/apply")) return "下发日志采集器";

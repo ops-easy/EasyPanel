@@ -100,12 +100,14 @@ test("legacy vCenter paths belong to the unified compute workspace", () => {
 
 test("new compute and network workspaces have independent permission visibility", () => {
   assert.match(platformPermissionsSource, /"compute" \| "network"/);
-  assert.match(headerSource, /moduleVisible\(perm, "compute"\)/);
-  assert.match(headerSource, /moduleVisible\(perm, "network"\)/);
-  assert.match(sidebarSource, /moduleVisible\(perm, "compute"\)/);
-  assert.match(sidebarSource, /moduleVisible\(perm, "network"\)/);
-  assert.match(homeHubSource, /menuItemVisible\(perm, "compute"/);
-  assert.match(homeHubSource, /menuItemVisible\(perm, "network"/);
+  assert.match(platformPermissionsSource, /case "compute":[\s\S]*moduleVisible\(p, "compute"\)/);
+  assert.match(platformPermissionsSource, /case "network":[\s\S]*moduleVisible\(p, "network"\)/);
+  assert.match(headerSource, /workspaceMenuVisible\(perm, "compute", navRole\)/);
+  assert.match(headerSource, /workspaceMenuVisible\(perm, "network", navRole\)/);
+  assert.match(sidebarSource, /workspaceMenuVisible\(perm, "compute", navRole\)/);
+  assert.match(sidebarSource, /workspaceMenuVisible\(perm, "network", navRole\)/);
+  assert.match(homeHubSource, /workspaceMenuVisible\(perm, "compute", hubRole\)/);
+  assert.match(homeHubSource, /workspaceMenuVisible\(perm, "network", hubRole\)/);
   assert.match(platformUsersSource, /compute: ModuleAccess/);
   assert.match(platformUsersSource, /network: ModuleAccess/);
   assert.match(platformUsersSource, /vcenter: form\.compute/);
@@ -134,7 +136,9 @@ test("legacy vCenter routes redirect before falling through to VM details", () =
 });
 
 test("header and home hub entries use the same permission gates as sidebar", () => {
-  assert.match(headerSource, /const headerShowK8s = menuItemVisible\(perm, "kubernetes"/);
+  assert.match(headerSource, /const headerShowK8s = workspaceMenuVisible\(perm, "kubernetes", navRole\)/);
+  assert.match(sidebarSource, /const showK8sNav = workspaceMenuVisible\(perm, "kubernetes", navRole\)/);
+  assert.match(homeHubSource, /const showK8s = workspaceMenuVisible\(perm, "kubernetes", hubRole\)/);
   assert.match(headerSource, /\{headerShowK8s \? \(/);
   assert.doesNotMatch(headerSource, /\{moduleVisible\(perm, "k8s"\) \? \(/);
   assert.match(homeHubSource, /enabled: cfg\?\.k8sConfigured === true && showK8s/);
@@ -187,7 +191,7 @@ test("user-facing navigation keeps vCenter features under compute", () => {
   );
   assert.match(
     computeRoutesSource,
-    /<Route path="dashboard" element=\{<ComputeDashboard \/>}/
+    /path="dashboard"[\s\S]*<RouteSuspense>[\s\S]*<ComputeDashboard \/>/
   );
   assert.match(
     sidebarSource,

@@ -6,16 +6,22 @@
   "scripts": {
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "check:api": "node ../scripts/check-api-contract.mjs && node --test tests/api-contract.test.mjs",
+    "check:bundle": "node ../scripts/check-web-bundle-budget.mjs",
+    "check:deploy": "node ../scripts/check-web-deploy-smoke.mjs",
     "check:text": "node --test tests/compute-network-text-encoding.test.mjs",
+    "check": "npm run lint && npm run check:api && npm run test && npm run build && npm run check:bundle && npm run check:deploy",
     "dev": "vite",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "smoke:deploy": "node ../scripts/smoke-deploy.mjs",
+    "smoke:dist": "node ../scripts/smoke-web-dist.mjs",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@bytemd/plugin-breaks": "^1.22.0",
     "@bytemd/plugin-frontmatter": "^1.22.0",
     "@bytemd/plugin-gfm": "^1.22.0",
-    "@bytemd/plugin-highlight": "^1.22.0",
     "@bytemd/plugin-math": "^1.22.0",
     "@bytemd/plugin-mermaid": "^1.22.0",
     "@bytemd/react": "^1.22.0",

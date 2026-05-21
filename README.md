@@ -87,8 +87,19 @@ make start-frontend
 
 ```bash
 cd api && go test ./...
-cd web && npm run build
-cd web && npm run lint
+cd web && npm run check
+```
+
+CI 会在 PR 以及 `main` / `master` 推送时运行后端测试、前端总检查、bundle 预算、API 契约、文本编码和 dist 烟测；镜像发布工作流复用同一套前端检查后再构建 GHCR 镜像。
+
+构建产物与已部署环境的烟测：
+
+```bash
+cd web
+npm run build
+npm run smoke:dist
+SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy
+SMOKE_BASE_URL=https://your-staging.example.com SMOKE_D_PATH=/d/ npm run smoke:deploy
 ```
 
 ### Kustomize 部署
@@ -133,7 +144,7 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
 - `ghcr.io/ops-easy/kube-bt-sync-web:latest`
 - `ghcr.io/ops-easy/kube-bt-sync-web:<commit-sha>`
 
-后端镜像使用多阶段构建，最终运行镜像基于 `distroless/static-debian12:nonroot`，只包含后端二进制；前端镜像基于 Nginx，并将 `/api/` 与 `/r/` 反向代理到后端 Service。
+后端镜像使用多阶段构建，最终运行镜像基于 `distroless/static-debian12:nonroot`，只包含后端二进制；前端镜像基于 Nginx，并将 `/api/`、`/r/` 与公开媒体 `/d/` 反向代理到后端 Service。
 
 ## 关键配置
 

@@ -12,7 +12,7 @@ k8s/
 └── kustomization.yaml          # Kustomize 聚合入口
 ```
 
-后端 Service 名称为 `kube-bt-sync`，监听 `8080`。前端 Nginx Service 名称为 `kube-bt-sync-frontend`，默认使用 NodePort `32080`，并把 `/api/` 与 `/r/` 代理到后端。
+后端 Service 名称为 `kube-bt-sync`，监听 `8080`。前端 Nginx Service 名称为 `kube-bt-sync-frontend`，默认使用 NodePort `32080`，并把 `/api/`、`/r/` 与公开媒体 `/d/` 代理到后端。
 
 ## 使用 Kustomize 部署
 
@@ -96,6 +96,18 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
 - 按实际网络设置 `DASHBOARD_TRUSTED_PROXIES`。
 - 默认 RBAC 权限较宽，生产环境可以根据功能裁剪。
 - 不要把 `/setup` 长期暴露给公网。
+
+## 部署验证
+
+前端镜像内置 Nginx 需要同时代理 `/api/`、Kubernetes 反向代理 `/r/` 和公开媒体 `/d/`。发布前建议先在本地验证构建产物，再对预发地址执行烟测：
+
+```bash
+cd web
+npm run build
+npm run smoke:dist
+SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy
+SMOKE_BASE_URL=https://your-staging.example.com SMOKE_D_PATH=/d/ npm run smoke:deploy
+```
 
 ## 常用命令
 

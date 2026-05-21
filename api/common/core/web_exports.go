@@ -2,6 +2,8 @@ package core
 
 import "github.com/gin-gonic/gin"
 
+// AttachCoreAPIRoutes 挂载仍归 core 包维护的生产 API。
+// 新业务域优先放到 api/<domain> 与 router/<domain>，再由 api/router/router.go 聚合。
 func AttachCoreAPIRoutes(api *gin.RouterGroup, app *ServerApp) {
 	api.GET("/namespaces", func(c *gin.Context) { handleGetNamespaces(c, app) })
 	api.GET("/services", func(c *gin.Context) { handleGetServices(c, app.K8s()) })

@@ -1,13 +1,88 @@
 package core
 
 import (
+	"context"
+	"database/sql"
+	"database/sql/driver"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 )
+
+const dashboardPermissionTestDriverName = "kubebt_dashboard_permission_test"
+
+var dashboardPermissionTestState = struct {
+	sync.Mutex
+	raw string
+}{}
+
+func init() {
+	sql.Register(dashboardPermissionTestDriverName, dashboardPermissionTestDriver{})
+}
+
+type dashboardPermissionTestDriver struct{}
+
+func (dashboardPermissionTestDriver) Open(string) (driver.Conn, error) {
+	return dashboardPermissionTestConn{}, nil
+}
+
+type dashboardPermissionTestConn struct{}
+
+func (dashboardPermissionTestConn) Prepare(string) (driver.Stmt, error) {
+	return nil, errors.New("test driver does not support Prepare")
+}
+
+func (dashboardPermissionTestConn) Close() error {
+	return nil
+}
+
+func (dashboardPermissionTestConn) Begin() (driver.Tx, error) {
+	return nil, errors.New("test driver does not support transactions")
+}
+
+func (dashboardPermissionTestConn) QueryContext(_ context.Context, query string, _ []driver.NamedValue) (driver.Rows, error) {
+	if !strings.Contains(query, "SELECT permissions_json FROM kubebt_dashboard_users") {
+		return nil, errors.New("unexpected query")
+	}
+	dashboardPermissionTestState.Lock()
+	raw := dashboardPermissionTestState.raw
+	dashboardPermissionTestState.Unlock()
+	return &dashboardPermissionRows{raw: raw}, nil
+}
+
+type dashboardPermissionRows struct {
+	raw  string
+	done bool
+}
+
+func (r *dashboardPermissionRows) Columns() []string {
+	return []string{"permissions_json"}
+}
+
+func (r *dashboardPermissionRows) Close() error {
+	return nil
+}
+
+func (r *dashboardPermissionRows) Next(dest []driver.Value) error {
+	if r.done {
+		return io.EOF
+	}
+	r.done = true
+	dest[0] = r.raw
+	return nil
+}
+
+func setDashboardPermissionTestRaw(raw string) {
+	dashboardPermissionTestState.Lock()
+	defer dashboardPermissionTestState.Unlock()
+	dashboardPermissionTestState.raw = raw
+}
 
 func TestAPIModulePrefixCoversComputeAndNetworkFeatures(t *testing.T) {
 	tests := []struct {
@@ -57,6 +132,35 @@ func TestEffectivePermissionsExposeComputeAndNetworkWithLegacyFallback(t *testin
 	}
 }
 
+func TestAdminPermissionsPreserveMenuHidesWithoutReducingBackendAccess(t *testing.T) {
+	setDashboardPermissionTestRaw(`{"k8s":"none","compute":"none","network":"none","baota":"none","appcenter":"none","menu":{"appcenter":false,"docs":true}}`)
+	db, err := sql.Open(dashboardPermissionTestDriverName, "")
+	if err != nil {
+		t.Fatalf("open test db: %v", err)
+	}
+	defer db.Close()
+
+	eff := LoadEffectiveDashboardPermissions(db, "root", DashboardRoleAdmin)
+	if eff.AppCenter != ModuleAccessRW || eff.K8s != ModuleAccessRW || eff.Compute != ModuleAccessRW {
+		t.Fatalf("admin module access = k8s:%q compute:%q appcenter:%q, want all rw", eff.K8s, eff.Compute, eff.AppCenter)
+	}
+	if eff.Menu["appcenter"] != false {
+		t.Fatalf("admin menu appcenter hide was not preserved: %#v", eff.Menu)
+	}
+	if eff.Menu["docs"] != true {
+		t.Fatalf("admin menu docs allow was not preserved: %#v", eff.Menu)
+	}
+
+	public := EffectivePermissionsToPublic(eff)
+	menu, ok := public["menu"].(map[string]bool)
+	if !ok {
+		t.Fatalf("public menu type = %T, want map[string]bool", public["menu"])
+	}
+	if menu["appcenter"] != false || menu["docs"] != true {
+		t.Fatalf("public menu = %#v", menu)
+	}
+}
+
 func TestPermissionEndpointForbiddenUsesComputeAndNetworkModules(t *testing.T) {
 	eff := effectivePermissionsFromJSON(DashboardRoleViewer, `{"vcenter":"rw","compute":"none","network":"ro","k8s":"none","baota":"none","appcenter":"none"}`)
 
@@ -71,6 +175,103 @@ func TestPermissionEndpointForbiddenUsesComputeAndNetworkModules(t *testing.T) {
 	}
 	if !permissionEndpointForbidden("POST", "/api/network/devices", eff) {
 		t.Fatalf("network=ro should block network write API")
+	}
+}
+
+func TestPermissionMatrixCoversKeyModules(t *testing.T) {
+	tests := []struct {
+		name   string
+		raw    string
+		method string
+		path   string
+		want   bool
+	}{
+		{
+			name:   "k8s ro allows summary read",
+			raw:    `{"k8s":"ro","compute":"none","network":"none","baota":"none","appcenter":"none"}`,
+			method: http.MethodGet,
+			path:   "/api/k8s/summary",
+			want:   false,
+		},
+		{
+			name:   "k8s ro blocks yaml apply",
+			raw:    `{"k8s":"ro","compute":"none","network":"none","baota":"none","appcenter":"none"}`,
+			method: http.MethodPost,
+			path:   "/api/k8s/apply-yaml",
+			want:   true,
+		},
+		{
+			name:   "compute ro allows vcenter read",
+			raw:    `{"k8s":"none","compute":"ro","network":"none","baota":"none","appcenter":"none"}`,
+			method: http.MethodGet,
+			path:   "/api/vcenter/vms",
+			want:   false,
+		},
+		{
+			name:   "compute ro blocks vcenter power write",
+			raw:    `{"k8s":"none","compute":"ro","network":"none","baota":"none","appcenter":"none"}`,
+			method: http.MethodPost,
+			path:   "/api/vcenter/vms/vm-101/power",
+			want:   true,
+		},
+		{
+			name:   "network ro allows device read",
+			raw:    `{"k8s":"none","compute":"none","network":"ro","baota":"none","appcenter":"none"}`,
+			method: http.MethodGet,
+			path:   "/api/network/devices",
+			want:   false,
+		},
+		{
+			name:   "network ro blocks device write",
+			raw:    `{"k8s":"none","compute":"none","network":"ro","baota":"none","appcenter":"none"}`,
+			method: http.MethodPost,
+			path:   "/api/network/devices",
+			want:   true,
+		},
+		{
+			name:   "baota ro allows status read",
+			raw:    `{"k8s":"none","compute":"none","network":"none","baota":"ro","appcenter":"none"}`,
+			method: http.MethodGet,
+			path:   "/api/baota/ingress-sync/status",
+			want:   false,
+		},
+		{
+			name:   "baota ro blocks sync run",
+			raw:    `{"k8s":"none","compute":"none","network":"none","baota":"ro","appcenter":"none"}`,
+			method: http.MethodPost,
+			path:   "/api/baota/ingress-sync/run",
+			want:   true,
+		},
+		{
+			name:   "appcenter none blocks app status read",
+			raw:    `{"k8s":"none","compute":"none","network":"none","baota":"none","appcenter":"none"}`,
+			method: http.MethodGet,
+			path:   "/api/app-center/redis/status",
+			want:   true,
+		},
+		{
+			name:   "redis readonly blocks writes",
+			raw:    `{"k8s":"none","compute":"none","network":"none","baota":"none","appcenter":"rw","appcenterRedis":"readonly"}`,
+			method: http.MethodPost,
+			path:   "/api/app-center/redis/k8s-deploy",
+			want:   true,
+		},
+		{
+			name:   "cloud vm managed only blocks create",
+			raw:    `{"k8s":"none","compute":"none","network":"none","baota":"none","appcenter":"rw","appcenterRedis":"full","appcenterCloudVm":"managed_only"}`,
+			method: http.MethodPost,
+			path:   "/api/app-center/cloud-vm/instances",
+			want:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			eff := effectivePermissionsFromJSON(DashboardRoleViewer, tt.raw)
+			if got := permissionEndpointForbidden(tt.method, tt.path, eff); got != tt.want {
+				t.Fatalf("permissionEndpointForbidden(%s, %s) = %v, want %v", tt.method, tt.path, got, tt.want)
+			}
+		})
 	}
 }
 

@@ -30,8 +30,9 @@ import {
 import { workspaceFromPathname } from "@/lib/workspace";
 import { cn } from "@/lib/utils";
 import GlobalSearchBar from "@/shared/layout/GlobalSearchBar";
-import { menuItemVisible, moduleVisible } from "@/lib/platform-permissions";
-import HeaderNotificationsSheet from "@/shared/layout/HeaderNotificationsSheet";
+import { workspaceMenuVisible } from "@/lib/platform-permissions";
+
+const HeaderNotificationsSheet = React.lazy(() => import("@/shared/layout/HeaderNotificationsSheet"));
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -53,19 +54,14 @@ const Header: React.FC = () => {
   const perm = cfg?.permissions;
   const navRole = status?.role;
   const isViewer = cfg?.dashboardRole === "viewer" || cfg?.viewer === true;
-  const headerShowK8s = menuItemVisible(perm, "kubernetes", navRole, moduleVisible(perm, "k8s"));
-  const headerShowCompute = menuItemVisible(perm, "compute", navRole, moduleVisible(perm, "compute"));
-  const headerShowNetwork = menuItemVisible(perm, "network", navRole, moduleVisible(perm, "network"));
-  const headerShowBaota = menuItemVisible(perm, "baota", navRole, moduleVisible(perm, "baota"));
-  const headerShowApp = menuItemVisible(perm, "appcenter", navRole, moduleVisible(perm, "appcenter"));
-  const headerShowBastion = menuItemVisible(
-    perm,
-    "vcenter_bastion",
-    navRole,
-    moduleVisible(perm, "compute") || moduleVisible(perm, "appcenter")
-  );
-  const headerShowAiInspect = menuItemVisible(perm, "aiInspect", navRole, true);
-  const headerShowDocs = menuItemVisible(perm, "docs", navRole, true);
+  const headerShowK8s = workspaceMenuVisible(perm, "kubernetes", navRole);
+  const headerShowCompute = workspaceMenuVisible(perm, "compute", navRole);
+  const headerShowNetwork = workspaceMenuVisible(perm, "network", navRole);
+  const headerShowBaota = workspaceMenuVisible(perm, "baota", navRole);
+  const headerShowApp = workspaceMenuVisible(perm, "appcenter", navRole);
+  const headerShowBastion = workspaceMenuVisible(perm, "bastion", navRole);
+  const headerShowAiInspect = workspaceMenuVisible(perm, "aiinspect", navRole);
+  const headerShowDocs = workspaceMenuVisible(perm, "docs", navRole);
 
   /** 与 MySQL 是否连通无关：管理员应始终看到入口；无库时页面内会提示配置 MySQL */
   const showPlatformUsers =
@@ -312,7 +308,9 @@ const Header: React.FC = () => {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <HeaderNotificationsSheet />
+        <React.Suspense fallback={null}>
+          <HeaderNotificationsSheet />
+        </React.Suspense>
 
         <div className="h-8 w-px bg-gray-200" />
 

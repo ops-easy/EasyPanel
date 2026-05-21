@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(here, "..");
-const sourceExtensions = new Set([".ts", ".tsx"]);
+const sourceExtensions = new Set([".ts", ".tsx", ".html", ".md", ".css"]);
 
 const suspiciousFragments = [
   [32515, 25120, 31926], // network
@@ -27,14 +27,9 @@ const suspiciousFragments = [
 ].map((codes) => String.fromCharCode(...codes));
 
 const scanEntries = [
-  "src/features/compute",
-  "src/features/network",
-  "src/features/cluster/pages/ToolNetworkIpScan.tsx",
-  "src/shared/layout/Sidebar.tsx",
-  "src/shared/layout/Header.tsx",
-  "src/shared/layout/AppLayoutMobile.tsx",
-  "src/shared/layout/GlobalSearchBar.tsx",
-  "src/pages/HomeHub.tsx",
+  "index.html",
+  "README.md",
+  "src",
 ];
 
 const requiredPhrases = new Map([
@@ -111,7 +106,7 @@ test("detects common mojibake samples before scanning source files", () => {
   assert.notDeepEqual(findMojibakeIssues(corruptedNetworkDevice), []);
 });
 
-test("compute and network user-facing sources stay valid UTF-8 Chinese", () => {
+test("frontend user-facing sources stay valid UTF-8 Chinese", () => {
   const files = [...new Set(scanEntries.flatMap(collectSourceFiles))].sort();
   const failures = [];
 

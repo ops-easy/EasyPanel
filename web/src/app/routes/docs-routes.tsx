@@ -1,9 +1,13 @@
 import { lazy, type ReactNode } from "react";
 import { Navigate, Route, useParams } from "react-router-dom";
 import { RouteSuspense } from "@/app/route-fallback";
-import DocsMedia from "@/features/docs/pages/DocsMedia";
 
+const DocsMedia = lazy(() => import("@/features/docs/pages/DocsMedia"));
 const MdEditorPage = lazy(() => import("@/md-editor/EditorContainer"));
+
+function LazyRoute({ children }: { children: ReactNode }) {
+  return <RouteSuspense>{children}</RouteSuspense>;
+}
 
 function DocsLegacyEditRedirect() {
   const { docId } = useParams();
@@ -14,22 +18,34 @@ function DocsLegacyEditRedirect() {
 
 function DocsEditorLazy() {
   return (
-    <RouteSuspense>
+    <LazyRoute>
       <MdEditorPage />
-    </RouteSuspense>
+    </LazyRoute>
   );
 }
 
-export function docsRoutes(): ReactNode {
+function withBase(basePath: string, path = ""): string {
+  if (!basePath) return path;
+  return path ? `${basePath}/${path}` : basePath;
+}
+
+export function docsRoutes(basePath = "docs"): ReactNode {
   return (
     <>
-      <Route path="docs/media" element={<DocsMedia />} />
-      <Route path="docs/guides" element={<DocsEditorLazy />} />
-      <Route path="docs/guides/doc/:docId" element={<DocsEditorLazy />} />
-      <Route path="docs/new" element={<Navigate to="/docs" replace />} />
-      <Route path="docs/:docId/edit" element={<DocsLegacyEditRedirect />} />
-      <Route path="docs/doc/:docId" element={<DocsEditorLazy />} />
-      <Route path="docs" element={<DocsEditorLazy />} />
+      <Route
+        path={withBase(basePath, "media")}
+        element={
+          <LazyRoute>
+            <DocsMedia />
+          </LazyRoute>
+        }
+      />
+      <Route path={withBase(basePath, "guides")} element={<DocsEditorLazy />} />
+      <Route path={withBase(basePath, "guides/doc/:docId")} element={<DocsEditorLazy />} />
+      <Route path={withBase(basePath, "new")} element={<Navigate to="/docs" replace />} />
+      <Route path={withBase(basePath, ":docId/edit")} element={<DocsLegacyEditRedirect />} />
+      <Route path={withBase(basePath, "doc/:docId")} element={<DocsEditorLazy />} />
+      <Route path={withBase(basePath)} element={<DocsEditorLazy />} />
     </>
   );
 }

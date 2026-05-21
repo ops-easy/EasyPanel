@@ -20,10 +20,8 @@ import { apiGetJson, apiPostJson } from "@/lib/api";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { parseAge } from "./parseAge";
 import { PodListBlock } from "./PodListBlock";
-import {
-  K8sGraphicEditDialog,
-  type K8sGraphicKind,
-} from "./k8s/K8sGraphicEditDialog";
+import { K8sGraphicEditDialogLazy } from "./k8s/K8sGraphicEditDialogLazy";
+import type { K8sGraphicKind } from "./k8s/K8sGraphicEditDialog.types";
 import { K8sObjectRevisionTriggerButton } from "@/features/cluster/components/K8sObjectRevisionDialog";
 import { K8sRelationsCard } from "./K8sRelationsCard";
 import { WorkloadHostNetworkBadge } from "./WorkloadHostNetworkBadge";
@@ -589,7 +587,7 @@ export const ClusterWorkloadDetail: React.FC<ClusterWorkloadDetailProps> = ({
         </>
       )}
 
-      <K8sGraphicEditDialog
+      <K8sGraphicEditDialogLazy
         open={graphicOpen}
         onOpenChange={setGraphicOpen}
         kind={graphicKind}

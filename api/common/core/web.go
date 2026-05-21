@@ -38,14 +38,18 @@ type DeleteIngressRequest struct {
 	DeleteBaota bool   `json:"deleteBaota"`
 }
 
-// NewRouter 构造 Dashboard HTTP 路由，供服务启动和路由护栏测试复用。
+// NewRouter 构造旧版 core-local Dashboard HTTP 路由。
+//
+// 生产入口已经迁移到 api/router/router.go；这里保留给旧测试和迁移期兼容，
+// 新模块路由不要继续挂到本函数里。
 func NewRouter(app *ServerApp) *gin.Engine {
 	r := gin.New()
 	attachLegacyRoutesForCoreRouter(r, app)
 	return r
 }
 
-// attachLegacyRoutesForCoreRouter keeps the old core-local router available for tests.
+// attachLegacyRoutesForCoreRouter 仅保留旧 core-local 路由，避免历史测试一次性大迁移。
+// 生产路由聚合以 api/router/router.go 为准。
 func attachLegacyRoutesForCoreRouter(r *gin.Engine, app *ServerApp) *gin.RouterGroup {
 	r.Use(gin.Recovery())
 	cfg := app.Cfg()

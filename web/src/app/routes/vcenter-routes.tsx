@@ -2,11 +2,11 @@ import { lazy, type ReactNode } from "react";
 import { Navigate, Route, useLocation, useParams } from "react-router-dom";
 import { RouteSuspense } from "@/app/route-fallback";
 import ViewerRedirect from "@/app/guards/ViewerRedirect";
-import BastionConsoleHome from "@/features/bastion/pages/BastionConsoleHome";
-import BastionLayout from "@/features/bastion/pages/BastionLayout";
-import VCenterBastionAdmin from "@/features/vcenter/pages/VCenterBastionAdmin";
-import VCenterBastionConsoleEmbed from "@/features/vcenter/pages/VCenterBastionConsoleEmbed";
 
+const BastionConsoleHome = lazy(() => import("@/features/bastion/pages/BastionConsoleHome"));
+const BastionLayout = lazy(() => import("@/features/bastion/pages/BastionLayout"));
+const VCenterBastionAdmin = lazy(() => import("@/features/vcenter/pages/VCenterBastionAdmin"));
+const VCenterBastionConsoleEmbed = lazy(() => import("@/features/vcenter/pages/VCenterBastionConsoleEmbed"));
 const VCenterBastionSession = lazy(() => import("@/features/vcenter/pages/VCenterBastion"));
 
 function encodeSegment(v?: string): string {
@@ -50,11 +50,20 @@ export function vcenterRoutes(): ReactNode {
         path="bastion"
         element={
           <ViewerRedirect to="/cluster/compute/dashboard">
-            <BastionLayout />
+            <RouteSuspense>
+              <BastionLayout />
+            </RouteSuspense>
           </ViewerRedirect>
         }
       >
-        <Route index element={<BastionConsoleHome />} />
+        <Route
+          index
+          element={
+            <RouteSuspense>
+              <BastionConsoleHome />
+            </RouteSuspense>
+          }
+        />
         <Route
           path="session"
           element={
@@ -63,8 +72,22 @@ export function vcenterRoutes(): ReactNode {
             </RouteSuspense>
           }
         />
-        <Route path="admin" element={<VCenterBastionAdmin />} />
-        <Route path="console/:moref" element={<VCenterBastionConsoleEmbed />} />
+        <Route
+          path="admin"
+          element={
+            <RouteSuspense>
+              <VCenterBastionAdmin />
+            </RouteSuspense>
+          }
+        />
+        <Route
+          path="console/:moref"
+          element={
+            <RouteSuspense>
+              <VCenterBastionConsoleEmbed />
+            </RouteSuspense>
+          }
+        />
       </Route>
       <Route path="vcenter/tools/ip-scan" element={<Navigate to="/cluster/compute/tools/ip-scan" replace />} />
       <Route path="vcenter/prometheus" element={<Navigate to="/cluster/compute/vcenter/dashboard" replace />} />

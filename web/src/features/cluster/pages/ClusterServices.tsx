@@ -31,7 +31,7 @@ import {
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { SvcRow } from "./types";
-import { K8sGraphicEditDialog } from "./k8s/K8sGraphicEditDialog";
+import { K8sGraphicEditDialogLazy } from "./k8s/K8sGraphicEditDialogLazy";
 import { normalizePortEntries, servicePortsPreview } from "./servicePortsDisplay";
 
 const ClusterServices: React.FC = () => {
@@ -260,7 +260,7 @@ const ClusterServices: React.FC = () => {
         </div>
       )}
 
-      <K8sGraphicEditDialog
+      <K8sGraphicEditDialogLazy
         open={graphicOpen}
         onOpenChange={(o) => {
           setGraphicOpen(o);

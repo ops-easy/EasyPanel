@@ -41,7 +41,7 @@ const INSPECT_MODEL_QUICK_PRESETS: { id: string; model: string }[] = [
 const OPS_AI_PROVIDER_SCENARIOS: { role: string; title: string; hint: string }[] = [
   { role: "inspect_summary", title: "巡检报告 · AI 总摘要", hint: "平台巡检完成后生成 Markdown 总评（与上方系统/用户模板一致，可用不同网关与模型）。" },
   { role: "inspect_probe", title: "巡检内 · 连通性探针（pong）", hint: "巡检流程中的大模型 ping；可与摘要使用不同 OpenClaw/模型。" },
-  { role: "vmlog_analyze", title: "VictoriaLogs · 日志智能分析", hint: "日志查询页「OpenClaw 分析」与单行分析接口。" },
+  { role: "vmlog_analyze", title: "VictoriaLogs · 日志智能分析", hint: "日志查询页「AI Provider 分析」与单行分析接口。" },
   { role: "cluster_advisory", title: "kube-system · 控制平面周期建议", hint: "Dashboard 控制面 AI 建议后台任务。" },
 ];
 

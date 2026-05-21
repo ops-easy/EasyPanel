@@ -22,7 +22,7 @@ export function describeSitePath(raw: string): string {
       desc: "AI 巡检：VictoriaLogs 状态、LogsQL 查询代理、虚拟机 Vector 采集脚本生成/SSH 下发",
     },
     { test: /^\/api\/ops\/grafana\//, desc: "AI 巡检：Grafana 连接、看板列表与同步" },
-    { test: /^\/api\/ops\/openclaw/, desc: "AI 巡检：OpenClaw / 大模型接口配置" },
+    { test: /^\/api\/ops\/ai-provider/, desc: "AI 巡检：AI Provider / 大模型接口配置" },
     { test: /^\/api\/ops\/inspect\//, desc: "AI 巡检：执行巡检或读取报告" },
     { test: /^\/api\/ops\/alerts/, desc: "AI 巡检：告警规则与通知通道" },
     { test: /^\/api\/ops\//, desc: "运维中心相关 API" },

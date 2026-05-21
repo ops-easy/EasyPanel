@@ -25,8 +25,8 @@ test("baota workspace opens the module dashboard instead of ingress sync", () =>
   assert.doesNotMatch(appSource, /path="baota" element=\{<Navigate to="\/cluster\/baota\/sync"/);
   assert.match(appSource, /path="baota" element=\{<Navigate to="\/cluster\/baota"/);
 
-  assert.match(clusterRoutesSource, /import BaotaDashboard/);
-  assert.match(clusterRoutesSource, /<Route index element=\{<BaotaDashboard \/>}/);
+  assert.match(clusterRoutesSource, /const BaotaDashboard = lazy\(\(\) => import\("@\/features\/baota\/pages\/BaotaDashboard"\)\)/);
+  assert.match(clusterRoutesSource, /<Route index element=\{lazyElement\(<BaotaDashboard \/>/);
   assert.doesNotMatch(clusterRoutesSource, /<Route index element=\{<Navigate to="sync" replace \/>}/);
 
   const headerBaotaItem = sourceBetween(headerSource, "{headerShowBaota ? (", "{headerShowApp ? (");

@@ -17,7 +17,7 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
 import { apiGetJson } from "@/lib/api";
-import { menuItemVisible, moduleVisible } from "@/lib/platform-permissions";
+import { workspaceMenuVisible } from "@/lib/platform-permissions";
 import { cn } from "@/lib/utils";
 import { type K8sSummary } from "@/features/cluster/pages/types";
 import { type VCenterVMsResponse, type VCenterHostsResponse } from "@/features/vcenter/pages/types";
@@ -33,7 +33,7 @@ type AiAlertsGet = {
   channels: unknown[];
 };
 
-type AiAIProviderGet = {
+type AIProviderGet = {
   endpoint: { enabled: boolean; provider?: string; model?: string; apiKeySet?: boolean };
 };
 
@@ -153,20 +153,15 @@ const HomeHub: React.FC = () => {
 
   const cfgLoading = runtimeQ.isLoading;
 
-  const showK8s = menuItemVisible(perm, "kubernetes", hubRole, moduleVisible(perm, "k8s"));
-  const showVc = menuItemVisible(perm, "compute", hubRole, moduleVisible(perm, "compute"));
-  const showNetwork = menuItemVisible(perm, "network", hubRole, moduleVisible(perm, "network"));
-  const showBaota = menuItemVisible(perm, "baota", hubRole, moduleVisible(perm, "baota"));
-  const showAppCenter = menuItemVisible(perm, "appcenter", hubRole, moduleVisible(perm, "appcenter"));
-  const showBastion = menuItemVisible(
-    perm,
-    "vcenter_bastion",
-    hubRole,
-    moduleVisible(perm, "compute") || moduleVisible(perm, "appcenter")
-  );
-  const showAiInspect = menuItemVisible(perm, "aiInspect", hubRole, true);
-  const showDocs = menuItemVisible(perm, "docs", hubRole, true);
-  const showHub = menuItemVisible(perm, "hub", hubRole, true);
+  const showK8s = workspaceMenuVisible(perm, "kubernetes", hubRole);
+  const showVc = workspaceMenuVisible(perm, "compute", hubRole);
+  const showNetwork = workspaceMenuVisible(perm, "network", hubRole);
+  const showBaota = workspaceMenuVisible(perm, "baota", hubRole);
+  const showAppCenter = workspaceMenuVisible(perm, "appcenter", hubRole);
+  const showBastion = workspaceMenuVisible(perm, "bastion", hubRole);
+  const showAiInspect = workspaceMenuVisible(perm, "aiinspect", hubRole);
+  const showDocs = workspaceMenuVisible(perm, "docs", hubRole);
+  const showHub = workspaceMenuVisible(perm, "hub", hubRole);
 
   // K8s summary
   const k8sQ = useQuery({
@@ -258,9 +253,9 @@ const HomeHub: React.FC = () => {
     queryFn: ({ signal }) => apiGetJson<AiAlertsGet>("/api/ops/alerts", { signal }),
     enabled: loggedIn && isAdmin,
   });
-  const aiOpenClawQ = useQuery({
+  const aiProviderQ = useQuery({
     queryKey: ["ops-ai-provider-hub"],
-    queryFn: ({ signal }) => apiGetJson<AiAIProviderGet>("/api/ops/ai-provider", { signal }),
+    queryFn: ({ signal }) => apiGetJson<AIProviderGet>("/api/ops/ai-provider", { signal }),
     enabled: loggedIn && isAdmin,
   });
   const aiReportsQ = useQuery({
@@ -382,8 +377,8 @@ const HomeHub: React.FC = () => {
     aiChannels,
     aiReports,
     aiPanels,
-    aiOcEnabled,
-    aiOcModel,
+    aiProviderEnabled,
+    aiProviderModel,
     aiPromK8s,
     aiPromVc,
     aiLoading,
@@ -406,11 +401,11 @@ const HomeHub: React.FC = () => {
       aiChannels: aiAlertsQ.data?.channels?.length ?? 0,
       aiReports: aiReportsQ.data?.reports?.length ?? 0,
       aiPanels: aiPanelsQ.data?.panels?.length ?? 0,
-      aiOcEnabled: aiOpenClawQ.data?.endpoint?.enabled ?? false,
-      aiOcModel: aiOpenClawQ.data?.endpoint?.model,
+      aiProviderEnabled: aiProviderQ.data?.endpoint?.enabled ?? false,
+      aiProviderModel: aiProviderQ.data?.endpoint?.model,
       aiPromK8s: aiPromQ.data?.scopes?.k8s?.configured ?? false,
       aiPromVc: aiPromQ.data?.scopes?.vcenter?.configured ?? false,
-      aiLoading: aiAlertsQ.isLoading || aiOpenClawQ.isLoading || aiPanelsQ.isLoading,
+      aiLoading: aiAlertsQ.isLoading || aiProviderQ.isLoading || aiPanelsQ.isLoading,
     };
   }, [
     bastionVmsQ.data?.vms,
@@ -420,10 +415,10 @@ const HomeHub: React.FC = () => {
     aiAlertsQ.data?.channels,
     aiReportsQ.data?.reports,
     aiPanelsQ.data?.panels,
-    aiOpenClawQ.data?.endpoint,
+    aiProviderQ.data?.endpoint,
     aiPromQ.data?.scopes,
     aiAlertsQ.isLoading,
-    aiOpenClawQ.isLoading,
+    aiProviderQ.isLoading,
     aiPanelsQ.isLoading,
   ]);
 
@@ -653,8 +648,8 @@ const HomeHub: React.FC = () => {
               {aiLoading ? (
                 <HubStatusPill tone="slate">检查中…</HubStatusPill>
               ) : isAdmin ? (
-                <HubStatusPill tone={aiOcEnabled ? "cyan" : "slate"}>
-                  {aiOcEnabled ? `大模型 ${aiOcModel ? `· ${aiOcModel}` : "已启用"}` : "大模型未启用"}
+                <HubStatusPill tone={aiProviderEnabled ? "cyan" : "slate"}>
+                  {aiProviderEnabled ? `大模型 ${aiProviderModel ? `· ${aiProviderModel}` : "已启用"}` : "大模型未启用"}
                 </HubStatusPill>
               ) : (
                 <HubStatusPill tone="cyan">已就绪</HubStatusPill>

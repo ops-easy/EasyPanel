@@ -48,10 +48,8 @@ import { toast } from "sonner";
 import { parseAge } from "./parseAge";
 import { cn } from "@/lib/utils";
 import { K8sObjectRevisionTriggerButton } from "@/features/cluster/components/K8sObjectRevisionDialog";
-import {
-  K8sGraphicEditDialog,
-  type K8sGraphicKind,
-} from "./k8s/K8sGraphicEditDialog";
+import { K8sGraphicEditDialogLazy } from "./k8s/K8sGraphicEditDialogLazy";
+import type { K8sGraphicKind } from "./k8s/K8sGraphicEditDialog.types";
 import {
   formatSchedulingPrecheckError,
   isProbablySingleYamlDoc,
@@ -604,7 +602,7 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
       )}
 
       {canGraphic && graphicKind && namespaceFixed && (
-        <K8sGraphicEditDialog
+        <K8sGraphicEditDialogLazy
           open={graphicOpen}
           onOpenChange={(o) => {
             setGraphicOpen(o);

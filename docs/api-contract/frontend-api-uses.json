@@ -1,0 +1,5959 @@
+{
+  "generatedBy": "scripts/check-api-contract.mjs",
+  "kind": "frontend-api-uses",
+  "routeCount": 744,
+  "routes": [
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
+      "sourceLine": 600,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api",
+      "sourceFile": "web/src/lib/site-path-descriptions.ts",
+      "sourceLine": 53,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/...",
+      "sourceFile": "web/src/lib/api.ts",
+      "sourceLine": 22,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/account/oidc/bind/start",
+      "sourceFile": "web/src/features/account/pages/AccountMyProfile.tsx",
+      "sourceLine": 201,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/account/profile",
+      "sourceFile": "web/src/features/account/pages/AccountMyProfile.tsx",
+      "sourceLine": 50,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/account/profile",
+      "sourceFile": "web/src/features/account/pages/AccountMyProfile.tsx",
+      "sourceLine": 112,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/account/profile/oidc/unbind",
+      "sourceFile": "web/src/features/account/pages/AccountMyProfile.tsx",
+      "sourceLine": 320,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/admin/users",
+      "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
+      "sourceLine": 299,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/admin/users",
+      "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
+      "sourceLine": 420,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/admin/users/:param",
+      "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
+      "sourceLine": 432,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/admin/users/:param",
+      "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
+      "sourceLine": 407,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/admin/users/oidc/bind/start",
+      "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
+      "sourceLine": 633,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/admin/users/oidc/unbind",
+      "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
+      "sourceLine": 1197,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/admin/users/totp/disable",
+      "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
+      "sourceLine": 481,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/admin/users/totp/provision",
+      "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
+      "sourceLine": 459,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/cloud-vm",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 52,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/access-nodes",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx",
+      "sourceLine": 62,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/bootstrap",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx",
+      "sourceLine": 189,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/bootstrap",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx",
+      "sourceLine": 57,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/cloud-vm/bootstrap",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx",
+      "sourceLine": 87,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/instances",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx",
+      "sourceLine": 196,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/instances",
+      "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
+      "sourceLine": 48,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/instances",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 535,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/instances",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 470,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/instances",
+      "sourceFile": "web/src/features/bastion/pages/BastionConsoleHome.tsx",
+      "sourceLine": 61,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/instances",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastion.tsx",
+      "sourceLine": 293,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/instances",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 215,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/cloud-vm/instances",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx",
+      "sourceLine": 301,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/cloud-vm/instances",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 49,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/cloud-vm/instances",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 50,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/cloud-vm/instances",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 51,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/cloud-vm/instances/:param",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmDetail.tsx",
+      "sourceLine": 598,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/instances/:param",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmDetail.tsx",
+      "sourceLine": 334,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/cloud-vm/instances/:param",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmDetail.tsx",
+      "sourceLine": 429,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/cloud-vm/instances/:param",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmDetail.tsx",
+      "sourceLine": 483,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/cloud-vm/instances/:param",
+      "sourceFile": "web/src/features/app-center/cloudvm/components/CloudVmSshTerminalSheet.tsx",
+      "sourceLine": 125,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/instances/:param/metrics",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmDetail.tsx",
+      "sourceLine": 357,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/cloud-vm/instances/:param/reset-root-password",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmDetail.tsx",
+      "sourceLine": 577,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/cloud-vm/instances/:param/reveal-hysteria-client",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmDetail.tsx",
+      "sourceLine": 460,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/cloud-vm/instances/:param/scale",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmDetail.tsx",
+      "sourceLine": 509,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/cloud-vm/instances/${encodeURIComponent(String(instanceId",
+      "sourceFile": "web/src/features/app-center/cloudvm/components/CloudVmSshTerminalSheet.tsx",
+      "sourceLine": 125,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/instances/usage",
+      "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx",
+      "sourceLine": 205,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/cloud-vm/ssh-security-events",
+      "sourceFile": "web/src/shared/layout/HeaderNotificationsSheet.tsx",
+      "sourceLine": 118,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/hermes",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 56,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/bootstrap",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
+      "sourceLine": 74,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/hermes/bootstrap",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
+      "sourceLine": 127,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
+      "sourceLine": 79,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances",
+      "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
+      "sourceLine": 63,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
+      "sourceLine": 192,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 225,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/hermes/instances/:param",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
+      "sourceLine": 163,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/hermes/instances/:param",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 149,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances/:param",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 64,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances/:param/file",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 78,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/hermes/instances/:param/file",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
+      "sourceLine": 182,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/hermes/instances/:param/file",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 125,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/:param/migrate-openclaw",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 141,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/:param/migrate-openclaw-dry-run",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 134,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/:param/probe",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 106,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/:param/restart",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
+      "sourceLine": 173,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/:param/restart",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 116,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
+      "sourceLine": 163,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 149,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 64,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 78,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
+      "sourceLine": 173,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 106,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 116,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 134,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 141,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
+      "sourceLine": 182,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 125,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances/k8s-status",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
+      "sourceLine": 84,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances/k8s-status",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 70,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/k8s-deploy",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
+      "sourceLine": 146,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/kafka",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 54,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 277,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
+      "sourceLine": 131,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances",
+      "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
+      "sourceLine": 70,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 209,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/kafka/instances/:param",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 754,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/acls",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 426,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/kafka/instances/:param/acls",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 690,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/kafka/instances/:param/acls/delete",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 722,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/cluster",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 443,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/kafka/instances/:param/consumer-group-lag",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 471,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/consumer-groups",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 420,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/exposure",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 367,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/kafka/instances/:param/exposure",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 378,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/kafka/instances/:param/perf-test",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 538,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/kafka/instances/:param/perf-test/:param",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 561,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/perf-test/:param",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 487,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/kafka/instances/:param/perf-test/${encodeURIComponent(name",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 561,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/perf-test/${encodeURIComponent(perfJobName",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 487,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/kafka/instances/:param/perf-test/validate",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 523,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/perf-tests",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 478,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/quotas",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 434,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/quotas",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
+      "sourceLine": 60,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/quotas",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
+      "sourceLine": 152,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/kafka/instances/:param/quotas",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 704,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/kafka/instances/:param/quotas",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
+      "sourceLine": 201,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/rollout",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 354,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/rollout",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
+      "sourceLine": 137,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/kafka/instances/:param/scram-users",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 732,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/kafka/instances/:param/scram-users/:param",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 745,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/kafka/instances/:param/scram-users/${encodeURIComponent(username",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 745,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 404,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
+      "sourceLine": 146,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 636,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 649,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param/configs",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 452,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param/configs",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 777,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param/messages",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 818,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param/messages",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 799,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param/throttle",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
+      "sourceLine": 55,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param/throttle",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
+      "sourceLine": 181,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(selectedTopic",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 452,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(selectedTopic",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 818,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(selectedTopic",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 777,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(selectedTopic",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 799,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(t",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 649,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(topic",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
+      "sourceLine": 55,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(topic",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
+      "sourceLine": 181,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/kafka/k8s-deploy",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 573,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/status",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 261,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/status",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
+      "sourceLine": 116,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/kafka/templates",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 271,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/kafka/templates",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 614,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/kafka/templates/:param",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 626,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/kafka/templates/:param",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 611,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/bootstrap",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 343,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/bootstrap",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
+      "sourceLine": 73,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/bootstrap",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 342,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/openclaw/bootstrap",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
+      "sourceLine": 146,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/gateway-service-health",
+      "sourceFile": "web/src/shared/layout/HeaderNotificationsSheet.tsx",
+      "sourceLine": 137,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/openclaw/gateway-service-health",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 430,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/openclaw/gateway-service-health",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 440,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/gateway-service-health/read",
+      "sourceFile": "web/src/shared/layout/HeaderNotificationsSheet.tsx",
+      "sourceLine": 144,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/image-catalog",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
+      "sourceLine": 84,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/openclaw/image-catalog",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
+      "sourceLine": 127,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances",
+      "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
+      "sourceLine": 55,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 398,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 404,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances",
+      "sourceFile": "web/src/features/cluster/pages/ClusterOverviewPodsWorkloadPanel.tsx",
+      "sourceLine": 451,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances",
+      "sourceFile": "web/src/features/cluster/pages/ClusterOverviewPodsWorkloadPanel.tsx",
+      "sourceLine": 509,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances",
+      "sourceFile": "web/src/features/cluster/pages/PodRestartAiPanel.tsx",
+      "sourceLine": 155,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
+      "sourceLine": 174,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 220,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/apply-telegram-to-openclaw-json",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 731,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/apply-toolchain-preset",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 588,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/apply-upstream-runtime",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 607,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/chat",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 837,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/chat",
+      "sourceFile": "web/src/features/cluster/pages/ClusterOverviewPodsWorkloadPanel.tsx",
+      "sourceLine": 475,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/chat",
+      "sourceFile": "web/src/features/cluster/pages/ClusterOverviewPodsWorkloadPanel.tsx",
+      "sourceLine": 526,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/chat",
+      "sourceFile": "web/src/features/cluster/pages/PodRestartAiPanel.tsx",
+      "sourceLine": 242,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/egress-proxy",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 642,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/file",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 238,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/file",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 256,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/gateway-image",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 693,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/google-reachability-check",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 663,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/rbac-preset",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 559,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/telegram-settings",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 483,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/telegram-settings",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 677,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/telegram-verify",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 713,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances/:param/upstream-health",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 629,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(chatRow.id",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 837,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 731,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/cluster/pages/ClusterOverviewPodsWorkloadPanel.tsx",
+      "sourceLine": 475,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/cluster/pages/ClusterOverviewPodsWorkloadPanel.tsx",
+      "sourceLine": 526,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/cluster/pages/PodRestartAiPanel.tsx",
+      "sourceLine": 242,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 476,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 238,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 483,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 629,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 559,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 588,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 607,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 642,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 663,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 693,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 713,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 731,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 256,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 677,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 748,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(snap.id",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 615,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances/k8s-status",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 405,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances/k8s-status",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 609,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances/k8s-status",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 508,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/instances/k8s-status",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
+      "sourceLine": 198,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/k8s-deploy",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 665,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/rbac-presets",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 353,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/rbac-presets",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
+      "sourceLine": 93,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/rbac-presets",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 377,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/toolchain-options",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 546,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/openclaw/toolchain-options",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawDetail.tsx",
+      "sourceLine": 389,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/openclaw/validate-upstream",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 709,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/opensearch",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 53,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/opensearch/instances",
+      "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
+      "sourceLine": 76,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/opensearch/instances",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 129,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/opensearch/instances",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 230,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/opensearch/instances/:param/cluster/health",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 148,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/opensearch/instances/:param/index",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 200,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/opensearch/instances/:param/index/detail",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 170,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/opensearch/instances/:param/index/settings",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 185,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/opensearch/instances/:param/indices",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 156,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/opensearch/instances/:param/indices/prune",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 214,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/opensearch/k8s-deploy",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 275,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/opensearch/status",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 116,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/opensearch/templates",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 122,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/opensearch/templates",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 327,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/opensearch/templates/:param",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 340,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/opensearch/templates/:param",
+      "sourceFile": "web/src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx",
+      "sourceLine": 324,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/redis",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 55,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances",
+      "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
+      "sourceLine": 41,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 438,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances",
+      "sourceFile": "web/src/features/bastion/pages/BastionConsoleHome.tsx",
+      "sourceLine": 69,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastion.tsx",
+      "sourceLine": 300,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 204,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/redis/instances",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 2624,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/redis/instances/:param",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 1039,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances/:param/bigkeys",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 1023,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances/:param/clients",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 1009,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances/:param/k8s-network",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 146,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances/:param/k8s-status",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 1608,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances/:param/keys",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 931,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances/:param/keys",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 946,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances/:param/keys",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 992,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/instances/:param/keys",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 1439,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/redis/instances/:param/keys/delete",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 1030,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/redis/instances/:param/ping",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 300,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/redis/instances/:param/redis-cli/ws",
+      "sourceFile": "web/src/features/app-center/redis/components/RedisCliTerminalSheet.tsx",
+      "sourceLine": 79,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/redis/instances/${encodeURIComponent(String(instanceId",
+      "sourceFile": "web/src/features/app-center/redis/components/RedisCliTerminalSheet.tsx",
+      "sourceLine": 79,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/redis/k8s-deploy",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 1834,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/runtime",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 845,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/redis/runtime/ws",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 870,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/status",
+      "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
+      "sourceLine": 34,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/status",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 431,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/status",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 199,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/templates",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 1746,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/redis/templates",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedisTemplates.tsx",
+      "sourceLine": 106,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/redis/templates",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedisTemplates.tsx",
+      "sourceLine": 172,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/redis/templates/:param",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedisTemplates.tsx",
+      "sourceLine": 188,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/redis/templates/:param",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedisTemplates.tsx",
+      "sourceLine": 169,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/audit/harbor-dashboard",
+      "sourceFile": "web/src/features/account/pages/SiteStats.tsx",
+      "sourceLine": 97,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/audit/harbor-dashboard",
+      "sourceFile": "web/src/lib/site-path-descriptions.ts",
+      "sourceLine": 10,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/audit/logs",
+      "sourceFile": "web/src/features/account/pages/PlatformAudit.tsx",
+      "sourceLine": 49,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/audit/logs",
+      "sourceFile": "web/src/shared/layout/HeaderNotificationsSheet.tsx",
+      "sourceLine": 195,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/audit/site-stats",
+      "sourceFile": "web/src/features/account/pages/SiteStats.tsx",
+      "sourceLine": 90,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/audit/site-stats",
+      "sourceFile": "web/src/lib/site-path-descriptions.ts",
+      "sourceLine": 9,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/audit/summary",
+      "sourceFile": "web/src/features/account/pages/PlatformAudit.tsx",
+      "sourceLine": 56,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/auth/login",
+      "sourceFile": "web/src/pages/Login.tsx",
+      "sourceLine": 535,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/auth/login",
+      "sourceFile": "web/src/lib/api.ts",
+      "sourceLine": 42,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/auth/login",
+      "sourceFile": "web/src/pages/Login.tsx",
+      "sourceLine": 545,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/auth/login-challenge",
+      "sourceFile": "web/src/pages/Login.tsx",
+      "sourceLine": 45,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/auth/login-totp",
+      "sourceFile": "web/src/pages/Login.tsx",
+      "sourceLine": 565,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/auth/logout",
+      "sourceFile": "web/src/auth/auth-context.tsx",
+      "sourceLine": 104,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/auth/logout",
+      "sourceFile": "web/src/shared/layout/AppLayoutMobile.tsx",
+      "sourceLine": 105,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/auth/oidc/login",
+      "sourceFile": "web/src/pages/Login.tsx",
+      "sourceLine": 488,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/auth/status",
+      "sourceFile": "web/src/auth/auth-context.tsx",
+      "sourceLine": 71,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/auth/status",
+      "sourceFile": "web/src/auth/auth-context.tsx",
+      "sourceLine": 75,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/auth/status",
+      "sourceFile": "web/src/lib/api.ts",
+      "sourceLine": 43,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/auth/status",
+      "sourceFile": "web/src/lib/site-path-descriptions.ts",
+      "sourceLine": 11,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/baota/ingress-sync/run",
+      "sourceFile": "web/src/features/baota/pages/BaotaSync.tsx",
+      "sourceLine": 48,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/baota/ingress-sync/status",
+      "sourceFile": "web/src/features/baota/pages/BaotaSync.tsx",
+      "sourceLine": 43,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/bastion/sftp/ws",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastionSftpPanel.tsx",
+      "sourceLine": 23,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/bastion/ssh/ws",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterSshTerminal.tsx",
+      "sourceLine": 23,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/bastion/targets",
+      "sourceFile": "web/src/features/bastion/pages/BastionConsoleHome.tsx",
+      "sourceLine": 45,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/bastion/targets",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastion.tsx",
+      "sourceLine": 307,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/bastion/targets",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastionAdmin.tsx",
+      "sourceLine": 326,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/bastion/targets/ssh-settings",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastion.tsx",
+      "sourceLine": 168,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
+      "sourceLine": 217,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHosts.tsx",
+      "sourceLine": 119,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHostSshPage.tsx",
+      "sourceLine": 19,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterHubDashboard.tsx",
+      "sourceLine": 36,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/cloud-hosts",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHosts.tsx",
+      "sourceLine": 165,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/cloud-hosts",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 65,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/cloud-hosts",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 66,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/cloud-hosts",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 68,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/cloud-hosts/:param",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHosts.tsx",
+      "sourceLine": 182,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/cloud-hosts/:param",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHosts.tsx",
+      "sourceLine": 163,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts/:param/listening-ports",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHosts.tsx",
+      "sourceLine": 140,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts/:param/sftp/list",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHostSftpPanel.tsx",
+      "sourceLine": 93,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts/:param/ssh-settings",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHostSftpPanel.tsx",
+      "sourceLine": 85,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts/:param/ssh-settings",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHostSshTerminal.tsx",
+      "sourceLine": 54,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/cloud-hosts/:param/ssh/ws",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHostSshTerminal.tsx",
+      "sourceLine": 14,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/cloud-hosts/${encodeURIComponent(editing.id",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHosts.tsx",
+      "sourceLine": 163,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts/${encodeURIComponent(hostId",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHostSftpPanel.tsx",
+      "sourceLine": 85,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts/${encodeURIComponent(hostId",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHostSftpPanel.tsx",
+      "sourceLine": 93,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts/${encodeURIComponent(hostId",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHostSshTerminal.tsx",
+      "sourceLine": 54,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/cloud-hosts/${encodeURIComponent(hostId",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHostSftpPanel.tsx",
+      "sourceLine": 106,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/cloud-hosts/${encodeURIComponent(hostId",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHostSftpPanel.tsx",
+      "sourceLine": 51,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/cloud-hosts/${encodeURIComponent(hostId",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHostSshTerminal.tsx",
+      "sourceLine": 14,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/cloud-hosts/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHosts.tsx",
+      "sourceLine": 182,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts/${encodeURIComponent(portsDialogHost!.id",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHosts.tsx",
+      "sourceLine": 140,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/cloud-hosts/metrics-snapshot",
+      "sourceFile": "web/src/features/vcenter/pages/CloudHosts.tsx",
+      "sourceLine": 124,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/config",
+      "sourceFile": "web/src/app/shell/BrandingEffect.tsx",
+      "sourceLine": 10,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/config",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
+      "sourceLine": 167,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/config",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx",
+      "sourceLine": 143,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/config",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
+      "sourceLine": 95,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/config",
+      "sourceFile": "web/src/hooks/use-app-config.ts",
+      "sourceLine": 20,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/config",
+      "sourceFile": "web/src/lib/site-path-descriptions.ts",
+      "sourceLine": 12,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/accounts",
+      "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
+      "sourceLine": 81,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/accounts",
+      "sourceFile": "web/src/features/dns/pages/DnsAccounts.tsx",
+      "sourceLine": 69,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/accounts",
+      "sourceFile": "web/src/features/dns/pages/DnsDomains.tsx",
+      "sourceLine": 45,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/accounts",
+      "sourceFile": "web/src/features/dns/pages/DnsAccounts.tsx",
+      "sourceLine": 100,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/dns/accounts/:param",
+      "sourceFile": "web/src/features/dns/pages/DnsAccounts.tsx",
+      "sourceLine": 111,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/accounts/:param",
+      "sourceFile": "web/src/features/dns/pages/DnsAccounts.tsx",
+      "sourceLine": 88,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/dns/accounts/:param",
+      "sourceFile": "web/src/features/dns/pages/DnsAccounts.tsx",
+      "sourceLine": 98,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/accounts/:param/sync-domains",
+      "sourceFile": "web/src/features/dns/pages/DnsAccounts.tsx",
+      "sourceLine": 137,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/accounts/:param/sync-domains",
+      "sourceFile": "web/src/features/dns/pages/DnsDomains.tsx",
+      "sourceLine": 117,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/accounts/:param/test",
+      "sourceFile": "web/src/features/dns/pages/DnsAccounts.tsx",
+      "sourceLine": 123,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/certs",
+      "sourceFile": "web/src/features/dns/pages/DnsCerts.tsx",
+      "sourceLine": 58,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/certs",
+      "sourceFile": "web/src/features/dns/pages/DnsCerts.tsx",
+      "sourceLine": 80,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/dns/certs/:param",
+      "sourceFile": "web/src/features/dns/pages/DnsCerts.tsx",
+      "sourceLine": 97,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/certs/:param",
+      "sourceFile": "web/src/features/dns/pages/DnsCerts.tsx",
+      "sourceLine": 152,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/certs/:param/apply",
+      "sourceFile": "web/src/features/dns/pages/DnsCerts.tsx",
+      "sourceLine": 139,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PATCH",
+      "pathPattern": "/api/dns/certs/:param/baota",
+      "sourceFile": "web/src/features/dns/pages/DnsCerts.tsx",
+      "sourceLine": 109,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/certs/:param/push-baota",
+      "sourceFile": "web/src/features/dns/pages/DnsCerts.tsx",
+      "sourceLine": 125,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/domains",
+      "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
+      "sourceLine": 87,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/domains",
+      "sourceFile": "web/src/features/dns/pages/DnsDomains.tsx",
+      "sourceLine": 41,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/domains",
+      "sourceFile": "web/src/features/dns/pages/DnsFailover.tsx",
+      "sourceLine": 61,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/domains",
+      "sourceFile": "web/src/features/dns/pages/DnsRecords.tsx",
+      "sourceLine": 44,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/domains",
+      "sourceFile": "web/src/features/dns/pages/DnsScheduled.tsx",
+      "sourceLine": 59,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/domains",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 234,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/domains",
+      "sourceFile": "web/src/features/dns/pages/DnsDomains.tsx",
+      "sourceLine": 76,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/dns/domains/:param",
+      "sourceFile": "web/src/features/dns/pages/DnsDomains.tsx",
+      "sourceLine": 87,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/dns/domains/:param",
+      "sourceFile": "web/src/features/dns/pages/DnsDomains.tsx",
+      "sourceLine": 75,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/domains/:param/records",
+      "sourceFile": "web/src/features/dns/pages/DnsRecords.tsx",
+      "sourceLine": 61,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/domains/:param/records",
+      "sourceFile": "web/src/features/dns/pages/DnsRecords.tsx",
+      "sourceLine": 109,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/dns/domains/:param/records/:param",
+      "sourceFile": "web/src/features/dns/pages/DnsRecords.tsx",
+      "sourceLine": 120,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/dns/domains/:param/records/:param",
+      "sourceFile": "web/src/features/dns/pages/DnsRecords.tsx",
+      "sourceLine": 107,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/domains/:param/records/:param/status",
+      "sourceFile": "web/src/features/dns/pages/DnsRecords.tsx",
+      "sourceLine": 131,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/domains/:param/records/sync",
+      "sourceFile": "web/src/features/dns/pages/DnsDomains.tsx",
+      "sourceLine": 99,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/domains/:param/records/sync",
+      "sourceFile": "web/src/features/dns/pages/DnsRecords.tsx",
+      "sourceLine": 96,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/failover",
+      "sourceFile": "web/src/features/dns/pages/DnsFailover.tsx",
+      "sourceLine": 57,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/failover",
+      "sourceFile": "web/src/features/dns/pages/DnsFailover.tsx",
+      "sourceLine": 95,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/dns/failover/:param",
+      "sourceFile": "web/src/features/dns/pages/DnsFailover.tsx",
+      "sourceLine": 106,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/dns/failover/:param",
+      "sourceFile": "web/src/features/dns/pages/DnsFailover.tsx",
+      "sourceLine": 94,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/failover/:param/check",
+      "sourceFile": "web/src/features/dns/pages/DnsFailover.tsx",
+      "sourceLine": 114,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/failover/:param/logs",
+      "sourceFile": "web/src/features/dns/pages/DnsFailover.tsx",
+      "sourceLine": 75,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/scheduled",
+      "sourceFile": "web/src/features/dns/pages/DnsScheduled.tsx",
+      "sourceLine": 55,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/scheduled",
+      "sourceFile": "web/src/features/dns/pages/DnsScheduled.tsx",
+      "sourceLine": 69,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/dns/scheduled/:param",
+      "sourceFile": "web/src/features/dns/pages/DnsScheduled.tsx",
+      "sourceLine": 82,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/status",
+      "sourceFile": "web/src/features/dns/pages/DnsDashboard.tsx",
+      "sourceLine": 36,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/docs",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 114,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/docs",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 319,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/docs",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 337,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/docs/:param",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 392,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/docs/:param",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 126,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/docs/:param",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 370,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/docs/:param",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 445,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/docs/:param/restore-version",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 458,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/docs/:param/versions",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 134,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/docs/attachment-storage",
+      "sourceFile": "web/src/features/docs/pages/DocsMedia.tsx",
+      "sourceLine": 73,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/docs/attachment-storage",
+      "sourceFile": "web/src/features/docs/pages/DocsMedia.tsx",
+      "sourceLine": 97,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/docs/attachment-storage",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 505,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/docs/attachment-storage/cos",
+      "sourceFile": "web/src/features/docs/pages/DocsMedia.tsx",
+      "sourceLine": 129,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/docs/attachment-storage/test",
+      "sourceFile": "web/src/features/docs/pages/DocsMedia.tsx",
+      "sourceLine": 114,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/docs/categories",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 120,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/docs/guides/:param",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 405,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/docs/guides/${encodeURIComponent(currentGuide.guideKey",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 405,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/docs/guides/resolve",
+      "sourceFile": "web/src/shared/layout/UserGuideSheet.tsx",
+      "sourceLine": 64,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/docs/media",
+      "sourceFile": "web/src/features/docs/pages/DocsMedia.tsx",
+      "sourceLine": 67,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/docs/media/:param",
+      "sourceFile": "web/src/features/docs/pages/DocsMedia.tsx",
+      "sourceLine": 140,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/docs/upload",
+      "sourceFile": "web/src/features/docs/pages/DocsMedia.tsx",
+      "sourceLine": 159,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/docs/upload",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 278,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/index/search",
+      "sourceFile": "web/src/features/harbor/pages/HarborProjectsPage.tsx",
+      "sourceLine": 218,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/index/status",
+      "sourceFile": "web/src/features/harbor/components/HarborRedisIndexSettingsPanel.tsx",
+      "sourceLine": 62,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/index/status",
+      "sourceFile": "web/src/features/harbor/pages/HarborProjectsPage.tsx",
+      "sourceLine": 199,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/index/status",
+      "sourceFile": "web/src/features/harbor/pages/HarborProjectsPage.tsx",
+      "sourceLine": 213,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/harbor/index/sync",
+      "sourceFile": "web/src/features/harbor/components/HarborRedisIndexSettingsPanel.tsx",
+      "sourceLine": 79,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/projects",
+      "sourceFile": "web/src/features/harbor/pages/HarborProjectsPage.tsx",
+      "sourceLine": 79,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/projects",
+      "sourceFile": "web/src/features/harbor/pages/HarborProjectsPage.tsx",
+      "sourceLine": 210,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/harbor/projects/:param/artifact-additions",
+      "sourceFile": "web/src/features/harbor/pages/harborPaths.ts",
+      "sourceLine": 71,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/harbor/projects/:param/artifacts",
+      "sourceFile": "web/src/features/harbor/pages/HarborArtifactsPage.tsx",
+      "sourceLine": 151,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/harbor/projects/:param/artifacts",
+      "sourceFile": "web/src/features/harbor/pages/harborPaths.ts",
+      "sourceLine": 57,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/projects/:param/repositories",
+      "sourceFile": "web/src/features/harbor/pages/HarborProjectsPage.tsx",
+      "sourceLine": 138,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/projects/:param/repositories",
+      "sourceFile": "web/src/features/harbor/pages/HarborProjectsPage.tsx",
+      "sourceLine": 153,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/projects/:param/repositories",
+      "sourceFile": "web/src/features/harbor/pages/HarborReposPage.tsx",
+      "sourceLine": 79,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/harbor/projects/${encodeURIComponent(project",
+      "sourceFile": "web/src/features/harbor/pages/HarborArtifactsPage.tsx",
+      "sourceLine": 151,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/projects/${encodeURIComponent(project",
+      "sourceFile": "web/src/features/harbor/pages/HarborProjectsPage.tsx",
+      "sourceLine": 138,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/projects/${encodeURIComponent(project",
+      "sourceFile": "web/src/features/harbor/pages/HarborProjectsPage.tsx",
+      "sourceLine": 153,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/projects/${encodeURIComponent(project",
+      "sourceFile": "web/src/features/harbor/pages/HarborReposPage.tsx",
+      "sourceLine": 79,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/harbor/projects/${encodeURIComponent(project",
+      "sourceFile": "web/src/features/harbor/pages/harborPaths.ts",
+      "sourceLine": 57,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/harbor/projects/${encodeURIComponent(project",
+      "sourceFile": "web/src/features/harbor/pages/harborPaths.ts",
+      "sourceLine": 71,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/statistics",
+      "sourceFile": "web/src/features/harbor/pages/HarborProjectsPage.tsx",
+      "sourceLine": 262,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/statistics",
+      "sourceFile": "web/src/features/harbor/pages/HarborProjectsPage.tsx",
+      "sourceLine": 420,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/harbor/status",
+      "sourceFile": "web/src/features/harbor/pages/HarborProjectsPage.tsx",
+      "sourceLine": 193,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/host/admin-ip-ban-alert/read",
+      "sourceFile": "web/src/shared/layout/HeaderNotificationsSheet.tsx",
+      "sourceLine": 111,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/host/egress-notification",
+      "sourceFile": "web/src/shared/layout/HeaderNotificationsSheet.tsx",
+      "sourceLine": 98,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/host/remote-login-alert/read",
+      "sourceFile": "web/src/shared/layout/HeaderNotificationsSheet.tsx",
+      "sourceLine": 107,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/host/security-login-alert/read",
+      "sourceFile": "web/src/shared/layout/HeaderNotificationsSheet.tsx",
+      "sourceLine": 103,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ingress/delete",
+      "sourceFile": "web/src/features/baota/pages/IngressList.tsx",
+      "sourceLine": 105,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ingress/delete",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 41,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ingress/raw",
+      "sourceFile": "web/src/features/baota/pages/IngressList.tsx",
+      "sourceLine": 70,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ingress/yaml",
+      "sourceFile": "web/src/features/baota/pages/IngressList.tsx",
+      "sourceLine": 83,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ingress/yaml",
+      "sourceFile": "web/src/features/cluster/components/PublishIngress.tsx",
+      "sourceLine": 40,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ingress/yaml",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 40,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ingresses",
+      "sourceFile": "web/src/features/baota/pages/IngressList.tsx",
+      "sourceLine": 47,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/:param",
+      "sourceFile": "web/src/features/cluster/pages/ClusterWorkloadDetail.tsx",
+      "sourceLine": 136,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/:param${effectiveNs",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sListPage.tsx",
+      "sourceLine": 158,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/addons/dashboard-monitoring/install",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx",
+      "sourceLine": 196,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/addons/dashboard-monitoring/verify",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx",
+      "sourceLine": 222,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/addons/ingress-nginx/controller-node",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
+      "sourceLine": 312,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/addons/ingress-nginx/host-ports",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
+      "sourceLine": 333,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/addons/ingress-nginx/install",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
+      "sourceLine": 282,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/addons/ingress-nginx/uninstall",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
+      "sourceLine": 390,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/addons/ingress-nginx/verify",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
+      "sourceLine": 369,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/addons/kube-prometheus-stack/install",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
+      "sourceLine": 182,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/addons/kube-prometheus-stack/verify",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
+      "sourceLine": 244,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/addons/status",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
+      "sourceLine": 184,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/addons/status",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx",
+      "sourceLine": 168,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/addons/status",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
+      "sourceLine": 136,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/apply-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterConfigMapDetail.tsx",
+      "sourceLine": 99,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/apply-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterIngressDetail.tsx",
+      "sourceLine": 100,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/apply-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterIngresses.tsx",
+      "sourceLine": 73,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/apply-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sListPage.tsx",
+      "sourceLine": 196,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/apply-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterSecretDetail.tsx",
+      "sourceLine": 99,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/apply-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterServiceDetail.tsx",
+      "sourceLine": 95,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/apply-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterServices.tsx",
+      "sourceLine": 63,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/apply-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterWorkloadDetail.tsx",
+      "sourceLine": 210,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/apply-yaml",
+      "sourceFile": "web/src/features/cluster/pages/PodListBlock.tsx",
+      "sourceLine": 290,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/apply-yaml",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 42,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/configmaps",
+      "sourceFile": "web/src/features/cluster/pages/ClusterConfigMapDetail.tsx",
+      "sourceLine": 67,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/crds",
+      "sourceFile": "web/src/features/cluster/pages/ClusterCustomResources.tsx",
+      "sourceLine": 111,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/crds/:param",
+      "sourceFile": "web/src/features/cluster/pages/ClusterCustomResources.tsx",
+      "sourceLine": 85,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/crds/:param/instances:param",
+      "sourceFile": "web/src/features/cluster/pages/ClusterCustomResources.tsx",
+      "sourceLine": 90,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/crds/:param/instances/:param/:param",
+      "sourceFile": "web/src/features/cluster/pages/ClusterCustomResources.tsx",
+      "sourceLine": 94,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/crds/${encodeURIComponent(crd",
+      "sourceFile": "web/src/features/cluster/pages/ClusterCustomResources.tsx",
+      "sourceLine": 90,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/crds/${encodeURIComponent(crd",
+      "sourceFile": "web/src/features/cluster/pages/ClusterCustomResources.tsx",
+      "sourceLine": 94,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/crds/${encodeURIComponent(name",
+      "sourceFile": "web/src/features/cluster/pages/ClusterCustomResources.tsx",
+      "sourceLine": 85,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/deployments/:param/:param/restart",
+      "sourceFile": "web/src/features/cluster/pages/ClusterWorkloadDetail.tsx",
+      "sourceLine": 179,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/deployments/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/ClusterWorkloadDetail.tsx",
+      "sourceLine": 179,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/etcd/defrag-job",
+      "sourceFile": "web/src/features/cluster/pages/ClusterEtcdPage.tsx",
+      "sourceLine": 96,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/etcd/defrag-job-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterEtcdPage.tsx",
+      "sourceLine": 114,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/etcd/summary",
+      "sourceFile": "web/src/features/cluster/pages/ClusterEtcdPage.tsx",
+      "sourceLine": 87,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/ingresses",
+      "sourceFile": "web/src/features/cluster/pages/ClusterIngressDetail.tsx",
+      "sourceLine": 69,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/ingresses",
+      "sourceFile": "web/src/features/cluster/pages/ClusterIngresses.tsx",
+      "sourceLine": 67,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/namespace-stats",
+      "sourceFile": "web/src/features/cluster/pages/ClusterNamespacePicker.tsx",
+      "sourceLine": 77,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/nodes",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
+      "sourceLine": 204,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/nodes",
+      "sourceFile": "web/src/features/cluster/pages/ClusterNodes.tsx",
+      "sourceLine": 311,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/nodes",
+      "sourceFile": "web/src/features/cluster/pages/k8s/K8sGraphicEditDialog.tsx",
+      "sourceLine": 349,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-json",
+      "sourceFile": "web/src/features/cluster/pages/k8s/K8sGraphicEditDialog.tsx",
+      "sourceLine": 340,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/k8s/object-json",
+      "sourceFile": "web/src/features/cluster/pages/k8s/K8sGraphicEditDialog.tsx",
+      "sourceLine": 492,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-revisions",
+      "sourceFile": "web/src/features/cluster/components/K8sObjectRevisionDialog.tsx",
+      "sourceLine": 122,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-revisions/diff",
+      "sourceFile": "web/src/features/cluster/components/K8sObjectRevisionDialog.tsx",
+      "sourceLine": 181,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/object-revisions/rollback",
+      "sourceFile": "web/src/features/cluster/components/K8sObjectRevisionDialog.tsx",
+      "sourceLine": 193,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-revisions/yaml",
+      "sourceFile": "web/src/features/cluster/components/K8sObjectRevisionDialog.tsx",
+      "sourceLine": 153,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterConfigMapDetail.tsx",
+      "sourceLine": 84,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterConfigMapDetail.tsx",
+      "sourceLine": 118,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterIngressDetail.tsx",
+      "sourceLine": 86,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterIngressDetail.tsx",
+      "sourceLine": 119,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterIngresses.tsx",
+      "sourceLine": 107,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sListPage.tsx",
+      "sourceLine": 257,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterSecretDetail.tsx",
+      "sourceLine": 85,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterSecretDetail.tsx",
+      "sourceLine": 118,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterServiceDetail.tsx",
+      "sourceLine": 81,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterServiceDetail.tsx",
+      "sourceLine": 115,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterServices.tsx",
+      "sourceLine": 95,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterWorkloadDetail.tsx",
+      "sourceLine": 163,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/ClusterWorkloadDetail.tsx",
+      "sourceLine": 243,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "web/src/features/cluster/pages/PodListBlock.tsx",
+      "sourceLine": 322,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/objects",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 43,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/k8s/objects/:param/:param/:param",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sListPage.tsx",
+      "sourceLine": 218,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/k8s/objects/:param/${encodeURIComponent(namespaceFixed!",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sListPage.tsx",
+      "sourceLine": 218,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/k8s/objects/ingress/:param/:param",
+      "sourceFile": "web/src/features/cluster/pages/ClusterIngresses.tsx",
+      "sourceLine": 85,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/k8s/objects/ingress/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/ClusterIngresses.tsx",
+      "sourceLine": 85,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/k8s/objects/pod/:param/:param",
+      "sourceFile": "web/src/features/cluster/pages/PodListBlock.tsx",
+      "sourceLine": 301,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/k8s/objects/pod/${encodeURIComponent(ns",
+      "sourceFile": "web/src/features/cluster/pages/PodListBlock.tsx",
+      "sourceLine": 301,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/k8s/objects/service/:param/:param",
+      "sourceFile": "web/src/features/cluster/pages/ClusterServices.tsx",
+      "sourceLine": 74,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/k8s/objects/service/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/ClusterServices.tsx",
+      "sourceLine": 74,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pod-restart-ai/correlation-latest",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectReports.tsx",
+      "sourceLine": 279,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pod-restart-ai/reports",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectReports.tsx",
+      "sourceLine": 298,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pod-restart-ai/reports",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectReports.tsx",
+      "sourceLine": 400,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pod-restart-ai/reports",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectReports.tsx",
+      "sourceLine": 521,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/pod-restart-ai/reports",
+      "sourceFile": "web/src/features/cluster/pages/PodRestartAiPanel.tsx",
+      "sourceLine": 251,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/k8s/pod-restart-ai/reports/:param",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectReports.tsx",
+      "sourceLine": 383,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pod-restart-ai/rollup-summary",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectReports.tsx",
+      "sourceLine": 286,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pod-restarts",
+      "sourceFile": "web/src/features/cluster/pages/ClusterOverviewPodsWorkloadPanel.tsx",
+      "sourceLine": 400,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pods",
+      "sourceFile": "web/src/features/cluster/pages/ClusterNodes.tsx",
+      "sourceLine": 192,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pods",
+      "sourceFile": "web/src/shared/layout/GlobalSearchBar.tsx",
+      "sourceLine": 56,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pods",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 44,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pods/:param/:param",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPodDetail.tsx",
+      "sourceLine": 146,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pods/:param/:param/exec/ws",
+      "sourceFile": "web/src/features/cluster/pages/usePodExecTerminal.ts",
+      "sourceLine": 34,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pods/:param/:param/logs",
+      "sourceFile": "web/src/features/cluster/pages/podLogsApi.ts",
+      "sourceLine": 13,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pods/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPodDetail.tsx",
+      "sourceLine": 146,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pods/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/podLogsApi.ts",
+      "sourceLine": 13,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pods/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/usePodExecTerminal.ts",
+      "sourceLine": 34,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pods/metrics",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPodDetail.tsx",
+      "sourceLine": 400,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pods/metrics${qs",
+      "sourceFile": "web/src/features/cluster/pages/PodListBlock.tsx",
+      "sourceLine": 260,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pods/resource-efficiency",
+      "sourceFile": "web/src/features/cluster/pages/ClusterOverviewPodsWorkloadPanel.tsx",
+      "sourceLine": 406,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pods${qs",
+      "sourceFile": "web/src/features/cluster/pages/PodListBlock.tsx",
+      "sourceLine": 248,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/prometheus/cluster-charts",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPrometheusPanel.tsx",
+      "sourceLine": 607,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/prometheus/cluster-snapshot",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPrometheusPanel.tsx",
+      "sourceLine": 589,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/prometheus/pod-network-top",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPrometheusPanel.tsx",
+      "sourceLine": 597,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pvc-files/:param/:param/delete",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 171,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pvc-files/:param/:param/list",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 149,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pvc-files/:param/:param/mkdir",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 177,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pvc-files/:param/:param/mounts",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 123,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pvc-files/:param/:param/read",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 159,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pvc-files/:param/:param/rename",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 183,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pvc-files/:param/:param/write",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 165,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pvc-files/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 123,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/pvc-files/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 149,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pvc-files/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 159,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pvc-files/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 165,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pvc-files/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 171,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pvc-files/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 177,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/pvc-files/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
+      "sourceLine": 183,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/pvcs/:param/:param/expand",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sListPage.tsx",
+      "sourceLine": 230,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/pvcs/${encodeURIComponent(namespaceFixed!",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sListPage.tsx",
+      "sourceLine": 230,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/rbac",
+      "sourceFile": "web/src/features/cluster/pages/ClusterRBAC.tsx",
+      "sourceLine": 85,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/rbac/quick-readonly-user",
+      "sourceFile": "web/src/features/cluster/pages/ClusterRBAC.tsx",
+      "sourceLine": 98,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/rbac/service-accounts/:param/:param",
+      "sourceFile": "web/src/features/cluster/pages/ClusterRBACServiceAccountDetail.tsx",
+      "sourceLine": 46,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/k8s/rbac/service-accounts/${encodeURIComponent(namespace",
+      "sourceFile": "web/src/features/cluster/pages/ClusterRBACServiceAccountDetail.tsx",
+      "sourceLine": 46,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/resource-relations",
+      "sourceFile": "web/src/features/cluster/pages/K8sRelationsCard.tsx",
+      "sourceLine": 208,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/secrets",
+      "sourceFile": "web/src/features/cluster/pages/ClusterSecretDetail.tsx",
+      "sourceLine": 68,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/services",
+      "sourceFile": "web/src/features/cluster/pages/ClusterServiceDetail.tsx",
+      "sourceLine": 61,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/services",
+      "sourceFile": "web/src/features/cluster/pages/ClusterServices.tsx",
+      "sourceLine": 56,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/storage-classes",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 1796,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/summary",
+      "sourceFile": "web/src/features/cluster/pages/ClusterOverview.tsx",
+      "sourceLine": 48,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/summary",
+      "sourceFile": "web/src/features/cluster/pages/ClusterOverviewPodsWorkloadPanel.tsx",
+      "sourceLine": 418,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/summary",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 169,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/workloads/patch-container-resources",
+      "sourceFile": "web/src/features/cluster/pages/ClusterOverviewPodsWorkloadPanel.tsx",
+      "sourceLine": 568,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/workloads/resource-advisory",
+      "sourceFile": "web/src/features/cluster/pages/ClusterOverviewPodsWorkloadPanel.tsx",
+      "sourceLine": 412,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/workloads/scheduling-check",
+      "sourceFile": "web/src/features/cluster/pages/workloadSchedulingPrecheck.ts",
+      "sourceLine": 29,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/workloads/scheduling-check-yaml",
+      "sourceFile": "web/src/features/cluster/pages/workloadSchedulingPrecheck.ts",
+      "sourceLine": 36,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/login/public-status",
+      "sourceFile": "web/src/pages/Login.tsx",
+      "sourceLine": 54,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/namespaces",
+      "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
+      "sourceLine": 266,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/namespaces",
+      "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      "sourceLine": 380,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/namespaces",
+      "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
+      "sourceLine": 1802,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/namespaces",
+      "sourceFile": "web/src/features/cluster/components/IngressGraphicalForm.tsx",
+      "sourceLine": 47,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/network",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 58,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/features/network/ikuai/pages/IkuaiConfigurationGate.tsx",
+      "sourceLine": 39,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 204,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
+      "sourceLine": 74,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 285,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/features/network/ikuai/pages/IkuaiConfigurationGate.tsx",
+      "sourceLine": 45,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 264,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
+      "sourceLine": 104,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/network/devices/:param",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 275,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/network/devices/:param",
+      "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
+      "sourceLine": 115,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/clients",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 245,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/exporter-status",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 224,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/exporter-status",
+      "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
+      "sourceLine": 91,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/interfaces",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 238,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/overview",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 231,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/overview",
+      "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
+      "sourceLine": 98,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/traffic",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 252,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 275,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
+      "sourceLine": 115,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/ai-provider",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
+      "sourceLine": 79,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/ai-provider",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
+      "sourceLine": 149,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/ai-provider",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 258,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/ops/ai-provider",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
+      "sourceLine": 252,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/alerts",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectAlerts.tsx",
+      "sourceLine": 94,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/alerts",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
+      "sourceLine": 74,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/alerts",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 253,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/ops/alerts",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectAlerts.tsx",
+      "sourceLine": 133,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/alerts/alertmanager-webhook/regenerate",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectAlerts.tsx",
+      "sourceLine": 116,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/alerts/log",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectAlerts.tsx",
+      "sourceLine": 100,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/alerts/test-channel",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectAlerts.tsx",
+      "sourceLine": 165,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/cluster-advisory",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogDetails.tsx",
+      "sourceLine": 254,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/cluster-advisory",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogs.tsx",
+      "sourceLine": 202,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/cluster-advisory",
+      "sourceFile": "web/src/shared/layout/HeaderNotificationsSheet.tsx",
+      "sourceLine": 159,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ops/cluster-advisory",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
+      "sourceLine": 102,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/cluster-advisory/ack",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
+      "sourceLine": 109,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/cluster-advisory/dismiss-bell",
+      "sourceFile": "web/src/shared/layout/HeaderNotificationsSheet.tsx",
+      "sourceLine": 166,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/cluster-advisory/run",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
+      "sourceLine": 114,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/inspect/reports",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
+      "sourceLine": 85,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/inspect/reports",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectReports.tsx",
+      "sourceLine": 194,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/inspect/reports",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 264,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/inspect/run",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
+      "sourceLine": 263,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/inspect/tasks",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
+      "sourceLine": 165,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/inspect/tasks/:param",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
+      "sourceLine": 155,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/inspect/tasks/${encodeURIComponent(inspectTaskId",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
+      "sourceLine": 155,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/monitoring/panels",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
+      "sourceLine": 69,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/monitoring/panels",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectMonitoring.tsx",
+      "sourceLine": 102,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/monitoring/panels",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 270,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/ops/monitoring/panels",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectMonitoring.tsx",
+      "sourceLine": 168,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ops/vmlog",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 48,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ops/vmlog",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 135,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/vmlog/ai-analyze",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogDetails.tsx",
+      "sourceLine": 347,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/vmlog/ai-analyze",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogDetails.tsx",
+      "sourceLine": 369,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ops/vmlog/ai-analyze",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 82,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/vmlog/ai-analyze-row",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogDetails.tsx",
+      "sourceLine": 382,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ops/vmlog/ai-analyze-row",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 81,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/vmlog/details",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogDetails.tsx",
+      "sourceLine": 323,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ops/vmlog/details",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 79,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/vmlog/discover",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sVmLogSection.tsx",
+      "sourceLine": 71,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/vmlog/namespaces",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sVmLogSection.tsx",
+      "sourceLine": 64,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/vmlog/namespaces",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogDetails.tsx",
+      "sourceLine": 271,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/vmlog/overview",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogs.tsx",
+      "sourceLine": 193,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ops/vmlog/overview",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 78,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/vmlog/query",
+      "sourceFile": "web/src/features/cluster/pages/PodRestartAiPanel.tsx",
+      "sourceLine": 203,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/vmlog/stats",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogDetails.tsx",
+      "sourceLine": 331,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ops/vmlog/stats",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 80,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/vmlog/status",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogCollection.tsx",
+      "sourceLine": 32,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/vmlog/status",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogDetails.tsx",
+      "sourceLine": 247,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/vmlog/status",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogs.tsx",
+      "sourceLine": 172,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/vmlog/status",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
+      "sourceLine": 192,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/vmlog/vm-shipper/apply",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
+      "sourceLine": 323,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ops/vmlog/vm-shipper/apply",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 85,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/vmlog/vm-shipper/inspect",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
+      "sourceLine": 305,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ops/vmlog/vm-shipper/inspect",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 84,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/vmlog/vm-shipper/script",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
+      "sourceLine": 294,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ops/vmlog/vm-shipper/script",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 83,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/vmlog/vm-shipper/tasks",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
+      "sourceLine": 286,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/ops/vmlog/vm-shipper/tasks",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 86,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/vmlog/vm-shipper/tasks/:param",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
+      "sourceLine": 276,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/vmlog/vm-shipper/tasks/${encodeURIComponent(shipperTaskId",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
+      "sourceLine": 276,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/prometheus/discover",
+      "sourceFile": "web/src/features/settings/components/SettingsPrometheusSection.tsx",
+      "sourceLine": 84,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/prometheus/query",
+      "sourceFile": "web/src/lib/api.ts",
+      "sourceLine": 626,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/prometheus/query",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 47,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/prometheus/query_range",
+      "sourceFile": "web/src/lib/api.ts",
+      "sourceLine": 639,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/prometheus/source",
+      "sourceFile": "web/src/features/settings/components/SettingsPrometheusSection.tsx",
+      "sourceLine": 109,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/prometheus/source",
+      "sourceFile": "web/src/features/settings/components/SettingsPrometheusSection.tsx",
+      "sourceLine": 140,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/prometheus/source",
+      "sourceFile": "web/src/features/settings/components/SettingsPrometheusSection.tsx",
+      "sourceLine": 168,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/prometheus/source",
+      "sourceFile": "web/src/features/settings/components/SettingsPrometheusSection.tsx",
+      "sourceLine": 186,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/prometheus/source",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 46,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/prometheus/status",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
+      "sourceLine": 63,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/prometheus/status",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectMonitoring.tsx",
+      "sourceLine": 97,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/prometheus/status",
+      "sourceFile": "web/src/features/settings/components/SettingsPrometheusSection.tsx",
+      "sourceLine": 78,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/prometheus/status",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 277,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/prometheus/validate-config-yaml",
+      "sourceFile": "web/src/features/cluster/pages/k8s/K8sGraphicEditDialog.tsx",
+      "sourceLine": 316,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/prometheus/vcenter-metrics",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterPrometheusPanel.tsx",
+      "sourceLine": 89,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 57,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets",
+      "sourceFile": "web/src/features/compute/pages/PVEPage.tsx",
+      "sourceLine": 74,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 224,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 190,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets",
+      "sourceFile": "web/src/features/compute/pages/PVEPage.tsx",
+      "sourceLine": 99,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 283,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/pve/targets/:param",
+      "sourceFile": "web/src/features/compute/pages/PVEPage.tsx",
+      "sourceLine": 110,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/pve/targets/:param",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 294,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:param/guests",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 255,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:param/guests/:param/power",
+      "sourceFile": "web/src/features/compute/pages/PVEPage.tsx",
+      "sourceLine": 127,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:param/guests/:param/power",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 311,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:param/nodes",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 248,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:param/probe",
+      "sourceFile": "web/src/features/compute/pages/PVEPage.tsx",
+      "sourceLine": 120,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:param/probe",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 304,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:param/storage",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 262,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:param/summary",
+      "sourceFile": "web/src/features/compute/pages/PVEPage.tsx",
+      "sourceLine": 89,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:param/summary",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 241,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:param/tasks",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 269,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(activeId",
+      "sourceFile": "web/src/features/compute/pages/PVEPage.tsx",
+      "sourceLine": 127,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(activeId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 311,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/compute/pages/PVEPage.tsx",
+      "sourceLine": 110,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 294,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/compute/pages/PVEPage.tsx",
+      "sourceLine": 120,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 304,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/runtime/status",
+      "sourceFile": "web/src/hooks/use-runtime-status.ts",
+      "sourceLine": 10,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/runtime/status",
+      "sourceFile": "web/src/hooks/use-system-check.ts",
+      "sourceLine": 10,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/runtime/status",
+      "sourceFile": "web/src/lib/site-path-descriptions.ts",
+      "sourceLine": 13,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/services",
+      "sourceFile": "web/src/features/cluster/components/IngressGraphicalForm.tsx",
+      "sourceLine": 52,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sVmLogSection.tsx",
+      "sourceLine": 49,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/cluster/pages/K8sConnectWizard.tsx",
+      "sourceLine": 39,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogCollection.tsx",
+      "sourceLine": 38,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogCollection.tsx",
+      "sourceLine": 49,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/settings/components/SettingsPrometheusSection.tsx",
+      "sourceLine": 126,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/settings/components/SettingsPrometheusSection.tsx",
+      "sourceLine": 138,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/settings/components/SettingsPrometheusSection.tsx",
+      "sourceLine": 165,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/settings/components/SettingsRuntimeSection.tsx",
+      "sourceLine": 94,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterConnectWizard.tsx",
+      "sourceLine": 34,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sVmLogSection.tsx",
+      "sourceLine": 84,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/cluster/pages/K8sConnectWizard.tsx",
+      "sourceLine": 92,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectLogCollection.tsx",
+      "sourceLine": 50,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/settings/components/SettingsPrometheusSection.tsx",
+      "sourceLine": 139,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/settings/components/SettingsPrometheusSection.tsx",
+      "sourceLine": 166,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/settings/components/SettingsRuntimeSection.tsx",
+      "sourceLine": 151,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterConnectWizard.tsx",
+      "sourceLine": 94,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/settings/runtime",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 45,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/setup",
+      "sourceFile": "web/src/pages/Setup.tsx",
+      "sourceLine": 164,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/setup",
+      "sourceFile": "web/src/lib/api.ts",
+      "sourceLine": 44,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/setup",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 39,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/setup/status",
+      "sourceFile": "web/src/app/guards/SetupGate.tsx",
+      "sourceLine": 12,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/setup/status",
+      "sourceFile": "web/src/pages/Setup.tsx",
+      "sourceLine": 74,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/status",
+      "sourceFile": "web/src/features/baota/pages/BaotaSync.tsx",
+      "sourceLine": 37,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/system/check",
+      "sourceFile": "web/src/lib/site-path-descriptions.ts",
+      "sourceLine": 14,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/toolbox/ip-scan/config",
+      "sourceFile": "web/src/features/cluster/pages/ToolNetworkIpScan.tsx",
+      "sourceLine": 166,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/toolbox/ip-scan/config",
+      "sourceFile": "web/src/features/cluster/pages/ToolNetworkIpScan.tsx",
+      "sourceLine": 189,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/toolbox/ip-scan/history",
+      "sourceFile": "web/src/features/cluster/pages/ToolNetworkIpScan.tsx",
+      "sourceLine": 172,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/toolbox/ip-scan/run",
+      "sourceFile": "web/src/features/cluster/pages/ToolNetworkIpScan.tsx",
+      "sourceLine": 200,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/v1/query",
+      "sourceFile": "web/src/features/settings/components/SettingsPrometheusSection.tsx",
+      "sourceLine": 249,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 59,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter",
+      "sourceFile": "web/src/lib/audit-display.ts",
+      "sourceLine": 60,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/bastion/extra/:param/sftp/ws",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastionSftpPanel.tsx",
+      "sourceLine": 25,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/bastion/extra/:param/ssh/ws",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterSshTerminal.tsx",
+      "sourceLine": 19,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/bastion/extra/${encodeURIComponent(extraId",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterSshTerminal.tsx",
+      "sourceLine": 19,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/bastion/extra/${encodeURIComponent(target.id",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastionSftpPanel.tsx",
+      "sourceLine": 25,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/bastion/native-ssh",
+      "sourceFile": "web/src/features/bastion/pages/BastionConsoleHome.tsx",
+      "sourceLine": 82,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/bastion/policy",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastionAdmin.tsx",
+      "sourceLine": 333,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/vcenter/bastion/policy",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastionAdmin.tsx",
+      "sourceLine": 499,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/bastion/vms",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastionAdmin.tsx",
+      "sourceLine": 318,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/bastion/vms",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 243,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/hosts",
+      "sourceFile": "web/src/features/bastion/pages/BastionConsoleHome.tsx",
+      "sourceLine": 53,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/hosts",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterEsxiPrometheusDashboard.tsx",
+      "sourceLine": 102,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/hosts",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterHosts.tsx",
+      "sourceLine": 154,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/hosts",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterHubDashboard.tsx",
+      "sourceLine": 30,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/hosts",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 183,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/hosts/:param",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterHostDetail.tsx",
+      "sourceLine": 17,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/hosts/${encodeURIComponent(decoded",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterHostDetail.tsx",
+      "sourceLine": 17,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/status",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterHosts.tsx",
+      "sourceLine": 149,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/status",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterList.tsx",
+      "sourceLine": 104,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/tasks/:param",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 134,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/tasks/${encodeURIComponent(powerTaskId",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 134,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
+      "sourceLine": 222,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterHubDashboard.tsx",
+      "sourceLine": 24,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterList.tsx",
+      "sourceLine": 116,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterList.tsx",
+      "sourceLine": 129,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 176,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms",
+      "sourceFile": "web/src/shared/layout/GlobalSearchBar.tsx",
+      "sourceLine": 49,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/:param",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 74,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/:param/console-html",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterConsolePanel.tsx",
+      "sourceLine": 21,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/vms/:param/console-ws",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastionConsoleEmbed.tsx",
+      "sourceLine": 147,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/vcenter/vms/:param/disk/expand",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 202,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/vcenter/vms/:param/hardware",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 188,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/:param/listening-ports",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 120,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/vms/:param/metrics",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterPerfMonitor.tsx",
+      "sourceLine": 228,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/:param/netperf",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastion.tsx",
+      "sourceLine": 378,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/vcenter/vms/:param/power",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 168,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/vcenter/vms/:param/power",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 215,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/:param/quickstats",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastion.tsx",
+      "sourceLine": 367,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/vms/:param/sftp/ws",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastionSftpPanel.tsx",
+      "sourceLine": 20,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/vms/:param/ssh/ws",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterSshTerminal.tsx",
+      "sourceLine": 15,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/:param/tcp-established",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterPerfMonitor.tsx",
+      "sourceLine": 234,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/:param/webmks",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterConsolePanel.tsx",
+      "sourceLine": 29,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(dec",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastionConsoleEmbed.tsx",
+      "sourceLine": 147,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(decoded",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 74,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(decoded",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 120,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(decoded",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 168,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(decoded",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 202,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(decoded",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 215,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(decoded",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterVMDetail.tsx",
+      "sourceLine": 188,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(moref",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterConsolePanel.tsx",
+      "sourceLine": 21,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(moref",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterConsolePanel.tsx",
+      "sourceLine": 29,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(moref",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterPerfMonitor.tsx",
+      "sourceLine": 234,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(moref",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterConsolePanel.tsx",
+      "sourceLine": 35,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(moref",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterPerfMonitor.tsx",
+      "sourceLine": 228,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(moref",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterSshTerminal.tsx",
+      "sourceLine": 15,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(selectedVmMoref!",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastion.tsx",
+      "sourceLine": 367,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(selectedVmMoref!",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastion.tsx",
+      "sourceLine": 378,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/vcenter/vms/${encodeURIComponent(target.moref",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterBastionSftpPanel.tsx",
+      "sourceLine": 20,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/r/:param.html",
+      "sourceFile": "web/src/md-editor/EditorContainer.tsx",
+      "sourceLine": 204,
+      "needsManualReview": true,
+      "kind": "literal"
+    }
+  ]
+}

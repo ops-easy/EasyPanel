@@ -2,19 +2,28 @@ import { lazy, type ReactNode } from "react";
 import { Navigate, Route } from "react-router-dom";
 import { RouteSuspense } from "@/app/route-fallback";
 import ViewerRedirect from "@/app/guards/ViewerRedirect";
-import ToolNetworkIpScan from "@/features/cluster/pages/ToolNetworkIpScan";
-import ComputeLayout from "@/features/compute/layout/ComputeLayout";
-import ComputeDashboard from "@/features/compute/pages/ComputeDashboard";
-import CloudHosts from "@/features/vcenter/pages/CloudHosts";
-import CloudHostSshPage from "@/features/vcenter/pages/CloudHostSshPage";
-import VCenterGpuDashboard from "@/features/vcenter/pages/VCenterGpuDashboard";
-import VCenterHostDetail from "@/features/vcenter/pages/VCenterHostDetail";
-import VCenterHosts from "@/features/vcenter/pages/VCenterHosts";
-import VCenterHubDashboard from "@/features/vcenter/pages/VCenterHubDashboard";
-import VCenterList from "@/features/vcenter/pages/VCenterList";
-import VCenterSettings from "@/features/vcenter/pages/VCenterSettings";
-import { VCenterConnectionGate, VCenterPrometheusGate } from "@/features/vcenter/pages/VCenterConfigGuards";
 
+const ToolNetworkIpScan = lazy(() => import("@/features/cluster/pages/ToolNetworkIpScan"));
+const ComputeLayout = lazy(() => import("@/features/compute/layout/ComputeLayout"));
+const ComputeDashboard = lazy(() => import("@/features/compute/pages/ComputeDashboard"));
+const CloudHosts = lazy(() => import("@/features/vcenter/pages/CloudHosts"));
+const CloudHostSshPage = lazy(() => import("@/features/vcenter/pages/CloudHostSshPage"));
+const VCenterGpuDashboard = lazy(() => import("@/features/vcenter/pages/VCenterGpuDashboard"));
+const VCenterHostDetail = lazy(() => import("@/features/vcenter/pages/VCenterHostDetail"));
+const VCenterHosts = lazy(() => import("@/features/vcenter/pages/VCenterHosts"));
+const VCenterHubDashboard = lazy(() => import("@/features/vcenter/pages/VCenterHubDashboard"));
+const VCenterList = lazy(() => import("@/features/vcenter/pages/VCenterList"));
+const VCenterSettings = lazy(() => import("@/features/vcenter/pages/VCenterSettings"));
+const VCenterConnectionGate = lazy(() =>
+  import("@/features/vcenter/pages/VCenterConfigGuards").then((m) => ({
+    default: m.VCenterConnectionGate,
+  }))
+);
+const VCenterPrometheusGate = lazy(() =>
+  import("@/features/vcenter/pages/VCenterConfigGuards").then((m) => ({
+    default: m.VCenterPrometheusGate,
+  }))
+);
 const PveDashboard = lazy(() => import("@/features/compute/pve/pages/PveDashboard"));
 const PveTargets = lazy(() => import("@/features/compute/pve/pages/PveTargets"));
 const PveGuests = lazy(() => import("@/features/compute/pve/pages/PveGuests"));
@@ -25,67 +34,100 @@ const VCenterVMDetail = lazy(() => import("@/features/vcenter/pages/VCenterVMDet
 
 export function computeRoutes(): ReactNode {
   return (
-    <Route path="compute" element={<ComputeLayout />}>
+    <Route
+      path="compute"
+      element={
+        <RouteSuspense>
+          <ComputeLayout />
+        </RouteSuspense>
+      }
+    >
       <Route index element={<Navigate to="dashboard" replace />} />
-      <Route path="dashboard" element={<ComputeDashboard />} />
+      <Route
+        path="dashboard"
+        element={
+          <RouteSuspense>
+            <ComputeDashboard />
+          </RouteSuspense>
+        }
+      />
       <Route path="vcenter" element={<Navigate to="/cluster/compute/vcenter/vms" replace />} />
       <Route
         path="vcenter/dashboard"
         element={
-          <VCenterConnectionGate embedded>
-            <VCenterHubDashboard />
-          </VCenterConnectionGate>
+          <RouteSuspense>
+            <VCenterConnectionGate embedded>
+              <VCenterHubDashboard />
+            </VCenterConnectionGate>
+          </RouteSuspense>
         }
       />
       <Route
         path="vcenter/vms"
         element={
-          <VCenterConnectionGate>
-            <VCenterList />
-          </VCenterConnectionGate>
+          <RouteSuspense>
+            <VCenterConnectionGate>
+              <VCenterList />
+            </VCenterConnectionGate>
+          </RouteSuspense>
         }
       />
       <Route
         path="vcenter/vms/:moref"
         element={
-          <VCenterConnectionGate>
-            <RouteSuspense>
+          <RouteSuspense>
+            <VCenterConnectionGate>
               <VCenterVMDetail />
-            </RouteSuspense>
-          </VCenterConnectionGate>
+            </VCenterConnectionGate>
+          </RouteSuspense>
         }
       />
       <Route
         path="vcenter/hosts/:moref"
         element={
-          <VCenterConnectionGate>
-            <VCenterHostDetail />
-          </VCenterConnectionGate>
+          <RouteSuspense>
+            <VCenterConnectionGate>
+              <VCenterHostDetail />
+            </VCenterConnectionGate>
+          </RouteSuspense>
         }
       />
       <Route
         path="vcenter/hosts"
         element={
-          <VCenterConnectionGate>
-            <VCenterHosts />
-          </VCenterConnectionGate>
+          <RouteSuspense>
+            <VCenterConnectionGate>
+              <VCenterHosts />
+            </VCenterConnectionGate>
+          </RouteSuspense>
         }
       />
       <Route
         path="vcenter/gpu"
         element={
-          <VCenterPrometheusGate>
-            <VCenterGpuDashboard />
-          </VCenterPrometheusGate>
+          <RouteSuspense>
+            <VCenterPrometheusGate>
+              <VCenterGpuDashboard />
+            </VCenterPrometheusGate>
+          </RouteSuspense>
         }
       />
       <Route path="vcenter/prometheus" element={<Navigate to="/cluster/compute/vcenter/dashboard" replace />} />
-      <Route path="vcenter/settings" element={<VCenterSettings />} />
+      <Route
+        path="vcenter/settings"
+        element={
+          <RouteSuspense>
+            <VCenterSettings />
+          </RouteSuspense>
+        }
+      />
       <Route
         path="cloud/:hostId/ssh"
         element={
           <ViewerRedirect to="/cluster/compute/dashboard">
-            <CloudHostSshPage />
+            <RouteSuspense>
+              <CloudHostSshPage />
+            </RouteSuspense>
           </ViewerRedirect>
         }
       />
@@ -93,7 +135,9 @@ export function computeRoutes(): ReactNode {
         path="cloud"
         element={
           <ViewerRedirect to="/cluster/compute/dashboard">
-            <CloudHosts />
+            <RouteSuspense>
+              <CloudHosts />
+            </RouteSuspense>
           </ViewerRedirect>
         }
       />
@@ -102,7 +146,9 @@ export function computeRoutes(): ReactNode {
         path="tools/ip-scan"
         element={
           <ViewerRedirect to="/cluster/compute/dashboard">
-            <ToolNetworkIpScan />
+            <RouteSuspense>
+              <ToolNetworkIpScan />
+            </RouteSuspense>
           </ViewerRedirect>
         }
       />

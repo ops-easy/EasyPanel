@@ -185,7 +185,11 @@ func effectivePermissionsFromJSON(role string, raw string) *EffectiveDashboardPe
 		Menu:                           j.Menu,
 	}
 	if role == DashboardRoleAdmin {
-		return defaultEffectiveAdmin()
+		admin := defaultEffectiveAdmin()
+		if len(j.Menu) > 0 {
+			admin.Menu = j.Menu
+		}
+		return admin
 	}
 	return out
 }
@@ -202,14 +206,17 @@ func resolveK8sPodBool(ptr *bool, k8sAccess string, defaultRW bool) bool {
 
 // LoadEffectiveDashboardPermissions 从数据库加载并合并；无行或空 JSON 时 viewer 使用旧版默认。
 func LoadEffectiveDashboardPermissions(db *sql.DB, username, role string) *EffectiveDashboardPermissions {
-	if role == DashboardRoleAdmin {
-		return defaultEffectiveAdmin()
-	}
 	if db == nil {
+		if role == DashboardRoleAdmin {
+			return defaultEffectiveAdmin()
+		}
 		return defaultEffectiveLegacyViewer()
 	}
 	u := strings.TrimSpace(username)
 	if u == "" {
+		if role == DashboardRoleAdmin {
+			return defaultEffectiveAdmin()
+		}
 		return defaultEffectiveLegacyViewer()
 	}
 	var raw sql.NullString
@@ -217,6 +224,9 @@ func LoadEffectiveDashboardPermissions(db *sql.DB, username, role string) *Effec
 	defer cancel()
 	err := db.QueryRowContext(ctx, `SELECT permissions_json FROM kubebt_dashboard_users WHERE username=? LIMIT 1`, u).Scan(&raw)
 	if err != nil || !raw.Valid || strings.TrimSpace(raw.String) == "" {
+		if role == DashboardRoleAdmin {
+			return defaultEffectiveAdmin()
+		}
 		return defaultEffectiveLegacyViewer()
 	}
 	return effectivePermissionsFromJSON(role, raw.String)

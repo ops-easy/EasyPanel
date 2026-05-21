@@ -1,9 +1,9 @@
 import { lazy, type ReactNode } from "react";
 import { Navigate, Route } from "react-router-dom";
 import { RouteSuspense } from "@/app/route-fallback";
-import AppCenterDashboard from "@/features/app-center/layout/AppCenterDashboard";
-import AppCenterLayout from "@/features/app-center/layout/AppCenterLayout";
 
+const AppCenterDashboard = lazy(() => import("@/features/app-center/layout/AppCenterDashboard"));
+const AppCenterLayout = lazy(() => import("@/features/app-center/layout/AppCenterLayout"));
 const AppCenterRedis = lazy(() => import("@/features/app-center/redis/pages/AppCenterRedis"));
 const AppCenterOpenSearch = lazy(
   () => import("@/features/app-center/opensearch/pages/AppCenterOpenSearch")
@@ -47,9 +47,23 @@ const AppCenterHermesDetail = lazy(
 
 export function appCenterRoutes(): ReactNode {
   return (
-    <Route path="apps" element={<AppCenterLayout />}>
+    <Route
+      path="apps"
+      element={
+        <RouteSuspense>
+          <AppCenterLayout />
+        </RouteSuspense>
+      }
+    >
       <Route index element={<Navigate to="dashboard" replace />} />
-      <Route path="dashboard" element={<AppCenterDashboard />} />
+      <Route
+        path="dashboard"
+        element={
+          <RouteSuspense>
+            <AppCenterDashboard />
+          </RouteSuspense>
+        }
+      />
       <Route
         path="redis"
         element={

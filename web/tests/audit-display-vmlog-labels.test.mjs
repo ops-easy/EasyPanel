@@ -14,7 +14,8 @@ test("vmlog audit entries use product-facing labels instead of raw API paths", (
   assert.match(auditDisplaySource, /查看 VictoriaLogs 日志总览/);
   assert.match(auditDisplaySource, /查看 VictoriaLogs 日志详情/);
   assert.match(auditDisplaySource, /统计 VictoriaLogs 日志/);
-  assert.match(auditDisplaySource, /OpenClaw 分析日志/);
+  assert.match(auditDisplaySource, /AI Provider 分析日志/);
+  assert.doesNotMatch(auditDisplaySource, /openclaw-analyze/);
   assert.match(auditDisplaySource, /下发日志采集器/);
 });
 

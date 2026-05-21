@@ -7,39 +7,76 @@ import { networkRoutes } from "@/app/routes/network-routes";
 import { opsRoutes } from "@/app/routes/ops-routes";
 import { vcenterRoutes } from "@/app/routes/vcenter-routes";
 import ViewerRedirect from "@/app/guards/ViewerRedirect";
-import BaotaDashboard from "@/features/baota/pages/BaotaDashboard";
-import BaotaSync from "@/features/baota/pages/BaotaSync";
-import IngressList from "@/features/baota/pages/IngressList";
-import BaotaLayout from "@/features/baota/pages/BaotaLayout";
-import BaotaSettingsPage from "@/features/baota/pages/BaotaSettingsPage";
-import ClusterCustomResourcesLayout, {
-  ClusterCustomResourceCrdList,
-  ClusterCustomResourceDetail,
-  ClusterCustomResourceInstances,
-} from "@/features/cluster/pages/ClusterCustomResources";
-import ClusterEtcdPage from "@/features/cluster/pages/ClusterEtcdPage";
-import ClusterIngresses from "@/features/cluster/pages/ClusterIngresses";
-import ClusterK8sSettings from "@/features/cluster/pages/ClusterK8sSettings";
-import ClusterLayout from "@/features/cluster/pages/ClusterLayout";
-import ClusterNamespacePicker from "@/features/cluster/pages/ClusterNamespacePicker";
-import ClusterNamespaceResourcesLayout from "@/features/cluster/pages/ClusterNamespaceResourcesLayout";
-import ClusterNodes from "@/features/cluster/pages/ClusterNodes";
-import ClusterOverview from "@/features/cluster/pages/ClusterOverview";
-import ClusterPods from "@/features/cluster/pages/ClusterPods";
-import ClusterPodsAll from "@/features/cluster/pages/ClusterPodsAll";
-import ClusterRBAC from "@/features/cluster/pages/ClusterRBAC";
-import ClusterRBACServiceAccountDetail from "@/features/cluster/pages/ClusterRBACServiceAccountDetail";
-import ClusterServices from "@/features/cluster/pages/ClusterServices";
-import {
-  ClusterConfigMapsScoped,
-  ClusterDaemonSetsScoped,
-  ClusterDeploymentsScoped,
-  ClusterPVCsScoped,
-  ClusterSecretsScoped,
-  ClusterStatefulSetsScoped,
-} from "@/features/cluster/pages/ClusterWorkloadPages";
-import LegacyPodDetailRedirect from "@/features/cluster/pages/LegacyPodDetailRedirect";
 
+const BaotaDashboard = lazy(() => import("@/features/baota/pages/BaotaDashboard"));
+const BaotaSync = lazy(() => import("@/features/baota/pages/BaotaSync"));
+const IngressList = lazy(() => import("@/features/baota/pages/IngressList"));
+const BaotaLayout = lazy(() => import("@/features/baota/pages/BaotaLayout"));
+const BaotaSettingsPage = lazy(() => import("@/features/baota/pages/BaotaSettingsPage"));
+const ClusterCustomResourcesLayout = lazy(() => import("@/features/cluster/pages/ClusterCustomResources"));
+const ClusterCustomResourceCrdList = lazy(() =>
+  import("@/features/cluster/pages/ClusterCustomResources").then((m) => ({
+    default: m.ClusterCustomResourceCrdList,
+  }))
+);
+const ClusterCustomResourceDetail = lazy(() =>
+  import("@/features/cluster/pages/ClusterCustomResources").then((m) => ({
+    default: m.ClusterCustomResourceDetail,
+  }))
+);
+const ClusterCustomResourceInstances = lazy(() =>
+  import("@/features/cluster/pages/ClusterCustomResources").then((m) => ({
+    default: m.ClusterCustomResourceInstances,
+  }))
+);
+const ClusterEtcdPage = lazy(() => import("@/features/cluster/pages/ClusterEtcdPage"));
+const ClusterIngresses = lazy(() => import("@/features/cluster/pages/ClusterIngresses"));
+const ClusterK8sSettings = lazy(() => import("@/features/cluster/pages/ClusterK8sSettings"));
+const ClusterLayout = lazy(() => import("@/features/cluster/pages/ClusterLayout"));
+const ClusterNamespacePicker = lazy(() => import("@/features/cluster/pages/ClusterNamespacePicker"));
+const ClusterNamespaceResourcesLayout = lazy(() =>
+  import("@/features/cluster/pages/ClusterNamespaceResourcesLayout")
+);
+const ClusterNodes = lazy(() => import("@/features/cluster/pages/ClusterNodes"));
+const ClusterOverview = lazy(() => import("@/features/cluster/pages/ClusterOverview"));
+const ClusterPods = lazy(() => import("@/features/cluster/pages/ClusterPods"));
+const ClusterPodsAll = lazy(() => import("@/features/cluster/pages/ClusterPodsAll"));
+const ClusterRBAC = lazy(() => import("@/features/cluster/pages/ClusterRBAC"));
+const ClusterRBACServiceAccountDetail = lazy(() =>
+  import("@/features/cluster/pages/ClusterRBACServiceAccountDetail")
+);
+const ClusterServices = lazy(() => import("@/features/cluster/pages/ClusterServices"));
+const ClusterConfigMapsScoped = lazy(() =>
+  import("@/features/cluster/pages/ClusterWorkloadPages").then((m) => ({
+    default: m.ClusterConfigMapsScoped,
+  }))
+);
+const ClusterDaemonSetsScoped = lazy(() =>
+  import("@/features/cluster/pages/ClusterWorkloadPages").then((m) => ({
+    default: m.ClusterDaemonSetsScoped,
+  }))
+);
+const ClusterDeploymentsScoped = lazy(() =>
+  import("@/features/cluster/pages/ClusterWorkloadPages").then((m) => ({
+    default: m.ClusterDeploymentsScoped,
+  }))
+);
+const ClusterPVCsScoped = lazy(() =>
+  import("@/features/cluster/pages/ClusterWorkloadPages").then((m) => ({
+    default: m.ClusterPVCsScoped,
+  }))
+);
+const ClusterSecretsScoped = lazy(() =>
+  import("@/features/cluster/pages/ClusterWorkloadPages").then((m) => ({
+    default: m.ClusterSecretsScoped,
+  }))
+);
+const ClusterStatefulSetsScoped = lazy(() =>
+  import("@/features/cluster/pages/ClusterWorkloadPages").then((m) => ({
+    default: m.ClusterStatefulSetsScoped,
+  }))
+);
+const LegacyPodDetailRedirect = lazy(() => import("@/features/cluster/pages/LegacyPodDetailRedirect"));
 const HarborSectionPage = lazy(() => import("@/features/harbor/pages/HarborSection"));
 const HarborProjectsPageLazy = lazy(() => import("@/features/harbor/pages/HarborProjectsPage"));
 const HarborReposPageLazy = lazy(() => import("@/features/harbor/pages/HarborReposPage"));
@@ -54,21 +91,25 @@ const ClusterSecretDetailPage = lazy(() => import("@/features/cluster/pages/Clus
 const ClusterPVCFilesPageLazy = lazy(() => import("@/features/cluster/pages/ClusterPVCFilesPage"));
 const PodRestartAiReportsPageLazy = lazy(() => import("@/features/cluster/pages/PodRestartAiReportsPage"));
 
-export function clusterRoutes(): ReactNode {
+function lazyElement(node: ReactNode): ReactNode {
+  return <RouteSuspense>{node}</RouteSuspense>;
+}
+
+function clusterRouteChildren(): ReactNode {
   return (
-    <Route path="cluster" element={<Outlet />}>
+    <>
       <Route
         path="baota"
         element={
           <ViewerRedirect to="/cluster">
-            <BaotaLayout />
+            {lazyElement(<BaotaLayout />)}
           </ViewerRedirect>
         }
       >
-        <Route index element={<BaotaDashboard />} />
-        <Route path="ingress" element={<IngressList />} />
-        <Route path="sync" element={<BaotaSync />} />
-        <Route path="settings" element={<BaotaSettingsPage />} />
+        <Route index element={lazyElement(<BaotaDashboard />)} />
+        <Route path="ingress" element={lazyElement(<IngressList />)} />
+        <Route path="sync" element={lazyElement(<BaotaSync />)} />
+        <Route path="settings" element={lazyElement(<BaotaSettingsPage />)} />
       </Route>
       <Route
         path="ns/:namespace/pods/:podName/terminal"
@@ -78,10 +119,10 @@ export function clusterRoutes(): ReactNode {
           </RouteSuspense>
         }
       />
-      <Route element={<ClusterLayout />}>
-        <Route index element={<ClusterOverview />} />
-        <Route path="ns" element={<ClusterNamespacePicker />} />
-        <Route path="ns/:namespace" element={<ClusterNamespaceResourcesLayout />}>
+      <Route element={lazyElement(<ClusterLayout />)}>
+        <Route index element={lazyElement(<ClusterOverview />)} />
+        <Route path="ns" element={lazyElement(<ClusterNamespacePicker />)} />
+        <Route path="ns/:namespace" element={lazyElement(<ClusterNamespaceResourcesLayout />)}>
           <Route index element={<Navigate to="pods" replace />} />
           <Route
             path="pods/:podName"
@@ -91,7 +132,7 @@ export function clusterRoutes(): ReactNode {
               </RouteSuspense>
             }
           />
-          <Route path="pods" element={<ClusterPods />} />
+          <Route path="pods" element={lazyElement(<ClusterPods />)} />
           <Route
             path="deployments/:workloadName"
             element={
@@ -100,7 +141,7 @@ export function clusterRoutes(): ReactNode {
               </RouteSuspense>
             }
           />
-          <Route path="deployments" element={<ClusterDeploymentsScoped />} />
+          <Route path="deployments" element={lazyElement(<ClusterDeploymentsScoped />)} />
           <Route
             path="statefulsets/:workloadName"
             element={
@@ -109,7 +150,7 @@ export function clusterRoutes(): ReactNode {
               </RouteSuspense>
             }
           />
-          <Route path="statefulsets" element={<ClusterStatefulSetsScoped />} />
+          <Route path="statefulsets" element={lazyElement(<ClusterStatefulSetsScoped />)} />
           <Route
             path="daemonsets/:workloadName"
             element={
@@ -118,7 +159,7 @@ export function clusterRoutes(): ReactNode {
               </RouteSuspense>
             }
           />
-          <Route path="daemonsets" element={<ClusterDaemonSetsScoped />} />
+          <Route path="daemonsets" element={lazyElement(<ClusterDaemonSetsScoped />)} />
           <Route
             path="services/:serviceName"
             element={
@@ -127,7 +168,7 @@ export function clusterRoutes(): ReactNode {
               </RouteSuspense>
             }
           />
-          <Route path="services" element={<ClusterServices />} />
+          <Route path="services" element={lazyElement(<ClusterServices />)} />
           <Route
             path="ingresses/:ingressName"
             element={
@@ -136,7 +177,7 @@ export function clusterRoutes(): ReactNode {
               </RouteSuspense>
             }
           />
-          <Route path="ingresses" element={<ClusterIngresses />} />
+          <Route path="ingresses" element={lazyElement(<ClusterIngresses />)} />
           <Route
             path="pvcs/:pvcName/files"
             element={
@@ -145,7 +186,7 @@ export function clusterRoutes(): ReactNode {
               </RouteSuspense>
             }
           />
-          <Route path="pvcs" element={<ClusterPVCsScoped />} />
+          <Route path="pvcs" element={lazyElement(<ClusterPVCsScoped />)} />
           <Route
             path="configmaps/:configMapName"
             element={
@@ -154,7 +195,7 @@ export function clusterRoutes(): ReactNode {
               </RouteSuspense>
             }
           />
-          <Route path="configmaps" element={<ClusterConfigMapsScoped />} />
+          <Route path="configmaps" element={lazyElement(<ClusterConfigMapsScoped />)} />
           <Route
             path="secrets/:secretName"
             element={
@@ -163,10 +204,10 @@ export function clusterRoutes(): ReactNode {
               </RouteSuspense>
             }
           />
-          <Route path="secrets" element={<ClusterSecretsScoped />} />
+          <Route path="secrets" element={lazyElement(<ClusterSecretsScoped />)} />
         </Route>
-        <Route path="pods/:namespace/:podName" element={<LegacyPodDetailRedirect />} />
-        <Route path="pods" element={<ClusterPodsAll />} />
+        <Route path="pods/:namespace/:podName" element={lazyElement(<LegacyPodDetailRedirect />)} />
+        <Route path="pods" element={lazyElement(<ClusterPodsAll />)} />
         <Route path="statefulsets" element={<Navigate to="/cluster/ns?resource=statefulsets" replace />} />
         <Route path="services" element={<Navigate to="/cluster/ns?resource=services" replace />} />
         <Route path="ingresses" element={<Navigate to="/cluster/ns?resource=ingresses" replace />} />
@@ -175,8 +216,8 @@ export function clusterRoutes(): ReactNode {
         <Route path="secrets" element={<Navigate to="/cluster/ns?resource=secrets" replace />} />
         <Route path="deployments" element={<Navigate to="/cluster/ns?resource=deployments" replace />} />
         <Route path="daemonsets" element={<Navigate to="/cluster/ns?resource=daemonsets" replace />} />
-        <Route path="nodes" element={<ClusterNodes />} />
-        <Route path="etcd" element={<ClusterEtcdPage />} />
+        <Route path="nodes" element={lazyElement(<ClusterNodes />)} />
+        <Route path="etcd" element={lazyElement(<ClusterEtcdPage />)} />
         <Route
           path="pod-restart-reports"
           element={
@@ -185,15 +226,15 @@ export function clusterRoutes(): ReactNode {
             </RouteSuspense>
           }
         />
-        <Route path="rbac" element={<ClusterRBAC />} />
-        <Route path="rbac/sa/:namespace/:name" element={<ClusterRBACServiceAccountDetail />} />
-        <Route path="custom-resources" element={<ClusterCustomResourcesLayout />}>
-          <Route index element={<ClusterCustomResourceCrdList />} />
+        <Route path="rbac" element={lazyElement(<ClusterRBAC />)} />
+        <Route path="rbac/sa/:namespace/:name" element={lazyElement(<ClusterRBACServiceAccountDetail />)} />
+        <Route path="custom-resources" element={lazyElement(<ClusterCustomResourcesLayout />)}>
+          <Route index element={lazyElement(<ClusterCustomResourceCrdList />)} />
           <Route
             path=":crdName/instances/:namespace/:objName"
-            element={<ClusterCustomResourceDetail />}
+            element={lazyElement(<ClusterCustomResourceDetail />)}
           />
-          <Route path=":crdName" element={<ClusterCustomResourceInstances />} />
+          <Route path=":crdName" element={lazyElement(<ClusterCustomResourceInstances />)} />
         </Route>
         <Route
           path="harbor"
@@ -228,7 +269,7 @@ export function clusterRoutes(): ReactNode {
             }
           />
         </Route>
-        <Route path="settings" element={<ClusterK8sSettings />} />
+        <Route path="settings" element={lazyElement(<ClusterK8sSettings />)} />
         <Route path="tools/ip-scan" element={<Navigate to="/cluster/compute/tools/ip-scan" replace />} />
         {computeRoutes()}
         {networkRoutes()}
@@ -236,6 +277,18 @@ export function clusterRoutes(): ReactNode {
         {opsRoutes()}
         {vcenterRoutes()}
       </Route>
+    </>
+  );
+}
+
+export function clusterRoutes(basePath = "cluster"): ReactNode {
+  const children = clusterRouteChildren();
+  if (!basePath) {
+    return <Route element={<Outlet />}>{children}</Route>;
+  }
+  return (
+    <Route path={basePath} element={<Outlet />}>
+      {children}
     </Route>
   );
 }

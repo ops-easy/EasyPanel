@@ -2,18 +2,6 @@ import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useStat
 import { Link, matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, History, Library } from "lucide-react";
-import { Editor } from "@bytemd/react";
-import gfm from "@bytemd/plugin-gfm";
-import highlight from "@bytemd/plugin-highlight";
-import math from "@bytemd/plugin-math";
-import breaks from "@bytemd/plugin-breaks";
-import frontmatter from "@bytemd/plugin-frontmatter";
-import mermaid from "@bytemd/plugin-mermaid";
-import zhHans from "bytemd/locales/zh_Hans.json";
-import "bytemd/dist/index.css";
-import "github-markdown-css/github-markdown-light.css";
-import "highlight.js/styles/xcode.css";
-import "katex/dist/katex.min.css";
 import "./md-editor-shell.css";
 import { enhancePreviewCodeBlocks } from "./enhancePreviewCodeBlocks";
 
@@ -24,6 +12,9 @@ import { DEFAULT_EXCALIDRAW_SCENE } from "./docExcalidrawConstants";
 
 const DocExcalidrawPane = lazy(() =>
   import("./DocExcalidrawPane").then((m) => ({ default: m.DocExcalidrawPane }))
+);
+const MarkdownEditorPane = lazy(() =>
+  import("./MarkdownEditorPane").then((m) => ({ default: m.MarkdownEditorPane }))
 );
 import { exportMarkdown } from "./utils/exportMarkdown";
 import type { EduMdDocument } from "./types";
@@ -88,8 +79,6 @@ function firstUrlFromUploadMarkdown(md: string): string | null {
   if (link?.[1]) return link[1];
   return null;
 }
-
-const plugins = [gfm(), highlight(), math(), breaks(), frontmatter(), mermaid()];
 
 export default function MdEditorPage() {
   const navigate = useNavigate();
@@ -279,13 +268,7 @@ export default function MdEditorPage() {
     );
     setGuideEnabled(currentGuide.enabled);
     setGuideSortOrder(String(currentGuide.sortOrder ?? 0));
-  }, [
-    currentGuide?.enabled,
-    currentGuide?.guideKey,
-    currentGuide?.matchType,
-    currentGuide?.routePattern,
-    currentGuide?.sortOrder,
-  ]);
+  }, [currentGuide]);
 
   const uploadFile = async (file: File, kind: string) => {
     const fd = new FormData();
@@ -783,16 +766,13 @@ export default function MdEditorPage() {
                 />
               </Suspense>
             ) : (
-              <Editor
-                value={editorBody}
-                plugins={plugins}
-                locale={zhHans}
-                onChange={handleDocChange}
-                mode="split"
-                placeholder="开始编写你的 Markdown 文档…"
-                uploadImages={uploadImages}
-                editorConfig={{ lineNumbers: true }}
-              />
+              <Suspense fallback={<div className="md-editor-placeholder">加载 Markdown 编辑器...</div>}>
+                <MarkdownEditorPane
+                  value={editorBody}
+                  onChange={handleDocChange}
+                  uploadImages={uploadImages}
+                />
+              </Suspense>
             )
           ) : (
             <div className="md-editor-placeholder">

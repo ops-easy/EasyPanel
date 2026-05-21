@@ -39,7 +39,7 @@ import { useAuth } from "@/auth/auth-context";
 import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
 import { WORKSPACE_STORAGE_KEY, type WorkspaceId } from "@/lib/workspace";
 import { cn } from "@/lib/utils";
-import { menuItemVisible, moduleVisible } from "@/lib/platform-permissions";
+import { menuItemVisible, moduleVisible, workspaceMenuVisible } from "@/lib/platform-permissions";
 import type { K8sSidebarMenuItem } from "@/lib/api";
 import { APP_CENTER_MODULE_NAV_ITEMS, isAppCenterNavItemActive } from "@/features/app-center/layout/appCenterNavigation";
 
@@ -410,19 +410,14 @@ const Sidebar: React.FC = () => {
   const check = runtimeQ.data?.systemCheck;
   const cfg = runtimeQ.data?.config;
   const perm = cfg?.permissions;
-  const showK8sNav = menuItemVisible(perm, "kubernetes", navRole, moduleVisible(perm, "k8s"));
-  const showComputeNav = menuItemVisible(perm, "compute", navRole, moduleVisible(perm, "compute"));
-  const showNetworkNav = menuItemVisible(perm, "network", navRole, moduleVisible(perm, "network"));
-  const showBaotaNav = menuItemVisible(perm, "baota", navRole, moduleVisible(perm, "baota"));
-  const showAppCenterNav = menuItemVisible(perm, "appcenter", navRole, moduleVisible(perm, "appcenter"));
-  const showAiInspectNav = menuItemVisible(perm, "aiInspect", navRole, true);
-  const showDocsNav = menuItemVisible(perm, "docs", navRole, true);
-  const showBastionNav = menuItemVisible(
-    perm,
-    "vcenter_bastion",
-    navRole,
-    moduleVisible(perm, "compute") || moduleVisible(perm, "appcenter")
-  );
+  const showK8sNav = workspaceMenuVisible(perm, "kubernetes", navRole);
+  const showComputeNav = workspaceMenuVisible(perm, "compute", navRole);
+  const showNetworkNav = workspaceMenuVisible(perm, "network", navRole);
+  const showBaotaNav = workspaceMenuVisible(perm, "baota", navRole);
+  const showAppCenterNav = workspaceMenuVisible(perm, "appcenter", navRole);
+  const showAiInspectNav = workspaceMenuVisible(perm, "aiinspect", navRole);
+  const showDocsNav = workspaceMenuVisible(perm, "docs", navRole);
+  const showBastionNav = workspaceMenuVisible(perm, "bastion", navRole);
   const showVcCloud = menuItemVisible(perm, "vcenter_cloud", navRole, moduleVisible(perm, "compute"));
   const showVcTools = menuItemVisible(perm, "vcenter_tools", navRole, moduleVisible(perm, "compute"));
   const showHarborNav = menuItemVisible(perm, "harbor", navRole, moduleVisible(perm, "k8s"));

@@ -226,7 +226,7 @@ const AiInspectDashboard: React.FC = () => {
               <OpenClawChatMarkdown source={clusterAdvisoryQ.data.markdown} />
             </div>
           ) : !clusterAdvisoryQ.data?.runError ? (
-            <p className="text-xs text-slate-500">等待后台首次分析或检查 AI 巡检 OpenClaw 是否启用。</p>
+            <p className="text-xs text-slate-500">等待后台首次分析或检查 AI Provider 是否启用。</p>
           ) : null}
         </CardContent>
       </Card>

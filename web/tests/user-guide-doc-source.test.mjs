@@ -28,7 +28,7 @@ test("document center separates regular docs from system page guides", () => {
   assert.ok(editorSource.includes("allowDelete={!isGuideMode}"));
 
   assert.ok(listSource.includes("\u9875\u9762\u6307\u5357"));
-  assert.ok(routesSource.includes("docs/guides"));
-  assert.ok(routesSource.includes("docs/guides/doc/:docId"));
+  assert.ok(routesSource.includes('withBase(basePath, "guides")'));
+  assert.ok(routesSource.includes('withBase(basePath, "guides/doc/:docId")'));
   assert.ok(sidebarSource.includes("/docs/guides"));
 });
