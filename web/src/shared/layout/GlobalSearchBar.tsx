@@ -69,7 +69,7 @@ const GlobalSearchBar: React.FC = () => {
             kind: "vm",
             title: vm.name,
             subtitle: vm.moref,
-            href: `/cluster/vcenter/${encodeURIComponent(vm.moref)}`,
+            href: `/cluster/compute/vcenter/vms/${encodeURIComponent(vm.moref)}`,
           });
         }
       }

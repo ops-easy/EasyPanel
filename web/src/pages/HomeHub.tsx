@@ -213,15 +213,15 @@ const HomeHub: React.FC = () => {
   });
 
   const showK8s = menuItemVisible(perm, "kubernetes", hubRole, moduleVisible(perm, "k8s"));
-  const showVc = menuItemVisible(perm, "vcenter", hubRole, moduleVisible(perm, "vcenter"));
-  const showNetwork = menuItemVisible(perm, "network", hubRole, moduleVisible(perm, "vcenter"));
+  const showVc = menuItemVisible(perm, "compute", hubRole, moduleVisible(perm, "compute"));
+  const showNetwork = menuItemVisible(perm, "network", hubRole, moduleVisible(perm, "network"));
   const showBaota = menuItemVisible(perm, "baota", hubRole, moduleVisible(perm, "baota"));
   const showAppCenter = menuItemVisible(perm, "appcenter", hubRole, moduleVisible(perm, "appcenter"));
   const showBastion = menuItemVisible(
     perm,
     "vcenter_bastion",
     hubRole,
-    moduleVisible(perm, "vcenter") || moduleVisible(perm, "appcenter")
+    moduleVisible(perm, "compute") || moduleVisible(perm, "appcenter")
   );
   const showAiInspect = menuItemVisible(perm, "aiInspect", hubRole, true);
   const showDocs = menuItemVisible(perm, "docs", hubRole, true);

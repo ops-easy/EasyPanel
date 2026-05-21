@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGetJson, type AppConfig } from "@/lib/api";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import K8sConnectWizard from "./K8sConnectWizard";
-import VCenterConnectWizard from "@/features/vcenter/pages/VCenterConnectWizard";
 
 const ClusterLayout: React.FC = () => {
   const { pathname } = useLocation();
@@ -22,40 +21,29 @@ const ClusterLayout: React.FC = () => {
   const isAiInspectSection = pathname.startsWith("/cluster/ai-inspect");
   /** Harbor 仓库：仅需运行时 Harbor 凭据，不要求 K8s 已连通 */
   const isHarborSection = pathname.startsWith("/cluster/harbor");
-  /** 内网工具箱（IP 扫描等）：挂在 /cluster/vcenter/tools，不依赖 vCenter/K8s API */
-  const isToolboxSection = pathname.startsWith("/cluster/vcenter/tools");
-  /** 旧爱快入口：需要先让子路由重定向到 /cluster/network/ikuai/dashboard */
-  const isLegacyIkuaiRouter = pathname === "/cluster/vcenter/router";
-  /** 侧栏「vCenter / 虚拟机」菜单：仅在此区展示 vCenter 向导，不展示 K8s 向导 */
-  const isVCenterSection = pathname.startsWith("/cluster/vcenter");
-  /** 公有云 SSH 主机：不依赖 vCenter 配置，直接进入列表与添加 */
-  const isCloudHostsSection =
-    pathname === "/cluster/vcenter/cloud" || pathname.startsWith("/cluster/vcenter/cloud/");
+  /** 内网工具箱（IP 扫描等）：挂在 /cluster/compute/tools，不依赖 vCenter/K8s API */
+  const isToolboxSection = pathname.startsWith("/cluster/compute/tools");
+  /** 旧 vCenter 路径：只负责重定向到统一的「虚拟化与主机」工作区 */
+  const isLegacyVCenterSection = pathname.startsWith("/cluster/vcenter");
   const isBastionShell =
     pathname === "/cluster/bastion" ||
     pathname.startsWith("/cluster/bastion/") ||
     pathname === "/cluster/vcenter/bastion" ||
     pathname.startsWith("/cluster/vcenter/bastion/");
-  /** 子页自带标题（如 Cluster / vCenter Settings）时不再重复「Kubernetes 集群」横幅 */
+  /** 子页自带标题（如 Cluster Settings / 虚拟化配置）时不再重复「Kubernetes 集群」横幅 */
   const hideClusterIntro =
     pathname === "/cluster/pod-restart-reports" ||
     pathname === "/cluster/settings" ||
     pathname === "/cluster/etcd" ||
-    pathname === "/cluster/vcenter/settings" ||
-    pathname === "/cluster/vcenter/dashboard" ||
-    pathname === "/cluster/vcenter/gpu" ||
-    pathname === "/cluster/vcenter/router" ||
     isBastionShell ||
-    pathname.startsWith("/cluster/vcenter/bastion/console/") ||
     pathname.startsWith("/cluster/bastion/console/") ||
-    isCloudHostsSection ||
     isAppsSection ||
     isComputeSection ||
     isNetworkSection ||
+    isLegacyVCenterSection ||
     isBastionSection ||
     isAiInspectSection ||
     isToolboxSection ||
-    isLegacyIkuaiRouter ||
     isHarborSection;
 
   const configQ = useAppConfig();
@@ -64,7 +52,6 @@ const ClusterLayout: React.FC = () => {
   const failed = configQ.isError;
   const d = configQ.data;
   const k8sOk = d?.k8sConfigured === true;
-  const vcOk = d?.vcenterConfigured === true;
 
   /**
    * 配置尚未返回或请求失败时仍渲染 Outlet，避免子路由整页空白（刷新才恢复多由此引起）。
@@ -75,23 +62,12 @@ const ClusterLayout: React.FC = () => {
     isAppsSection ||
     isComputeSection ||
     isNetworkSection ||
+    isLegacyVCenterSection ||
     isAiInspectSection ||
     isBastionSection ||
-    isLegacyIkuaiRouter ||
     isHarborSection
   ) {
     main = <Outlet />;
-  } else if (isVCenterSection) {
-    const vcReady = vcOk || isCloudHostsSection || isToolboxSection;
-    if (pending || failed) {
-      main = <Outlet />;
-    } else if (vcReady) {
-      main = <Outlet />;
-    } else if (d) {
-      main = <VCenterConnectWizard />;
-    } else {
-      main = <Outlet />;
-    }
   } else {
     if (pending || failed) {
       main = <Outlet />;
@@ -113,25 +89,14 @@ const ClusterLayout: React.FC = () => {
     >
       {!hideClusterIntro && (
         <div className="mb-6">
-          {isVCenterSection ? (
-            <>
-              <h1 className="mb-2 text-2xl font-bold text-gray-900">vSphere / vCenter</h1>
-              <p className="text-sm text-gray-500">
-                虚拟机列表与控制台；连接信息保存在「运行时配置」。未配置时将显示下方向导。
-              </p>
-            </>
-          ) : (
-            <>
-              <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-slate-100">Kubernetes 集群</h1>
-              <p className="text-sm text-gray-500 dark:text-slate-400">概览：集群态 → 命名空间 → Pod</p>
-            </>
-          )}
+          <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-slate-100">Kubernetes 集群</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400">概览：集群态 → 命名空间 → Pod</p>
         </div>
       )}
-      {!isAppsSection && !isComputeSection && !isNetworkSection && !isAiInspectSection && !isLegacyIkuaiRouter && pending && (
+      {!isAppsSection && !isComputeSection && !isNetworkSection && !isLegacyVCenterSection && !isAiInspectSection && pending && (
         <p className="mb-2 text-sm text-gray-500">正在加载集群配置…</p>
       )}
-      {!isAppsSection && !isComputeSection && !isNetworkSection && !isAiInspectSection && !isLegacyIkuaiRouter && failed && (
+      {!isAppsSection && !isComputeSection && !isNetworkSection && !isLegacyVCenterSection && !isAiInspectSection && failed && (
         <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
           无法读取 /api/config：{extractErrorMessage(configQ.error)}。下方页面仍会尝试加载；请检查网络或服务端。
         </p>

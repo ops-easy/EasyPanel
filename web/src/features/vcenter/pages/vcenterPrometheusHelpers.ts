@@ -53,6 +53,10 @@ export async function promQueryVcenter(q: string, opt?: ApiFetchOptions): Promis
   return prometheusQueryApi("vcenter", q, opt);
 }
 
+export async function promQueryNetwork(q: string, opt?: ApiFetchOptions): Promise<unknown> {
+  return prometheusQueryApi("network", q, opt);
+}
+
 export async function promQueryRangeVcenter(
   q: string,
   startSec: number,
@@ -61,6 +65,16 @@ export async function promQueryRangeVcenter(
   opt?: ApiFetchOptions
 ): Promise<unknown> {
   return prometheusQueryRangeApi("vcenter", q, startSec, endSec, step, opt);
+}
+
+export async function promQueryRangeNetwork(
+  q: string,
+  startSec: number,
+  endSec: number,
+  step: string,
+  opt?: ApiFetchOptions
+): Promise<unknown> {
+  return prometheusQueryRangeApi("network", q, startSec, endSec, step, opt);
 }
 
 /** matrix 折线序列的图例标签（来自 Prometheus metric 标签键） */

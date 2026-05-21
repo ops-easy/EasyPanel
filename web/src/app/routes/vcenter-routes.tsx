@@ -1,23 +1,17 @@
 import { lazy, type ReactNode } from "react";
-import { Navigate, Route, useLocation } from "react-router-dom";
+import { Navigate, Route, useLocation, useParams } from "react-router-dom";
 import { RouteSuspense } from "@/app/route-fallback";
 import ViewerRedirect from "@/app/guards/ViewerRedirect";
 import BastionConsoleHome from "@/features/bastion/pages/BastionConsoleHome";
 import BastionLayout from "@/features/bastion/pages/BastionLayout";
-import ToolNetworkIpScan from "@/features/cluster/pages/ToolNetworkIpScan";
-import CloudHosts from "@/features/vcenter/pages/CloudHosts";
-import CloudHostSshPage from "@/features/vcenter/pages/CloudHostSshPage";
 import VCenterBastionAdmin from "@/features/vcenter/pages/VCenterBastionAdmin";
 import VCenterBastionConsoleEmbed from "@/features/vcenter/pages/VCenterBastionConsoleEmbed";
-import VCenterGpuDashboard from "@/features/vcenter/pages/VCenterGpuDashboard";
-import VCenterHostDetail from "@/features/vcenter/pages/VCenterHostDetail";
-import VCenterHosts from "@/features/vcenter/pages/VCenterHosts";
-import VCenterHubDashboard from "@/features/vcenter/pages/VCenterHubDashboard";
-import VCenterList from "@/features/vcenter/pages/VCenterList";
-import VCenterSettings from "@/features/vcenter/pages/VCenterSettings";
 
 const VCenterBastionSession = lazy(() => import("@/features/vcenter/pages/VCenterBastion"));
-const VCenterVMDetail = lazy(() => import("@/features/vcenter/pages/VCenterVMDetail"));
+
+function encodeSegment(v?: string): string {
+  return encodeURIComponent(v || "");
+}
 
 function LegacyVcenterBastionRedirect() {
   const { pathname } = useLocation();
@@ -26,35 +20,36 @@ function LegacyVcenterBastionRedirect() {
   return <Navigate to={to} replace />;
 }
 
+function LegacyVcenterHostRedirect() {
+  const { moref } = useParams();
+  return <Navigate to={`/cluster/compute/vcenter/hosts/${encodeSegment(moref)}`} replace />;
+}
+
+function LegacyVcenterVmRedirect() {
+  const { moref } = useParams();
+  return <Navigate to={`/cluster/compute/vcenter/vms/${encodeSegment(moref)}`} replace />;
+}
+
+function LegacyCloudHostSshRedirect() {
+  const { hostId } = useParams();
+  return <Navigate to={`/cluster/compute/cloud/${encodeSegment(hostId)}/ssh`} replace />;
+}
+
 export function vcenterRoutes(): ReactNode {
   return (
     <>
-      <Route path="vcenter/dashboard" element={<VCenterHubDashboard />} />
-      <Route path="vcenter/gpu" element={<VCenterGpuDashboard />} />
-      <Route path="vcenter/hosts/:moref" element={<VCenterHostDetail />} />
-      <Route path="vcenter/hosts" element={<VCenterHosts />} />
-      <Route
-        path="vcenter/cloud/:hostId/ssh"
-        element={
-          <ViewerRedirect to="/cluster/vcenter/dashboard">
-            <CloudHostSshPage />
-          </ViewerRedirect>
-        }
-      />
-      <Route
-        path="vcenter/cloud"
-        element={
-          <ViewerRedirect to="/cluster/vcenter/dashboard">
-            <CloudHosts />
-          </ViewerRedirect>
-        }
-      />
-      <Route path="vcenter/settings" element={<VCenterSettings />} />
+      <Route path="vcenter/dashboard" element={<Navigate to="/cluster/compute/vcenter/dashboard" replace />} />
+      <Route path="vcenter/gpu" element={<Navigate to="/cluster/compute/vcenter/gpu" replace />} />
+      <Route path="vcenter/hosts/:moref" element={<LegacyVcenterHostRedirect />} />
+      <Route path="vcenter/hosts" element={<Navigate to="/cluster/compute/vcenter/hosts" replace />} />
+      <Route path="vcenter/cloud/:hostId/ssh" element={<LegacyCloudHostSshRedirect />} />
+      <Route path="vcenter/cloud" element={<Navigate to="/cluster/compute/cloud" replace />} />
+      <Route path="vcenter/settings" element={<Navigate to="/cluster/compute/vcenter/settings" replace />} />
       <Route path="vcenter/bastion/*" element={<LegacyVcenterBastionRedirect />} />
       <Route
         path="bastion"
         element={
-          <ViewerRedirect to="/cluster/vcenter/dashboard">
+          <ViewerRedirect to="/cluster/compute/dashboard">
             <BastionLayout />
           </ViewerRedirect>
         }
@@ -71,24 +66,10 @@ export function vcenterRoutes(): ReactNode {
         <Route path="admin" element={<VCenterBastionAdmin />} />
         <Route path="console/:moref" element={<VCenterBastionConsoleEmbed />} />
       </Route>
-      <Route
-        path="vcenter/tools/ip-scan"
-        element={
-          <ViewerRedirect to="/cluster/vcenter/dashboard">
-            <ToolNetworkIpScan />
-          </ViewerRedirect>
-        }
-      />
+      <Route path="vcenter/tools/ip-scan" element={<Navigate to="/cluster/compute/tools/ip-scan" replace />} />
       <Route path="vcenter/router" element={<Navigate to="/cluster/network/ikuai/dashboard" replace />} />
-      <Route path="vcenter" element={<VCenterList />} />
-      <Route
-        path="vcenter/:moref"
-        element={
-          <RouteSuspense>
-            <VCenterVMDetail />
-          </RouteSuspense>
-        }
-      />
+      <Route path="vcenter" element={<Navigate to="/cluster/compute/vcenter/vms" replace />} />
+      <Route path="vcenter/:moref" element={<LegacyVcenterVmRedirect />} />
     </>
   );
 }

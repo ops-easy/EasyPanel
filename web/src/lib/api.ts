@@ -66,6 +66,8 @@ export type SystemCheck = {
 
 export type PlatformPermissions = {
   k8s?: string;
+  compute?: string;
+  network?: string;
   vcenter?: string;
   baota?: string;
   appcenter?: string;

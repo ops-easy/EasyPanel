@@ -337,7 +337,7 @@ const CloudHosts: React.FC = () => {
                           size="sm"
                           className="gap-1.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-md shadow-violet-500/20 transition-all duration-200 hover:from-violet-500 hover:to-violet-600 hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.97]"
                         >
-                          <Link to={`/cluster/vcenter/cloud/${encodeURIComponent(h.id)}/ssh`}>
+                          <Link to={`/cluster/compute/cloud/${encodeURIComponent(h.id)}/ssh`}>
                             <Terminal className="h-3.5 w-3.5 opacity-95" strokeWidth={2} />
                             SSH
                           </Link>

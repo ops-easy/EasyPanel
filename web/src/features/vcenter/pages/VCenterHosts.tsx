@@ -11,7 +11,7 @@ import type { VCenterHostRow, VCenterHostsResponse } from "./types";
 import { VCenterPercentBar } from "./VCenterPercentBar";
 
 function hostDetailPath(moref: string): string {
-  return `/cluster/vcenter/hosts/${encodeURIComponent(moref)}`;
+  return `/cluster/compute/vcenter/hosts/${encodeURIComponent(moref)}`;
 }
 
 function formatUptime(sec: number | undefined): string {

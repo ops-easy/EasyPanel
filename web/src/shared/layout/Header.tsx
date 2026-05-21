@@ -42,7 +42,6 @@ const Header: React.FC = () => {
   const isK8s = workspace === "kubernetes";
   const isCompute = workspace === "compute";
   const isNetwork = workspace === "network";
-  const isVcenter = workspace === "vcenter";
   const isBaota = workspace === "baota";
   const isAppcenter = workspace === "appcenter";
   const isBastion = workspace === "bastion";
@@ -55,15 +54,15 @@ const Header: React.FC = () => {
   const navRole = status?.role;
   const isViewer = cfg?.dashboardRole === "viewer" || cfg?.viewer === true;
   const headerShowK8s = menuItemVisible(perm, "kubernetes", navRole, moduleVisible(perm, "k8s"));
-  const headerShowCompute = menuItemVisible(perm, "compute", navRole, moduleVisible(perm, "vcenter"));
-  const headerShowNetwork = menuItemVisible(perm, "network", navRole, moduleVisible(perm, "vcenter"));
+  const headerShowCompute = menuItemVisible(perm, "compute", navRole, moduleVisible(perm, "compute"));
+  const headerShowNetwork = menuItemVisible(perm, "network", navRole, moduleVisible(perm, "network"));
   const headerShowBaota = menuItemVisible(perm, "baota", navRole, moduleVisible(perm, "baota"));
   const headerShowApp = menuItemVisible(perm, "appcenter", navRole, moduleVisible(perm, "appcenter"));
   const headerShowBastion = menuItemVisible(
     perm,
     "vcenter_bastion",
     navRole,
-    moduleVisible(perm, "vcenter") || moduleVisible(perm, "appcenter")
+    moduleVisible(perm, "compute") || moduleVisible(perm, "appcenter")
   );
   const headerShowAiInspect = menuItemVisible(perm, "aiInspect", navRole, true);
   const headerShowDocs = menuItemVisible(perm, "docs", navRole, true);
@@ -146,8 +145,6 @@ const Header: React.FC = () => {
                           ? "from-violet-600 to-violet-700"
                           : isNetwork
                             ? "from-cyan-600 to-slate-700"
-                        : isVcenter
-                          ? "from-violet-600 to-violet-700"
                           : isBaota
                             ? "from-amber-600 to-orange-600"
                             : isBastion
@@ -167,8 +164,6 @@ const Header: React.FC = () => {
                   <Monitor size={18} strokeWidth={2.25} />
                 ) : isNetwork ? (
                   <Network size={18} strokeWidth={2.25} />
-                ) : isVcenter ? (
-                  <Monitor size={18} strokeWidth={2.25} />
                 ) : isBaota ? (
                   <Server size={17} strokeWidth={2.25} />
                 ) : isBastion ? (
@@ -190,8 +185,6 @@ const Header: React.FC = () => {
                         ? "虚拟化与主机"
                         : isNetwork
                           ? "网络设备"
-                      : isVcenter
-                        ? "vCenter"
                         : isBaota
                           ? "宝塔"
                           : isBastion

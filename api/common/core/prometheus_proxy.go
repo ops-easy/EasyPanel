@@ -68,6 +68,16 @@ func GetPrometheusURLForScope(cfg Config, scope string) string {
 		if s := strings.TrimSpace(cfg.PrometheusURLVCenter); s != "" {
 			return s
 		}
+	case "network", "ikuai", "openwrt":
+		if s := strings.TrimSpace(prometheusURLOverrideVCenter); s != "" {
+			return s
+		}
+		if s := strings.TrimSpace(cfg.VMSelectURLVCenter); s != "" {
+			return s
+		}
+		if s := strings.TrimSpace(cfg.PrometheusURLVCenter); s != "" {
+			return s
+		}
 	case "cloud", "public":
 		if s := strings.TrimSpace(prometheusURLOverrideCloud); s != "" {
 			return s
@@ -106,7 +116,7 @@ func SetPrometheusURLOverrideForScope(scope, u string) {
 	switch strings.ToLower(strings.TrimSpace(scope)) {
 	case "k8s", "kubernetes":
 		prometheusURLOverrideK8s = u
-	case "vcenter", "vm":
+	case "vcenter", "vm", "network", "ikuai", "openwrt":
 		prometheusURLOverrideVCenter = u
 	case "cloud", "public":
 		prometheusURLOverrideCloud = u
@@ -382,6 +392,7 @@ func handlePrometheusStatus(c *gin.Context, cfg Config) {
 	uk := GetPrometheusURLForScope(cfg, "k8s")
 	uv := GetPrometheusURLForScope(cfg, "vcenter")
 	uc := GetPrometheusURLForScope(cfg, "cloud")
+	un := GetPrometheusURLForScope(cfg, "network")
 	c.JSON(http.StatusOK, gin.H{
 		"configured":     u != "",
 		"urlHint":        maskPrometheusURL(u),
@@ -403,13 +414,18 @@ func handlePrometheusStatus(c *gin.Context, cfg Config) {
 				"urlHint":        maskPrometheusURL(uc),
 				"sourceOverride": strings.TrimSpace(ovC) != "",
 			},
+			"network": gin.H{
+				"configured":     un != "",
+				"urlHint":        maskPrometheusURL(un),
+				"sourceOverride": strings.TrimSpace(ovV) != "",
+			},
 		},
 	})
 }
 
 type prometheusSourceBody struct {
 	BaseURL string `json:"baseUrl"`
-	Scope   string `json:"scope"` // k8s | vcenter | cloud | global（默认 global，兼容旧客户端）
+	Scope   string `json:"scope"` // k8s | vcenter | cloud | network | global（默认 global，兼容旧客户端）
 }
 
 func handlePrometheusSource(c *gin.Context, cfg Config) {

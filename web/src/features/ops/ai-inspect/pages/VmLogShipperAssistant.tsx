@@ -447,7 +447,7 @@ export const VmLogShipperAssistant: React.FC = () => {
               日志查询 → vCenter / 虚拟机采集说明
             </Link>
             。管理云主机：{" "}
-            <Link className="font-medium text-emerald-800 underline-offset-2 hover:underline" to="/cluster/vcenter/cloud">
+            <Link className="font-medium text-emerald-800 underline-offset-2 hover:underline" to="/cluster/compute/cloud">
               vCenter → 云主机
             </Link>
             。安装任务现在会在后台执行，并返回安装进度、失败原因、目标状态检查结果。
@@ -685,7 +685,7 @@ export const VmLogShipperAssistant: React.FC = () => {
                   {vcenterVmsQ.isError ? (
                     <p className="text-[11px] text-amber-800">
                       无法加载虚拟机列表（vCenter 未连接或无权限）。仍可生成脚本后在机器上手动执行；或前往{" "}
-                      <Link className="font-medium underline-offset-2 hover:underline" to="/cluster/vcenter">
+                      <Link className="font-medium underline-offset-2 hover:underline" to="/cluster/compute/vcenter/vms">
                         vCenter 虚拟机列表
                       </Link>{" "}
                       确认连接。

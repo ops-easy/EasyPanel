@@ -221,7 +221,7 @@ const BastionConsoleHome: React.FC = () => {
             </Link>
           ) : null}
           <Link
-            to="/cluster/vcenter/settings"
+            to="/cluster/compute/vcenter/settings"
             className="rounded-lg border border-slate-700 px-4 py-2 text-slate-400 hover:bg-slate-900/50 hover:text-slate-200"
           >
             vCenter / SSH 设置

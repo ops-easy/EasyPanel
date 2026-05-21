@@ -44,8 +44,8 @@ import { useAppConfig } from "@/hooks/use-app-config";
 import {
   matrixToChartRowsByLabel,
   promInstantVector,
-  promQueryRangeVcenter,
-  promQueryVcenter,
+  promQueryRangeNetwork,
+  promQueryNetwork,
 } from "./vcenterPrometheusHelpers";
 
 const chartCpu: ChartConfig = { v: { label: "CPU %", color: "hsl(142 71% 42%)" } };
@@ -155,15 +155,15 @@ const VCenterIkuaiRouterPage: React.FC = () => {
   const instancesQ = useQuery({
     queryKey: ["ikuai-prom-instances"],
     queryFn: async ({ signal }) => {
-      const tryUp = await promQueryVcenter(`max by (instance, job) (ikuai_up)`, { signal });
+      const tryUp = await promQueryNetwork(`max by (instance, job) (ikuai_up)`, { signal });
       let rows = promInstantVector(tryUp);
       let kind: IkuaiExporterKind = "modern";
       if (rows.length === 0) {
-        const d = await promQueryVcenter(`max by (instance, job) (ikuai_device_count)`, { signal });
+        const d = await promQueryNetwork(`max by (instance, job) (ikuai_device_count)`, { signal });
         rows = promInstantVector(d);
       }
       if (rows.length === 0) {
-        const leg = await promQueryVcenter(`max by (instance, job) (ikuai_sys_stat_cpu_used)`, {
+        const leg = await promQueryNetwork(`max by (instance, job) (ikuai_sys_stat_cpu_used)`, {
           signal,
         });
         rows = promInstantVector(leg);
@@ -218,18 +218,18 @@ const VCenterIkuaiRouterPage: React.FC = () => {
           uptimeD,
           wanInfoD,
         ] = await Promise.all([
-          promQueryVcenter(`ikuai_version{${il}}`, { signal }),
-          promQueryVcenter(`avg(ikuai_cpu_usage_ratio{${il}})`, { signal }),
-          promQueryVcenter(`ikuai_memory_usage_bytes{${il}}`, { signal }),
-          promQueryVcenter(`ikuai_memory_size_bytes{${il}}`, { signal }),
-          promQueryVcenter(`ikuai_dhcp_addrpool_num{${il}}`, { signal }),
-          promQueryVcenter(`ikuai_device_count{${il}}`, { signal }),
-          promQueryVcenter(`ikuai_network_conn_count{${il},id="host"}`, { signal }),
-          promQueryVcenter(`ikuai_network_recv_kbytes_per_second{${il},id="host"}`, { signal }),
-          promQueryVcenter(`ikuai_network_send_kbytes_per_second{${il},id="host"}`, { signal }),
-          promQueryVcenter(`ikuai_up{${il},id="host"}`, { signal }),
-          promQueryVcenter(`ikuai_uptime{${il},id="host"}`, { signal }),
-          promQueryVcenter(`ikuai_iface_info{${il},interface="wan1"}`, { signal }),
+          promQueryNetwork(`ikuai_version{${il}}`, { signal }),
+          promQueryNetwork(`avg(ikuai_cpu_usage_ratio{${il}})`, { signal }),
+          promQueryNetwork(`ikuai_memory_usage_bytes{${il}}`, { signal }),
+          promQueryNetwork(`ikuai_memory_size_bytes{${il}}`, { signal }),
+          promQueryNetwork(`ikuai_dhcp_addrpool_num{${il}}`, { signal }),
+          promQueryNetwork(`ikuai_device_count{${il}}`, { signal }),
+          promQueryNetwork(`ikuai_network_conn_count{${il},id="host"}`, { signal }),
+          promQueryNetwork(`ikuai_network_recv_kbytes_per_second{${il},id="host"}`, { signal }),
+          promQueryNetwork(`ikuai_network_send_kbytes_per_second{${il},id="host"}`, { signal }),
+          promQueryNetwork(`ikuai_up{${il},id="host"}`, { signal }),
+          promQueryNetwork(`ikuai_uptime{${il},id="host"}`, { signal }),
+          promQueryNetwork(`ikuai_iface_info{${il},interface="wan1"}`, { signal }),
         ]);
         const verRows = promInstantVector(verD);
         const m0 = verRows[0]?.metric ?? {};
@@ -275,14 +275,14 @@ const VCenterIkuaiRouterPage: React.FC = () => {
       const qUp = `ikuai_sys_stat_stream{${il},type="upload"}`;
       const qTemp = `ikuai_sys_stat_cpu_temp{${il}}`;
       const [verData, cpuD, memU, memT, connD, downD, upD, tempD] = await Promise.all([
-        promQueryVcenter(qVer, { signal }),
-        promQueryVcenter(qCpu, { signal }),
-        promQueryVcenter(qMemU, { signal }),
-        promQueryVcenter(qMemT, { signal }),
-        promQueryVcenter(qConn, { signal }),
-        promQueryVcenter(qDown, { signal }),
-        promQueryVcenter(qUp, { signal }),
-        promQueryVcenter(qTemp, { signal }),
+        promQueryNetwork(qVer, { signal }),
+        promQueryNetwork(qCpu, { signal }),
+        promQueryNetwork(qMemU, { signal }),
+        promQueryNetwork(qMemT, { signal }),
+        promQueryNetwork(qConn, { signal }),
+        promQueryNetwork(qDown, { signal }),
+        promQueryNetwork(qUp, { signal }),
+        promQueryNetwork(qTemp, { signal }),
       ]);
       const verRows = promInstantVector(verData);
       const verStr =
@@ -319,13 +319,13 @@ const VCenterIkuaiRouterPage: React.FC = () => {
     queryFn: async ({ signal }) => {
       if (!il) return [];
       if (exporterKind === "modern") {
-        const data = await promQueryVcenter(
+        const data = await promQueryNetwork(
           `sum by (category) (ikuai_app_flow_histogram_sum{${il}})`,
           { signal }
         );
         return promInstantVector(data);
       }
-      const data = await promQueryVcenter(`ikuai_protocol_appflow{${il}}`, { signal });
+      const data = await promQueryNetwork(`ikuai_protocol_appflow{${il}}`, { signal });
       return promInstantVector(data);
     },
     enabled: Boolean(il) && promOk && cfgQ.isSuccess && instancesQ.isSuccess,
@@ -346,9 +346,9 @@ const VCenterIkuaiRouterPage: React.FC = () => {
         const qUl = `max by (ip_addr, mac, hostname, comment) (${joinSend})`;
         const qCn = `ikuai_network_conn_count{${il},id=~"device/.*"}`;
         const [dlD, ulD, cnD] = await Promise.all([
-          promQueryVcenter(qDl, { signal }),
-          promQueryVcenter(qUl, { signal }),
-          promQueryVcenter(qCn, { signal }),
+          promQueryNetwork(qDl, { signal }),
+          promQueryNetwork(qUl, { signal }),
+          promQueryNetwork(qCn, { signal }),
         ]);
         const dl = promInstantVector(dlD);
         const ul = promInstantVector(ulD);
@@ -384,9 +384,9 @@ const VCenterIkuaiRouterPage: React.FC = () => {
       const qUl = `max by (ip_addr, mac, hostname, comment) (ikuai_client_upload{${il}})`;
       const qCn = `max by (ip_addr, mac, hostname, comment) (ikuai_client_connect_num{${il}})`;
       const [dlD, ulD, cnD] = await Promise.all([
-        promQueryVcenter(qDl, { signal }),
-        promQueryVcenter(qUl, { signal }),
-        promQueryVcenter(qCn, { signal }),
+        promQueryNetwork(qDl, { signal }),
+        promQueryNetwork(qUl, { signal }),
+        promQueryNetwork(qCn, { signal }),
       ]);
       const dl = promInstantVector(dlD);
       const ul = promInstantVector(ulD);
@@ -427,7 +427,7 @@ const VCenterIkuaiRouterPage: React.FC = () => {
         exporterKind === "modern"
           ? `ikuai_cpu_usage_ratio{${il}}`
           : `ikuai_sys_stat_cpu_used{${il}}`;
-      return promQueryRangeVcenter(q, startSec, endSec, step, { signal });
+      return promQueryRangeNetwork(q, startSec, endSec, step, { signal });
     },
     enabled: Boolean(il) && promOk && instancesQ.isSuccess,
   });
@@ -436,7 +436,7 @@ const VCenterIkuaiRouterPage: React.FC = () => {
     queryKey: ["ikuai-chart-stream", il, exporterKind, startSec, endSec, step],
     queryFn: ({ signal }) => {
       if (exporterKind === "modern") {
-        return promQueryRangeVcenter(
+        return promQueryRangeNetwork(
           `ikuai_network_recv_kbytes_per_second{${il},id=~"iface/.*|host"}`,
           startSec,
           endSec,
@@ -444,7 +444,7 @@ const VCenterIkuaiRouterPage: React.FC = () => {
           { signal }
         );
       }
-      return promQueryRangeVcenter(
+      return promQueryRangeNetwork(
         `ikuai_sys_stat_stream{${il}}`,
         startSec,
         endSec,
@@ -459,7 +459,7 @@ const VCenterIkuaiRouterPage: React.FC = () => {
     queryKey: ["ikuai-chart-send-line", il, exporterKind, startSec, endSec, step],
     queryFn: ({ signal }) => {
       if (exporterKind !== "modern") return { status: "success", data: { result: [] } };
-      return promQueryRangeVcenter(
+      return promQueryRangeNetwork(
         `ikuai_network_send_kbytes_per_second{${il},id=~"iface/.*|host"}`,
         startSec,
         endSec,
@@ -474,7 +474,7 @@ const VCenterIkuaiRouterPage: React.FC = () => {
     queryKey: ["ikuai-chart-iface-dl", il, exporterKind, startSec, endSec, step],
     queryFn: ({ signal }) => {
       if (exporterKind === "modern") {
-        return promQueryRangeVcenter(
+        return promQueryRangeNetwork(
           `ikuai_network_recv_kbytes_per_second{${il},id=~"iface/.*"}`,
           startSec,
           endSec,
@@ -482,7 +482,7 @@ const VCenterIkuaiRouterPage: React.FC = () => {
           { signal }
         );
       }
-      return promQueryRangeVcenter(
+      return promQueryRangeNetwork(
         `ikuai_iface_stream_download{${il}}`,
         startSec,
         endSec,
@@ -498,7 +498,7 @@ const VCenterIkuaiRouterPage: React.FC = () => {
     queryKey: ["ikuai-chart-topip", il, exporterKind, joinRecv, startSec, endSec, step],
     queryFn: ({ signal }) => {
       if (exporterKind === "modern") {
-        return promQueryRangeVcenter(
+        return promQueryRangeNetwork(
           `topk(10, max by (ip_addr) ((${joinRecv})))`,
           startSec,
           endSec,
@@ -506,7 +506,7 @@ const VCenterIkuaiRouterPage: React.FC = () => {
           { signal }
         );
       }
-      return promQueryRangeVcenter(
+      return promQueryRangeNetwork(
         `topk(10, max by (ip_addr) (ikuai_client_download{${il}}))`,
         startSec,
         endSec,
@@ -521,7 +521,7 @@ const VCenterIkuaiRouterPage: React.FC = () => {
     queryKey: ["ikuai-chart-mem-pct", il, startSec, endSec, step],
     queryFn: ({ signal }) => {
       if (exporterKind !== "modern") {
-        return promQueryRangeVcenter(
+        return promQueryRangeNetwork(
           `ikuai_sys_stat_memory{${il},type="used"}`,
           startSec,
           endSec,
@@ -529,7 +529,7 @@ const VCenterIkuaiRouterPage: React.FC = () => {
           { signal }
         );
       }
-      return promQueryRangeVcenter(
+      return promQueryRangeNetwork(
         `(ikuai_memory_usage_bytes{${il}} / ikuai_memory_size_bytes{${il}}) * 100`,
         startSec,
         endSec,
@@ -650,24 +650,25 @@ const VCenterIkuaiRouterPage: React.FC = () => {
     return (
       <div className="space-y-4">
         <Link
-          to="/cluster/vcenter"
+          to="/cluster/network/dashboard"
           className="inline-flex items-center gap-1 text-sm font-medium text-violet-700 hover:underline"
         >
           <ArrowLeft className="h-4 w-4" />
-          返回虚拟机列表
+          返回网络设备
         </Link>
         <div className="rounded-2xl border border-amber-200/80 bg-amber-50/50 px-5 py-4 text-sm text-amber-950">
-          <p className="font-medium">未配置 vCenter 用 Prometheus</p>
+          <p className="font-medium">未配置网络设备 Prometheus</p>
           <p className="mt-1 text-xs text-amber-900/90">
-            请填写 <code className="rounded bg-white/70 px-1">prometheusUrlVcenter</code> 或兜底{" "}
-            <code className="rounded bg-white/70 px-1">prometheusUrl</code>，并确保已抓取 ikuai exporter（Go 版{" "}
-            <code className="rounded bg-white/70 px-1">ikuai_*</code> 或 Python 版 <code className="rounded bg-white/70 px-1">ikuai_client_*</code>）。
+            请确认网络设备页登记的 scope 可访问已抓取 iKuai exporter 的 Prometheus，或使用兜底{" "}
+            <code className="rounded bg-white/70 px-1">prometheusUrl</code>（Go 版{" "}
+            <code className="rounded bg-white/70 px-1">ikuai_*</code> 或 Python 版{" "}
+            <code className="rounded bg-white/70 px-1">ikuai_client_*</code>）。
           </p>
           <Link
-            to="/cluster/vcenter/settings"
+            to="/cluster/network/dashboard"
             className="mt-2 inline-block text-sm font-semibold text-amber-950 underline"
           >
-            vCenter 设置
+            网络设备数据源
           </Link>
         </div>
       </div>
@@ -681,11 +682,11 @@ const VCenterIkuaiRouterPage: React.FC = () => {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
-            to="/cluster/vcenter"
+            to="/cluster/network/dashboard"
             className="mb-2 inline-flex items-center gap-1 text-sm font-medium text-violet-700 hover:underline"
           >
             <ArrowLeft className="h-4 w-4" />
-            虚拟机列表
+            返回网络设备
           </Link>
           <div className="flex items-center gap-2">
             <Router className="h-7 w-7 text-sky-600" />
@@ -765,10 +766,10 @@ const VCenterIkuaiRouterPage: React.FC = () => {
           当前：<span className="font-semibold text-slate-700">{exporterKind === "modern" ? "Go 版指标" : "Python 版指标"}</span>
         </p>
         <Link
-          to="/cluster/vcenter/settings"
+          to="/cluster/network/dashboard"
           className="text-xs font-medium text-violet-700 hover:underline"
         >
-          Prometheus 数据源
+          网络设备数据源
         </Link>
       </div>
 

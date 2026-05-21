@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { useAppConfig } from "@/hooks/use-app-config";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Cloud, Cpu, Gauge, Monitor, Router, Settings, MemoryStick } from "lucide-react";
+import { AlertTriangle, Cloud, Cpu, Gauge, Monitor, Settings, MemoryStick } from "lucide-react";
 import { apiGetJson, type AppConfig } from "@/lib/api";
 import type { VCenterHostsResponse, VCenterVMsResponse } from "./types";
 import StatCard from "@/shared/ui/StatCard";
@@ -78,7 +78,7 @@ const VCenterHubDashboard: React.FC = () => {
               {vcErr instanceof Error ? vcErr.message : "加载失败"} — 请检查 vCenter 凭据与网络。
             </p>
             <Link
-              to="/cluster/vcenter/settings"
+              to="/cluster/compute/vcenter/settings"
               className="mt-2 inline-block text-xs font-semibold underline"
             >
               vCenter 设置
@@ -168,14 +168,14 @@ const VCenterHubDashboard: React.FC = () => {
 
       <div className="flex flex-wrap gap-3">
         <Link
-          to="/cluster/vcenter"
+          to="/cluster/compute/vcenter/vms"
           className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-medium text-violet-900 hover:bg-violet-100"
         >
           <Monitor size={18} />
           虚拟机列表
         </Link>
         <Link
-          to="/cluster/vcenter/hosts"
+          to="/cluster/compute/vcenter/hosts"
           className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
         >
           <Cpu size={18} />
@@ -185,14 +185,7 @@ const VCenterHubDashboard: React.FC = () => {
           appCfgQ.data?.prometheusConfigured === true) && (
           <>
             <Link
-              to="/cluster/vcenter/router"
-              className="inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-medium text-sky-900 hover:bg-sky-100"
-            >
-              <Router size={18} />
-              爱快路由监控
-            </Link>
-            <Link
-              to="/cluster/vcenter/gpu"
+              to="/cluster/compute/vcenter/gpu"
               className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-medium text-violet-900 hover:bg-violet-100"
             >
               <Gauge size={18} />
@@ -202,7 +195,7 @@ const VCenterHubDashboard: React.FC = () => {
         )}
         {!isViewer && (
           <Link
-            to="/cluster/vcenter/cloud"
+            to="/cluster/compute/cloud"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
           >
             <Cloud size={18} />
@@ -210,7 +203,7 @@ const VCenterHubDashboard: React.FC = () => {
           </Link>
         )}
         <Link
-          to="/cluster/vcenter/settings"
+          to="/cluster/compute/vcenter/settings"
           className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
         >
           <Settings size={18} />

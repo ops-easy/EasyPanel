@@ -288,7 +288,7 @@ const VCenterGpuDashboard: React.FC = () => {
             prometheusUrl），并在该 Prometheus 中抓取 GPU Exporter（推荐 nvidia-dcgm-exporter）。
           </p>
           <Link
-            to="/cluster/vcenter/settings"
+            to="/cluster/compute/vcenter/settings"
             className="mt-2 inline-block text-sm font-semibold text-amber-950 underline underline-offset-2"
           >
             vCenter 设置 / 监控
@@ -340,10 +340,10 @@ const VCenterGpuDashboard: React.FC = () => {
         >
           刷新
         </Button>
-        <Link to="/cluster/vcenter/dashboard" className="text-xs font-medium text-violet-700 hover:underline">
+        <Link to="/cluster/compute/vcenter/dashboard" className="text-xs font-medium text-violet-700 hover:underline">
           返回 vCenter 巡检
         </Link>
-        <Link to="/cluster/vcenter/settings" className="text-xs font-medium text-slate-600 hover:underline">
+        <Link to="/cluster/compute/vcenter/settings" className="text-xs font-medium text-slate-600 hover:underline">
           数据源设置
         </Link>
       </div>

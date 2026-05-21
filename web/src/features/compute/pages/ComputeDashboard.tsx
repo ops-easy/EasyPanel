@@ -7,7 +7,7 @@ const tiles = [
   {
     title: "vCenter",
     desc: "保留现有虚拟机、宿主机、GPU、控制台与设置能力。",
-    to: "/cluster/vcenter/dashboard",
+    to: "/cluster/compute/vcenter/dashboard",
     icon: Monitor,
     tint: "text-violet-700 bg-violet-50 border-violet-100",
   },
@@ -21,7 +21,7 @@ const tiles = [
   {
     title: "云主机",
     desc: "继续沿用现有公有云 SSH 登记与终端入口。",
-    to: "/cluster/vcenter/cloud",
+    to: "/cluster/compute/cloud",
     icon: Cloud,
     tint: "text-sky-700 bg-sky-50 border-sky-100",
   },
@@ -85,7 +85,7 @@ const ComputeDashboard: React.FC = () => {
           <Shield className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
           <p className="text-sm leading-6 text-slate-700">
             兼容策略：旧的 <span className="font-mono">/cluster/vcenter</span>、云主机和堡垒机路径保留；
-            新的 <span className="font-mono">/cluster/compute</span> 作为信息架构总入口。
+            新的 <span className="font-mono">/cluster/compute</span> 作为统一入口；旧路径会自动跳转到这里。
           </p>
         </div>
       </section>

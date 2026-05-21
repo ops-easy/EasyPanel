@@ -12,6 +12,8 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
 export type AuthPermissions = {
   k8s?: string;
+  compute?: string;
+  network?: string;
   vcenter?: string;
   baota?: string;
   appcenter?: string;

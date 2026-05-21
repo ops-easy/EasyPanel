@@ -31,7 +31,7 @@ import RedisStatusBanner from "@/features/app-center/redis/components/RedisStatu
 const BOTTOM_TABS = [
   { icon: LayoutDashboard, label: "工作台", to: "/", exact: true },
   { icon: Hexagon, label: "K8s", to: "/cluster", exact: false },
-  { icon: Monitor, label: "vCenter", to: "/cluster/vcenter", exact: false },
+  { icon: Monitor, label: "虚拟化", to: "/cluster/compute/dashboard", exact: false },
   { icon: AppWindow, label: "应用", to: "/cluster/apps", exact: false },
   { icon: Settings, label: "设置", to: "/settings", exact: false },
 ] as const;

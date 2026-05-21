@@ -2,9 +2,15 @@ import type { PlatformPermissions } from "@/lib/api";
 
 export function moduleVisible(
   p: PlatformPermissions | undefined | null,
-  m: "k8s" | "vcenter" | "baota" | "appcenter"
+  m: "k8s" | "compute" | "network" | "vcenter" | "baota" | "appcenter"
 ): boolean {
   if (!p) return true;
+  if (m === "compute") {
+    return (p.compute ?? p.vcenter) !== "none";
+  }
+  if (m === "network") {
+    return (p.network ?? p.vcenter) !== "none";
+  }
   const v = p[m];
   return v !== "none";
 }

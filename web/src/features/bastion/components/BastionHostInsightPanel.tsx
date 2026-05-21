@@ -326,7 +326,7 @@ const BastionHostInsightPanel: React.FC<BastionHostInsightPanelProps> = ({ vm, e
           </div>
 
           <Link
-            to={`/cluster/vcenter/${encodeURIComponent(vm.moref)}`}
+            to={`/cluster/compute/vcenter/vms/${encodeURIComponent(vm.moref)}`}
             className="block rounded-md border border-[#1890ff]/40 bg-[#1890ff]/10 py-2 text-center text-xs font-medium text-[#69c0ff] hover:bg-[#1890ff]/18"
           >
             打开虚拟机详情与性能

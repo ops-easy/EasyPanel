@@ -215,7 +215,7 @@ function DocBody() {
           <strong>Kubernetes</strong>：<Code>/cluster</Code>（集群总览）。
         </Li>
         <Li>
-          <strong>vCenter</strong>：<Code>/cluster/vcenter/dashboard</Code>（总览入口）。
+          <strong>虚拟化与主机</strong>：<Code>/cluster/compute/dashboard</Code>（统一入口）。
         </Li>
         <Li>
           <strong>宝塔</strong>：<Code>/cluster/baota/sync</Code>（Ingress 同步入口；<Code>/cluster/baota</Code> 会重定向至此）。
@@ -471,7 +471,7 @@ function DocBody() {
           <strong>监控</strong>：管理页 CPU/内存/网络依赖已配置的 K8s Prometheus 或 vmselect（<Code>vmSelectUrlK8s</Code> 优先）。
         </Li>
         <Li>
-          <strong>与公有云主机</strong>：<Code>/cluster/vcenter/cloud</Code> 为外部 SSH 登记；云主机为集群内 Pod，勿混淆。
+          <strong>与公有云主机</strong>：<Code>/cluster/compute/cloud</Code> 为外部 SSH 登记；云主机为集群内 Pod，勿混淆。
         </Li>
       </Ul>
       <P>
@@ -503,30 +503,30 @@ function DocBody() {
 
       <H>八、vCenter、公有云与网络工具</H>
       <P>
-        vCenter 与虚拟机列表依赖在 <strong>vCenter 设置</strong>（<Code>/cluster/vcenter/settings</Code>）中配置的地址与凭据；同页填写{" "}
+        vCenter 与虚拟机列表依赖在 <strong>vCenter 设置</strong>（<Code>/cluster/compute/vcenter/settings</Code>）中配置的地址与凭据；同页填写{" "}
         <Code>prometheusUrlVcenter</Code>（监控走 <Code>scope=vcenter</Code>，与 Kubernetes 侧的 <Code>prometheusUrlK8s</Code>{" "}
         <strong>相互独立</strong>）。可选字段 <Code>vmSelectUrlVcenter</Code>、<Code>vmSelectUrlCloud</Code>（及环境变量{" "}
         <Code>VM_SELECT_URL_VCENTER</Code>、<Code>VM_SELECT_URL_CLOUD</Code>）表示 VictoriaMetrics <strong>vmselect</strong>，填写后<strong>优先于</strong>同 scope 的 Prometheus 地址；留空则仍用 Prometheus。公有云主机列表还可填 <Code>prometheusUrlCloud</Code>。
       </P>
       <Ul>
         <Li>
-          <strong>vCenter 总览</strong>：<Code>/cluster/vcenter/dashboard</Code>。
+          <strong>vCenter 总览</strong>：<Code>/cluster/compute/vcenter/dashboard</Code>。
         </Li>
         <Li>
-          <strong>虚拟机列表</strong>：<Code>/cluster/vcenter</Code>；<strong>虚拟机详情</strong>：<Code>/cluster/vcenter/&lt;moref&gt;</Code>。列表约<strong>每 22 秒</strong>带 <Code>refresh=1</Code> 向 vCenter 重新拉取快照，电源状态（运行中 / 已关机 / 挂起等）会随重启、关机等操作更新；详情页约<strong>每 16 秒</strong>刷新，便于观察电源与 Tools 上报变化。
+          <strong>虚拟机列表</strong>：<Code>/cluster/compute/vcenter/vms</Code>；<strong>虚拟机详情</strong>：<Code>/cluster/compute/vcenter/vms/&lt;moref&gt;</Code>。列表约<strong>每 22 秒</strong>带 <Code>refresh=1</Code> 向 vCenter 重新拉取快照，电源状态（运行中 / 已关机 / 挂起等）会随重启、关机等操作更新；详情页约<strong>每 16 秒</strong>刷新，便于观察电源与 Tools 上报变化。
         </Li>
         <Li>
-          <strong>主机</strong>：<Code>/cluster/vcenter/hosts</Code>，主机详情含 <Code>/cluster/vcenter/hosts/&lt;moref&gt;</Code>。
+          <strong>主机</strong>：<Code>/cluster/compute/vcenter/hosts</Code>，主机详情含 <Code>/cluster/compute/vcenter/hosts/&lt;moref&gt;</Code>。
         </Li>
         <Li>
-          <strong>公有云主机列表</strong>（非 K8s Pod）：<Code>/cluster/vcenter/cloud</Code>；<strong>SSH 终端</strong>：{" "}
-          <Code>/cluster/vcenter/cloud/&lt;hostId&gt;/ssh</Code>（通常仅管理员可用）。
+          <strong>公有云主机列表</strong>（非 K8s Pod）：<Code>/cluster/compute/cloud</Code>；<strong>SSH 终端</strong>：{" "}
+          <Code>/cluster/compute/cloud/&lt;hostId&gt;/ssh</Code>（通常仅管理员可用）。
         </Li>
         <Li>
-          <strong>vCenter 设置</strong>：<Code>/cluster/vcenter/settings</Code>。
+          <strong>vCenter 设置</strong>：<Code>/cluster/compute/vcenter/settings</Code>。
         </Li>
         <Li>
-          <strong>IP 扫描</strong>：<Code>/cluster/vcenter/tools/ip-scan</Code>（<Code>/cluster/tools/ip-scan</Code> 会重定向到此处；RBAC
+          <strong>IP 扫描</strong>：<Code>/cluster/compute/tools/ip-scan</Code>（旧的 <Code>/cluster/vcenter/tools/ip-scan</Code> 与 <Code>/cluster/tools/ip-scan</Code> 会重定向到此处；RBAC
           与角色允许时可见）。
         </Li>
       </Ul>

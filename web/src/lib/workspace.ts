@@ -6,7 +6,6 @@ export type WorkspaceId =
   | "kubernetes"
   | "compute"
   | "network"
-  | "vcenter"
   | "baota"
   | "appcenter"
   | "bastion"
@@ -24,7 +23,7 @@ export function workspaceFromPathname(pathname: string): WorkspaceId {
   if (pathname.startsWith("/cluster/apps")) return "appcenter";
   if (pathname.startsWith("/cluster/bastion")) return "bastion";
   if (pathname.startsWith("/cluster/ai-inspect")) return "aiinspect";
-  if (pathname.startsWith("/cluster/vcenter")) return "vcenter";
+  if (pathname.startsWith("/cluster/vcenter")) return "compute";
   if (pathname.startsWith("/cluster")) return "kubernetes";
   return "kubernetes";
 }

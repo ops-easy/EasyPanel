@@ -47,6 +47,7 @@ declare global {
   const CircleIcon: typeof import('lucide-react').CircleIcon
   const ClipboardCopy: typeof import('lucide-react').ClipboardCopy
   const ClipboardList: typeof import('lucide-react').ClipboardList
+  const Clock3: typeof import('lucide-react').Clock3
   const Cloud: typeof import('lucide-react').Cloud
   const CloudCog: typeof import('lucide-react').CloudCog
   const CloudDownload: typeof import('lucide-react').CloudDownload

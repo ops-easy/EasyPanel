@@ -75,7 +75,8 @@ type RedisScope = "full" | "readonly" | "managed_only";
 
 type MenuVisibility = {
   kubernetes: boolean;
-  vcenter: boolean;
+  compute: boolean;
+  network: boolean;
   baota: boolean;
   appcenter: boolean;
   vcenter_cloud: boolean;
@@ -86,7 +87,8 @@ type MenuVisibility = {
 
 const defaultMenuVisibility = (): MenuVisibility => ({
   kubernetes: true,
-  vcenter: true,
+  compute: true,
+  network: true,
   baota: true,
   appcenter: true,
   vcenter_cloud: true,
@@ -107,22 +109,28 @@ function parseMenuFromJson(o: Record<string, unknown>): MenuVisibility {
       out[k] = m[k] !== false;
     }
   });
+  if (!Object.prototype.hasOwnProperty.call(m, "compute") && Object.prototype.hasOwnProperty.call(m, "vcenter")) {
+    out.compute = m.vcenter !== false;
+  }
   return out;
 }
 
 const MENU_LABELS: Record<keyof MenuVisibility, string> = {
   kubernetes: "Kubernetes（侧栏 / 顶栏 / 工作台）",
-  vcenter: "vCenter",
+  compute: "虚拟化与主机（侧栏 / 顶栏 / 工作台）",
+  network: "网络设备（侧栏 / 顶栏 / 工作台）",
   baota: "宝塔",
   appcenter: "应用中心",
-  vcenter_cloud: "vCenter · 公有云",
-  vcenter_tools: "vCenter · 内网工具箱",
-  vcenter_bastion: "vCenter · 堡垒机",
+  vcenter_cloud: "虚拟化与主机 · 公有云",
+  vcenter_tools: "虚拟化与主机 · 内网工具箱",
+  vcenter_bastion: "虚拟化与主机 · 堡垒机",
   hub: "工作台首页（各模块卡片）",
 };
 
 type PermForm = {
   k8s: ModuleAccess;
+  compute: ModuleAccess;
+  network: ModuleAccess;
   vcenter: ModuleAccess;
   baota: ModuleAccess;
   appcenter: ModuleAccess;
@@ -139,6 +147,8 @@ type PermForm = {
 
 const defaultPermForm = (): PermForm => ({
   k8s: "ro",
+  compute: "ro",
+  network: "ro",
   vcenter: "ro",
   baota: "ro",
   appcenter: "ro",
@@ -173,6 +183,9 @@ function parsePermissionsJson(raw: string | undefined): { useCustom: boolean; fo
       appcenter = "rw";
     }
     const k8s = normalizeModule(o.k8s);
+    const legacyVcenter = normalizeModule(o.vcenter);
+    const compute = typeof o.compute === "string" ? normalizeModule(o.compute) : legacyVcenter;
+    const network = typeof o.network === "string" ? normalizeModule(o.network) : legacyVcenter;
     const k8sPodExec =
       typeof o.k8sPodExec === "boolean" ? o.k8sPodExec : k8s === "rw";
     const k8sPodDelete =
@@ -181,7 +194,9 @@ function parsePermissionsJson(raw: string | undefined): { useCustom: boolean; fo
       useCustom: true,
       form: {
         k8s,
-        vcenter: normalizeModule(o.vcenter),
+        compute,
+        network,
+        vcenter: compute,
         baota: normalizeModule(o.baota),
         appcenter,
         appcenterRedis,
@@ -220,7 +235,9 @@ function buildPermissionsJson(
   });
   const base: Record<string, unknown> = {
     k8s: form.k8s,
-    vcenter: form.vcenter,
+    compute: form.compute,
+    network: form.network,
+    vcenter: form.compute,
     baota: form.baota,
     appcenter,
     appcenterRedis: form.appcenterRedis,
@@ -473,7 +490,7 @@ const PlatformUsers: React.FC = () => {
     onError: (e) => toast.error((e as Error).message),
   });
 
-  const setModule = (key: keyof Pick<PermForm, "k8s" | "vcenter" | "baota" | "appcenter">, v: ModuleAccess) => {
+  const setModule = (key: keyof Pick<PermForm, "k8s" | "compute" | "network" | "baota" | "appcenter">, v: ModuleAccess) => {
     setPermForm((f) => {
       const next = { ...f, [key]: v };
       if (key === "appcenter" && v === "none") {
@@ -819,9 +836,14 @@ const PlatformUsers: React.FC = () => {
                           onChange={(v) => setModule("k8s", v)}
                         />
                         <ModuleSelectRow
-                          label="vCenter"
-                          value={permForm.vcenter}
-                          onChange={(v) => setModule("vcenter", v)}
+                          label="虚拟化与主机"
+                          value={permForm.compute}
+                          onChange={(v) => setModule("compute", v)}
+                        />
+                        <ModuleSelectRow
+                          label="网络设备"
+                          value={permForm.network}
+                          onChange={(v) => setModule("network", v)}
                         />
                         <ModuleSelectRow
                           label="宝塔"

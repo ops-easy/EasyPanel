@@ -980,7 +980,7 @@ export const VCenterHostPrometheusDetail: React.FC<{
           VMware / vSphere 输入）。
         </p>
         <Link
-          to="/cluster/vcenter/settings"
+          to="/cluster/compute/vcenter/settings"
           className="mt-2 inline-block text-sm font-semibold text-amber-950 underline underline-offset-2 dark:text-amber-50"
         >
           vCenter 设置
@@ -1031,7 +1031,7 @@ export const VCenterHostPrometheusDetail: React.FC<{
                 刷新
               </Button>
               <Link
-                to="/cluster/vcenter/settings"
+                to="/cluster/compute/vcenter/settings"
                 className="pb-2 text-xs font-medium text-violet-300 hover:text-violet-200 hover:underline"
               >
                 数据源

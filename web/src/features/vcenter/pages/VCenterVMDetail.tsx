@@ -256,7 +256,7 @@ const VCenterVMDetail: React.FC = () => {
     <div className="space-y-6">
       <div>
         <Link
-          to="/cluster/vcenter"
+          to="/cluster/compute/vcenter/vms"
           className="mb-3 inline-flex items-center text-sm text-blue-600 hover:underline"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />

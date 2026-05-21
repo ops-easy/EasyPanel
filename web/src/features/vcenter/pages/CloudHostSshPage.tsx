@@ -25,7 +25,7 @@ const CloudHostSshPage: React.FC = () => {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <Link
-          to="/cluster/vcenter/cloud"
+          to="/cluster/compute/cloud"
           className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-violet-700 transition-colors hover:bg-violet-50 hover:text-violet-900"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -107,7 +107,7 @@ const CloudHostSshPage: React.FC = () => {
           ) : !listQ.isLoading ? (
             <p className="py-8 text-center text-sm text-gray-500">
               请返回{" "}
-              <Link to="/cluster/vcenter/cloud" className="font-medium text-violet-700 underline">
+              <Link to="/cluster/compute/cloud" className="font-medium text-violet-700 underline">
                 公有云列表
               </Link>{" "}
               重新选择主机。

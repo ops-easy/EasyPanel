@@ -284,7 +284,7 @@ const VCenterSshTerminal: React.FC<VCenterSshTerminalProps> = ({
           <p className="mt-2 text-xs leading-relaxed">
             在服务端配置 SSH 用户名与密码即可（端口默认 22）。已初始化时可在{" "}
             <Link
-              to="/cluster/vcenter/settings"
+              to="/cluster/compute/vcenter/settings"
               className="font-medium text-amber-950 underline underline-offset-2"
             >
               vCenter 设置

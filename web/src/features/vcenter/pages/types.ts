@@ -66,30 +66,6 @@ export type VCenterVMsIoPrometheusResponse = {
   }>;
 };
 
-/** GET /api/vcenter/vms/ikuai-client-stream — yw9381/ikuai_exporter，按私网 IP 与虚拟机 guest IP 对齐 */
-export type VCenterIkuaiLanDeviceRow = {
-  ip: string;
-  mac?: string;
-  hostname?: string;
-  comment?: string;
-  clientType?: string;
-  download: number;
-  upload?: number;
-};
-
-export type VCenterVMsIkuaiClientStreamResponse = {
-  prometheusConfigured: boolean;
-  exporterKind?: "modern" | "legacy";
-  ratesByIp: Record<string, VCenterVMPerfRateRow>;
-  devices: VCenterIkuaiLanDeviceRow[];
-  note?: string;
-  queriesUsed?: Partial<{
-    downloadByIp: string;
-    uploadByIp: string;
-    topology: string;
-  }>;
-};
-
 export type VCenterHostRow = {
   moref: string;
   name: string;

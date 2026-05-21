@@ -26,7 +26,7 @@ const VCenterHostDetail: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <Link
-          to="/cluster/vcenter/hosts"
+          to="/cluster/compute/vcenter/hosts"
           className="inline-flex h-9 items-center gap-1 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           <ArrowLeft className="h-4 w-4" />

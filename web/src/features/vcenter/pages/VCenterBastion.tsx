@@ -510,7 +510,7 @@ const VCenterBastion: React.FC = () => {
             className="h-8 px-2 text-[10px] text-[#8c8c8c] hover:bg-[#1f1f1f] hover:text-[#69c0ff]"
             asChild
           >
-            <Link to="/cluster/vcenter/settings">SSH</Link>
+            <Link to="/cluster/compute/vcenter/settings">SSH</Link>
           </Button>
           {selectedVm ? (
             <Button
@@ -520,7 +520,7 @@ const VCenterBastion: React.FC = () => {
               className="h-8 px-2 text-[10px] text-[#8c8c8c] hover:bg-[#1f1f1f] hover:text-[#69c0ff]"
               asChild
             >
-              <Link to={`/cluster/vcenter/${encodeURIComponent(selectedVm.moref)}`}>详情</Link>
+              <Link to={`/cluster/compute/vcenter/vms/${encodeURIComponent(selectedVm.moref)}`}>详情</Link>
             </Button>
           ) : null}
         </div>

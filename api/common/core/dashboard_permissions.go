@@ -29,6 +29,8 @@ const (
 // DashboardPermissionsJSON 存于 kubebt_dashboard_users.permissions_json。
 type DashboardPermissionsJSON struct {
 	K8s       string `json:"k8s"`
+	Compute   string `json:"compute,omitempty"`
+	Network   string `json:"network,omitempty"`
 	VCenter   string `json:"vcenter"`
 	Baota     string `json:"baota"`
 	AppCenter string `json:"appcenter"`
@@ -51,6 +53,8 @@ type DashboardPermissionsJSON struct {
 // EffectiveDashboardPermissions 合并角色与 JSON 后的运行时权限。
 type EffectiveDashboardPermissions struct {
 	K8s       string
+	Compute   string
+	Network   string
 	VCenter   string
 	Baota     string
 	AppCenter string
@@ -87,6 +91,8 @@ func NormalizeModuleAccess(s string) string {
 func defaultEffectiveAdmin() *EffectiveDashboardPermissions {
 	return &EffectiveDashboardPermissions{
 		K8s:                            ModuleAccessRW,
+		Compute:                        ModuleAccessRW,
+		Network:                        ModuleAccessRW,
 		VCenter:                        ModuleAccessRW,
 		Baota:                          ModuleAccessRW,
 		AppCenter:                      ModuleAccessRW,
@@ -104,6 +110,8 @@ func defaultEffectiveAdmin() *EffectiveDashboardPermissions {
 func defaultEffectiveLegacyViewer() *EffectiveDashboardPermissions {
 	return &EffectiveDashboardPermissions{
 		K8s:                            ModuleAccessRO,
+		Compute:                        ModuleAccessRO,
+		Network:                        ModuleAccessRO,
 		VCenter:                        ModuleAccessRO,
 		Baota:                          ModuleAccessRO,
 		AppCenter:                      ModuleAccessRO,
@@ -151,9 +159,20 @@ func effectivePermissionsFromJSON(role string, raw string) *EffectiveDashboardPe
 	if j.AppCenterCloudVmHysteriaReveal != nil && *j.AppCenterCloudVmHysteriaReveal {
 		hyReveal = true
 	}
+	legacyVCenterAcc := normalizeModuleAccess(j.VCenter)
+	computeAcc := legacyVCenterAcc
+	if strings.TrimSpace(j.Compute) != "" {
+		computeAcc = normalizeModuleAccess(j.Compute)
+	}
+	networkAcc := legacyVCenterAcc
+	if strings.TrimSpace(j.Network) != "" {
+		networkAcc = normalizeModuleAccess(j.Network)
+	}
 	out := &EffectiveDashboardPermissions{
 		K8s:                            k8sAcc,
-		VCenter:                        normalizeModuleAccess(j.VCenter),
+		Compute:                        computeAcc,
+		Network:                        networkAcc,
+		VCenter:                        computeAcc,
 		Baota:                          normalizeModuleAccess(j.Baota),
 		AppCenter:                      normalizeModuleAccess(j.AppCenter),
 		AppCenterRedis:                 redisScope,
@@ -241,13 +260,19 @@ func apiModulePrefix(path string) string {
 		return "appcenter"
 	}
 	if strings.HasPrefix(path, "/api/vcenter/") {
-		return "vcenter"
+		return "compute"
 	}
 	if strings.HasPrefix(path, "/api/cloud-hosts") {
-		return "vcenter"
+		return "compute"
 	}
 	if strings.HasPrefix(path, "/api/toolbox/") {
-		return "vcenter"
+		return "compute"
+	}
+	if strings.HasPrefix(path, "/api/pve/") {
+		return "compute"
+	}
+	if strings.HasPrefix(path, "/api/network/") {
+		return "network"
 	}
 	if strings.HasPrefix(path, "/api/ingress/") {
 		return "baota"
@@ -277,6 +302,10 @@ func moduleAccessFor(eff *EffectiveDashboardPermissions, module string) string {
 	switch module {
 	case "k8s":
 		return eff.K8s
+	case "compute":
+		return eff.Compute
+	case "network":
+		return eff.Network
 	case "vcenter":
 		return eff.VCenter
 	case "baota":
@@ -300,6 +329,18 @@ func isK8sPodDeleteAPIPath(method, path string) bool {
 		return false
 	}
 	return strings.HasPrefix(path, "/api/k8s/pods/")
+}
+
+func isPrometheusReadQueryAPIPath(path string) bool {
+	return path == "/api/prometheus/query" || path == "/api/prometheus/query_range"
+}
+
+func anyPrometheusConsumerModuleVisible(eff *EffectiveDashboardPermissions) bool {
+	return eff.K8s != ModuleAccessNone ||
+		eff.VCenter != ModuleAccessNone ||
+		eff.Compute != ModuleAccessNone ||
+		eff.Network != ModuleAccessNone ||
+		eff.AppCenter != ModuleAccessNone
 }
 
 // cloudVMPathIsHysteriaReveal POST 校验密码后返回 Hysteria2 客户端敏感配置，不修改集群资源。
@@ -326,6 +367,9 @@ func permissionEndpointForbidden(method, path string, eff *EffectiveDashboardPer
 	}
 	if strings.HasPrefix(path, "/api/admin/") {
 		return true
+	}
+	if isPrometheusReadQueryAPIPath(path) {
+		return !anyPrometheusConsumerModuleVisible(eff)
 	}
 	mod := apiModulePrefix(path)
 	if mod != "" {
@@ -542,6 +586,8 @@ func EffectivePermissionsToPublic(eff *EffectiveDashboardPermissions) gin.H {
 	}
 	out := gin.H{
 		"k8s":                            eff.K8s,
+		"compute":                        eff.Compute,
+		"network":                        eff.Network,
 		"vcenter":                        eff.VCenter,
 		"baota":                          eff.Baota,
 		"appcenter":                      eff.AppCenter,

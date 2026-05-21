@@ -228,7 +228,7 @@ export function clusterRoutes(): ReactNode {
           />
         </Route>
         <Route path="settings" element={<ClusterK8sSettings />} />
-        <Route path="tools/ip-scan" element={<Navigate to="/cluster/vcenter/tools/ip-scan" replace />} />
+        <Route path="tools/ip-scan" element={<Navigate to="/cluster/compute/tools/ip-scan" replace />} />
         {computeRoutes()}
         {networkRoutes()}
         {appCenterRoutes()}
