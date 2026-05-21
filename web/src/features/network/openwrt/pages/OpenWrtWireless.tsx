@@ -1,3 +1,5 @@
-import OpenWrtDashboard from "./OpenWrtDashboard";
+import OpenWrtWorkspace from "./OpenWrtWorkspace";
 
-export default OpenWrtDashboard;
+export default function OpenWrtWireless() {
+  return <OpenWrtWorkspace view="wireless" />;
+}

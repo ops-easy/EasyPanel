@@ -1,3 +1,5 @@
-import NetworkDashboard from "../../pages/NetworkDashboard";
+import OpenWrtWorkspace from "./OpenWrtWorkspace";
 
-export default NetworkDashboard;
+export default function OpenWrtDashboard() {
+  return <OpenWrtWorkspace view="dashboard" />;
+}

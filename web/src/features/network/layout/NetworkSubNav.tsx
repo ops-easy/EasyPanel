@@ -10,7 +10,9 @@ const links = [
   { to: "/cluster/network/ikuai/clients", label: "iKuai 客户端", icon: Users },
   { to: "/cluster/network/openwrt/dashboard", label: "OpenWrt", icon: Wifi },
   { to: "/cluster/network/openwrt/interfaces", label: "OpenWrt 接口", icon: RadioTower },
+  { to: "/cluster/network/openwrt/clients", label: "OpenWrt 客户端", icon: Users },
   { to: "/cluster/network/openwrt/connections", label: "连接跟踪", icon: Activity },
+  { to: "/cluster/network/openwrt/wireless", label: "OpenWrt 无线", icon: Wifi },
   { to: "/cluster/network/openwrt/exporter", label: "数据源", icon: Gauge },
 ] as const;
 

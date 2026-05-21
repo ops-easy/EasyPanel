@@ -1,3 +1,5 @@
-import PVEPage from "../../pages/PVEPage";
+import PveWorkspace from "./PveWorkspace";
 
-export default PVEPage;
+export default function PveStorage() {
+  return <PveWorkspace view="storage" />;
+}

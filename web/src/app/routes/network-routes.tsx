@@ -13,6 +13,7 @@ const OpenWrtClients = lazy(() => import("@/features/network/openwrt/pages/OpenW
 const OpenWrtInterfaces = lazy(() => import("@/features/network/openwrt/pages/OpenWrtInterfaces"));
 const OpenWrtConnections = lazy(() => import("@/features/network/openwrt/pages/OpenWrtConnections"));
 const OpenWrtWireless = lazy(() => import("@/features/network/openwrt/pages/OpenWrtWireless"));
+const OpenWrtExporter = lazy(() => import("@/features/network/openwrt/pages/OpenWrtExporter"));
 
 export function networkRoutes(): ReactNode {
   return (
@@ -116,7 +117,7 @@ export function networkRoutes(): ReactNode {
         path="openwrt/exporter"
         element={
           <RouteSuspense>
-            <OpenWrtDashboard />
+            <OpenWrtExporter />
           </RouteSuspense>
         }
       />
