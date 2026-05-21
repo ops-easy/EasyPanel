@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, BookOpen, Loader2, PencilLine } from "lucide-react";
+import { AlertCircle, BookOpen, Loader2 } from "lucide-react";
 import { OpenClawChatMarkdown } from "@/features/app-center/openclaw/components/OpenClawChatMarkdown";
-import { useAuth } from "@/auth/auth-context";
 import { ApiHttpError, apiGetJson } from "@/lib/api";
 import { Button } from "@/shared/ui/button";
 import {
@@ -44,8 +43,6 @@ function guideErrorMessage(error: unknown): string {
 
 export default function UserGuideSheet() {
   const location = useLocation();
-  const { status } = useAuth();
-  const isAdmin = status?.role === "admin";
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -95,28 +92,19 @@ export default function UserGuideSheet() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="right"
+          showCloseButton={false}
           className="flex h-full w-full max-w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-xl md:max-w-2xl"
         >
           <SheetHeader className="shrink-0 space-y-2 border-b border-slate-100 bg-slate-50/90 px-6 py-4 text-left">
-            <div className="flex min-w-0 items-start justify-between gap-3">
-              <div className="min-w-0">
-                <SheetTitle className="truncate text-lg">{title}</SheetTitle>
-                <SheetDescription className="mt-1 text-xs leading-relaxed">
-                  {guideQ.isLoading
-                    ? "正在根据当前页面加载指南。"
-                    : guideQ.data?.fallback
-                      ? "当前页面未配置专属指南，显示全局指南。"
-                      : `当前页面指南：${routeLabel}`}
-                </SheetDescription>
-              </div>
-              {isAdmin && doc ? (
-                <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5" asChild>
-                  <Link to={`/docs/guides/doc/${doc.id}`}>
-                    <PencilLine className="h-3.5 w-3.5" aria-hidden />
-                    编辑
-                  </Link>
-                </Button>
-              ) : null}
+            <div className="min-w-0">
+              <SheetTitle className="truncate text-lg">{title}</SheetTitle>
+              <SheetDescription className="mt-1 text-xs leading-relaxed">
+                {guideQ.isLoading
+                  ? "正在根据当前页面加载指南。"
+                  : guideQ.data?.fallback
+                    ? "当前页面未配置专属指南，显示全局指南。"
+                    : `当前页面指南：${routeLabel}`}
+              </SheetDescription>
             </div>
           </SheetHeader>
 
@@ -130,11 +118,6 @@ export default function UserGuideSheet() {
               <div className="flex h-full min-h-64 flex-col items-center justify-center gap-3 text-center text-slate-500">
                 <AlertCircle className="h-7 w-7 text-amber-500" aria-hidden />
                 <p className="max-w-sm text-sm">{guideErrorMessage(guideQ.error)}</p>
-                {isAdmin ? (
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/docs/guides">管理页面指南</Link>
-                  </Button>
-                ) : null}
               </div>
             ) : doc ? (
               <div className="markdown-body max-w-none">
@@ -145,16 +128,6 @@ export default function UserGuideSheet() {
                     当前指南不是 Markdown 文档，请在文档中心调整为 Markdown 后再展示。
                   </div>
                 )}
-                {isAdmin ? (
-                  <div className="mt-6 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to={`/docs/guides/doc/${doc.id}`}>编辑这篇指南</Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to="/docs/guides">页面指南中心</Link>
-                    </Button>
-                  </div>
-                ) : null}
               </div>
             ) : null}
           </div>
