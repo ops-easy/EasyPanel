@@ -21,7 +21,10 @@ import {
 } from "@/lib/audit-display";
 import { cn } from "@/lib/utils";
 
-type Tab = "all" | "auth" | "k8s" | "vcenter" | "appcenter" | "baota" | "other";
+type Tab = "all" | "auth" | "k8s" | "vcenter" | "appcenter" | "baota" | "aiInspect" | "other";
+
+const auditRowGridClass =
+  "md:grid md:grid-cols-[minmax(8rem,1fr)_minmax(0,1.2fr)_minmax(13rem,1.4fr)_auto] md:items-center md:gap-4";
 
 function rowTab(r: AuditRecord): Tab {
   const a = r.action || "";
@@ -32,6 +35,7 @@ function rowTab(r: AuditRecord): Tab {
   if (p.includes("/vcenter/")) return "vcenter";
   if (p.includes("/app-center/") || p.includes("/app-center")) return "appcenter";
   if (p.includes("/baota") || p.includes("baota")) return "baota";
+  if (p.includes("/ops/vmlog/")) return "aiInspect";
   if (p.includes("/settings/runtime") || p.includes("/admin/") || p.includes("/cloud-hosts")) return "other";
   return "other";
 }
@@ -143,6 +147,7 @@ export default function PlatformAudit() {
             <SelectItem value="vcenter">vCenter / 虚拟机</SelectItem>
             <SelectItem value="appcenter">应用中心</SelectItem>
             <SelectItem value="baota">宝塔</SelectItem>
+            <SelectItem value="aiInspect">AI 巡检</SelectItem>
             <SelectItem value="other">平台 / 运行时 / 其他</SelectItem>
           </SelectContent>
         </Select>
@@ -162,21 +167,42 @@ export default function PlatformAudit() {
         ) : filtered.length === 0 ? (
           <p className="p-8 text-sm text-slate-500">该分类下暂无记录</p>
         ) : (
-          <ul className="divide-y divide-slate-100">
-            {[...filtered].reverse().map((row, i) => (
-              <li key={`${row.ts}-${i}`} className="px-4 py-3.5 sm:px-5">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium leading-snug text-slate-900">{formatAuditTitle(row)}</p>
-                    {row.detail ? (
-                      <p className="mt-1.5 text-sm leading-relaxed text-slate-700">{row.detail}</p>
-                    ) : null}
-                    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-                      <span className="tabular-nums">{formatAuditTime(row.ts)}</span>
+          <>
+            <div
+              className={cn(
+                "hidden border-b border-slate-100 bg-slate-50/70 px-4 py-2 text-[11px] font-medium text-slate-500 sm:px-5 md:grid",
+                auditRowGridClass
+              )}
+            >
+              <span>事件</span>
+              <span>对象</span>
+              <span>时间与来源</span>
+              <span className="text-right">模块</span>
+            </div>
+            <ul className="divide-y divide-slate-100">
+              {[...filtered].reverse().map((row, i) => (
+                <li key={`${row.ts}-${i}`} className="px-4 py-3 transition-colors hover:bg-slate-50 sm:px-5">
+                  <div className={cn("grid gap-2", auditRowGridClass)}>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold leading-snug text-slate-900">
+                        {formatAuditTitle(row)}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      {row.detail ? (
+                        <p className="truncate font-mono text-xs leading-6 text-slate-700" title={row.detail}>
+                          {row.detail}
+                        </p>
+                      ) : (
+                        <p className="text-xs leading-6 text-slate-400">—</p>
+                      )}
+                    </div>
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                      <span className="font-mono tabular-nums text-slate-600">{formatAuditTime(row.ts)}</span>
                       {row.user ? (
                         <>
                           <span className="text-slate-300">·</span>
-                          <span>用户 {row.user}</span>
+                          <span className="truncate">用户 {row.user}</span>
                         </>
                       ) : null}
                       {row.ip ? (
@@ -192,17 +218,22 @@ export default function PlatformAudit() {
                         </>
                       ) : null}
                     </div>
+                    <div className="flex justify-start md:justify-end">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "shrink-0 border bg-white font-normal",
+                          auditModuleBadgeClass(auditModuleLabel(row))
+                        )}
+                      >
+                        {auditModuleLabel(row)}
+                      </Badge>
+                    </div>
                   </div>
-                  <Badge
-                    variant="outline"
-                    className={cn("shrink-0 border font-normal", auditModuleBadgeClass(auditModuleLabel(row)))}
-                  >
-                    {auditModuleLabel(row)}
-                  </Badge>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
     </div>

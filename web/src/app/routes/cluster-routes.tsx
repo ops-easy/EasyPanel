@@ -7,6 +7,7 @@ import { networkRoutes } from "@/app/routes/network-routes";
 import { opsRoutes } from "@/app/routes/ops-routes";
 import { vcenterRoutes } from "@/app/routes/vcenter-routes";
 import ViewerRedirect from "@/app/guards/ViewerRedirect";
+import BaotaDashboard from "@/features/baota/pages/BaotaDashboard";
 import BaotaSync from "@/features/baota/pages/BaotaSync";
 import IngressList from "@/features/baota/pages/IngressList";
 import BaotaLayout from "@/features/baota/pages/BaotaLayout";
@@ -64,7 +65,7 @@ export function clusterRoutes(): ReactNode {
           </ViewerRedirect>
         }
       >
-        <Route index element={<Navigate to="sync" replace />} />
+        <Route index element={<BaotaDashboard />} />
         <Route path="ingress" element={<IngressList />} />
         <Route path="sync" element={<BaotaSync />} />
         <Route path="settings" element={<BaotaSettingsPage />} />

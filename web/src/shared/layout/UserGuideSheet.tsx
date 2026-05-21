@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { BookOpen } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -15,7 +15,7 @@ import { PlatformArchitectureDiagram } from "@/shared/ui/PlatformArchitectureDia
 /**
  * 全局右下角「使用文档」：汇总控制台主要功能与入口，便于随时查阅。
  * 浮动按钮挂到 document.body，避免主布局 overflow/transform 遮挡；z-index 高于常规内容。
- * 新增模块或权限字段时，请同步更新本文 `DocBody` / `DocToc`，保持与路由及后端一致。云主机预选软件（Docker/Nginx/宝塔/Hysteria2）行为以 `api/internal/cloud_vm_software.go` 为准，第七节说明需与之同步。〇 节架构图与 `PlatformArchitectureDiagram.tsx` 及 `k8s/backend/deployment.yaml` 典型部署一致；ingress-nginx 与 **Kubernetes Dashboard + metrics-server** 一键安装（国内镜像、安装后自检）及 PVC 文件编辑器行为见第四节。第十三节与文档库编辑器、公开分享页、附件 COS 图形配置及监控中心内置图展示一致。
+ * 新增模块或权限字段时，请同步更新本文 `DocBody` / `DocToc`，保持与路由及后端一致。容器主机预选软件（Docker/Nginx/宝塔/Hysteria2）行为以 `api/internal/cloud_vm_software.go` 为准，第七节说明需与之同步。〇 节架构图与 `PlatformArchitectureDiagram.tsx` 及 `k8s/backend/deployment.yaml` 典型部署一致；ingress-nginx 与 **Kubernetes Dashboard + metrics-server** 一键安装（国内镜像、安装后自检）及 PVC 文件编辑器行为见第四节。第十三节与文档库编辑器、公开分享页、附件 COS 图形配置及监控中心内置图展示一致。
  */
 export default function UserGuideSheet() {
   const [open, setOpen] = useState(false);
@@ -53,7 +53,7 @@ export default function UserGuideSheet() {
             <SheetDescription className="text-xs leading-relaxed">
               按模块梳理路由与常见操作；与侧栏「工作区」及子导航一致。<strong className="text-slate-800">〇</strong> 为典型{" "}
               <strong className="text-slate-800">K8s Pod 部署架构图</strong>及 ingress-nginx hostNetwork、<strong className="text-slate-800">Dashboard + metrics-server</strong> 一键安装说明；第四节含{" "}
-              <strong className="text-slate-800">Kubernetes API、Prometheus 与可选 VictoriaMetrics（vmselect）</strong> 的配置步骤；应用中心云主机与
+              <strong className="text-slate-800">Kubernetes API、Prometheus 与可选 VictoriaMetrics（vmselect）</strong> 的配置步骤；应用中心容器主机与
               OpenClaw 见第七节（含<strong className="text-slate-800">预选软件实现原理</strong>：Docker / Nginx / 宝塔在无 systemd 环境下的启动与校验）。
             </SheetDescription>
           </SheetHeader>
@@ -101,7 +101,7 @@ function DocToc() {
     { id: "四", title: "Kubernetes（API、Prometheus、VM、路由）" },
     { id: "五", title: "宝塔工作区" },
     { id: "六", title: "应用中心 · 总览与 Redis" },
-    { id: "七", title: "应用中心 · 云主机与 OpenClaw（预选软件原理）" },
+    { id: "七", title: "应用中心 · 容器主机与 OpenClaw（预选软件原理）" },
     { id: "八", title: "vCenter、公有云与网络工具" },
     { id: "九", title: "设置与账户" },
     { id: "十", title: "首次初始化" },
@@ -152,7 +152,7 @@ function DocBody() {
           <strong>Kubernetes Dashboard + metrics-server（可选 Web UI）</strong>：集群设置页独立卡片可<strong>一键安装</strong> metrics-server v0.7.2 与 Dashboard 2.7（<Code>recommended</Code> 清单）；YAML 下载策略与 ingress 相同（jsDelivr / ghproxy）；容器镜像默认改写为 <Code>m.daocloud.io</Code> 前缀（与 ingress 共用「跳过 K8s 镜像改写」开关）。默认可为 metrics-server 注入 <Code>--kubelet-insecure-tls</Code>；安装后自动轮询 Deployment 就绪，并支持「深度自检」接口。会创建 <Code>kube-bt-sync-dashboard-admin</Code>（cluster-admin，生产请改最小权限）。<strong>不</strong>自动填写 <Code>prometheusUrlK8s</Code>（平台图表请用上一项 kube-prometheus-stack）。详细见仓库 <Code>docs/kubernetes-dashboard-prometheus.md</Code> 第 1.1 节。
         </Li>
         <Li>
-          <strong>出站依赖</strong>：宝塔、Prometheus/vmselect、MySQL、Redis、vCenter、云主机 SSH 等均为<strong>可选</strong> TCP 出站；未配置则对应功能不可用或降级为本地存储。
+          <strong>出站依赖</strong>：宝塔、Prometheus/vmselect、MySQL、Redis、vCenter、容器主机 SSH 等均为<strong>可选</strong> TCP 出站；未配置则对应功能不可用或降级为本地存储。
         </Li>
       </Ul>
 
@@ -167,7 +167,7 @@ function DocBody() {
       <H>二、登录与权限与数据存储</H>
       <Ul>
         <Li>
-          <strong className="text-slate-800">管理员</strong>：配置、部署、同步、Ingress 写入、应用中心 Redis/云主机 等写操作（具体仍受下方模块与子权限约束）。
+          <strong className="text-slate-800">管理员</strong>：配置、部署、同步、Ingress 写入、应用中心 Redis/容器主机 等写操作（具体仍受下方模块与子权限约束）。
         </Li>
         <Li>
           <strong className="text-slate-800">只读（viewer）</strong>：以查看为主；写操作及敏感接口会返回无权限；旧版只读账号对部分 WebSocket（如 SSH、redis-cli）仍禁止。
@@ -196,10 +196,10 @@ function DocBody() {
           <strong className="text-slate-800">平台用户权限（MySQL）</strong>：非 admin 用户可在「用户管理」中配置 <Code>permissions_json</Code>。
           <strong>应用中心</strong>模块为 <Code>appcenter</Code>（none / ro / rw）；子域包括 <Code>appcenterRedis</Code> 与 <Code>appcenterCloudVm</Code>（均可为
           full / readonly / managed_only）。未配置 <Code>appcenterCloudVm</Code> 时<strong>继承</strong> <Code>appcenterRedis</Code>。
-          「仅纳管」类子域要求应用中心为 rw，且云主机/Redis 部分写能力会按后端策略限制（见接口返回）。
+          「仅纳管」类子域要求应用中心为 rw，且容器主机/Redis 部分写能力会按后端策略限制（见接口返回）。
         </Li>
         <Li>
-          <strong className="text-slate-800">platform_kv 与 Redis 镜像</strong>：验证码与失败次数、云主机镜像引导等键值写入 MySQL 表 <Code>kubebt_platform_kv</Code>（无
+          <strong className="text-slate-800">platform_kv 与 Redis 镜像</strong>：验证码与失败次数、容器主机镜像引导等键值写入 MySQL 表 <Code>kubebt_platform_kv</Code>（无
           MySQL 时落盘）；在开启 <Code>KUBEBT_RUNTIME_DUAL_WRITE_REDIS</Code> 时将<strong>全量</strong> platform_kv 镜像到 Redis，便于多副本与灾备恢复。
           平台 Redis 短暂不可用时进程会周期性<strong>自动重连</strong>，恢复后无需重启控制台服务。
         </Li>
@@ -221,10 +221,10 @@ function DocBody() {
           <strong>宝塔</strong>：<Code>/cluster/baota/sync</Code>（Ingress 同步入口；<Code>/cluster/baota</Code> 会重定向至此）。
         </Li>
         <Li>
-          <strong>应用中心</strong>：<Code>/cluster/apps/dashboard</Code>；Redis 为 <Code>/cluster/apps/redis</Code>；云主机为{" "}
+          <strong>应用中心</strong>：<Code>/cluster/apps/dashboard</Code>；Redis 为 <Code>/cluster/apps/redis</Code>；容器主机为{" "}
           <Code>/cluster/apps/cloud-vm</Code>（详情页 <Code>/cluster/apps/cloud-vm/&lt;id&gt;</Code>，首次镜像引导{" "}
           <Code>/cluster/apps/cloud-vm/bootstrap</Code>，仅管理员）；OpenClaw 为 <Code>/cluster/apps/openclaw</Code>。在<strong>应用中心工作区</strong>下，左侧菜单顺序为
-          Redis → 云主机 → <strong>OpenClaw</strong>（与顶栏子导航一致）。
+          Redis → Kafka → OpenSearch → DNS 管理 → 容器主机 → <strong>OpenClaw</strong> → Hermes（与顶栏子导航一致）。
         </Li>
         <Li>
           <strong>AI 巡检</strong>：<strong>日志查询</strong> <Code>/cluster/ai-inspect/logs</Code>（VictoriaLogs 可视化，服务端聚合）；<strong>巡检配置</strong>{" "}
@@ -267,7 +267,7 @@ function DocBody() {
           点击<strong>保存并重载</strong>。侧栏 Kubernetes 旁状态会变为 <strong>已连接</strong>、<strong>已填写（未连集群）</strong> 或 <strong>未配置</strong>，便于排查网络、证书与 RBAC。
         </Li>
         <Li>
-          在同一页的 <strong>Kubernetes 监控（Prometheus · VM）</strong>卡片中：填写 <strong>Prometheus 根地址</strong>（<Code>prometheusUrlK8s</Code>，如 <Code>http://prometheus-k8s.monitoring:9090</Code>）；若迁移到 VictoriaMetrics，点击 <strong>「监控数据源（Prometheus / VictoriaMetrics）」</strong> 在对话框中增加 <Code>vmSelectUrlK8s</Code>（vmselect 根地址，如 <Code>http://vmselect.monitoring:8481</Code>），保存后查询优先走 VM。用于集群总览、节点、应用中心 Redis/云主机等监控图表。已能连 API 时，可使用<strong>集群内服务发现</strong>扫描 Prometheus Service；亦可用页面 PromQL 试查确认连通。
+          在同一页的 <strong>Kubernetes 监控（Prometheus · VM）</strong>卡片中：填写 <strong>Prometheus 根地址</strong>（<Code>prometheusUrlK8s</Code>，如 <Code>http://prometheus-k8s.monitoring:9090</Code>）；若迁移到 VictoriaMetrics，点击 <strong>「监控数据源（Prometheus / VictoriaMetrics）」</strong> 在对话框中增加 <Code>vmSelectUrlK8s</Code>（vmselect 根地址，如 <Code>http://vmselect.monitoring:8481</Code>），保存后查询优先走 VM。用于集群总览、节点、应用中心 Redis/容器主机等监控图表。已能连 API 时，可使用<strong>集群内服务发现</strong>扫描 Prometheus Service；亦可用页面 PromQL 试查确认连通。
         </Li>
         <Li>
           应用中心 <strong>Redis K8s 镜像与 pull Secret</strong>在「Redis → 模版中心」配置；各命名空间需存在模版中填写的 <Code>imagePullSecret</Code> 名称。
@@ -294,7 +294,7 @@ function DocBody() {
       <P className="text-xs text-slate-600">
         <strong className="text-slate-800">Prometheus / VM 查询</strong>：前端通过 <Code>POST /api/prometheus/query</Code> 与{" "}
         <Code>POST /api/prometheus/query_range</Code> 提交 PromQL（<Code>scope=k8s</Code> 时后端按配置选用 Prometheus 或 vmselect，二者查询 API 兼容）；服务端在已连接<strong>平台 Redis</strong>时对相同查询结果做约 60
-        秒缓存。首页与工作台仅加载轻量路由；应用中心 Redis、云主机、虚拟机详情等为<strong>按需异步加载</strong>的脚本块以缩短首屏时间。
+        秒缓存。首页与工作台仅加载轻量路由；应用中心 Redis、容器主机、虚拟机详情等为<strong>按需异步加载</strong>的脚本块以缩短首屏时间。
       </P>
 
       <P className="font-medium text-slate-800">界面路由（与侧栏一致）</P>
@@ -395,9 +395,9 @@ function DocBody() {
         <strong>PVC</strong> 与鉴权 Secret 等），再移除 MySQL 中的登记。若部分资源删除失败，HTTP 响应体中的 <Code>k8sWarnings</Code> 会列出原因；纯外部地址纳管、未走 K8s 部署的实例不受影响。
       </P>
 
-      <H>七、应用中心 · 云主机与 OpenClaw</H>
+      <H>七、应用中心 · 容器主机与 OpenClaw</H>
       <P>
-        <strong className="text-slate-800">路由</strong>：列表与创建 <Code>/cluster/apps/cloud-vm</Code>（子导航「实例列表 / 创建云主机」）；单实例管理{" "}
+        <strong className="text-slate-800">路由</strong>：列表与创建 <Code>/cluster/apps/cloud-vm</Code>（子导航「实例列表 / 创建容器主机」）；单实例管理{" "}
         <Code>/cluster/apps/cloud-vm/&lt;id&gt;</Code>；管理员<strong>镜像与命名空间模板</strong>{" "}
         <Code>/cluster/apps/cloud-vm/bootstrap</Code>（列表页管理员可见「打开配置页 / 复制完整地址」）。
       </P>
@@ -408,7 +408,7 @@ function DocBody() {
         <strong className="text-slate-800">创建流程</strong>：与 Redis 类似在本页分 Tab，四步——① 基础（名称、镜像、root 密码）→ ② 规格与数据盘 → ③ 网络与高级（初始化脚本、NodePort、环境变量、自定义
         command/args）→ ④ <strong>自定义软件</strong>（可选 Docker、Nginx、宝塔、<strong>Hysteria2 客户端</strong> 与常用 CLI；可导入官方客户端 YAML。平台将配置中本地{" "}
         <Code>listen: 127.0.0.1:端口</Code> 改为 <Code>0.0.0.0</Code>，并创建集群内 TCP Service（<Code>&lt;Deployment&gt;-hy2</Code>），其它 Pod 可经{" "}
-        <Code>*.svc.cluster.local</Code> 使用本地 HTTP/SOCKS inbound）。Hysteria 裸二进制由<strong>云主机镜像引导</strong>页配置的全局下载 URL（留空则用官方 <Code>app/v2.6.5</Code> 路径）按架构拉取，并自动尝试 ghproxy 等镜像。创建成功后跳转管理页。
+        <Code>*.svc.cluster.local</Code> 使用本地 HTTP/SOCKS inbound）。Hysteria 裸二进制由<strong>容器主机镜像引导</strong>页配置的全局下载 URL（留空则用官方 <Code>app/v2.6.5</Code> 路径）按架构拉取，并自动尝试 ghproxy 等镜像。创建成功后跳转管理页。
       </P>
       <P>
         <strong className="text-slate-800">基础镜像与内置软件</strong>：默认可用 <Code>docker.io/library/ubuntu:22.04</Code> 等最小镜像；首次启动脚本会在安装{" "}
@@ -421,7 +421,7 @@ function DocBody() {
       </P>
       <P className="font-medium text-slate-800">预选软件（Docker、Nginx、宝塔）— 实现原理</P>
       <P className="text-xs text-slate-500">
-        云主机本质是集群里的一个 Pod（容器），<strong>PID 1 不是 systemd</strong>，因此包管理器安装的 <Code>docker.io</Code>、<Code>nginx</Code> 等<strong>不会</strong>像物理机那样由{" "}
+        容器主机本质是集群里的一个 Pod（容器），<strong>PID 1 不是 systemd</strong>，因此包管理器安装的 <Code>docker.io</Code>、<Code>nginx</Code> 等<strong>不会</strong>像物理机那样由{" "}
         <Code>systemctl</Code> 自动拉起；平台在 <Code>user-init.sh</Code> 里用 shell 显式启动进程并做探测，失败即退出。
       </P>
       <Ul>
@@ -448,7 +448,7 @@ function DocBody() {
         </Li>
         <Li>
           <strong className="text-slate-800">Hysteria2 客户端</strong>：勾选后可粘贴整行 <Code>hysteria2://</Code>/<Code>hy2://</Code> 分享链接或手写客户端 YAML（写入 Secret <Code>hysteria2.yaml</Code>）；启动命令为 <Code>hysteria client -c</Code>，并将 YAML 中回环{" "}
-          <Code>listen</Code> 改为 <Code>0.0.0.0</Code> 以便集群内访问本地代理端口。二进制按<strong>镜像引导模板</strong>中配置的 amd64/arm64 下载地址（及镜像站回退）自动拉取；<strong>下载失败不会阻塞 SSH 就绪</strong>。若仍拉取不到，可在引导页改为自建可访问 URL，或为 Deployment 配置 <Code>HTTP_PROXY</Code>/<Code>HTTPS_PROXY</Code> 后滚动重启。勾选 Hysteria2 时，容器启动会向 <Code>/etc/profile.d/51-kube-bt-hysteria-proxy.sh</Code> 写入本机 HTTP(S) 代理环境变量（及 YAML 中含 <Code>socks5</Code> 时的 <Code>ALL_PROXY</Code>），登录 SSH 交互 shell 即可 <Code>curl</Code> 外网。管理页在勾选客户端时展示基于 Prometheus 的<strong>客户端相关 Pod 网卡流量</strong>；与 OpenClaw 联用时可登记<strong>出站云主机</strong>并填写网关代理。
+          <Code>listen</Code> 改为 <Code>0.0.0.0</Code> 以便集群内访问本地代理端口。二进制按<strong>镜像引导模板</strong>中配置的 amd64/arm64 下载地址（及镜像站回退）自动拉取；<strong>下载失败不会阻塞 SSH 就绪</strong>。若仍拉取不到，可在引导页改为自建可访问 URL，或为 Deployment 配置 <Code>HTTP_PROXY</Code>/<Code>HTTPS_PROXY</Code> 后滚动重启。勾选 Hysteria2 时，容器启动会向 <Code>/etc/profile.d/51-kube-bt-hysteria-proxy.sh</Code> 写入本机 HTTP(S) 代理环境变量（及 YAML 中含 <Code>socks5</Code> 时的 <Code>ALL_PROXY</Code>），登录 SSH 交互 shell 即可 <Code>curl</Code> 外网。管理页在勾选客户端时展示基于 Prometheus 的<strong>客户端相关 Pod 网卡流量</strong>；与 OpenClaw 联用时可登记<strong>出站容器主机</strong>并填写网关代理。
         </Li>
         <Li>
           <strong className="text-slate-800">与 SSH 就绪探针的关系</strong>：默认入口在 <Code>user-init.sh</Code> 成功结束后才 <Code>exec sshd -D</Code>；Service 就绪探针检测 NodePort 上 SSH 端口。故预选软件或用户脚本的失败会表现为<strong>长时间未就绪</strong>，而非「能连上但环境半残」。
@@ -471,11 +471,11 @@ function DocBody() {
           <strong>监控</strong>：管理页 CPU/内存/网络依赖已配置的 K8s Prometheus 或 vmselect（<Code>vmSelectUrlK8s</Code> 优先）。
         </Li>
         <Li>
-          <strong>与公有云主机</strong>：<Code>/cluster/compute/cloud</Code> 为外部 SSH 登记；云主机为集群内 Pod，勿混淆。
+          <strong>与公有云主机</strong>：<Code>/cluster/compute/cloud</Code> 为外部 SSH 登记；容器主机为集群内 Pod，勿混淆。
         </Li>
       </Ul>
       <P>
-        <strong className="text-slate-800">OpenClaw 网关</strong>：<Code>/cluster/apps/openclaw</Code>。界面与云主机类似：<strong>实例列表</strong>与<strong>分步创建</strong>（K8s 资源名、对外暴露、模型与密钥）。部署时可登记<strong>带 Hysteria2 客户端的云主机</strong>作为出站；若未手填代理 URL，平台会推导 <Code>http://…-hy2.&lt;ns&gt;.svc.cluster.local:&lt;端口&gt;</Code> 写入网关 <Code>HTTP(S)_PROXY</Code>，并尽量写入 <Code>openclaw.json</Code> 根级 <Code>env</Code>。详情「管理配置」中：先保存出站与代理 → 在出站 Pod 内执行{" "}
+        <strong className="text-slate-800">OpenClaw 网关</strong>：<Code>/cluster/apps/openclaw</Code>。界面与容器主机类似：<strong>实例列表</strong>与<strong>分步创建</strong>（K8s 资源名、对外暴露、模型与密钥）。部署时可登记<strong>带 Hysteria2 客户端的容器主机</strong>作为出站；若未手填代理 URL，平台会推导 <Code>http://…-hy2.&lt;ns&gt;.svc.cluster.local:&lt;端口&gt;</Code> 写入网关 <Code>HTTP(S)_PROXY</Code>，并尽量写入 <Code>openclaw.json</Code> 根级 <Code>env</Code>。详情「管理配置」中：先保存出站与代理 → 在出站 Pod 内执行{" "}
         <strong>Google generate_204</strong> 检测（结果存 MySQL）→ 仅检测通过后可开启<strong>对接 Telegram</strong>（Bot Token 加密存 MySQL）→ 可用「验证 getMe」确认与 Telegram API 连通 → 再合并频道到 PVC 上 <Code>openclaw.json</Code>。部署时需自行填写命名空间、Deployment/Service 名称与镜像（占位仅为提示）；命名空间可从集群已有列表中选择或输入新名称。
       </P>
       <P>
@@ -498,7 +498,7 @@ function DocBody() {
         <strong className="text-slate-800">删除 OpenClaw 实例</strong>：删除平台登记时会删除 Ingress（若创建时填写了 Ingress 资源名，或暴露方式为 Ingress 时的默认名）、Service、Deployment（前台级联）、实例专属的 ClusterRoleBinding（并尝试删除同名 RoleBinding 以免历史残留）；当<strong>同一命名空间内没有其他 OpenClaw 登记</strong>时，还会删除共享的 PVC、ConfigMap、Secret 与 ServiceAccount，避免残留卷与密钥。<strong>管理员</strong>预设通过 ClusterRoleBinding 绑定 <Code>kube-bt-openclaw-admin</Code>，可对<strong>全集群</strong>执行匹配 RBAC 的操作（与 <Code>tools.profile: full</Code> 是否允许工具为不同一层）。
       </P>
       <P>
-        <strong className="text-slate-800">删除云主机实例</strong>：删除时会依次删除 Deployment（前台级联）、Service、<strong>PVC</strong>（数据盘）与实例 Secret，再移除数据库记录。
+        <strong className="text-slate-800">删除容器主机实例</strong>：删除时会依次删除 Deployment（前台级联）、Service、<strong>PVC</strong>（数据盘）与实例 Secret，再移除数据库记录。
       </P>
 
       <H>八、vCenter、公有云与网络工具</H>
@@ -544,7 +544,7 @@ function DocBody() {
           <strong>站点统计</strong>：<Code>/account/site-stats</Code>（管理员）。进程内累计 HTTP 量、访问最多路径与客户端 IP、登录失败按 IP 汇总（重启清零）；与 <Code>audit.jsonl</Code> 互补。
         </Li>
         <Li>
-          <strong>小铃铛</strong>：<strong>异地登录</strong>（本次 IP 与上次成功登录不一致时红色强调）、<strong>登录暴力尝试</strong>、<strong>admin 密码错误导致 IP 临时封禁</strong>、<strong>应用中心云主机 SSH 密码失败</strong>，以及最近几条与平台审计同源的记录；<strong>宿主机公网出口 IP</strong>在本通知面板摘要中展示（若已启用出口探测）。
+          <strong>小铃铛</strong>：<strong>异地登录</strong>（本次 IP 与上次成功登录不一致时红色强调）、<strong>登录暴力尝试</strong>、<strong>admin 密码错误导致 IP 临时封禁</strong>、<strong>应用中心容器主机 SSH 密码失败</strong>，以及最近几条与平台审计同源的记录；<strong>宿主机公网出口 IP</strong>在本通知面板摘要中展示（若已启用出口探测）。
         </Li>
         <Li>
           <strong>两步验证（TOTP）</strong>：管理员在「平台用户」中可为用户生成或关闭 Google Authenticator
@@ -585,7 +585,7 @@ function DocBody() {
       <P className="font-medium text-slate-800">平台「AI 巡检」在服务端如何工作（原理）</P>
       <P className="text-xs text-slate-600">
         全部在 <strong className="text-slate-800">kube-bt-sync 进程内</strong>执行，不依赖浏览器连集群。① 按配置勾选范围，先做<strong>快速检查项</strong>（如能否调
-        Kubernetes API、vCenter 是否初始化、Prometheus 即时查询、MySQL 中 Redis/云主机登记数量、SSH 存储是否就绪等）。② 再并行拉取<strong>深度分项</strong>，各模块写成{" "}
+        Kubernetes API、vCenter 是否初始化、Prometheus 即时查询、MySQL 中 Redis/容器主机登记数量、SSH 存储是否就绪等）。② 再并行拉取<strong>深度分项</strong>，各模块写成{" "}
         <strong>Markdown 段落</strong>（含表格、事件、<strong>异常 Pod 日志摘录</strong>等）。③ 可选：对 OpenClaw / OpenAI 兼容地址做一次<strong>大模型连通探针</strong>（短请求）。④
         若巡检配置里<strong>启用 OpenClaw</strong> 且填写了 Base URL，服务端将<strong>精简后的巡检 JSON</strong>（摘要、检查项、各分项 id/标题/状态，不含整段 Markdown 正文）连同你在配置页写的<strong>系统提示词与用户模板</strong>，通过{" "}
         <Code>POST …/v1/chat/completions</Code> 发给模型，得到<strong>中文摘要 Markdown</strong> 写入报告。⑤ 完整报告（检查项、分项 Markdown、可选 AI 摘要、探针结果）写入{" "}
@@ -606,7 +606,7 @@ function DocBody() {
      ▼                ▼
 ┌─────────┐    ┌─────────────────────┐
 │快速检查项 │    │分项 Markdown 采集    │  K8s 统计·事件·异常Pod日志
-│(列表徽章)│    │(折叠报告正文)        │  vCenter·Redis·云主机·OpenClaw·SSH
+│(列表徽章)│    │(折叠报告正文)        │  vCenter·Redis·容器主机·OpenClaw·SSH
 └────┬────┘    └──────────┬──────────┘
      │                    │
      └────────┬───────────┘
@@ -638,7 +638,7 @@ function DocBody() {
       </P>
       <Ul>
         <Li>
-          <strong>AI 巡检（管理员）</strong>：可选择<strong>手动填写</strong> OpenAI 兼容 <Code>Base URL</Code>，或选用<strong>应用中心已登记的 OpenClaw</strong>（集群内地址 + 网关 Token，无需在表单重复填 Key）。配置模型与提示词；勾选巡检对象（Kubernetes、vCenter、Prometheus 探活、Redis 实例表、SSH 存储、云主机表等）。可「立即执行」或按所设<strong>每日时刻</strong>自动生成报告；若启用大模型，会将巡检 JSON 送入对话接口生成摘要（需 <Code>KUBEBT_ENCRYPTION_KEY</Code> 以保存 API Key）。
+          <strong>AI 巡检（管理员）</strong>：可选择<strong>手动填写</strong> OpenAI 兼容 <Code>Base URL</Code>，或选用<strong>应用中心已登记的 OpenClaw</strong>（集群内地址 + 网关 Token，无需在表单重复填 Key）。配置模型与提示词；勾选巡检对象（Kubernetes、vCenter、Prometheus 探活、Redis 实例表、SSH 存储、容器主机表等）。可「立即执行」或按所设<strong>每日时刻</strong>自动生成报告；若启用大模型，会将巡检 JSON 送入对话接口生成摘要（需 <Code>KUBEBT_ENCRYPTION_KEY</Code> 以保存 API Key）。
         </Li>
         <Li>
           <strong>监控中心</strong>：填写 Grafana 根地址后「保存」并「同步看板」——服务端仅此时访问 Grafana API（<Code>/api/search</Code>、<Code>/api/dashboards/uid/…</Code>），将看板 JSON 落盘到 <Code>ops_grafana/&lt;uid&gt;.json</Code>。若 Grafana 已接 SSO 无法使用账号密码，请将认证方式选为 <strong>API Token</strong>，在 Grafana 中创建 Service Account 或 API Token 后填入密码框（Bearer）。展示时在页面选择全局 <strong>Prometheus 数据源</strong>（Kubernetes 或 vCenter）；各面板可查看 Grafana 中配置的<strong>数据源标识</strong>，系统会尝试<strong>推断</strong>属于 K8s 或 vCenter，也可对单面板<strong>强制指定</strong>查询后端。实际查询走本平台{" "}

@@ -10,6 +10,7 @@ import { Switch } from "@/shared/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
+import ComputeSetupPanel from "@/features/compute/components/ComputeSetupPanel";
 
 export type PveView = "dashboard" | "targets" | "nodes" | "guests" | "storage" | "tasks";
 
@@ -23,6 +24,15 @@ type PVETarget = {
   skipTls?: boolean;
   prometheusJob?: string;
   updatedAt?: string;
+};
+
+type PveTargetFormState = {
+  name: string;
+  baseUrl: string;
+  tokenId: string;
+  tokenSecret: string;
+  prometheusJob: string;
+  skipTls: boolean;
 };
 
 type PVEGuest = {
@@ -214,14 +224,16 @@ function PveWorkspace({ view }: { view: PveView }) {
     queryFn: ({ signal }) => apiGetJson<{ targets: PVETarget[] }>("/api/pve/targets", { signal }),
   });
 
+  const pveTargets = useMemo(() => targetsQ.data?.targets ?? [], [targetsQ.data?.targets]);
+  const pveNeedsSetup = !targetsQ.isLoading && pveTargets.length === 0;
+
   useEffect(() => {
-    const rows = targetsQ.data?.targets ?? [];
-    if (!activeId && rows.length > 0) setActiveId(rows[0].id);
-  }, [activeId, targetsQ.data?.targets]);
+    if (!activeId && pveTargets.length > 0) setActiveId(pveTargets[0].id);
+  }, [activeId, pveTargets]);
 
   const active = useMemo(
-    () => (targetsQ.data?.targets ?? []).find((x) => x.id === activeId),
-    [activeId, targetsQ.data?.targets]
+    () => pveTargets.find((x) => x.id === activeId),
+    [activeId, pveTargets]
   );
 
   const summaryQ = useQuery({
@@ -342,66 +354,107 @@ function PveWorkspace({ view }: { view: PveView }) {
         </div>
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
-        <aside className="space-y-4">
-          <TargetForm form={form} setForm={setForm} canWrite={canWrite} pending={createMut.isPending} onSubmit={() => createMut.mutate()} />
-          <TargetList
-            targets={targetsQ.data?.targets ?? []}
-            activeId={activeId}
-            loading={targetsQ.isLoading}
-            onSelect={setActiveId}
-          />
-        </aside>
-
-        <main className="space-y-4">
-          <PveStats
-            nodes={summaryNodes}
-            guests={summaryGuests}
-            storage={summaryStorage}
-            tasks={view === "tasks" ? tasks : undefined}
-            loading={summaryQ.isLoading}
-          />
-          <CurrentTargetCard
-            active={active}
-            canWrite={canWrite}
-            probePending={probeMut.isPending}
-            deletePending={deleteMut.isPending}
-            onProbe={(id) => probeMut.mutate(id)}
-            onDelete={(id) => deleteMut.mutate(id)}
-          />
-
-          {view === "dashboard" ? (
-            <PveDashboardPanel nodes={summaryNodes} guests={summaryGuests} storage={summaryStorage} loading={summaryQ.isLoading} />
-          ) : null}
-          {view === "targets" ? (
-            <PveTargetsPanel
-              targets={targetsQ.data?.targets ?? []}
-              loading={targetsQ.isLoading}
-              canWrite={canWrite}
+      {pveNeedsSetup ? (
+        <PveSetupPanel
+          form={form}
+          setForm={setForm}
+          canWrite={canWrite}
+          pending={createMut.isPending}
+          onSubmit={() => createMut.mutate()}
+        />
+      ) : (
+        <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
+          <aside className="space-y-4">
+            <TargetForm form={form} setForm={setForm} canWrite={canWrite} pending={createMut.isPending} onSubmit={() => createMut.mutate()} />
+            <TargetList
+              targets={pveTargets}
               activeId={activeId}
+              loading={targetsQ.isLoading}
               onSelect={setActiveId}
-              onProbe={(id) => probeMut.mutate(id)}
-              onDelete={(id) => deleteMut.mutate(id)}
+            />
+          </aside>
+
+          <main className="space-y-4">
+            <PveStats
+              nodes={summaryNodes}
+              guests={summaryGuests}
+              storage={summaryStorage}
+              tasks={view === "tasks" ? tasks : undefined}
+              loading={summaryQ.isLoading}
+            />
+            <CurrentTargetCard
+              active={active}
+              canWrite={canWrite}
               probePending={probeMut.isPending}
               deletePending={deleteMut.isPending}
+              onProbe={(id) => probeMut.mutate(id)}
+              onDelete={(id) => deleteMut.mutate(id)}
             />
-          ) : null}
-          {view === "nodes" ? <PveNodesPanel rows={nodes} loading={nodesQ.isLoading} /> : null}
-          {view === "guests" ? (
-            <PveGuestsPanel
-              rows={guests}
-              loading={guestsQ.isLoading}
-              canWrite={canWrite}
-              activeId={activeId}
-              powerPending={powerMut.isPending}
-              onPower={(body) => powerMut.mutate(body)}
-            />
-          ) : null}
-          {view === "storage" ? <PveStoragePanel rows={storage} loading={storageQ.isLoading} /> : null}
-          {view === "tasks" ? <PveTasksPanel rows={tasks} loading={tasksQ.isLoading} /> : null}
-        </main>
-      </div>
+
+            {view === "dashboard" ? (
+              <PveDashboardPanel nodes={summaryNodes} guests={summaryGuests} storage={summaryStorage} loading={summaryQ.isLoading} />
+            ) : null}
+            {view === "targets" ? (
+              <PveTargetsPanel
+                targets={pveTargets}
+                loading={targetsQ.isLoading}
+                canWrite={canWrite}
+                activeId={activeId}
+                onSelect={setActiveId}
+                onProbe={(id) => probeMut.mutate(id)}
+                onDelete={(id) => deleteMut.mutate(id)}
+                probePending={probeMut.isPending}
+                deletePending={deleteMut.isPending}
+              />
+            ) : null}
+            {view === "nodes" ? <PveNodesPanel rows={nodes} loading={nodesQ.isLoading} /> : null}
+            {view === "guests" ? (
+              <PveGuestsPanel
+                rows={guests}
+                loading={guestsQ.isLoading}
+                canWrite={canWrite}
+                activeId={activeId}
+                powerPending={powerMut.isPending}
+                onPower={(body) => powerMut.mutate(body)}
+              />
+            ) : null}
+            {view === "storage" ? <PveStoragePanel rows={storage} loading={storageQ.isLoading} /> : null}
+            {view === "tasks" ? <PveTasksPanel rows={tasks} loading={tasksQ.isLoading} /> : null}
+          </main>
+        </div>
+      )}
     </div>
+  );
+}
+
+function PveSetupPanel({
+  form,
+  setForm,
+  canWrite,
+  pending,
+  onSubmit,
+}: {
+  form: PveTargetFormState;
+  setForm: React.Dispatch<React.SetStateAction<PveTargetFormState>>;
+  canWrite: boolean;
+  pending: boolean;
+  onSubmit: () => void;
+}) {
+  return (
+    <ComputeSetupPanel
+      kind="pve"
+      title="请先新增 PVE 目标"
+      description="PVE 的节点、虚拟机、存储和任务页都需要先保存 Proxmox VE API 地址与 Token。新增目标后，各子页会自动切换到该目标的数据视图。"
+    >
+      <TargetForm
+        form={form}
+        setForm={setForm}
+        canWrite={canWrite}
+        pending={pending}
+        onSubmit={onSubmit}
+        embedded
+      />
+    </ComputeSetupPanel>
   );
 }
 
@@ -411,15 +464,17 @@ function TargetForm({
   canWrite,
   pending,
   onSubmit,
+  embedded = false,
 }: {
-  form: { name: string; baseUrl: string; tokenId: string; tokenSecret: string; prometheusJob: string; skipTls: boolean };
-  setForm: React.Dispatch<React.SetStateAction<{ name: string; baseUrl: string; tokenId: string; tokenSecret: string; prometheusJob: string; skipTls: boolean }>>;
+  form: PveTargetFormState;
+  setForm: React.Dispatch<React.SetStateAction<PveTargetFormState>>;
   canWrite: boolean;
   pending: boolean;
   onSubmit: () => void;
+  embedded?: boolean;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <section className={embedded ? "rounded-lg border border-amber-100 bg-amber-50/40 p-4" : "rounded-xl border border-slate-200 bg-white p-4 shadow-sm"}>
       <h2 className="text-sm font-semibold text-slate-950">新增 PVE 目标</h2>
       <div className="mt-4 space-y-3">
         <div className="space-y-1.5">

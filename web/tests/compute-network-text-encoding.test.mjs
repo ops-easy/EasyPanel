@@ -40,7 +40,7 @@ const scanEntries = [
 const requiredPhrases = new Map([
   [
     "src/features/compute/pages/ComputeDashboard.tsx",
-    ["虚拟化与主机", "vCenter、PVE、公有云与堡垒机", "兼容策略"],
+    ["虚拟化与主机", "vCenter、PVE、公有云与堡垒机", "进入 PVE"],
   ],
   [
     "src/features/network/pages/NetworkDashboard.tsx",

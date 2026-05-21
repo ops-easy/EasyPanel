@@ -25,7 +25,7 @@ type BastionTargetRow = {
 };
 
 /**
- * 堡垒机控制台首页：与 Orion「工作台」类似，汇总本平台已同步的主机/虚拟机数据（来自 vCenter 与策略中的额外主机）。
+ * 堡垒机控制台首页：汇总可进入统一终端的目标数据，覆盖 vCenter、PVE、额外主机、云主机与 Redis CLI。
  */
 const BastionConsoleHome: React.FC = () => {
   const { status: auth } = useAuth();
@@ -95,7 +95,7 @@ const BastionConsoleHome: React.FC = () => {
         <div className="space-y-2 text-center sm:text-left">
           <h1 className="text-xl font-semibold tracking-tight text-slate-100">堡垒机控制台</h1>
           <p className="text-sm text-slate-400">
-            数据来自当前运行时已连接的 vCenter 与堡垒机策略；进入「主机与终端」可选择主机、打开 SSH / 远程桌面与 SFTP。
+            数据来自当前运行时已连接的 vCenter、PVE、堡垒机策略、应用中心云主机与 Redis CLI；进入「主机与终端」可选择目标、打开 SSH / 远程桌面、SFTP 或 redis-cli。
           </p>
         </div>
 
@@ -109,7 +109,7 @@ const BastionConsoleHome: React.FC = () => {
             </div>
             <div>
               <p className="font-medium text-emerald-100">主机与终端</p>
-              <p className="text-xs text-slate-400">左侧主机列表 · 多标签 SSH · Windows 网页 RDP（HTTPS 网关）</p>
+              <p className="text-xs text-slate-400">vCenter / PVE / 额外主机 · 多标签 SSH · Windows 网页 RDP · redis-cli</p>
             </div>
           </div>
           <ArrowRight className="h-5 w-5 shrink-0 text-emerald-400/80" aria-hidden />
@@ -144,7 +144,7 @@ const BastionConsoleHome: React.FC = () => {
 
         {bastionQ.isError ? (
           <div className="rounded-xl border border-red-900/50 bg-red-950/20 px-4 py-3 text-sm text-red-200">
-            {(bastionQ.error as Error)?.message ?? "加载堡垒机列表失败"}（请确认 vCenter 已配置）
+            {(bastionQ.error as Error)?.message ?? "加载堡垒机列表失败"}（请确认 vCenter / PVE 目标与堡垒机策略配置可用）
           </div>
         ) : null}
 
@@ -169,7 +169,7 @@ const BastionConsoleHome: React.FC = () => {
             <p className="text-2xl font-semibold text-slate-100">
               {bastionQ.isLoading ? "..." : pveTargets.length}
             </p>
-            <p className="mt-1 text-xs text-slate-500">From saved Proxmox VE targets</p>
+            <p className="mt-1 text-xs text-slate-500">来自已保存的 Proxmox VE 目标</p>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#12161c] p-4">
@@ -224,6 +224,31 @@ const BastionConsoleHome: React.FC = () => {
           ) : null}
         </div>
 
+        <div className="rounded-2xl border border-slate-800 bg-[#10151b] p-5 text-left">
+          <p className="text-sm font-medium text-slate-200">SSH 与终端设置归属</p>
+          <div className="mt-4 grid gap-3 text-xs leading-relaxed text-slate-400 sm:grid-cols-2">
+            <p>
+              <span className="font-medium text-slate-200">vCenter VM 全局 SSH：</span>
+              在 vCenter 设置中维护默认凭据，适用于未单独保存凭据的 vCenter 虚拟机。
+            </p>
+            <p>
+              <span className="font-medium text-slate-200">PVE VM/CT：选中目标后在右上角打开 SSH 设置</span>
+              ，可单独覆盖 Host、端口、用户和密钥。
+            </p>
+            <p>
+              <span className="font-medium text-slate-200">额外主机：在「策略与分组」里配置地址、凭据与 RDP</span>
+              ，适合物理机、跳板机等。
+            </p>
+            <p>
+              <span className="font-medium text-slate-200">云主机：在云主机详情中维护 SSH</span>
+              ；堡垒机侧栏只是快捷打开。
+            </p>
+            <p>
+              <span className="font-medium text-slate-200">Redis CLI：使用实例连接信息，不走 SSH 凭据</span>。
+            </p>
+          </div>
+        </div>
+
         <div className="flex flex-wrap gap-3 text-sm">
           <Link
             to="/cluster/bastion/session"
@@ -236,14 +261,14 @@ const BastionConsoleHome: React.FC = () => {
               to="/cluster/bastion/admin"
               className="rounded-lg border border-slate-700 px-4 py-2 text-slate-400 hover:bg-slate-900/50 hover:text-slate-200"
             >
-              策略与分组
+              策略与额外主机
             </Link>
           ) : null}
           <Link
             to="/cluster/compute/vcenter/settings"
             className="rounded-lg border border-slate-700 px-4 py-2 text-slate-400 hover:bg-slate-900/50 hover:text-slate-200"
           >
-            vCenter / SSH 设置
+            vCenter VM 全局 SSH
           </Link>
         </div>
       </div>

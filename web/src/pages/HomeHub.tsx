@@ -8,16 +8,6 @@ import {
   AppWindow,
   Sparkles,
   SquareTerminal,
-  Database,
-  HardDrive,
-  Bot,
-  Search,
-  Globe,
-  Layers,
-  Cpu,
-  Bell,
-  LineChart,
-  FileText,
   Network,
   Library,
   ArrowRight,
@@ -52,35 +42,96 @@ type NetworkDevice = {
   kind: "ikuai" | "openwrt";
 };
 
-function StatusBadge({ ok, loading }: { ok: boolean; loading?: boolean }) {
-  if (loading) {
-    return (
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">
-        检查中…
-      </span>
-    );
-  }
-  return ok ? (
-    <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-      <CheckCircle2 size={11} />
-      已接入
-    </span>
-  ) : (
-    <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-      <AlertCircle size={11} />
-      待配置
+type PVETarget = {
+  id: string;
+};
+
+type HubStatusTone = "slate" | "emerald" | "amber" | "cyan" | "teal" | "violet";
+
+function HubStatusPill({
+  tone = "slate",
+  icon,
+  children,
+}: {
+  tone?: HubStatusTone;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const toneClass: Record<HubStatusTone, string> = {
+    slate: "bg-slate-100 text-slate-500",
+    emerald: "bg-emerald-50 text-emerald-700",
+    amber: "bg-amber-50 text-amber-800",
+    cyan: "bg-cyan-50 text-cyan-700",
+    teal: "bg-teal-50 text-teal-700",
+    violet: "bg-violet-50 text-violet-700",
+  };
+
+  return (
+    <span
+      className={cn(
+        "inline-flex min-h-6 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold leading-none",
+        toneClass[tone]
+      )}
+    >
+      {icon}
+      {children}
     </span>
   );
 }
 
-function MetricItem({ label, value }: { label: string; value: number | string }) {
+function StatusBadge({ ok, loading }: { ok: boolean; loading?: boolean }) {
+  if (loading) {
+    return <HubStatusPill tone="slate">检查中…</HubStatusPill>;
+  }
+  return ok ? (
+    <HubStatusPill tone="emerald" icon={<CheckCircle2 size={11} />}>
+      已接入
+    </HubStatusPill>
+  ) : (
+    <HubStatusPill tone="amber" icon={<AlertCircle size={11} />}>
+      待配置
+    </HubStatusPill>
+  );
+}
+
+function MetricItem({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: number | string;
+  className?: string;
+}) {
   return (
-    <div className="flex flex-col">
+    <div className={cn("flex min-w-0 flex-col", className)}>
       <span className="text-[11px] leading-none text-gray-400">{label}</span>
       <span className="mt-0.5 text-lg font-semibold tabular-nums leading-none text-gray-900">
         {value}
       </span>
     </div>
+  );
+}
+
+function HubMetricGrid({
+  children,
+  columns = "grid-cols-2",
+}: {
+  children: React.ReactNode;
+  columns?: string;
+}) {
+  return (
+    <div className={cn("mt-4 grid gap-x-5 gap-y-3 border-t border-gray-100 pt-4", columns)}>
+      {children}
+    </div>
+  );
+}
+
+function HubCardHint({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mt-3 min-h-[42px] text-xs leading-relaxed text-gray-500">
+      {children}
+    </p>
   );
 }
 
@@ -97,6 +148,8 @@ const HomeHub: React.FC = () => {
   const check = runtimeQ.data?.systemCheck;
   const perm = cfg?.permissions;
   const hubRole = authStatus?.role;
+  const isAdmin = authStatus?.role === "admin";
+  const loggedIn = Boolean(authStatus?.loggedIn);
 
   const cfgLoading = runtimeQ.isLoading;
 
@@ -134,6 +187,13 @@ const HomeHub: React.FC = () => {
     queryKey: ["vcenter-hosts-hub"],
     queryFn: ({ signal }) => apiGetJson<VCenterHostsResponse>("/api/vcenter/hosts", { signal }),
     enabled: cfg?.vcenterConfigured === true && showVc,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const pveTargetsQ = useQuery({
+    queryKey: ["pve-targets-hub"],
+    queryFn: ({ signal }) => apiGetJson<{ targets: PVETarget[] }>("/api/pve/targets", { signal }),
+    enabled: loggedIn && showVc,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -193,8 +253,6 @@ const HomeHub: React.FC = () => {
   });
 
   // AI 巡检
-  const isAdmin = authStatus?.role === "admin";
-  const loggedIn = Boolean(authStatus?.loggedIn);
   const aiAlertsQ = useQuery({
     queryKey: ["ops-alerts-hub"],
     queryFn: ({ signal }) => apiGetJson<AiAlertsGet>("/api/ops/alerts", { signal }),
@@ -236,16 +294,14 @@ const HomeHub: React.FC = () => {
   });
 
   const hubCardClass =
-    "group flex h-[340px] min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md";
+    "group flex min-h-[360px] min-w-0 flex-col rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md";
   const hubEntryClass = "mt-auto inline-flex items-center gap-1 pt-3 text-xs font-medium group-hover:underline";
 
   // vCenter aggregated stats（useMemo：避免无关 query 更新时重复 reduce）
   const {
-    vcHosts,
     vcMemTotalMB,
     vcMemUsedMB,
     vcMemFreeMB,
-    vcMemUsedPct,
     nVcVm,
     nVcHost,
     vcLoading,
@@ -255,11 +311,9 @@ const HomeHub: React.FC = () => {
     const memUsed = hosts.reduce((s, h) => s + (h.memoryUsageMB ?? 0), 0);
     const memFree = memTotal - memUsed;
     return {
-      vcHosts: hosts,
       vcMemTotalMB: memTotal,
       vcMemUsedMB: memUsed,
       vcMemFreeMB: memFree,
-      vcMemUsedPct: memTotal > 0 ? Math.round((memUsed / memTotal) * 100) : 0,
       nVcVm: vcVmsQ.data?.vms?.length ?? 0,
       nVcHost: hosts.length,
       vcLoading: vcVmsQ.isLoading || vcHostsQ.isLoading,
@@ -268,9 +322,20 @@ const HomeHub: React.FC = () => {
 
   const k8sOk = cfg?.k8sConfigured === true;
   const vcOk = cfg?.vcenterConfigured === true;
+  const nPveTargets = pveTargetsQ.data?.targets?.length ?? 0;
+  const computeOk = vcOk || nPveTargets > 0;
+  const computeLoading = cfgLoading || (!vcOk && pveTargetsQ.isLoading);
+  const k8sMetricValue = (value?: number): number | string => {
+    if (cfgLoading) return "…";
+    if (!k8sOk) return 0;
+    if (k8sQ.isLoading) return "…";
+    return value ?? "—";
+  };
   const baotaTargetOk = cfg?.baotaTargets?.some((t) => Boolean(t.url && t.hasApiKey)) ?? false;
   const baotaOk = Boolean((cfg?.hasBaotaApiKey && cfg?.baotaUrl) || baotaTargetOk);
   const baotaReachable = check?.baota.status === "success";
+  const nBaotaTargets = cfg?.baotaTargets?.filter((t) => Boolean(t.url && t.hasApiKey)).length ?? (baotaOk ? 1 : 0);
+  const ddnsOk = Boolean(cfg?.ddnsHost?.trim());
   const baotaEntryTo = baotaOk ? "/cluster/baota/sync" : "/cluster/baota/settings";
 
   const { nRedis, nKafka, nCloudVm, nOpenClaw, nHermes, nOpenSearch, nDomains, appCenterTotal } = useMemo(() => {
@@ -393,14 +458,17 @@ const HomeHub: React.FC = () => {
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">Kubernetes</h2>
             <p className="mt-0.5 text-xs text-gray-400">集群资源、命名空间与工作负载</p>
-            {k8sOk && (
-              <div className="mt-4 flex gap-5 border-t border-gray-100 pt-4">
-                <MetricItem label="节点" value={k8sQ.isLoading ? "…" : (k8sQ.data?.nodeCount ?? "—")} />
-                <MetricItem label="命名空间" value={k8sQ.isLoading ? "…" : (k8sQ.data?.namespaceCount ?? "—")} />
-                <MetricItem label="Pod" value={k8sQ.isLoading ? "…" : (k8sQ.data?.podCount ?? "—")} />
-                <MetricItem label="服务" value={k8sQ.isLoading ? "…" : (k8sQ.data?.serviceCount ?? "—")} />
-              </div>
-            )}
+            <HubMetricGrid>
+              <MetricItem label="节点" value={k8sMetricValue(k8sQ.data?.nodeCount)} />
+              <MetricItem label="命名空间" value={k8sMetricValue(k8sQ.data?.namespaceCount)} />
+              <MetricItem label="Pod" value={k8sMetricValue(k8sQ.data?.podCount)} />
+              <MetricItem label="服务" value={k8sMetricValue(k8sQ.data?.serviceCount)} />
+            </HubMetricGrid>
+            <HubCardHint>
+              {k8sOk || cfgLoading
+                ? "展示集群核心资源摘要；进入工作区后可继续查看命名空间、工作负载与服务明细。"
+                : "请先在集群设置保存 Kubernetes 连接，摘要会自动切换为实时资源数。"}
+            </HubCardHint>
             <span className={cn(hubEntryClass, "text-blue-600")}>
               进入 <ArrowRight size={13} />
             </span>
@@ -417,48 +485,23 @@ const HomeHub: React.FC = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-violet-700 text-white">
                 <Monitor size={20} strokeWidth={2.2} />
               </div>
-              <StatusBadge ok={vcOk} loading={cfgLoading} />
+              <StatusBadge ok={computeOk} loading={computeLoading} />
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">虚拟化与主机</h2>
             <p className="mt-0.5 text-xs text-gray-400">vCenter、PVE、公有云与堡垒机</p>
-            {vcOk && (
-              <>
-                <div className="mt-4 flex gap-5 border-t border-gray-100 pt-4">
-                  <MetricItem label="虚拟机" value={vcLoading ? "…" : nVcVm} />
-                  <MetricItem label="宿主机" value={vcLoading ? "…" : nVcHost} />
-                  {!vcLoading && vcMemTotalMB > 0 && (
-                    <MetricItem label="内存使用率" value={`${vcMemUsedPct}%`} />
-                  )}
-                </div>
-                {!vcLoading && vcMemTotalMB > 0 && (
-                  <div className="mt-3 space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px] text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Cpu size={10} />
-                        宿主机内存
-                      </span>
-                      <span>{fmtMB(vcMemUsedMB)} / {fmtMB(vcMemTotalMB)}</span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-                      <div
-                        className={cn(
-                          "h-full rounded-full transition-all",
-                          vcMemUsedPct >= 85
-                            ? "bg-red-500"
-                            : vcMemUsedPct >= 70
-                              ? "bg-amber-400"
-                              : "bg-violet-500"
-                        )}
-                        style={{ width: `${vcMemUsedPct}%` }}
-                      />
-                    </div>
-                    <p className="text-[11px] text-gray-400">
-                      剩余 <span className="font-medium text-gray-600">{fmtMB(vcMemFreeMB)}</span>
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
+            <HubMetricGrid>
+              <MetricItem label="vCenter VM" value={!vcOk || vcLoading ? (vcLoading ? "…" : 0) : nVcVm} />
+              <MetricItem label="ESXi 主机" value={!vcOk || vcLoading ? (vcLoading ? "…" : 0) : nVcHost} />
+              <MetricItem label="PVE 目标" value={pveTargetsQ.isLoading ? "…" : nPveTargets} />
+              <MetricItem label="云主机" value={cloudVmQ.isLoading ? "…" : nCloudVm} />
+            </HubMetricGrid>
+            <HubCardHint>
+              {!computeOk && !computeLoading
+                ? "请先接入 vCenter 或新增 PVE 目标，摘要会保持同一版式并显示纳管数量。"
+                : vcOk && !vcLoading && vcMemTotalMB > 0
+                  ? `宿主机内存 ${fmtMB(vcMemUsedMB)} / ${fmtMB(vcMemTotalMB)}，剩余 ${fmtMB(vcMemFreeMB)}。`
+                  : "统一汇总 vCenter、PVE、公有云与堡垒机入口，进入后按平台继续展开操作。"}
+            </HubCardHint>
             <span className={cn(hubEntryClass, "text-violet-600")}>
               进入 <ArrowRight size={13} />
             </span>
@@ -475,41 +518,23 @@ const HomeHub: React.FC = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-600 to-slate-700 text-white">
                 <Network size={20} strokeWidth={2.2} />
               </div>
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                  networkDevicesQ.isLoading
-                    ? "bg-slate-100 text-slate-400"
-                    : nNetworkDevices > 0
-                      ? "bg-cyan-50 text-cyan-700"
-                      : "bg-slate-100 text-slate-500"
-                )}
+              <HubStatusPill
+                tone={networkDevicesQ.isLoading || nNetworkDevices === 0 ? "slate" : "cyan"}
               >
                 {networkDevicesQ.isLoading ? "加载中..." : `${nNetworkDevices} 设备`}
-              </span>
+              </HubStatusPill>
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">网络设备</h2>
             <p className="mt-0.5 text-xs text-gray-400">iKuai、OpenWrt</p>
-            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-gray-100 pt-4">
-              <div className="flex items-center gap-1.5">
-                <Network size={13} className="shrink-0 text-cyan-500" />
-                <div>
-                  <p className="text-[10px] text-gray-400">iKuai</p>
-                  <p className="text-sm font-semibold tabular-nums text-gray-900">
-                    {networkDevicesQ.isLoading ? "..." : nIkuaiDevices}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Globe size={13} className="shrink-0 text-emerald-500" />
-                <div>
-                  <p className="text-[10px] text-gray-400">OpenWrt</p>
-                  <p className="text-sm font-semibold tabular-nums text-gray-900">
-                    {networkDevicesQ.isLoading ? "..." : nOpenWrtDevices}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <HubMetricGrid>
+              <MetricItem label="iKuai" value={networkDevicesQ.isLoading ? "…" : nIkuaiDevices} />
+              <MetricItem label="OpenWrt" value={networkDevicesQ.isLoading ? "…" : nOpenWrtDevices} />
+              <MetricItem label="纳管设备" value={networkDevicesQ.isLoading ? "…" : nNetworkDevices} />
+              <MetricItem label="数据源" value={nNetworkDevices > 0 ? "已接入" : "待接入"} />
+            </HubMetricGrid>
+            <HubCardHint>
+              网络设备按 iKuai 与 OpenWrt 分组展示，进入后可查看接口、客户端与监控数据源。
+            </HubCardHint>
             <span className={cn(hubEntryClass, "text-cyan-700")}>
               进入 <ArrowRight size={13} />
             </span>
@@ -530,23 +555,17 @@ const HomeHub: React.FC = () => {
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">宝塔</h2>
             <p className="mt-0.5 text-xs text-gray-400">Ingress 同步、面板 API 与 DDNS</p>
-            {baotaOk ? (
-              <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-4">
-                <span
-                  className={cn(
-                    "h-1.5 w-1.5 rounded-full",
-                    cfgLoading ? "bg-slate-300" : baotaReachable ? "bg-emerald-500" : "bg-amber-400"
-                  )}
-                />
-                <span className="text-xs text-gray-500">
-                  {cfgLoading ? "检查中…" : baotaReachable ? "面板可达" : "面板不可达"}
-                </span>
-              </div>
-            ) : (
-              <div className="mt-4 border-t border-gray-100 pt-4 text-xs leading-relaxed text-gray-500">
-                默认地址只是占位；填写宝塔面板地址与 API Key 后才会启用同步。
-              </div>
-            )}
+            <HubMetricGrid>
+              <MetricItem label="面板 API" value={cfgLoading ? "…" : baotaOk ? (baotaReachable ? "可达" : "异常") : "未配置"} />
+              <MetricItem label="DDNS" value={ddnsOk ? "已设置" : "未设置"} />
+              <MetricItem label="宝塔实例" value={cfgLoading ? "…" : nBaotaTargets} />
+              <MetricItem label="Ingress" value={baotaOk ? "可同步" : "待配置"} />
+            </HubMetricGrid>
+            <HubCardHint>
+              {baotaOk
+                ? "同步入口、Ingress 列表与宝塔设置使用同一工作区，未连通时会显示异常状态。"
+                : "默认地址只是占位；填写宝塔面板地址与 API Key 后才会启用同步。"}
+            </HubCardHint>
             <span className={cn(hubEntryClass, "text-amber-700")}>
               {baotaOk ? "进入" : "去配置"} <ArrowRight size={13} />
             </span>
@@ -563,63 +582,24 @@ const HomeHub: React.FC = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 text-white">
                 <AppWindow size={20} strokeWidth={2.2} />
               </div>
-              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+              <HubStatusPill tone="emerald">
                 {appCenterTotal} 实例
-              </span>
+              </HubStatusPill>
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">应用中心</h2>
-            <p className="mt-0.5 text-xs text-gray-400">Redis、Kafka、云主机、OpenClaw、Hermes、OpenSearch、DNS</p>
-            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-gray-100 pt-4">
-              <div className="flex items-center gap-1.5">
-                <Database size={13} className="shrink-0 text-slate-400" />
-                <div>
-                  <p className="text-[10px] text-gray-400">Redis</p>
-                  <p className="text-sm font-semibold tabular-nums text-gray-900">{nRedis}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Layers size={13} className="shrink-0 text-violet-400" />
-                <div>
-                  <p className="text-[10px] text-gray-400">Kafka</p>
-                  <p className="text-sm font-semibold tabular-nums text-gray-900">{nKafka}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <HardDrive size={13} className="shrink-0 text-slate-400" />
-                <div>
-                  <p className="text-[10px] text-gray-400">云主机</p>
-                  <p className="text-sm font-semibold tabular-nums text-gray-900">{nCloudVm}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Bot size={13} className="shrink-0 text-violet-400" />
-                <div>
-                  <p className="text-[10px] text-gray-400">OpenClaw</p>
-                  <p className="text-sm font-semibold tabular-nums text-gray-900">{nOpenClaw}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Sparkles size={13} className="shrink-0 text-fuchsia-400" />
-                <div>
-                  <p className="text-[10px] text-gray-400">Hermes</p>
-                  <p className="text-sm font-semibold tabular-nums text-gray-900">{nHermes}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Search size={13} className="shrink-0 text-slate-400" />
-                <div>
-                  <p className="text-[10px] text-gray-400">OpenSearch</p>
-                  <p className="text-sm font-semibold tabular-nums text-gray-900">{nOpenSearch}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Globe size={13} className="shrink-0 text-emerald-400" />
-                <div>
-                  <p className="text-[10px] text-gray-400">域名</p>
-                  <p className="text-sm font-semibold tabular-nums text-gray-900">{nDomains}</p>
-                </div>
-              </div>
-            </div>
+            <p className="mt-0.5 text-xs text-gray-400">Redis、Kafka、OpenSearch、DNS、容器主机、OpenClaw、Hermes</p>
+            <HubMetricGrid columns="grid-cols-3">
+              <MetricItem label="Redis" value={nRedis} />
+              <MetricItem label="Kafka" value={nKafka} />
+              <MetricItem label="OpenSearch" value={nOpenSearch} />
+              <MetricItem label="域名" value={nDomains} />
+              <MetricItem label="容器主机" value={nCloudVm} />
+              <MetricItem label="OpenClaw" value={nOpenClaw} />
+              <MetricItem label="Hermes" value={nHermes} />
+            </HubMetricGrid>
+            <HubCardHint>
+              应用中心摘要按顶部与侧栏同一顺序展示，实例数来自各模块登记数据。
+            </HubCardHint>
             <span className={cn(hubEntryClass, "text-emerald-700")}>
               进入 <ArrowRight size={13} />
             </span>
@@ -636,83 +616,24 @@ const HomeHub: React.FC = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-teal-600 to-emerald-800 text-white">
                 <SquareTerminal size={20} strokeWidth={2.2} />
               </div>
-              <span className={cn(
-                "rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                bastionLoading
-                  ? "bg-slate-100 text-slate-400"
-                  : nBastionDirect > 0
-                    ? "bg-teal-50 text-teal-700"
-                    : "bg-slate-100 text-slate-500"
-              )}>
+              <HubStatusPill tone={bastionLoading || nBastionDirect === 0 ? "slate" : "teal"}>
                 {bastionLoading ? "加载中…" : `${nBastionDirect} 台堡垒目标`}
-              </span>
+              </HubStatusPill>
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">堡垒机</h2>
             <p className="mt-0.5 text-xs text-gray-400">统一终端：vCenter SSH/桌面、云主机与 Redis CLI</p>
 
-            <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-gray-100 pt-4">
-              {/* vCenter 虚拟机 */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Monitor size={12} className="shrink-0 text-violet-400" />
-                  <span className="text-[11px] text-gray-400">虚拟机</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm font-semibold tabular-nums text-gray-900">
-                    {bastionLoading ? "…" : nBastionVm}
-                  </span>
-                  {!bastionLoading && nBastionVm > 0 && (
-                    <span className="ml-1 text-[10px] text-emerald-600">
-                      {nBastionOn} 开机
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* 额外主机 */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <HardDrive size={12} className="shrink-0 text-slate-400" />
-                  <span className="text-[11px] text-gray-400">额外主机</span>
-                </div>
-                <span className="text-sm font-semibold tabular-nums text-gray-900">
-                  {bastionLoading ? "…" : nBastionExtra}
-                </span>
-              </div>
-
-              {/* ESXi 宿主机 */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Server size={12} className="shrink-0 text-slate-400" />
-                  <span className="text-[11px] text-gray-400">ESXi 主机</span>
-                </div>
-                <span className="text-sm font-semibold tabular-nums text-gray-900">
-                  {vcLoading ? "…" : nVcHost}
-                </span>
-              </div>
-
-              {/* 云主机 */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Globe size={12} className="shrink-0 text-emerald-400" />
-                  <span className="text-[11px] text-gray-400">云主机</span>
-                </div>
-                <span className="text-sm font-semibold tabular-nums text-gray-900">
-                  {cloudVmQ.isLoading ? "…" : nCloudVm}
-                </span>
-              </div>
-
-              {/* Redis CLI */}
-              <div className="col-span-2 flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Database size={12} className="shrink-0 text-red-400" />
-                  <span className="text-[11px] text-gray-400">Redis CLI 入口</span>
-                </div>
-                <span className="text-sm font-semibold tabular-nums text-gray-900">
-                  {redisQ.isLoading ? "…" : nRedis}
-                </span>
-              </div>
-            </div>
+            <HubMetricGrid>
+              <MetricItem label="虚拟机" value={bastionLoading ? "…" : nBastionVm} />
+              <MetricItem label="额外主机" value={bastionLoading ? "…" : nBastionExtra} />
+              <MetricItem label="ESXi 主机" value={vcLoading ? "…" : nVcHost} />
+              <MetricItem label="云主机" value={cloudVmQ.isLoading ? "…" : nCloudVm} />
+              <MetricItem label="Redis CLI" value={redisQ.isLoading ? "…" : nRedis} />
+              <MetricItem label="开机 VM" value={bastionLoading ? "…" : nBastionOn} />
+            </HubMetricGrid>
+            <HubCardHint>
+              堡垒机入口统一展示 SSH、远程桌面与 Redis CLI 的可连接目标数量。
+            </HubCardHint>
 
             <span className={cn(hubEntryClass, "text-teal-600")}>
               进入 <ArrowRight size={13} />
@@ -730,107 +651,30 @@ const HomeHub: React.FC = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-600 to-teal-700 text-white">
                 <Sparkles size={20} strokeWidth={2.2} />
               </div>
-              {/* 大模型状态徽章 */}
               {aiLoading ? (
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-400">检查中…</span>
+                <HubStatusPill tone="slate">检查中…</HubStatusPill>
               ) : isAdmin ? (
-                <span className={cn(
-                  "rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                  aiOcEnabled ? "bg-cyan-50 text-cyan-700" : "bg-slate-100 text-slate-500"
-                )}>
+                <HubStatusPill tone={aiOcEnabled ? "cyan" : "slate"}>
                   {aiOcEnabled ? `大模型 ${aiOcModel ? `· ${aiOcModel}` : "已启用"}` : "大模型未启用"}
-                </span>
+                </HubStatusPill>
               ) : (
-                <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-[11px] font-semibold text-cyan-700">已就绪</span>
+                <HubStatusPill tone="cyan">已就绪</HubStatusPill>
               )}
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">AI 巡检</h2>
             <p className="mt-0.5 text-xs text-gray-400">OpenClaw 巡检、监控告警、日志查询与采集</p>
 
-            {/* 数据源状态 */}
-            <div className="mt-4 flex items-center gap-3 border-t border-gray-100 pt-4">
-              <div className="flex items-center gap-1.5">
-                <span className={cn("h-1.5 w-1.5 rounded-full", aiLoading ? "bg-slate-300" : aiPromK8s ? "bg-emerald-500" : "bg-slate-300")} />
-                <span className="text-[11px] text-gray-400">K8s</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className={cn("h-1.5 w-1.5 rounded-full", aiLoading ? "bg-slate-300" : aiPromVc ? "bg-emerald-500" : "bg-slate-300")} />
-                <span className="text-[11px] text-gray-400">vCenter</span>
-              </div>
-              <span className="ml-auto text-[11px] text-gray-400">Prometheus 数据源</span>
-            </div>
-
-            {/* 统计网格 */}
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {isAdmin && (
-                <>
-                  {/* 告警规则 */}
-                  <div className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2.5">
-                    <Bell size={14} className="shrink-0 text-amber-500" />
-                    <div>
-                      <p className="text-[10px] text-gray-400">告警规则</p>
-                      <p className="text-sm font-semibold tabular-nums text-gray-900">
-                        {aiLoading ? "…" : `${aiRulesOn} / ${aiRulesTotal}`}
-                      </p>
-                      <p className="text-[10px] text-gray-400">启用 / 共</p>
-                    </div>
-                  </div>
-
-                  {/* 通知通道 + 巡检报告 */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <LineChart size={12} className="shrink-0 text-cyan-500" />
-                        <span className="text-[10px] text-gray-400">自定义面板</span>
-                      </div>
-                      <span className="text-sm font-semibold tabular-nums text-gray-900">
-                        {aiLoading ? "…" : aiPanels}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <FileText size={12} className="shrink-0 text-teal-500" />
-                        <span className="text-[10px] text-gray-400">巡检报告</span>
-                      </div>
-                      <span className="text-sm font-semibold tabular-nums text-gray-900">
-                        {aiLoading ? "…" : aiReports}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 告警规则启用率进度条 */}
-                  {aiRulesTotal > 0 && (
-                    <div className="col-span-2 space-y-1">
-                      <div className="flex items-center justify-between text-[11px] text-gray-400">
-                        <span>告警规则启用率</span>
-                        <span>{Math.round((aiRulesOn / aiRulesTotal) * 100)}%</span>
-                      </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-                        <div
-                          className="h-full rounded-full bg-amber-400 transition-all"
-                          style={{ width: `${Math.round((aiRulesOn / aiRulesTotal) * 100)}%` }}
-                        />
-                      </div>
-                      <p className="text-[10px] text-gray-400">
-                        {aiChannels} 个通知通道
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {!isAdmin && (
-                <div className="col-span-2 flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2.5">
-                  <LineChart size={14} className="shrink-0 text-cyan-500" />
-                  <div>
-                    <p className="text-[10px] text-gray-400">自定义监控面板</p>
-                    <p className="text-sm font-semibold tabular-nums text-gray-900">
-                      {aiLoading ? "…" : aiPanels}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+            <HubMetricGrid>
+              <MetricItem label="K8s 数据源" value={aiLoading ? "…" : aiPromK8s ? "已配置" : "未配置"} />
+              <MetricItem label="vCenter 数据源" value={aiLoading ? "…" : aiPromVc ? "已配置" : "未配置"} />
+              <MetricItem label="告警规则" value={isAdmin ? (aiLoading ? "…" : `${aiRulesOn}/${aiRulesTotal}`) : "受限"} />
+              <MetricItem label="监控面板" value={aiLoading ? "…" : aiPanels} />
+              <MetricItem label="巡检报告" value={isAdmin ? (aiLoading ? "…" : aiReports) : "受限"} />
+              <MetricItem label="通知通道" value={isAdmin ? (aiLoading ? "…" : aiChannels) : "受限"} />
+            </HubMetricGrid>
+            <HubCardHint>
+              AI 巡检摘要统一汇总数据源、告警、监控面板和报告；配置权限受角色控制。
+            </HubCardHint>
 
             <span className={cn(hubEntryClass, "text-cyan-600")}>
               进入 <ArrowRight size={13} />
@@ -848,26 +692,21 @@ const HomeHub: React.FC = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-700 to-violet-800 text-white">
                 <Library size={20} strokeWidth={2.2} />
               </div>
-              <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+              <HubStatusPill tone="violet">
                 文档中心
-              </span>
+              </HubStatusPill>
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">文档仓库</h2>
             <p className="mt-0.5 text-xs text-gray-400">Markdown 笔记、版本、媒体</p>
-            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-gray-100 pt-4">
-              <div className="flex items-center gap-1.5">
-                <FileText size={13} className="shrink-0 text-violet-500" />
-                <span className="text-[10px] text-gray-400">Markdown</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Layers size={13} className="shrink-0 text-slate-500" />
-                <span className="text-[10px] text-gray-400">版本</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Library size={13} className="shrink-0 text-zinc-500" />
-                <span className="text-[10px] text-gray-400">媒体</span>
-              </div>
-            </div>
+            <HubMetricGrid>
+              <MetricItem label="Markdown" value="可用" />
+              <MetricItem label="版本" value="可用" />
+              <MetricItem label="媒体" value="可用" />
+              <MetricItem label="分享" value="可用" />
+            </HubMetricGrid>
+            <HubCardHint>
+              文档仓库使用同一工作台卡片样式，进入后可管理笔记、历史版本、附件与公开分享。
+            </HubCardHint>
             <span className={cn(hubEntryClass, "text-violet-700")}>
               进入 <ArrowRight size={13} />
             </span>

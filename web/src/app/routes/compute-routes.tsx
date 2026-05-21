@@ -13,6 +13,7 @@ import VCenterHosts from "@/features/vcenter/pages/VCenterHosts";
 import VCenterHubDashboard from "@/features/vcenter/pages/VCenterHubDashboard";
 import VCenterList from "@/features/vcenter/pages/VCenterList";
 import VCenterSettings from "@/features/vcenter/pages/VCenterSettings";
+import { VCenterConnectionGate, VCenterPrometheusGate } from "@/features/vcenter/pages/VCenterConfigGuards";
 
 const PveDashboard = lazy(() => import("@/features/compute/pve/pages/PveDashboard"));
 const PveTargets = lazy(() => import("@/features/compute/pve/pages/PveTargets"));
@@ -28,19 +29,56 @@ export function computeRoutes(): ReactNode {
       <Route index element={<Navigate to="dashboard" replace />} />
       <Route path="dashboard" element={<ComputeDashboard />} />
       <Route path="vcenter" element={<Navigate to="/cluster/compute/vcenter/vms" replace />} />
-      <Route path="vcenter/dashboard" element={<VCenterHubDashboard />} />
-      <Route path="vcenter/vms" element={<VCenterList />} />
+      <Route
+        path="vcenter/dashboard"
+        element={
+          <VCenterConnectionGate embedded>
+            <VCenterHubDashboard />
+          </VCenterConnectionGate>
+        }
+      />
+      <Route
+        path="vcenter/vms"
+        element={
+          <VCenterConnectionGate>
+            <VCenterList />
+          </VCenterConnectionGate>
+        }
+      />
       <Route
         path="vcenter/vms/:moref"
         element={
-          <RouteSuspense>
-            <VCenterVMDetail />
-          </RouteSuspense>
+          <VCenterConnectionGate>
+            <RouteSuspense>
+              <VCenterVMDetail />
+            </RouteSuspense>
+          </VCenterConnectionGate>
         }
       />
-      <Route path="vcenter/hosts/:moref" element={<VCenterHostDetail />} />
-      <Route path="vcenter/hosts" element={<VCenterHosts />} />
-      <Route path="vcenter/gpu" element={<VCenterGpuDashboard />} />
+      <Route
+        path="vcenter/hosts/:moref"
+        element={
+          <VCenterConnectionGate>
+            <VCenterHostDetail />
+          </VCenterConnectionGate>
+        }
+      />
+      <Route
+        path="vcenter/hosts"
+        element={
+          <VCenterConnectionGate>
+            <VCenterHosts />
+          </VCenterConnectionGate>
+        }
+      />
+      <Route
+        path="vcenter/gpu"
+        element={
+          <VCenterPrometheusGate>
+            <VCenterGpuDashboard />
+          </VCenterPrometheusGate>
+        }
+      />
       <Route path="vcenter/prometheus" element={<Navigate to="/cluster/compute/vcenter/dashboard" replace />} />
       <Route path="vcenter/settings" element={<VCenterSettings />} />
       <Route

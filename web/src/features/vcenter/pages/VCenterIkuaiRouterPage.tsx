@@ -47,6 +47,7 @@ import {
   promQueryRangeNetwork,
   promQueryNetwork,
 } from "./vcenterPrometheusHelpers";
+import NetworkDeviceSetupPanel from "@/features/network/components/NetworkDeviceSetupPanel";
 
 const chartCpu: ChartConfig = { v: { label: "CPU %", color: "hsl(142 71% 42%)" } };
 const chartKibPerSec: ChartConfig = { v: { label: "KiB/s", color: "hsl(199 72% 46%)" } };
@@ -777,11 +778,15 @@ const VCenterIkuaiRouterPage: React.FC = () => {
         <p className="text-sm text-red-600">{(instancesQ.error as Error).message}</p>
       )}
       {!instancesQ.isLoading && instList.length === 0 && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
-          未发现 <span className="font-mono text-xs">ikuai_up</span> /{" "}
-          <span className="font-mono text-xs">ikuai_device_count</span> /{" "}
-          <span className="font-mono text-xs">ikuai_sys_stat_cpu_used</span>。请确认 Prometheus 已抓取 exporter。
-        </div>
+        <NetworkDeviceSetupPanel
+          kind="ikuai"
+          mode="missing-metrics"
+          title="未发现 iKuai exporter 指标"
+          description="Prometheus 当前没有返回 ikuai_up、ikuai_device_count 或 ikuai_sys_stat_cpu_used。请确认 iKuai exporter 正在运行、Prometheus 已抓取目标，并且设备登记的 scope、instance 或 job 标签与实际指标一致。"
+          primaryLabel="返回网络设备"
+          primaryTo="/cluster/network/dashboard"
+          compact
+        />
       )}
 
       {il && (

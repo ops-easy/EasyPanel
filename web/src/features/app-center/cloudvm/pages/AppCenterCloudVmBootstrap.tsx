@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Copy, Loader2, Save } from "lucide-react";
@@ -100,7 +100,7 @@ export default function AppCenterCloudVmBootstrap() {
         })),
       }),
     onSuccess: () => {
-      toast.success("已保存云主机镜像配置");
+      toast.success("已保存容器主机镜像配置");
       void qc.invalidateQueries({ queryKey: ["app-center-cloud-vm-bootstrap"] });
       navigate("/cluster/apps/cloud-vm", { replace: true });
     },
@@ -126,14 +126,14 @@ export default function AppCenterCloudVmBootstrap() {
         <Button variant="ghost" size="sm" asChild className="gap-1.5">
           <Link to="/cluster/apps/cloud-vm">
             <ArrowLeft className="h-4 w-4" />
-            返回云主机
+            返回容器主机
           </Link>
         </Button>
       </div>
 
       <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-slate-50 px-6 py-8 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800/90">首次引导 · 管理员</p>
-        <h1 className="mt-1 text-2xl font-semibold text-slate-900">云主机镜像与命名空间</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-slate-900">容器主机镜像与命名空间</h1>
         <p className="mt-2 text-sm text-slate-600">
           导入可拉取的 Ubuntu（或自定义）镜像；保存后前台不再强制进入本页，后续可在后台{" "}
           <code className="rounded bg-slate-100 px-1">platform_kv</code> 调整{" "}

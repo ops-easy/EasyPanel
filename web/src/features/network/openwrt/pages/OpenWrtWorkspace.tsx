@@ -9,6 +9,7 @@ import { Label } from "@/shared/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
+import NetworkDeviceSetupPanel from "@/features/network/components/NetworkDeviceSetupPanel";
 
 export type OpenWrtView = "dashboard" | "interfaces" | "clients" | "connections" | "wireless" | "exporter";
 
@@ -23,6 +24,15 @@ type NetworkDevice = {
   jobLabel?: string;
   notes?: string;
   updatedAt?: string;
+};
+
+type NetworkDeviceFormState = {
+  kind: NetworkKind;
+  name: string;
+  prometheusScope: string;
+  instanceLabel: string;
+  jobLabel: string;
+  notes: string;
 };
 
 type OpenWrtFamilies = {
@@ -248,6 +258,7 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
   const metricNames = statusQ.data?.metricNames ?? overviewQ.data?.metricNames ?? [];
   const missingHints = statusQ.data?.missingHints ?? overviewQ.data?.missingHints ?? [];
   const familyReadyCount = familyLabels.filter(([key]) => Boolean(families[key])).length;
+  const openWrtNeedsSetup = !devicesQ.isLoading && openWrtDevices.length === 0;
 
   const createMut = useMutation({
     mutationFn: () => apiPostJson<{ device: NetworkDevice }>("/api/network/devices", form),
@@ -307,38 +318,80 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
         </div>
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
-        <aside className="space-y-4">
-          <DeviceForm form={form} setForm={setForm} canWrite={canWrite} pending={createMut.isPending} onSubmit={() => createMut.mutate()} />
-          <DeviceList devices={openWrtDevices} activeId={activeId} loading={devicesQ.isLoading} onSelect={setActiveId} />
-        </aside>
+      {openWrtNeedsSetup ? (
+        <OpenWrtSetupPanel
+          form={form}
+          setForm={setForm}
+          canWrite={canWrite}
+          pending={createMut.isPending}
+          onSubmit={() => createMut.mutate()}
+        />
+      ) : (
+        <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
+          <aside className="space-y-4">
+            <DeviceForm form={form} setForm={setForm} canWrite={canWrite} pending={createMut.isPending} onSubmit={() => createMut.mutate()} />
+            <DeviceList devices={openWrtDevices} activeId={activeId} loading={devicesQ.isLoading} onSelect={setActiveId} />
+          </aside>
 
-        <main className="space-y-4">
-          <OpenWrtStats
-            deviceCount={openWrtDevices.length}
-            familyReadyCount={familyReadyCount}
-            metricCount={metricNames.length}
-            loading={statusQ.isLoading || devicesQ.isLoading}
-          />
-          <CurrentDeviceCard
-            active={active}
-            canWrite={canWrite}
-            status={statusQ.data ?? overviewQ.data}
-            deletePending={deleteMut.isPending}
-            onDelete={(id) => deleteMut.mutate(id)}
-          />
+          <main className="space-y-4">
+            <OpenWrtStats
+              deviceCount={openWrtDevices.length}
+              familyReadyCount={familyReadyCount}
+              metricCount={metricNames.length}
+              loading={statusQ.isLoading || devicesQ.isLoading}
+            />
+            <CurrentDeviceCard
+              active={active}
+              canWrite={canWrite}
+              status={statusQ.data ?? overviewQ.data}
+              deletePending={deleteMut.isPending}
+              onDelete={(id) => deleteMut.mutate(id)}
+            />
 
-          {view === "dashboard" ? (
-            <OpenWrtDashboardPanel active={active} status={statusQ.data ?? overviewQ.data} overview={overviewQ.data} families={families} missingHints={missingHints} />
-          ) : null}
-          {view === "interfaces" ? <OpenWrtInterfacesPanel rows={interfacesQ.data?.interfaces ?? []} loading={interfacesQ.isLoading} note={interfacesQ.data?.note} /> : null}
-          {view === "clients" ? <OpenWrtClientsPanel rows={clientsQ.data?.clients ?? []} loading={clientsQ.isLoading} note={clientsQ.data?.note} hints={clientsQ.data?.missingHints ?? missingHints} /> : null}
-          {view === "connections" ? <OpenWrtConnectionsPanel rows={trafficQ.data?.traffic ?? []} loading={trafficQ.isLoading} note={trafficQ.data?.note} hints={trafficQ.data?.missingHints ?? missingHints} /> : null}
-          {view === "wireless" ? <OpenWrtWirelessPanel families={families} metricNames={metricNames} missingHints={missingHints} loading={statusQ.isLoading} /> : null}
-          {view === "exporter" ? <OpenWrtExporterPanel status={statusQ.data ?? overviewQ.data} overview={overviewQ.data} families={families} metricNames={metricNames} missingHints={missingHints} loading={statusQ.isLoading || overviewQ.isLoading} /> : null}
-        </main>
-      </div>
+            {view === "dashboard" ? (
+              <OpenWrtDashboardPanel active={active} status={statusQ.data ?? overviewQ.data} overview={overviewQ.data} families={families} missingHints={missingHints} />
+            ) : null}
+            {view === "interfaces" ? <OpenWrtInterfacesPanel rows={interfacesQ.data?.interfaces ?? []} loading={interfacesQ.isLoading} note={interfacesQ.data?.note} /> : null}
+            {view === "clients" ? <OpenWrtClientsPanel rows={clientsQ.data?.clients ?? []} loading={clientsQ.isLoading} note={clientsQ.data?.note} hints={clientsQ.data?.missingHints ?? missingHints} /> : null}
+            {view === "connections" ? <OpenWrtConnectionsPanel rows={trafficQ.data?.traffic ?? []} loading={trafficQ.isLoading} note={trafficQ.data?.note} hints={trafficQ.data?.missingHints ?? missingHints} /> : null}
+            {view === "wireless" ? <OpenWrtWirelessPanel families={families} metricNames={metricNames} missingHints={missingHints} loading={statusQ.isLoading} /> : null}
+            {view === "exporter" ? <OpenWrtExporterPanel status={statusQ.data ?? overviewQ.data} overview={overviewQ.data} families={families} metricNames={metricNames} missingHints={missingHints} loading={statusQ.isLoading || overviewQ.isLoading} /> : null}
+          </main>
+        </div>
+      )}
     </div>
+  );
+}
+
+function OpenWrtSetupPanel({
+  form,
+  setForm,
+  canWrite,
+  pending,
+  onSubmit,
+}: {
+  form: NetworkDeviceFormState;
+  setForm: React.Dispatch<React.SetStateAction<NetworkDeviceFormState>>;
+  canWrite: boolean;
+  pending: boolean;
+  onSubmit: () => void;
+}) {
+  return (
+    <NetworkDeviceSetupPanel
+      kind="openwrt"
+      mode="missing-device"
+      title="请先登记 OpenWrt 设备"
+      description="OpenWrt 的接口、客户端、连接和无线页面都需要先保存 Prometheus scope、instance 或 job 标签。登记后页面会继续探测 node_* 与 openwrt_* 指标。"
+    >
+      <DeviceForm
+        form={form}
+        setForm={setForm}
+        canWrite={canWrite}
+        pending={pending}
+        onSubmit={onSubmit}
+        embedded
+      />
+    </NetworkDeviceSetupPanel>
   );
 }
 
@@ -348,15 +401,17 @@ function DeviceForm({
   canWrite,
   pending,
   onSubmit,
+  embedded = false,
 }: {
-  form: { kind: NetworkKind; name: string; prometheusScope: string; instanceLabel: string; jobLabel: string; notes: string };
-  setForm: React.Dispatch<React.SetStateAction<{ kind: NetworkKind; name: string; prometheusScope: string; instanceLabel: string; jobLabel: string; notes: string }>>;
+  form: NetworkDeviceFormState;
+  setForm: React.Dispatch<React.SetStateAction<NetworkDeviceFormState>>;
   canWrite: boolean;
   pending: boolean;
   onSubmit: () => void;
+  embedded?: boolean;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <section className={embedded ? "rounded-lg border border-cyan-100 bg-cyan-50/40 p-4" : "rounded-xl border border-slate-200 bg-white p-4 shadow-sm"}>
       <h2 className="text-sm font-semibold text-slate-950">新增 OpenWrt 设备</h2>
       <div className="mt-4 space-y-3">
         <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-medium text-cyan-900">

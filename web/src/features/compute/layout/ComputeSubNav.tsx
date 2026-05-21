@@ -12,6 +12,7 @@ import {
   PlugZap,
   ScanSearch,
   Server,
+  Settings,
   Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ const links = [
   { to: "/cluster/compute/vcenter/vms", label: "vCenter / 虚拟机", icon: Monitor },
   { to: "/cluster/compute/vcenter/hosts", label: "vCenter / 宿主机", icon: Server },
   { to: "/cluster/compute/vcenter/gpu", label: "GPU 监控", icon: Gauge },
+  { to: "/cluster/compute/vcenter/settings", label: "vCenter 设置", icon: Settings },
   { to: "/cluster/compute/pve/dashboard", label: "PVE 总览", icon: HardDrive },
   { to: "/cluster/compute/pve/targets", label: "PVE 目标", icon: PlugZap },
   { to: "/cluster/compute/pve/nodes", label: "PVE 节点", icon: Server },

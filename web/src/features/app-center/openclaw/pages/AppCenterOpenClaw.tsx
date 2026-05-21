@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -517,7 +517,7 @@ const AppCenterOpenClaw: React.FC = () => {
   const [baseUrlOverride, setBaseUrlOverride] = useState("");
   const [geminiKey, setGeminiKey] = useState("");
   const [displayName, setDisplayName] = useState("");
-  /** 出站检测 / Telegram 用：选已启用 Hysteria2 的云主机登记 ID */
+  /** 出站检测 / Telegram 用：选已启用 Hysteria2 的容器主机登记 ID */
   const [egressCloudVmId, setEgressCloudVmId] = useState("");
   const [httpProxyUrl, setHttpProxyUrl] = useState("");
   const [rbacDeployPreset, setRbacDeployPreset] = useState<"readonly" | "edit" | "admin">("readonly");
@@ -1248,7 +1248,7 @@ const AppCenterOpenClaw: React.FC = () => {
               <CardHeader className="border-b border-slate-100 bg-slate-50/50">
                 <CardTitle className="text-base">创建 OpenClaw</CardTitle>
                 <CardDescription>
-                  与云主机相同的分步流程：资源名称须符合 DNS 标签规则；Secret 中变量名固定为 OPENAI_API_KEY / OPENAI_BASE_URL / GEMINI_API_KEY 等，由下方表单写入值。
+                  与容器主机相同的分步流程：资源名称须符合 DNS 标签规则；Secret 中变量名固定为 OPENAI_API_KEY / OPENAI_BASE_URL / GEMINI_API_KEY 等，由下方表单写入值。
                 </CardDescription>
                 <ol className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:gap-4">
                   {STEPS.map((s) => (
@@ -1737,24 +1737,24 @@ const AppCenterOpenClaw: React.FC = () => {
                     <div className="space-y-2 sm:col-span-2 rounded-lg border border-fuchsia-200/80 bg-fuchsia-50/40 px-3 py-3">
                       <p className="text-sm font-medium text-slate-800">出站与 HTTP(S) 代理（可选）</p>
                       <p className="text-[11px] leading-relaxed text-slate-600">
-                        若云主机已装 <strong>Hysteria2 客户端</strong>，可在此登记其平台 ID，供「管理配置」中在 Pod 内做{" "}
+                        若容器主机已装 <strong>Hysteria2 客户端</strong>，可在此登记其平台 ID，供「管理配置」中在 Pod 内做{" "}
                         <strong>Google 可达性</strong>检测；并在下方填写网关访问外网时使用的{" "}
                         <code className="rounded bg-white/80 px-0.5">HTTP_PROXY</code> /{" "}
                         <code className="rounded bg-white/80 px-0.5">HTTPS_PROXY</code>（如与 HY2 配套的 HTTP 代理地址，须集群内可解析）。
                       </p>
                       {cloudVmQ.isLoading ? (
-                        <p className="text-xs text-slate-500">加载云主机列表…</p>
+                        <p className="text-xs text-slate-500">加载容器主机列表…</p>
                       ) : cloudVmQ.data?.mysqlRequired ? (
-                        <p className="text-xs text-amber-800">未连接 MySQL 时无法列出云主机，可手动在详情页填写出站 ID。</p>
+                        <p className="text-xs text-amber-800">未连接 MySQL 时无法列出容器主机，可手动在详情页填写出站 ID。</p>
                       ) : (
                         <div className="space-y-2">
-                          <Label className="text-xs">出站云主机（仅列出已勾选 Hysteria2 客户端的实例）</Label>
+                          <Label className="text-xs">出站容器主机（仅列出已勾选 Hysteria2 客户端的实例）</Label>
                           <Select
                             value={egressCloudVmId.trim() ? egressCloudVmId.trim() : "__none__"}
                             onValueChange={(v) => setEgressCloudVmId(v === "__none__" ? "" : v)}
                           >
                             <SelectTrigger className="font-mono text-sm">
-                              <SelectValue placeholder="不登记出站云主机" />
+                              <SelectValue placeholder="不登记出站容器主机" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="__none__">不登记</SelectItem>
@@ -1770,7 +1770,7 @@ const AppCenterOpenClaw: React.FC = () => {
                           </Select>
                           {hysteriaCloudVms.length === 0 ? (
                             <p className="text-[11px] text-slate-500">
-                              当前无带 Hysteria2 客户端的云主机，请先在「云主机」向导第 4 步启用并粘贴分享链接或填写客户端 YAML。
+                              当前无带 Hysteria2 客户端的容器主机，请先在「容器主机」向导第 4 步启用并粘贴分享链接或填写客户端 YAML。
                             </p>
                           ) : null}
                         </div>

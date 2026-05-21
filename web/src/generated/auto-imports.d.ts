@@ -157,6 +157,7 @@ declare global {
   const SearchIcon: typeof import('lucide-react').SearchIcon
   const Send: typeof import('lucide-react').Send
   const Server: typeof import('lucide-react').Server
+  const ServerCog: typeof import('lucide-react').ServerCog
   const ServerCrash: typeof import('lucide-react').ServerCrash
   const Settings: typeof import('lucide-react').Settings
   const Settings2: typeof import('lucide-react').Settings2
@@ -178,6 +179,7 @@ declare global {
   const Terminal: typeof import('lucide-react').Terminal
   const TerminalIcon: typeof import('lucide-react').TerminalIcon
   const Timer: typeof import('lucide-react').Timer
+  const TimerReset: typeof import('lucide-react').TimerReset
   const ToggleLeft: typeof import('lucide-react').ToggleLeft
   const ToggleRight: typeof import('lucide-react').ToggleRight
   const Trash2: typeof import('lucide-react').Trash2

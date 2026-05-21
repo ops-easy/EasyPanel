@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -1532,16 +1532,16 @@ const AppCenterOpenClawDetail: React.FC = () => {
                 </div>
 
                 <div className="space-y-3 rounded-xl border border-fuchsia-200/80 bg-fuchsia-50/30 p-4">
-                  <span className="text-sm font-medium text-slate-800">出站云主机与 HTTP(S) 代理</span>
+                  <span className="text-sm font-medium text-slate-800">出站容器主机与 HTTP(S) 代理</span>
                   <p className="text-xs text-slate-600">
-                    登记带 <strong>Hysteria2 客户端</strong> 的云主机后，保存时会自动推导 <code className="rounded bg-white/80 px-0.5">http://&lt;云主机&gt;-hy2.&lt;ns&gt;.svc.cluster.local:&lt;端口&gt;</code> 作为生效代理（若未手填代理
+                    登记带 <strong>Hysteria2 客户端</strong> 的容器主机后，保存时会自动推导 <code className="rounded bg-white/80 px-0.5">http://&lt;容器主机&gt;-hy2.&lt;ns&gt;.svc.cluster.local:&lt;端口&gt;</code> 作为生效代理（若未手填代理
                     URL）。会写入网关 Deployment 的 <code className="rounded bg-white/80 px-0.5">HTTP_PROXY</code>，并尽量合并到 PVC 上 <code className="rounded bg-white/80 px-0.5">openclaw.json</code> 的{" "}
                     <code className="rounded bg-white/80 px-0.5">env</code>，便于 Telegram 等出站。
                   </p>
                   {canWrite ? (
                     <>
                       <div className="space-y-2">
-                        <Label className="text-xs">出站云主机</Label>
+                        <Label className="text-xs">出站容器主机</Label>
                         <Select
                           value={egressVmDraft.trim() ? egressVmDraft.trim() : "__none__"}
                           onValueChange={(v) => setEgressVmDraft(v === "__none__" ? "" : v)}
@@ -1589,7 +1589,7 @@ const AppCenterOpenClawDetail: React.FC = () => {
                 <div className="space-y-3 rounded-xl border border-slate-200 p-4">
                   <span className="text-sm font-medium text-slate-800">Google 可达性（Telegram 前置条件）</span>
                   <p className="text-xs text-slate-600">
-                    在上方登记的云主机 Pod 内请求 Google <code className="rounded bg-slate-100 px-0.5">generate_204</code>。若该云主机<strong>勾选了 Hysteria2 客户端</strong>，检测会经{" "}
+                    在上方登记的容器主机 Pod 内请求 Google <code className="rounded bg-slate-100 px-0.5">generate_204</code>。若该容器主机<strong>勾选了 Hysteria2 客户端</strong>，检测会经{" "}
                     <code className="rounded bg-slate-100 px-0.5">curl -x http://127.0.0.1:端口</code> 走本机 hysteria 的 HTTP inbound（与向导里本地端口一致），不会直连 Google。仅当检测通过后，平台才允许开启「对接
                     Telegram」；结果写入 MySQL。
                   </p>
@@ -1605,7 +1605,7 @@ const AppCenterOpenClawDetail: React.FC = () => {
                       运行检测
                     </Button>
                     {!egressVmDraft.trim() ? (
-                      <span className="text-xs text-amber-800">请先选择出站云主机并保存。</span>
+                      <span className="text-xs text-amber-800">请先选择出站容器主机并保存。</span>
                     ) : telegramQ.data?.googleCheckedAt ? (
                       <span className="text-xs text-slate-500">
                         上次 {formatDateTimeShanghai(telegramQ.data.googleCheckedAt)}

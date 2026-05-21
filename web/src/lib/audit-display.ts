@@ -45,6 +45,7 @@ function apiMutationLabel(method: string, path: string): string {
   if (path.includes("/api/settings/runtime")) return "保存运行配置";
   if (path.includes("/api/prometheus/source")) return "保存 Prometheus 数据源";
   if (path.includes("/api/prometheus/query")) return "Prometheus 查询（已不记入审计列表）";
+  if (path.includes("/api/ops/vmlog/")) return apiVmLogMutationLabel(method, path);
   if (path.includes("/api/app-center/cloud-vm/instances") && method === "POST") return "创建云主机实例";
   if (path.includes("/api/app-center/cloud-vm/instances/") && method === "DELETE") return "删除云主机实例";
   if (path.includes("/api/app-center/cloud-vm/instances/") && method === "PUT") return "更新云主机（如初始化脚本）";
@@ -71,6 +72,19 @@ function apiMutationLabel(method: string, path: string): string {
 
   const short = path.replace(/^\/api\//, "");
   return `${verb} ${short || path}`;
+}
+
+function apiVmLogMutationLabel(method: string, path: string): string {
+  if (path.includes("/api/ops/vmlog/overview")) return "查看 VictoriaLogs 日志总览";
+  if (path.includes("/api/ops/vmlog/details")) return "查看 VictoriaLogs 日志详情";
+  if (path.includes("/api/ops/vmlog/stats")) return "统计 VictoriaLogs 日志";
+  if (path.includes("/api/ops/vmlog/openclaw-analyze-row")) return "OpenClaw 分析单条日志";
+  if (path.includes("/api/ops/vmlog/openclaw-analyze")) return "OpenClaw 分析日志";
+  if (path.includes("/api/ops/vmlog/vm-shipper/script")) return "生成日志采集器脚本";
+  if (path.includes("/api/ops/vmlog/vm-shipper/inspect")) return "检查日志采集器配置";
+  if (path.includes("/api/ops/vmlog/vm-shipper/apply")) return "下发日志采集器";
+  if (path.includes("/api/ops/vmlog/vm-shipper/tasks")) return "查看日志采集器任务";
+  return method === "POST" ? "提交 VictoriaLogs 日志查询" : "VictoriaLogs 日志操作";
 }
 
 function apiKafkaMutationLabel(method: string, path: string): string {
@@ -118,6 +132,7 @@ export function auditModuleLabel(r: AuditRecord): string {
   const p = r.path || "";
   if (p.includes("/k8s/") || p.includes("/ingress")) return "Kubernetes";
   if (p.includes("/vcenter/")) return "vCenter";
+  if (p.includes("/api/ops/vmlog/")) return "AI 巡检";
   if (p.includes("/app-center/")) return "应用中心";
   if (p.includes("baota")) return "宝塔";
   if (p.includes("/settings/runtime") || p.includes("/admin/")) return "平台";
@@ -139,6 +154,8 @@ export function auditModuleBadgeClass(label: string): string {
       return "border-violet-200 bg-violet-50 text-violet-900";
     case "应用中心":
       return "border-emerald-200 bg-emerald-50 text-emerald-900";
+    case "AI 巡检":
+      return "border-cyan-200 bg-cyan-50 text-cyan-900";
     case "宝塔":
       return "border-amber-300 bg-amber-50/90 text-amber-950";
     case "平台":

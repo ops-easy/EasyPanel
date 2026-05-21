@@ -678,7 +678,7 @@ const VCenterBastion: React.FC = () => {
           <SquareTerminal className="size-4 shrink-0 text-[#1890ff]" aria-hidden />
           <div className="min-w-0">
             <h1 className="truncate text-xs font-semibold tracking-wide text-[#ffffff]">主机与终端</h1>
-            <p className="truncate text-[10px] text-[#8c8c8c]">vCenter · JumpServer RDP · SSH</p>
+            <p className="truncate text-[10px] text-[#8c8c8c]">vCenter · PVE · 额外主机 · 云主机 · Redis CLI</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
@@ -724,7 +724,7 @@ const VCenterBastion: React.FC = () => {
             className="h-8 px-2 text-[10px] text-[#8c8c8c] hover:bg-[#1f1f1f] hover:text-[#69c0ff]"
             asChild
           >
-            <Link to="/cluster/compute/vcenter/settings">SSH</Link>
+            <Link to="/cluster/compute/vcenter/settings" title="vCenter VM 全局 SSH 设置">全局 SSH</Link>
           </Button>
           {selectedVm ? (
             <Button

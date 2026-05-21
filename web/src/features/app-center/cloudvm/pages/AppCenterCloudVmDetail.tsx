@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -957,7 +957,7 @@ export default function AppCenterCloudVmDetail() {
           <p className="mt-1 text-xs text-slate-600">
             与初始化脚本一并保存：可粘贴整行 <code className="rounded bg-slate-100 px-0.5">hysteria2://</code> / <code className="rounded bg-slate-100 px-0.5">hy2://</code> 分享链接或手写 YAML 至 Secret，运行{" "}
             <code className="rounded bg-slate-100 px-0.5">hysteria client</code>；将配置中 <code className="rounded bg-slate-100 px-0.5">127.0.0.1</code> 的本地 listen 改为{" "}
-            <code className="rounded bg-slate-100 px-0.5">0.0.0.0</code>，并暴露下方端口（TCP）与集群内 Service。二进制由<strong>云主机镜像引导</strong>中的全局下载 URL 按架构拉取（含镜像站回退）；可在 Deployment 环境变量中设置{" "}
+            <code className="rounded bg-slate-100 px-0.5">0.0.0.0</code>，并暴露下方端口（TCP）与集群内 Service。二进制由<strong>容器主机镜像引导</strong>中的全局下载 URL 按架构拉取（含镜像站回退）；可在 Deployment 环境变量中设置{" "}
             <code className="rounded bg-slate-100 px-0.5">HTTPS_PROXY</code> 辅助下载。
           </p>
           <p className="mt-2 rounded-lg border border-fuchsia-100 bg-fuchsia-50/50 px-2 py-1.5 text-[11px] text-fuchsia-950/90">
@@ -1138,7 +1138,7 @@ export default function AppCenterCloudVmDetail() {
                   </div>
                 </div>
                 <p className="mt-2 text-[11px] leading-relaxed text-fuchsia-900/80">
-                  指标为该云主机 Pod 在数据面的收发速率（与 SSH、客户端隧道等共用网络命名空间）；可反映 Hysteria2 客户端的大致负载。未勾选安装客户端时不显示本区块。
+                  指标为该容器主机 Pod 在数据面的收发速率（与 SSH、客户端隧道等共用网络命名空间）；可反映 Hysteria2 客户端的大致负载。未勾选安装客户端时不显示本区块。
                 </p>
               </div>
             ) : null}
@@ -1146,7 +1146,7 @@ export default function AppCenterCloudVmDetail() {
         )}
         <p className="mt-3 text-[11px] text-slate-500">
           指标由服务端代理 Prometheus（cAdvisor / 容器网络），浏览器使用 POST 且不暴露 PromQL；若出现 502，请检查运行时{" "}
-          <code className="rounded bg-slate-100 px-1">prometheusUrlK8s</code> 从本服务进程是否可达（与云主机 SSH 无直接关系）。
+          <code className="rounded bg-slate-100 px-1">prometheusUrlK8s</code> 从本服务进程是否可达（与容器主机 SSH 无直接关系）。
         </p>
       </div>
 
@@ -1257,7 +1257,7 @@ export default function AppCenterCloudVmDetail() {
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>删除该云主机？</AlertDialogTitle>
+            <AlertDialogTitle>删除该容器主机？</AlertDialogTitle>
             <AlertDialogDescription>
               将删除实例及其<strong className="text-slate-900">数据卷（PVC）</strong>、网络访问（Service/NodePort）与
               <strong className="text-slate-900">访问凭据</strong>，此操作不可恢复。

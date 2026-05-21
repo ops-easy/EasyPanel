@@ -33,7 +33,7 @@ const App = () => {
               <Route element={<AuthedAppShell />}>
                 <Route index element={<HomeHub />} />
                 <Route path="ingress" element={<Navigate to="/cluster/baota/ingress" replace />} />
-                <Route path="baota" element={<Navigate to="/cluster/baota/sync" replace />} />
+                <Route path="baota" element={<Navigate to="/cluster/baota" replace />} />
                 <Route path="settings" element={<Settings />} />
                 {accountRoutes()}
                 {docsRoutes()}

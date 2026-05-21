@@ -242,7 +242,7 @@ const Header: React.FC = () => {
             {headerShowBaota ? (
             <DropdownMenuItem
               className="cursor-pointer gap-2 py-2.5"
-              onSelect={() => navigate("/cluster/baota/sync")}
+              onSelect={() => navigate("/cluster/baota")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-600">
                 <Server className="text-white" size={17} strokeWidth={2.25} />
@@ -263,14 +263,14 @@ const Header: React.FC = () => {
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="font-medium">应用中心</span>
-                <span className="text-xs text-muted-foreground">Redis · Kafka · OpenClaw · Hermes</span>
+                <span className="text-xs text-muted-foreground">Redis · Kafka · OpenSearch · DNS</span>
               </div>
             </DropdownMenuItem>
             ) : null}
             {headerShowBastion ? (
             <DropdownMenuItem
               className="cursor-pointer gap-2 py-2.5"
-              onSelect={() => navigate("/cluster/bastion/session")}
+              onSelect={() => navigate("/cluster/bastion")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-600 to-emerald-800">
                 <SquareTerminal className="text-white" size={17} strokeWidth={2.25} />

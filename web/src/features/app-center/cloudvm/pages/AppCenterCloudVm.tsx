@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { Link, Navigate, useNavigate } from "react-router-dom";
@@ -381,7 +381,7 @@ export default function AppCenterCloudVm() {
     }
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        云主机镜像尚未完成首次引导。管理员请打开{" "}
+        容器主机镜像尚未完成首次引导。管理员请打开{" "}
         <Link to={BOOTSTRAP_PATH} className="font-mono font-semibold underline">
           {BOOTSTRAP_PATH}
         </Link>{" "}
@@ -395,10 +395,10 @@ export default function AppCenterCloudVm() {
       <div className="relative overflow-hidden rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-50 via-white to-indigo-50/40 px-6 py-8 shadow-sm">
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-sky-800/90">应用中心 · 云主机</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-sky-800/90">应用中心 · 容器主机</p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-slate-900">
               <HardDrive className="h-7 w-7 text-sky-600" />
-              云主机
+              容器主机
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-600">
               四步创建：系统与密码 → 规格与数据盘 → 网络与高级 → 可选自定义软件。仅{" "}
@@ -413,7 +413,7 @@ export default function AppCenterCloudVm() {
                 onClick={openCreateTab}
               >
                 <Plus className="h-4 w-4" />
-                创建云主机
+                创建容器主机
               </Button>
             </div>
           )}
@@ -473,7 +473,7 @@ export default function AppCenterCloudVm() {
               className="gap-1.5 rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
             >
               <Plus className="h-4 w-4 shrink-0" />
-              创建云主机
+              创建容器主机
             </TabsTrigger>
           ) : null}
         </TabsList>
@@ -505,7 +505,7 @@ export default function AppCenterCloudVm() {
                       暂无实例
                       {canWrite ? (
                         <>
-                          ，可切换到「创建云主机」按步骤新建
+                          ，可切换到「创建容器主机」按步骤新建
                         </>
                       ) : null}
                     </TableCell>
@@ -568,9 +568,9 @@ export default function AppCenterCloudVm() {
           <TabsContent value="create" className="mt-4 outline-none">
             <Card className="border-slate-200 shadow-sm">
               <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-                <CardTitle className="text-base">创建云主机</CardTitle>
+                <CardTitle className="text-base">创建容器主机</CardTitle>
                 <CardDescription>
-                  与「公有云主机」登记类似的分步流程：共四步，完成后点击「创建云主机」。
+                  这是在 Kubernetes 中创建可 SSH 登录的容器化工作机；共四步，完成后点击「创建容器主机」。
                 </CardDescription>
                 <ol className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-2 lg:grid-cols-4 lg:items-stretch lg:gap-2">
                   {STEPS.map((s) => (
@@ -611,7 +611,7 @@ export default function AppCenterCloudVm() {
                 {step === 1 && (
                   <div className="grid max-w-xl gap-4">
                     <div>
-                      <Label>云主机名称</Label>
+                      <Label>容器主机名称</Label>
                       <Input
                         value={form.name}
                         onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -886,7 +886,7 @@ export default function AppCenterCloudVm() {
                               <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
                                 支持整行粘贴官方 <code className="rounded bg-white/80 px-0.5">hysteria2://</code> 或 <code className="rounded bg-white/80 px-0.5">hy2://</code> 分享链接（与客户端「复制分享」一致），也可导入 YAML；平台会补全本地{" "}
                                 <code className="rounded bg-white/80 px-0.5">http.listen</code>，并将 <code className="rounded bg-white/80 px-0.5">127.0.0.1</code> 改为{" "}
-                                <code className="rounded bg-white/80 px-0.5">0.0.0.0</code>，创建集群内 <code className="rounded bg-white/80 px-0.5">ClusterIP</code>（TCP）供其它 Pod 走 HTTP/SOCKS。下方端口须与本地 inbound 一致。二进制由<strong>云主机镜像引导</strong>中配置的全局下载地址（及自动镜像）按架构拉取；可在本向导<strong>环境变量</strong>中为 Deployment 设置{" "}
+                                <code className="rounded bg-white/80 px-0.5">0.0.0.0</code>，创建集群内 <code className="rounded bg-white/80 px-0.5">ClusterIP</code>（TCP）供其它 Pod 走 HTTP/SOCKS。下方端口须与本地 inbound 一致。二进制由<strong>容器主机镜像引导</strong>中配置的全局下载地址（及自动镜像）按架构拉取；可在本向导<strong>环境变量</strong>中为 Deployment 设置{" "}
                                 <code className="rounded bg-white/80 px-0.5">HTTPS_PROXY</code> / <code className="rounded bg-white/80 px-0.5">HTTP_PROXY</code> 辅助 Pod 内 <code className="rounded bg-white/80 px-0.5">curl</code>。
                               </p>
                             </div>
@@ -1027,7 +1027,7 @@ export default function AppCenterCloudVm() {
                         disabled={createMut.isPending || !step1Ok}
                         onClick={() => createMut.mutate()}
                       >
-                        {createMut.isPending ? "创建中…" : "创建云主机"}
+                        {createMut.isPending ? "创建中…" : "创建容器主机"}
                       </Button>
                     )}
                   </div>

@@ -111,7 +111,7 @@ export default function AppCenterDashboard() {
               Dashboard
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
-              纳管 Redis、Kafka、云主机、OpenClaw、Hermes 等实例数量与全局依赖（MySQL、加密、Redis 双写）；点下方卡片进入各子模块。
+              纳管 Redis、Kafka、容器主机、OpenClaw、Hermes 等实例数量与全局依赖（MySQL、加密、Redis 双写）；点下方卡片进入各子模块。
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -140,8 +140,28 @@ export default function AppCenterDashboard() {
               variant="secondary"
               className="h-10 shrink-0 gap-1.5 border-slate-200 bg-white shadow-sm hover:bg-slate-50"
             >
+              <Link to="/cluster/apps/opensearch">
+                OpenSearch
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="secondary"
+              className="h-10 shrink-0 gap-1.5 border-emerald-200/80 bg-emerald-50/70 shadow-sm hover:bg-emerald-100/80"
+            >
+              <Link to="/cluster/apps/dns">
+                DNS 管理
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="secondary"
+              className="h-10 shrink-0 gap-1.5 border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+            >
               <Link to="/cluster/apps/cloud-vm">
-                云主机
+                容器主机
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -162,26 +182,6 @@ export default function AppCenterDashboard() {
             >
               <Link to="/cluster/apps/hermes">
                 Hermes
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="secondary"
-              className="h-10 shrink-0 gap-1.5 border-slate-200 bg-white shadow-sm hover:bg-slate-50"
-            >
-              <Link to="/cluster/apps/opensearch">
-                OpenSearch
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="secondary"
-              className="h-10 shrink-0 gap-1.5 border-emerald-200/80 bg-emerald-50/70 shadow-sm hover:bg-emerald-100/80"
-            >
-              <Link to="/cluster/apps/dns">
-                DNS 管理
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -213,51 +213,6 @@ export default function AppCenterDashboard() {
               <p className="text-2xl font-semibold tabular-nums text-slate-900">{nKafka}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-xl border border-fuchsia-100 bg-white p-4 shadow-sm">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-slate-500">Hermes Agent</p>
-              <p className="text-2xl font-semibold tabular-nums text-slate-900">{nHermes}</p>
-              {hermesQ.data?.instances && hermesQ.data.instances.length > 0 ? (
-                <p className="mt-1 truncate text-[11px] text-slate-500" title={hermesQ.data.instances.map((i) => i.displayName || i.deploymentName).join(" · ")}>
-                  {hermesQ.data.instances
-                    .slice(0, 2)
-                    .map((i) => i.displayName || i.deploymentName || i.id)
-                    .join(" · ")}
-                  {hermesQ.data.instances.length > 2 ? ` 等 ${hermesQ.data.instances.length} 套` : ""}
-                </p>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700">
-              <HardDrive className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-slate-500">云主机实例</p>
-              <p className="text-2xl font-semibold tabular-nums text-slate-900">{nCloudVm}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl border border-violet-100 bg-white p-4 shadow-sm">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-700">
-              <Bot className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-slate-500">OpenClaw 网关</p>
-              <p className="text-2xl font-semibold tabular-nums text-slate-900">{nOpenClaw}</p>
-              {openClawQ.data?.instances && openClawQ.data.instances.length > 0 ? (
-                <p className="mt-1 truncate text-[11px] text-slate-500" title={openClawQ.data.instances.map((i) => i.displayName || i.deploymentName).join(" · ")}>
-                  {openClawQ.data.instances
-                    .slice(0, 2)
-                    .map((i) => i.displayName || i.deploymentName || i.id)
-                    .join(" · ")}
-                  {openClawQ.data.instances.length > 2 ? ` 等 ${openClawQ.data.instances.length} 套` : ""}
-                </p>
-              ) : null}
-            </div>
-          </div>
           <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700">
               <Search className="h-5 w-5" />
@@ -283,6 +238,51 @@ export default function AppCenterDashboard() {
             <div>
               <p className="text-xs font-medium text-slate-500">托管域名</p>
               <p className="text-2xl font-semibold tabular-nums text-slate-900">{nDnsDomains}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700">
+              <HardDrive className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-slate-500">容器主机实例</p>
+              <p className="text-2xl font-semibold tabular-nums text-slate-900">{nCloudVm}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-violet-100 bg-white p-4 shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-700">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-slate-500">OpenClaw 网关</p>
+              <p className="text-2xl font-semibold tabular-nums text-slate-900">{nOpenClaw}</p>
+              {openClawQ.data?.instances && openClawQ.data.instances.length > 0 ? (
+                <p className="mt-1 truncate text-[11px] text-slate-500" title={openClawQ.data.instances.map((i) => i.displayName || i.deploymentName).join(" · ")}>
+                  {openClawQ.data.instances
+                    .slice(0, 2)
+                    .map((i) => i.displayName || i.deploymentName || i.id)
+                    .join(" · ")}
+                  {openClawQ.data.instances.length > 2 ? ` 等 ${openClawQ.data.instances.length} 套` : ""}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-fuchsia-100 bg-white p-4 shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-slate-500">Hermes Agent</p>
+              <p className="text-2xl font-semibold tabular-nums text-slate-900">{nHermes}</p>
+              {hermesQ.data?.instances && hermesQ.data.instances.length > 0 ? (
+                <p className="mt-1 truncate text-[11px] text-slate-500" title={hermesQ.data.instances.map((i) => i.displayName || i.deploymentName).join(" · ")}>
+                  {hermesQ.data.instances
+                    .slice(0, 2)
+                    .map((i) => i.displayName || i.deploymentName || i.id)
+                    .join(" · ")}
+                  {hermesQ.data.instances.length > 2 ? ` 等 ${hermesQ.data.instances.length} 套` : ""}
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">

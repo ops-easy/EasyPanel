@@ -6,7 +6,9 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 const workspaceSource = read("../src/lib/workspace.ts");
 const sidebarSource = read("../src/shared/layout/Sidebar.tsx");
+const computeSubNavSource = read("../src/features/compute/layout/ComputeSubNav.tsx");
 const computeRoutesSource = read("../src/app/routes/compute-routes.tsx");
+const computeDashboardSource = read("../src/features/compute/pages/ComputeDashboard.tsx");
 const vcenterRoutesSource = read("../src/app/routes/vcenter-routes.tsx");
 const clusterRoutesSource = read("../src/app/routes/cluster-routes.tsx");
 const clusterLayoutSource = read("../src/features/cluster/pages/ClusterLayout.tsx");
@@ -20,6 +22,68 @@ const platformUsersSource = read("../src/features/account/pages/PlatformUsers.ts
 const vcenterListSource = read("../src/features/vcenter/pages/VCenterList.tsx");
 const vcenterTypesSource = read("../src/features/vcenter/pages/types.ts");
 const ikuaiRouterSource = read("../src/features/vcenter/pages/VCenterIkuaiRouterPage.tsx");
+
+function assertInOrder(source, needles, message) {
+  let previous = -1;
+  for (const needle of needles) {
+    const current = source.indexOf(needle);
+    assert.ok(current >= 0, `${message}: missing ${needle}`);
+    assert.ok(current > previous, `${message}: ${needle} is out of order`);
+    previous = current;
+  }
+}
+
+test("sidebar and mobile active states do not highlight parent dashboards together with child pages", () => {
+  assert.doesNotMatch(
+    sidebarSource,
+    /if \(ws === "baota"\) \{\s+return pathname\.startsWith\("\/cluster\/baota"\);/
+  );
+  assert.match(
+    sidebarSource,
+    /if \(ws === "baota"\) \{\s+return pathname === "\/cluster\/baota" \|\| pathname === "\/cluster\/baota\/";\s+\}/
+  );
+
+  assert.doesNotMatch(
+    sidebarSource,
+    /location\.pathname\.startsWith\("\/cluster\/network"\) && !location\.pathname\.startsWith\("\/cluster\/network\/ikuai"\)/
+  );
+  assert.match(sidebarSource, /const networkIkuaiActive =/);
+  assert.match(sidebarSource, /const networkOpenWrtActive =/);
+
+  assert.doesNotMatch(
+    mobileLayoutSource,
+    /pathname === to \|\| pathname\.startsWith\(to \+ "\/"\) \|\| pathname\.startsWith\(to \+ "\?"\)/
+  );
+  assert.match(mobileLayoutSource, /function isBottomTabActive/);
+  assert.match(mobileLayoutSource, /pathname\.startsWith\("\/cluster\/compute"\)/);
+  assert.match(mobileLayoutSource, /pathname\.startsWith\("\/cluster\/apps\/"\)/);
+});
+
+test("compute sidebar follows the same coarse order as compute top navigation", () => {
+  const computeSidebar = sidebarSource.slice(
+    sidebarSource.indexOf("showComputeNav && isCompute"),
+    sidebarSource.indexOf("showNetworkNav && isNetwork")
+  );
+  assertInOrder(
+    computeSidebar,
+    [
+      'to="/cluster/compute/vcenter/dashboard"',
+      'to="/cluster/compute/vcenter/vms"',
+      'to="/cluster/compute/vcenter/hosts"',
+      'to="/cluster/compute/vcenter/gpu"',
+      'to="/cluster/compute/pve/dashboard"',
+      'to="/cluster/compute/cloud"',
+      'to="/cluster/bastion"',
+      'to="/cluster/compute/tools/ip-scan"',
+    ],
+    "compute sidebar"
+  );
+});
+
+test("header workspace switcher opens bastion module home before terminal sessions", () => {
+  assert.doesNotMatch(headerSource, /navigate\("\/cluster\/bastion\/session"\)/);
+  assert.match(headerSource, /navigate\("\/cluster\/bastion"\)/);
+});
 
 test("legacy vCenter paths belong to the unified compute workspace", () => {
   assert.match(workspaceSource, /pathname\.startsWith\("\/cluster\/vcenter"\)\) return "compute"/);
@@ -76,6 +140,22 @@ test("header and home hub entries use the same permission gates as sidebar", () 
   assert.match(homeHubSource, /enabled: loggedIn && showNetwork/);
 });
 
+test("home hub keeps Kubernetes and compute cards summarized before configuration", () => {
+  const k8sStart = homeHubSource.indexOf("{showK8s && (");
+  const computeStart = homeHubSource.indexOf("{showVc && (");
+  const networkStart = homeHubSource.indexOf("{showNetwork && (");
+  assert.ok(k8sStart >= 0, "Kubernetes hub card should exist");
+  assert.ok(computeStart > k8sStart, "compute hub card should follow Kubernetes card");
+  assert.ok(networkStart > computeStart, "network hub card should follow compute card");
+
+  const k8sCard = homeHubSource.slice(k8sStart, computeStart);
+  const computeCard = homeHubSource.slice(computeStart, networkStart);
+  assert.doesNotMatch(k8sCard, /\{k8sOk && \(/);
+  assert.doesNotMatch(computeCard, /\{vcOk && \(/);
+  assert.match(k8sCard, /<MetricItem/);
+  assert.match(computeCard, /<MetricItem/);
+});
+
 test("network workspace does not link internal toolbox back into vCenter", () => {
   assert.doesNotMatch(sidebarSource, /showVcTools[\s\S]{0,240}to="\/cluster\/vcenter\/tools\/ip-scan"/);
   assert.doesNotMatch(sidebarSource, /<span>爱快路由<\/span>/);
@@ -99,6 +179,31 @@ test("user-facing navigation keeps vCenter features under compute", () => {
   assert.match(globalSearchSource, /href: `\/cluster\/compute\/vcenter\/vms\/\$\{encodeURIComponent\(vm\.moref\)\}`/);
   assert.match(mobileLayoutSource, /to: "\/cluster\/compute\/dashboard"/);
 
-  const settingsLinks = sidebarSource.match(/to="\/cluster\/compute\/vcenter\/settings"/g) ?? [];
-  assert.equal(settingsLinks.length, 1);
+  assert.match(
+    computeRoutesSource,
+    /<Route index element=\{<Navigate to="dashboard" replace \/>}/
+  );
+  assert.match(
+    computeRoutesSource,
+    /<Route path="dashboard" element=\{<ComputeDashboard \/>}/
+  );
+  assert.match(
+    sidebarSource,
+    /isDocs \|\| isCompute \|\| isNetwork \|\| isAppcenter \? "概览"/
+  );
+  assert.match(computeSubNavSource, /to:\s*"\/cluster\/compute\/dashboard"[\s\S]*label:\s*"总览"/);
+  assert.match(sidebarSource, /to="\/cluster\/compute\/vcenter\/dashboard"[\s\S]*<span>vCenter<\/span>/);
+  assert.doesNotMatch(sidebarSource, />vCenter 总览</);
+  assert.doesNotMatch(computeDashboardSource, /兼容策略|\/cluster\/vcenter|旧路径会自动跳转/);
+
+  assert.match(
+    computeSubNavSource,
+    /to:\s*"\/cluster\/compute\/vcenter\/settings"[\s\S]*label:\s*"vCenter 设置"/
+  );
+  assert.match(
+    computeSubNavSource,
+    /to:\s*"\/cluster\/compute\/pve\/targets"[\s\S]*label:\s*"PVE 目标"/
+  );
+  assert.doesNotMatch(sidebarSource, /to="\/cluster\/compute\/vcenter\/settings"/);
+  assert.doesNotMatch(sidebarSource, />vCenter 设置</);
 });

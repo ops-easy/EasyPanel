@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
@@ -100,7 +100,7 @@ function parseSshWsFirstMessage(data: string | ArrayBuffer): SshWsErr | { type: 
   return null;
 }
 
-/** 应用中心云主机：连接前输入 root 密码；3 次失败后需验证码；错误留在本页提示 */
+/** 应用中心容器主机：连接前输入 root 密码；3 次失败后需验证码；错误留在本页提示 */
 const CloudVmSshTerminalSheet: React.FC<CloudVmSshTerminalSheetProps> = ({
   open,
   onOpenChange,
@@ -395,7 +395,7 @@ const CloudVmSshTerminalSheet: React.FC<CloudVmSshTerminalSheetProps> = ({
               setTimeout(sendResize, 0);
               setTimeout(sendResize, 100);
               setTimeout(sendResize, 400);
-              toast.success("云主机 SSH 已连接", {
+              toast.success("容器主机 SSH 已连接", {
                 description: `实例 #${instanceId}`,
                 duration: 3000,
               });
@@ -415,7 +415,7 @@ const CloudVmSshTerminalSheet: React.FC<CloudVmSshTerminalSheetProps> = ({
             setTimeout(sendResize, 0);
             setTimeout(sendResize, 100);
             setTimeout(sendResize, 400);
-            toast.success("云主机 SSH 已连接", {
+            toast.success("容器主机 SSH 已连接", {
               description: `实例 #${instanceId}`,
               duration: 3000,
             });
@@ -495,7 +495,7 @@ const CloudVmSshTerminalSheet: React.FC<CloudVmSshTerminalSheetProps> = ({
           <DialogTitle
             className={fullBleed ? "text-sm font-semibold text-slate-100" : "text-base font-semibold text-gray-900"}
           >
-            云主机 SSH（root）
+            容器主机 SSH（root）
           </DialogTitle>
           <DialogDescription asChild>
             {fullBleed ? (
@@ -651,7 +651,7 @@ const CloudVmSshTerminalSheet: React.FC<CloudVmSshTerminalSheetProps> = ({
                 </div>
                 <div className="max-w-[280px] text-sm font-medium leading-snug">正在连接 SSH，请稍候…</div>
                 <p className="max-w-[320px] px-4 text-xs leading-relaxed text-slate-400">
-                  通过平台转发 WebSocket；若长时间无响应请检查网络与实例状态，或关闭后在云主机详情查看部署进度。
+                  通过平台转发 WebSocket；若长时间无响应请检查网络与实例状态，或关闭后在容器主机详情查看部署进度。
                 </p>
               </div>
             )}

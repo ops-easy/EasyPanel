@@ -36,6 +36,30 @@ const BOTTOM_TABS = [
   { icon: Settings, label: "设置", to: "/settings", exact: false },
 ] as const;
 
+function isBottomTabActive(pathname: string, to: string, exact: boolean): boolean {
+  if (exact) return pathname === to;
+  if (to === "/cluster") {
+    if (pathname === "/cluster" || pathname === "/cluster/") return true;
+    if (!pathname.startsWith("/cluster/")) return false;
+    return ![
+      "/cluster/compute",
+      "/cluster/vcenter",
+      "/cluster/apps",
+      "/cluster/network",
+      "/cluster/baota",
+      "/cluster/bastion",
+      "/cluster/ai-inspect",
+    ].some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  }
+  if (to === "/cluster/compute/dashboard") {
+    return pathname.startsWith("/cluster/compute") || pathname.startsWith("/cluster/vcenter");
+  }
+  if (to === "/cluster/apps") {
+    return pathname === "/cluster/apps" || pathname.startsWith("/cluster/apps/");
+  }
+  return pathname === to || pathname.startsWith(`${to}/`) || pathname.startsWith(`${to}?`);
+}
+
 function MobileBottomNav() {
   const { pathname } = useLocation();
 
@@ -46,7 +70,7 @@ function MobileBottomNav() {
     >
       <div className="grid grid-cols-5">
         {BOTTOM_TABS.map(({ icon: Icon, label, to, exact }) => {
-          const active = exact ? pathname === to : pathname === to || pathname.startsWith(to + "/") || pathname.startsWith(to + "?");
+          const active = isBottomTabActive(pathname, to, exact);
           return (
             <Link
               key={to}

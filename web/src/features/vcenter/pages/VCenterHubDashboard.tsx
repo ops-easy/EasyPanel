@@ -7,6 +7,7 @@ import { apiGetJson, type AppConfig } from "@/lib/api";
 import type { VCenterHostsResponse, VCenterVMsResponse } from "./types";
 import StatCard from "@/shared/ui/StatCard";
 import VCenterEsxiPrometheusDashboard from "./VCenterEsxiPrometheusDashboard";
+import { VCenterPrometheusInlineHint } from "./VCenterConfigGuards";
 
 /** vCenter 工作区首页：巡检摘要 + Prometheus + 公有云主机数量 */
 const VCenterHubDashboard: React.FC = () => {
@@ -163,7 +164,10 @@ const VCenterHubDashboard: React.FC = () => {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6">
-        <VCenterEsxiPrometheusDashboard />
+        <VCenterPrometheusInlineHint />
+        <div className="mt-4 first:mt-0">
+          <VCenterEsxiPrometheusDashboard />
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">

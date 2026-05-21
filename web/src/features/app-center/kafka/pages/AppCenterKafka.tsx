@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -2829,7 +2829,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
           <Card className="border-slate-200/80 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">部署新集群</CardTitle>
-              <CardDescription>与云主机类似：先选命名空间与模版，再提交到当前连接的 Kubernetes。</CardDescription>
+              <CardDescription>与容器主机类似：先选命名空间与模版，再提交到当前连接的 Kubernetes。</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <ul className="list-disc space-y-1 pl-5 text-xs text-slate-600">

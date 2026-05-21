@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useAppConfig } from "@/hooks/use-app-config";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -243,7 +243,7 @@ const HeaderNotificationsSheet: React.FC = () => {
         <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
           {sshEvents.length > 0 ? (
             <div className="shrink-0 rounded-xl border border-amber-200 bg-amber-50/90 px-3 py-3 text-sm">
-              <p className="font-medium text-amber-950">应用中心 · 云主机 SSH 密码失败</p>
+              <p className="font-medium text-amber-950">应用中心 · 容器主机 SSH 密码失败</p>
               <p className="mt-1 text-xs leading-relaxed text-amber-900/90">
                 以下记录为进程内缓存，服务重启后清空。含命名空间、Pod、平台用户、访问 IP、平台侧 IP。
               </p>

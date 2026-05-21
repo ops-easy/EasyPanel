@@ -61,8 +61,10 @@ const BaotaSync: React.FC = () => {
 
   const check = rtQ.data?.systemCheck;
   const routes = routesQ.data ?? [];
-  const loading = rtQ.isLoading || routesQ.isLoading;
-  const err = rtQ.error || routesQ.error;
+  const baotaStatusLoading = rtQ.isLoading;
+  const routesLoading = routesQ.isLoading;
+  const runtimeError = rtQ.error;
+  const routesError = routesQ.error;
   const rep = syncStatusQ.data?.report ?? null;
   const cfg = configQ.data;
   const baotaTargetConfigured = cfg?.baotaTargets?.some((t) => Boolean(t.url && t.hasApiKey)) ?? false;
@@ -226,9 +228,9 @@ const BaotaSync: React.FC = () => {
         </CardContent>
       </Card>
 
-      {err && (
+      {runtimeError && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          {extractErrorMessage(err)}
+          {extractErrorMessage(runtimeError)}
         </div>
       )}
 
@@ -238,19 +240,27 @@ const BaotaSync: React.FC = () => {
         </div>
         <div className="relative z-10">
           <h3 className="text-lg font-bold mb-1">
-            {loading ? "加载中..." : !baotaConfigured ? "宝塔未配置" : baotaOk ? "宝塔 API 可访问" : "宝塔 API 异常"}
+            {baotaStatusLoading ? "加载中..." : !baotaConfigured ? "宝塔未配置" : baotaOk ? "宝塔 API 可访问" : "宝塔 API 异常"}
           </h3>
           <p className="text-blue-100 text-sm max-w-xl break-all">
             {!baotaConfigured ? "请先在宝塔设置中保存面板地址与 API Key。" : (check?.baota.msg ?? "—")}
           </p>
         </div>
         <div className="relative z-10 px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm border border-white/30 text-sm font-semibold">
-          Node: {check?.k8s.nodeIP ?? "—"}
+          {baotaConfigured ? (baotaOk ? "API 正常" : "API 待检查") : "未配置"}
         </div>
       </div>
 
       <h3 className="text-lg font-bold text-gray-900">已托管同步路由（K8s Ingress）</h3>
-      {loading ? (
+      {routesError ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-semibold">Ingress 路由依赖 Kubernetes</p>
+          <p className="mt-1 text-xs leading-relaxed text-amber-900">
+            当前只是无法读取集群中的 Ingress 列表，不影响宝塔面板配置与 API 连通性。需要同步 Ingress 时，请先完成 Kubernetes 连接。
+          </p>
+          <p className="mt-2 break-all text-xs text-amber-900">{extractErrorMessage(routesError)}</p>
+        </div>
+      ) : routesLoading ? (
         <p className="text-sm text-gray-500">加载中...</p>
       ) : routes.length === 0 ? (
         <p className="text-sm text-gray-500">暂无带注解的 Ingress。</p>

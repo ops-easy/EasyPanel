@@ -13,8 +13,14 @@ npm run build
 
 - `/`
 - `/cluster`
+- `/cluster/apps/dashboard`
 - `/cluster/apps/redis`
 - `/cluster/apps/kafka`
+- `/cluster/apps/opensearch`
+- `/cluster/apps/dns`
+- `/cluster/apps/cloud-vm`
+- `/cluster/apps/openclaw`
+- `/cluster/apps/hermes`
 - `/cluster/vcenter/dashboard`
 - `/cluster/ai-inspect`
 - `/docs`

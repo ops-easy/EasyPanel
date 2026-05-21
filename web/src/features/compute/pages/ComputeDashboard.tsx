@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Cloud, Cpu, Monitor, Server, Shield, SquareTerminal } from "lucide-react";
+import { ArrowRight, Cloud, Cpu, Monitor, Server, SquareTerminal } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 
 const tiles = [
@@ -49,7 +49,7 @@ const ComputeDashboard: React.FC = () => {
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
               这一层把“运行主机”的能力集中放在一起：vCenter 仍承载现有虚拟化资产，PVE 作为新增平台接入，
-              公有云主机与堡垒机继续复用原有实现，避免旧入口断掉。
+              公有云主机与堡垒机按统一入口组织日常操作。
             </p>
           </div>
           <Button asChild className="w-fit gap-2 bg-violet-600 hover:bg-violet-700">
@@ -79,16 +79,6 @@ const ComputeDashboard: React.FC = () => {
           </Link>
         ))}
       </div>
-
-      <section className="rounded-xl border border-slate-200 bg-slate-50 px-5 py-4">
-        <div className="flex gap-3">
-          <Shield className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
-          <p className="text-sm leading-6 text-slate-700">
-            兼容策略：旧的 <span className="font-mono">/cluster/vcenter</span>、云主机和堡垒机路径保留；
-            新的 <span className="font-mono">/cluster/compute</span> 作为统一入口；旧路径会自动跳转到这里。
-          </p>
-        </div>
-      </section>
     </div>
   );
 };

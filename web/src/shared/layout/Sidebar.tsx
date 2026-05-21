@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -11,7 +11,6 @@ import {
   Cpu,
   Cloud,
   AppWindow,
-  Bot,
   Sparkles,
   LineChart,
   Bell,
@@ -25,7 +24,6 @@ import {
   FileText,
   BarChart3,
   Library,
-  Search,
   Layers,
   KeyRound,
   Calendar,
@@ -43,6 +41,7 @@ import { WORKSPACE_STORAGE_KEY, type WorkspaceId } from "@/lib/workspace";
 import { cn } from "@/lib/utils";
 import { menuItemVisible, moduleVisible } from "@/lib/platform-permissions";
 import type { K8sSidebarMenuItem } from "@/lib/api";
+import { APP_CENTER_MODULE_NAV_ITEMS, isAppCenterNavItemActive } from "@/features/app-center/layout/appCenterNavigation";
 
 type SidebarWorkspace = WorkspaceId;
 
@@ -140,7 +139,7 @@ function isDashboardActive(pathname: string, ws: SidebarWorkspace): boolean {
     );
   }
   if (ws === "baota") {
-    return pathname.startsWith("/cluster/baota");
+    return pathname === "/cluster/baota" || pathname === "/cluster/baota/";
   }
   return pathname === p || pathname === `${p}/`;
 }
@@ -429,8 +428,6 @@ const Sidebar: React.FC = () => {
   const showHarborNav = menuItemVisible(perm, "harbor", navRole, moduleVisible(perm, "k8s"));
   const showK8sClusterSettings =
     navRole === "admin" && menuItemVisible(perm, "k8s_settings", navRole, true);
-  const showVcSettings =
-    navRole === "admin" && menuItemVisible(perm, "vcenter_settings", navRole, true);
   const baotaTargetConfigured = cfg?.baotaTargets?.some((t) => Boolean(t.url && t.hasApiKey)) ?? false;
   const baotaConfigured = Boolean((cfg?.hasBaotaApiKey && cfg?.baotaUrl) || baotaTargetConfigured);
   const ok = baotaConfigured && check?.baota.status === "success";
@@ -533,30 +530,6 @@ const Sidebar: React.FC = () => {
   const dashActive = isDashboardActive(location.pathname, workspace);
   const dashTo = dashboardPath(workspace);
 
-  const appCenterRedisActive =
-    location.pathname === "/cluster/apps/redis" ||
-    location.pathname.startsWith("/cluster/apps/redis/");
-
-  const appCenterCloudVmActive =
-    location.pathname === "/cluster/apps/cloud-vm" ||
-    location.pathname.startsWith("/cluster/apps/cloud-vm/");
-
-  const appCenterOpenSearchActive =
-    location.pathname === "/cluster/apps/opensearch" ||
-    location.pathname.startsWith("/cluster/apps/opensearch/");
-
-  const appCenterOpenClawActive =
-    location.pathname === "/cluster/apps/openclaw" ||
-    location.pathname.startsWith("/cluster/apps/openclaw/");
-
-  const appCenterHermesActive =
-    location.pathname === "/cluster/apps/hermes" ||
-    location.pathname.startsWith("/cluster/apps/hermes/");
-
-  const appCenterKafkaActive =
-    location.pathname === "/cluster/apps/kafka" ||
-    location.pathname.startsWith("/cluster/apps/kafka/");
-
   const appCenterDnsActive =
     location.pathname === "/cluster/apps/dns" ||
     location.pathname.startsWith("/cluster/apps/dns/");
@@ -598,11 +571,14 @@ const Sidebar: React.FC = () => {
   const computeToolboxActive =
     location.pathname.startsWith("/cluster/compute/tools") ||
     location.pathname.startsWith("/cluster/vcenter/tools");
-  const computeVcenterSettingsActive =
-    location.pathname === "/cluster/compute/vcenter/settings" ||
-    location.pathname === "/cluster/vcenter/settings";
   const computePveActive = location.pathname.startsWith("/cluster/compute/pve");
   const computeBastionActive = location.pathname.startsWith("/cluster/bastion");
+  const networkIkuaiActive =
+    location.pathname === "/cluster/network/ikuai" ||
+    location.pathname.startsWith("/cluster/network/ikuai/");
+  const networkOpenWrtActive =
+    location.pathname === "/cluster/network/openwrt" ||
+    location.pathname.startsWith("/cluster/network/openwrt/");
 
   const brandLabel = isDocs
     ? "文档仓库"
@@ -758,7 +734,7 @@ const Sidebar: React.FC = () => {
               </Link>
             )}
             {showBaotaNav && (
-              <Link to="/cluster/baota/sync" className={navLinkTint(false, "amber")}>
+              <Link to="/cluster/baota" className={navLinkTint(false, "amber")}>
                 <Server size={20} className="text-gray-400" />
                 <span>宝塔</span>
               </Link>
@@ -866,7 +842,7 @@ const Sidebar: React.FC = () => {
                 size={20}
                 className={iconTint(computeVcenterDashboardActive, "violet")}
               />
-              <span>vCenter 总览</span>
+              <span>vCenter</span>
             </Link>
             <Link
               to="/cluster/compute/vcenter/vms"
@@ -879,14 +855,14 @@ const Sidebar: React.FC = () => {
               <span>虚拟机</span>
             </Link>
             <Link
-              to="/cluster/compute/pve/dashboard"
-              className={navLinkTint(computePveActive, "violet")}
+              to="/cluster/compute/vcenter/hosts"
+              className={navLinkTint(computeHostActive, "violet")}
             >
-              <Server
+              <Cpu
                 size={20}
-                className={iconTint(computePveActive, "violet")}
+                className={iconTint(computeHostActive, "violet")}
               />
-              <span>PVE</span>
+              <span>宿主机</span>
             </Link>
             <Link
               to="/cluster/compute/vcenter/gpu"
@@ -898,6 +874,16 @@ const Sidebar: React.FC = () => {
               />
               <span>GPU 监控</span>
             </Link>
+            <Link
+              to="/cluster/compute/pve/dashboard"
+              className={navLinkTint(computePveActive, "violet")}
+            >
+              <Server
+                size={20}
+                className={iconTint(computePveActive, "violet")}
+              />
+              <span>PVE</span>
+            </Link>
             {showVcCloud ? (
               <Link
                 to="/cluster/compute/cloud"
@@ -908,40 +894,6 @@ const Sidebar: React.FC = () => {
                   className={iconTint(computeCloudActive, "violet")}
                 />
                 <span>公有云</span>
-              </Link>
-            ) : null}
-            <Link
-              to="/cluster/compute/vcenter/hosts"
-              className={navLinkTint(computeHostActive, "violet")}
-            >
-              <Cpu
-                size={20}
-                className={iconTint(computeHostActive, "violet")}
-              />
-              <span>宿主机</span>
-            </Link>
-            {showVcTools ? (
-              <Link
-                to="/cluster/compute/tools/ip-scan"
-                className={navLinkTint(computeToolboxActive, "violet")}
-              >
-                <Radar
-                  size={20}
-                  className={iconTint(computeToolboxActive, "violet")}
-                />
-                <span>内网工具箱</span>
-              </Link>
-            ) : null}
-            {showVcSettings ? (
-              <Link
-                to="/cluster/compute/vcenter/settings"
-                className={navLinkTint(computeVcenterSettingsActive, "violet")}
-              >
-                <Settings
-                  size={20}
-                  className={iconTint(computeVcenterSettingsActive, "violet")}
-                />
-                <span>vCenter 设置</span>
               </Link>
             ) : null}
             {showBastionNav ? (
@@ -956,6 +908,18 @@ const Sidebar: React.FC = () => {
                 <span>堡垒机</span>
               </Link>
             ) : null}
+            {showVcTools ? (
+              <Link
+                to="/cluster/compute/tools/ip-scan"
+                className={navLinkTint(computeToolboxActive, "violet")}
+              >
+                <Radar
+                  size={20}
+                  className={iconTint(computeToolboxActive, "violet")}
+                />
+                <span>内网工具箱</span>
+              </Link>
+            ) : null}
           </>
         ) : showNetworkNav && isNetwork ? (
           <>
@@ -966,21 +930,21 @@ const Sidebar: React.FC = () => {
             </div>
             <Link
               to="/cluster/network/ikuai/dashboard"
-              className={navLinkTint(location.pathname.startsWith("/cluster/network/ikuai"), "slate")}
+              className={navLinkTint(networkIkuaiActive, "slate")}
             >
               <Router
                 size={20}
-                className={iconTint(location.pathname.startsWith("/cluster/network/ikuai"), "slate")}
+                className={iconTint(networkIkuaiActive, "slate")}
               />
               <span>iKuai</span>
             </Link>
             <Link
               to="/cluster/network/openwrt/dashboard"
-              className={navLinkTint(location.pathname.startsWith("/cluster/network") && !location.pathname.startsWith("/cluster/network/ikuai"), "slate")}
+              className={navLinkTint(networkOpenWrtActive, "slate")}
             >
               <Network
                 size={20}
-                className={iconTint(location.pathname.startsWith("/cluster/network") && !location.pathname.startsWith("/cluster/network/ikuai"), "slate")}
+                className={iconTint(networkOpenWrtActive, "slate")}
               />
               <span>OpenWrt</span>
             </Link>
@@ -1017,69 +981,30 @@ const Sidebar: React.FC = () => {
                 应用中心
               </p>
             </div>
-            {/* Kafka */}
-            <Link
-              to="/cluster/apps/kafka"
-              className={navLinkTint(appCenterKafkaActive, "emerald")}
-            >
-              <Database size={20} className={iconTint(appCenterKafkaActive, "emerald")} />
-              <span>Kafka</span>
-            </Link>
-            {/* Redis */}
-            <Link
-              to="/cluster/apps/redis"
-              className={navLinkTint(appCenterRedisActive, "emerald")}
-            >
-              <Database size={20} className={iconTint(appCenterRedisActive, "emerald")} />
-              <span>Redis</span>
-            </Link>
-            {/* OpenSearch */}
-            <Link
-              to="/cluster/apps/opensearch"
-              className={navLinkTint(appCenterOpenSearchActive, "emerald")}
-            >
-              <Search size={20} className={iconTint(appCenterOpenSearchActive, "emerald")} />
-              <span>OpenSearch</span>
-            </Link>
-            {/* 云主机 */}
-            <Link
-              to="/cluster/apps/cloud-vm"
-              className={navLinkTint(appCenterCloudVmActive, "emerald")}
-            >
-              <Cloud size={20} className={iconTint(appCenterCloudVmActive, "emerald")} />
-              <span>云主机</span>
-            </Link>
-            {/* Openclaw */}
-            <Link
-              to="/cluster/apps/openclaw"
-              className={navLinkTint(appCenterOpenClawActive, "emerald")}
-            >
-              <Bot size={20} className={iconTint(appCenterOpenClawActive, "emerald")} />
-              <span>Openclaw</span>
-            </Link>
-            {/* Hermes */}
-            <Link
-              to="/cluster/apps/hermes"
-              className={navLinkTint(appCenterHermesActive, "emerald")}
-            >
-              <Sparkles size={20} className={iconTint(appCenterHermesActive, "emerald")} />
-              <span>Hermes</span>
-            </Link>
-            {/* DNS 管理 —— 父级：精确匹配 /cluster/apps/dns 才全亮，子页时显示淡绿色（无左 bar） */}
-            {(() => {
-              const dnsExact = location.pathname === "/cluster/apps/dns" || location.pathname === "/cluster/apps/dns/";
-              const dnsParentCls = dnsExact
-                ? navLinkTint(true, "emerald")
-                : appCenterDnsActive
-                  ? "flex items-center space-x-3 rounded-xl px-4 py-3.5 text-sm font-medium text-emerald-700 hover:bg-gray-50"
-                  : "flex items-center space-x-3 rounded-xl px-4 py-3.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900";
+            {APP_CENTER_MODULE_NAV_ITEMS.map((item) => {
+              const active = isAppCenterNavItemActive(location.pathname, item);
+              const Icon = item.icon;
+              if (item.id === "dns") {
+                const dnsExact = location.pathname === "/cluster/apps/dns" || location.pathname === "/cluster/apps/dns/";
+                const dnsParentCls = dnsExact
+                  ? navLinkTint(true, "emerald")
+                  : appCenterDnsActive
+                    ? "flex items-center space-x-3 rounded-xl px-4 py-3.5 text-sm font-medium text-emerald-700 hover:bg-gray-50"
+                    : "flex items-center space-x-3 rounded-xl px-4 py-3.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900";
+                return (
+                  <Link key={item.id} to={item.to} className={dnsParentCls}>
+                    <Icon size={20} className={dnsExact ? "text-emerald-600" : appCenterDnsActive ? "text-emerald-500" : "text-gray-400"} />
+                    <span>{item.sidebarLabel}</span>
+                  </Link>
+                );
+              }
               return (
-                <Link to="/cluster/apps/dns" className={dnsParentCls}>
-                  <Globe size={20} className={dnsExact ? "text-emerald-600" : appCenterDnsActive ? "text-emerald-500" : "text-gray-400"} />
-                  <span>DNS 管理</span>
+                <Link key={item.id} to={item.to} className={navLinkTint(active, "emerald")}>
+                  <Icon size={20} className={iconTint(active, "emerald")} />
+                  <span>{item.sidebarLabel}</span>
                 </Link>
               );
-            })()}
+            })}
             {appCenterDnsActive && (
               <div className="ml-3 border-l-2 border-blue-100 pl-2">
                 {[

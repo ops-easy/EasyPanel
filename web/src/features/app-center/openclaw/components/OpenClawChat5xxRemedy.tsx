@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { CollapsibleManual } from "@/shared/ui/CollapsibleManual";
 
 type Props = {
@@ -66,7 +66,7 @@ export function OpenClawChat5xxRemedyPanel({ className }: Props) {
           ）。模型名在厂商侧不存在时会表现为网关 5xx。
         </li>
         <li>
-          确认网关 Pod 能访问厂商 API（出站网络、或已配置的 <span className="font-mono">HTTP(S)_PROXY</span> / 出站云主机）。
+          确认网关 Pod 能访问厂商 API（出站网络、或已配置的 <span className="font-mono">HTTP(S)_PROXY</span> / 出站容器主机）。
         </li>
         <li>
           修改 Secret、<span className="font-mono">openclaw.json</span> 或 agent 目录下{" "}

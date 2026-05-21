@@ -8,6 +8,7 @@ import { Badge } from "@/shared/ui/badge";
 import { apiGetJson, type HarborAdminDashboardResponse } from "@/lib/api";
 import { describeSitePath } from "@/lib/site-path-descriptions";
 import { formatHarborStatCell } from "@/lib/harbor-stat-format";
+import { cn } from "@/lib/utils";
 
 type SiteStatsResponse = {
   startedAt?: string;
@@ -18,6 +19,69 @@ type SiteStatsResponse = {
   totalLoginFailIPs?: number;
   note?: string;
 };
+
+type SiteStatsCountRow = { ip: string; count: number };
+
+const siteStatsPathRowGridClass =
+  "md:grid md:grid-cols-[2.75rem_minmax(0,1.6fr)_minmax(12rem,0.8fr)_7rem] md:items-center md:gap-4";
+const siteStatsIpRowGridClass = "grid grid-cols-[2.25rem_minmax(0,1fr)_5.5rem] items-center gap-3";
+
+function siteStatsCountWidth(count: number, maxCount: number): string {
+  return maxCount > 0 ? `${Math.max(6, Math.round((count / maxCount) * 100))}%` : "0%";
+}
+
+function renderIpRanking(
+  title: string,
+  rows: SiteStatsCountRow[],
+  maxCount: number,
+  tone: "traffic" | "security"
+) {
+  const barClass = tone === "security" ? "bg-rose-500/80" : "bg-sky-500/80";
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-4">
+        <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+        <Badge variant="outline" className="border-slate-200 bg-white text-[10px] font-normal text-slate-500">
+          {rows.length} 条
+        </Badge>
+      </div>
+      <div className={cn("border-y border-slate-100 bg-slate-50/90 px-4 py-2 text-[11px] font-medium text-slate-500", siteStatsIpRowGridClass)}>
+        <span>排行</span>
+        <span>IP 地址</span>
+        <span className="text-right">次数</span>
+      </div>
+      <ul className="max-h-[280px] divide-y divide-slate-100 overflow-y-auto">
+        {rows.length === 0 ? (
+          <li className="px-4 py-6 text-center text-xs text-slate-500">暂无记录</li>
+        ) : (
+          rows.map((row, i) => {
+            const countWidth = siteStatsCountWidth(row.count, maxCount);
+
+            return (
+              <li key={`${row.ip}-${i}`} className="transition-colors hover:bg-slate-50">
+                <div className={cn("px-4 py-2.5", siteStatsIpRowGridClass)}>
+                  <span className="font-mono text-[11px] tabular-nums text-slate-400">#{i + 1}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate font-mono text-xs text-slate-800" title={row.ip}>
+                      {row.ip}
+                    </span>
+                    <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-slate-100">
+                      <span className={cn("block h-full rounded-full", barClass)} style={{ width: countWidth }} />
+                    </span>
+                  </span>
+                  <span className="text-right font-mono text-xs font-semibold tabular-nums text-slate-700">
+                    {row.count}
+                  </span>
+                </div>
+              </li>
+            );
+          })
+        )}
+      </ul>
+    </div>
+  );
+}
 
 export default function SiteStats() {
   const { status } = useAuth();
@@ -40,6 +104,12 @@ export default function SiteStats() {
   }
 
   const d = q.data;
+  const topPaths = d?.topPaths ?? [];
+  const topClientIPs = d?.topClientIPs ?? [];
+  const loginFailsByIP = d?.loginFailsByIP ?? [];
+  const maxPathCount = Math.max(0, ...topPaths.map((row) => row.count));
+  const maxClientIpCount = Math.max(0, ...topClientIPs.map((row) => row.count));
+  const maxLoginFailIpCount = Math.max(0, ...loginFailsByIP.map((row) => row.count));
   const hp = harborQ.data?.platform;
   const remote = harborQ.data?.remoteStatistics;
   const remoteProj =
@@ -106,46 +176,60 @@ export default function SiteStats() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-slate-900">访问最多的路径（Top 30）</h2>
-            <ul className="mt-3 max-h-[360px] space-y-2 overflow-y-auto text-[11px] text-slate-700">
-              {(d?.topPaths ?? []).map((row, i) => (
-                <li key={`${row.path}-${i}`} className="border-b border-slate-50 pb-2">
-                  <div className="flex justify-between gap-2 font-mono">
-                    <span className="min-w-0 break-all">{row.path}</span>
-                    <span className="shrink-0 tabular-nums text-slate-500">{row.count}</span>
-                  </div>
-                  <p className="mt-0.5 text-[11px] leading-snug text-slate-500">
-                    {describeSitePath(row.path)}
-                  </p>
-                </li>
-              ))}
-            </ul>
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-4">
+              <h2 className="text-sm font-semibold text-slate-900">访问最多的路径（Top 30）</h2>
+              <Badge variant="outline" className="border-slate-200 bg-white text-[10px] font-normal text-slate-500">
+                {topPaths.length} 条
+              </Badge>
+            </div>
+            <div className="max-h-[420px] overflow-y-auto">
+              <div
+                className={cn(
+                  "sticky top-0 z-10 hidden border-y border-slate-100 bg-slate-50/95 px-4 py-2 text-[11px] font-medium text-slate-500 md:grid",
+                  siteStatsPathRowGridClass
+                )}
+              >
+                <span>排行</span>
+                <span>路径</span>
+                <span>来源模块</span>
+                <span className="text-right">访问次数</span>
+              </div>
+              <ul className="divide-y divide-slate-100">
+                {topPaths.map((row, i) => {
+                  const sourceLabel = describeSitePath(row.path);
+                  const countWidth =
+                    maxPathCount > 0 ? `${Math.max(6, Math.round((row.count / maxPathCount) * 100))}%` : "0%";
+
+                  return (
+                    <li key={`${row.path}-${i}`} className="transition-colors hover:bg-slate-50">
+                      <div className={cn("grid gap-2 px-4 py-3", siteStatsPathRowGridClass)}>
+                        <span className="font-mono text-[11px] tabular-nums text-slate-400">#{i + 1}</span>
+                        <span className="min-w-0 truncate font-mono text-xs text-slate-800" title={row.path}>
+                          {row.path}
+                        </span>
+                        <span className="min-w-0 truncate text-xs text-slate-500" title={sourceLabel}>
+                          {sourceLabel}
+                        </span>
+                        <span className="min-w-0 text-left md:text-right">
+                          <span className="font-mono text-xs font-semibold tabular-nums text-slate-700">
+                            {row.count}
+                          </span>
+                          <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-slate-100">
+                            <span className="block h-full rounded-full bg-teal-500/80" style={{ width: countWidth }} />
+                          </span>
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <h2 className="text-sm font-semibold text-slate-900">访问最多的客户端 IP</h2>
-              <ul className="mt-3 max-h-[280px] space-y-1.5 overflow-y-auto font-mono text-[11px] text-slate-700">
-                {(d?.topClientIPs ?? []).map((row, i) => (
-                  <li key={`${row.ip}-${i}`} className="flex justify-between gap-2 border-b border-slate-50 pb-1">
-                    <span>{row.ip}</span>
-                    <span className="tabular-nums text-slate-500">{row.count}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <h2 className="text-sm font-semibold text-slate-900">登录失败最多的 IP</h2>
-              <ul className="mt-3 max-h-[280px] space-y-1.5 overflow-y-auto font-mono text-[11px] text-slate-700">
-                {(d?.loginFailsByIP ?? []).map((row, i) => (
-                  <li key={`${row.ip}-${i}`} className="flex justify-between gap-2 border-b border-slate-50 pb-1">
-                    <span>{row.ip}</span>
-                    <span className="tabular-nums text-slate-500">{row.count}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {renderIpRanking("访问最多的客户端 IP", topClientIPs, maxClientIpCount, "traffic")}
+            {renderIpRanking("登录失败最多的 IP", loginFailsByIP, maxLoginFailIpCount, "security")}
           </div>
         </div>
       )}

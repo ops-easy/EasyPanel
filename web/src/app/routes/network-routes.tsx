@@ -3,6 +3,7 @@ import { Navigate, Route } from "react-router-dom";
 import { RouteSuspense } from "@/app/route-fallback";
 import NetworkLayout from "@/features/network/layout/NetworkLayout";
 import NetworkDashboard from "@/features/network/pages/NetworkDashboard";
+import IkuaiConfigurationGate from "@/features/network/ikuai/pages/IkuaiConfigurationGate";
 
 const IkuaiDashboard = lazy(() => import("@/features/network/ikuai/pages/IkuaiDashboard"));
 const IkuaiClients = lazy(() => import("@/features/network/ikuai/pages/IkuaiClients"));
@@ -27,49 +28,61 @@ export function networkRoutes(): ReactNode {
       <Route
         path="ikuai/dashboard"
         element={
-          <RouteSuspense>
-            <IkuaiDashboard />
-          </RouteSuspense>
+          <IkuaiConfigurationGate>
+            <RouteSuspense>
+              <IkuaiDashboard />
+            </RouteSuspense>
+          </IkuaiConfigurationGate>
         }
       />
       <Route
         path="ikuai/interfaces"
         element={
-          <RouteSuspense>
-            <IkuaiInterfaces />
-          </RouteSuspense>
+          <IkuaiConfigurationGate>
+            <RouteSuspense>
+              <IkuaiInterfaces />
+            </RouteSuspense>
+          </IkuaiConfigurationGate>
         }
       />
       <Route
         path="ikuai/clients"
         element={
-          <RouteSuspense>
-            <IkuaiClients />
-          </RouteSuspense>
+          <IkuaiConfigurationGate>
+            <RouteSuspense>
+              <IkuaiClients />
+            </RouteSuspense>
+          </IkuaiConfigurationGate>
         }
       />
       <Route
         path="ikuai/apps"
         element={
-          <RouteSuspense>
-            <IkuaiDashboard />
-          </RouteSuspense>
+          <IkuaiConfigurationGate>
+            <RouteSuspense>
+              <IkuaiDashboard />
+            </RouteSuspense>
+          </IkuaiConfigurationGate>
         }
       />
       <Route
         path="ikuai/vm-mapping"
         element={
-          <RouteSuspense>
-            <IkuaiVmMapping />
-          </RouteSuspense>
+          <IkuaiConfigurationGate>
+            <RouteSuspense>
+              <IkuaiVmMapping />
+            </RouteSuspense>
+          </IkuaiConfigurationGate>
         }
       />
       <Route
         path="ikuai/exporter"
         element={
-          <RouteSuspense>
-            <IkuaiDashboard />
-          </RouteSuspense>
+          <IkuaiConfigurationGate>
+            <RouteSuspense>
+              <IkuaiDashboard />
+            </RouteSuspense>
+          </IkuaiConfigurationGate>
         }
       />
       <Route path="openwrt" element={<Navigate to="/cluster/network/openwrt/dashboard" replace />} />
