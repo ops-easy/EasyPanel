@@ -109,7 +109,7 @@ test("route-specific 页面复用现有 PVE/OpenWrt 数据接口", () => {
   }
 
   const openWrtWorkspace = read("../src/features/network/openwrt/pages/OpenWrtWorkspace.tsx");
-  for (const endpoint of ["/overview", "/interfaces", "/clients", "/traffic", "/exporter-status"]) {
+  for (const endpoint of ["/openwrt/overview", "/openwrt/interfaces", "/openwrt/clients", "/openwrt/wireless", "/openwrt/firewall", "/exporter-status"]) {
     assert.match(openWrtWorkspace, new RegExp(endpoint.replace("/", "\\/")));
   }
 });
