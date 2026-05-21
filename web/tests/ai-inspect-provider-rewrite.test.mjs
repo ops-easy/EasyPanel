@@ -58,3 +58,37 @@ test("removed OpenClaw inspect API paths do not remain in runtime source", () =>
   }
   assert.deepEqual(offenders, []);
 });
+
+test("AI inspect visible copy does not describe generic provider features as OpenClaw-only", () => {
+  const checkedFiles = [
+    "src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
+    "src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
+    "src/features/ops/ai-inspect/pages/AiInspectLogs.tsx",
+    "src/features/ops/ai-inspect/pages/AiInspectLogDetails.tsx",
+    "src/features/ops/ai-inspect/pages/AiInspectReports.tsx",
+    "src/pages/HomeHub.tsx",
+  ];
+  const bannedCopy = [
+    /OpenClaw 巡检/,
+    /巡检 OpenClaw/,
+    /AI 巡检 OpenClaw/,
+    /OpenClaw 日志分析/,
+    /OpenClaw 配置/,
+    /OpenClaw 与定时巡检/,
+    /OpenClaw \/ 对话接口/,
+    /分场景 OpenClaw/,
+    /远端 OpenClaw/,
+  ];
+  const offenders = [];
+
+  for (const file of checkedFiles) {
+    const src = read(file);
+    for (const pattern of bannedCopy) {
+      if (pattern.test(src)) {
+        offenders.push(`${file}: ${pattern}`);
+      }
+    }
+  }
+
+  assert.deepEqual(offenders, []);
+});

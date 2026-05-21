@@ -41,6 +41,7 @@ declare global {
   const ChevronLeftIcon: typeof import('lucide-react').ChevronLeftIcon
   const ChevronRight: typeof import('lucide-react').ChevronRight
   const ChevronRightIcon: typeof import('lucide-react').ChevronRightIcon
+  const ChevronUp: typeof import('lucide-react').ChevronUp
   const ChevronUpIcon: typeof import('lucide-react').ChevronUpIcon
   const Chrome: typeof import('lucide-react').Chrome
   const CircleCheckIcon: typeof import('lucide-react').CircleCheckIcon

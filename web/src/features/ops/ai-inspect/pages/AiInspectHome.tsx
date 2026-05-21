@@ -40,7 +40,7 @@ const INSPECT_MODEL_QUICK_PRESETS: { id: string; model: string }[] = [
 
 const OPS_AI_PROVIDER_SCENARIOS: { role: string; title: string; hint: string }[] = [
   { role: "inspect_summary", title: "巡检报告 · AI 总摘要", hint: "平台巡检完成后生成 Markdown 总评（与上方系统/用户模板一致，可用不同网关与模型）。" },
-  { role: "inspect_probe", title: "巡检内 · 连通性探针（pong）", hint: "巡检流程中的大模型 ping；可与摘要使用不同 OpenClaw/模型。" },
+  { role: "inspect_probe", title: "巡检内 · 连通性探针（pong）", hint: "巡检流程中的大模型 ping；可与摘要使用不同 AI Provider/模型。" },
   { role: "vmlog_analyze", title: "VictoriaLogs · 日志智能分析", hint: "日志查询页「AI Provider 分析」与单行分析接口。" },
   { role: "cluster_advisory", title: "kube-system · 控制平面周期建议", hint: "Dashboard 控制面 AI 建议后台任务。" },
 ];
@@ -59,6 +59,19 @@ function emptyAIProviderProfile(): AIProviderEndpointForm {
     source: "custom",
     instanceId: "",
   };
+}
+
+function aiProviderDisplayName(provider?: string): string {
+  switch ((provider || "custom").toLowerCase()) {
+    case "openclaw":
+      return "OpenClaw";
+    case "hermes":
+      return "Hermes";
+    case "custom":
+      return "OpenAI 兼容";
+    default:
+      return provider || "AI Provider";
+  }
 }
 
 type AIProviderEndpointForm = {
@@ -349,13 +362,14 @@ const AiInspectHome: React.FC = () => {
 
   const endpointProvider = draft.endpoint.provider || "custom";
   const endpointSource = endpointProvider === "custom" ? "custom" : draft.endpoint.source === "appCenter" ? "appCenter" : "custom";
+  const endpointProviderName = aiProviderDisplayName(endpointProvider);
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">巡检配置</h1>
         <p className="mt-1 text-sm text-slate-600">
-          对接 OpenAI 兼容接口（含自建网关 / OpenClaw 类服务），汇总 Kubernetes、vCenter、Prometheus、Redis、SSH、云主机等检查结果；支持定时每日报告。总览与模块摘要见{" "}
+          对接 OpenAI 兼容接口（含自建网关 / 应用中心 AI 网关），汇总 Kubernetes、vCenter、Prometheus、Redis、SSH、云主机等检查结果；支持定时每日报告。总览与模块摘要见{" "}
           <Link to="/cluster/ai-inspect/dashboard" className="font-medium text-sky-700 underline">
             Dashboard 总览
           </Link>
@@ -368,7 +382,7 @@ const AiInspectHome: React.FC = () => {
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">OpenClaw / 对话接口</h2>
+        <h2 className="text-lg font-semibold text-slate-900">AI Provider / 对话接口</h2>
         <CollapsibleManual
           storageKey="ai-inspect.openclaw-config-manual"
           title="配置说明（填什么、怎么用）"
@@ -379,8 +393,7 @@ const AiInspectHome: React.FC = () => {
           <ul className="list-inside list-disc space-y-1.5 text-[13px] leading-relaxed text-slate-700">
             <li>
               <strong>Base URL</strong>：OpenAI 兼容的 API 根地址（如官方{" "}
-              <code className="rounded bg-white/80 px-1">https://api.openai.com/v1</code>、自建 vLLM、或 OpenClaw
-              网关暴露的 <code className="rounded bg-white/80 px-1">…/v1</code>
+              <code className="rounded bg-white/80 px-1">https://api.openai.com/v1</code>、自建 vLLM、或应用中心网关暴露的 <code className="rounded bg-white/80 px-1">…/v1</code>
               ）。须与网关文档中的「基础路径」一致，否则请求会 404。选用<strong>应用中心 OpenClaw</strong>时，平台会将{" "}
               <code className="rounded bg-white/80 px-1">MiniMax-M2.7</code> /{" "}
               <code className="rounded bg-white/80 px-1">MiniMax-M2.5</code> 等上游模型名放在{" "}
@@ -490,7 +503,7 @@ const AiInspectHome: React.FC = () => {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>巡检使用的 OpenClaw 来源</Label>
+            <Label>巡检使用的 AI Provider 来源</Label>
             <Select
               value={endpointSource}
               disabled={endpointProvider === "custom"}
@@ -571,7 +584,7 @@ const AiInspectHome: React.FC = () => {
                 </SelectContent>
               </Select>
               <p className="text-[12px] text-slate-500">
-                仅列出<strong>运行中</strong>（就绪）的 OpenClaw 实例作巡检工具；请在应用中心先部署并等待就绪。集群内地址供本 Dashboard Pod 访问；保存后即选用该实例（Token
+                仅列出当前可用的<strong>{endpointProviderName}</strong> 应用中心实例作巡检工具；请在应用中心先部署并等待就绪。集群内地址供本 Dashboard Pod 访问；保存后即选用该实例（Token
                 与模型由服务端按登记实例解析）。
               </p>
             </div>
@@ -625,7 +638,7 @@ const AiInspectHome: React.FC = () => {
           {endpointSource === "custom" ? (
             <Collapsible defaultOpen={false} className="rounded-lg border border-slate-200 bg-slate-50/90">
               <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm font-medium text-slate-800 hover:bg-slate-100/80 [&[data-state=open]_svg]:rotate-180">
-                <span>远端 OpenClaw / OpenAI 兼容：API Key 与模型（默认折叠）</span>
+                <span>远端 OpenAI 兼容：API Key 与模型（默认折叠）</span>
                 <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200" aria-hidden />
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-4 border-t border-slate-200 px-3 pb-3 pt-3">
@@ -785,9 +798,9 @@ const AiInspectHome: React.FC = () => {
       </section>
 
       <section className="rounded-2xl border border-violet-200/80 bg-gradient-to-b from-violet-50/40 to-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">分场景 OpenClaw（可选）</h2>
+        <h2 className="text-lg font-semibold text-slate-900">分场景 AI Provider（可选）</h2>
         <p className="mt-1 text-sm text-slate-600">
-          下列能力默认走上方「OpenClaw / 对话接口」；若需<strong>不同应用中心实例或远端模型</strong>，在对应折叠中开启并填写。保存时与主配置一并提交。
+          下列能力默认走上方「AI Provider / 对话接口」；若需<strong>不同应用中心实例或远端模型</strong>，在对应折叠中开启并填写。保存时与主配置一并提交。
         </p>
         <div className="mt-4 space-y-3">
           {OPS_AI_PROVIDER_SCENARIOS.map(({ role, title, hint }) => {
@@ -1078,7 +1091,7 @@ const AiInspectHome: React.FC = () => {
             <li>vCenter VM 事件与宿主机告警：过去 24h 的 VM 电源/配置变更事件 + 宿主机原生告警（黄色/红色）</li>
             <li>Prometheus（Kubernetes / vCenter）：分别做探活与基础可用性巡检</li>
             <li>VictoriaLogs / VM 日志：查询可达性、近 24 小时日志量、最近日志样本、已开启采集目标概览</li>
-            <li>应用中心 Redis、云主机、SSH 凭据存储、OpenClaw 网关探针</li>
+            <li>应用中心 Redis、云主机、SSH 凭据存储、AI Provider 网关探针</li>
           </ul>
         </div>
         <div className="mt-6 flex flex-wrap items-end gap-4">

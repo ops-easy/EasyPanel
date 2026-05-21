@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +14,7 @@ func handleLoginPublicStatus(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 		defer cancel()
+		cfg := app.Cfg()
 		out := buildSystemCheckResponse(ctx, app, DashboardRoleAdmin)
 		if b, ok := out["baota"].(gin.H); ok {
 			b["url"] = ""
@@ -30,7 +32,30 @@ func handleLoginPublicStatus(app *ServerApp) gin.HandlerFunc {
 			k["nodeHidden"] = true
 			out["k8s"] = k
 		}
-		c.JSON(http.StatusOK, gin.H{"systemCheck": out})
+		baotaConfigured := strings.TrimSpace(cfg.BaotaURL) != "" && strings.TrimSpace(cfg.BaotaAPIKey) != ""
+		for _, target := range EffectiveBaotaTargets(cfg) {
+			if strings.TrimSpace(target.URL) != "" && strings.TrimSpace(target.APIKey) != "" {
+				baotaConfigured = true
+				break
+			}
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"systemCheck": out,
+			"runtime": gin.H{
+				"k8sConnected":             app.K8s() != nil,
+				"k8sRuntimeConfigured":     app.Runtime() != nil && K8sRuntimeConfigured(app.Runtime()),
+				"vcenterConfigured":        cfg.vCenterConfigured(),
+				"vcenterRuntimeConfigured": VCenterRuntimeCredentialsPresent(cfg),
+				"redisConfigured":          RedisAddrConfigured(cfg),
+				"redisConnected":           app.Redis() != nil,
+				"mysqlDsnConfigured":       strings.TrimSpace(cfg.MySQLDSN) != "",
+				"mysqlReachable":           app.MySQLDB() != nil,
+				"baotaConfigured":          baotaConfigured,
+				"ddnsConfigured":           strings.TrimSpace(cfg.DDNSHost) != "",
+				"ingressBaotaSyncEnabled":  cfg.IngressBaotaSyncEnabled,
+				"syncIntervalSec":          int(cfg.SyncInterval.Seconds()),
+			},
+		})
 	}
 }
 

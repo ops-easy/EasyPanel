@@ -264,7 +264,7 @@ const AiInspectLogs: React.FC = () => {
             AI 建议 · 控制平面（kube-system）
           </CardTitle>
           <CardDescription className="text-xs leading-relaxed">
-            与下方 VictoriaLogs 总览互补：平台周期抓取 apiserver/etcd 等日志并由 OpenClaw 输出集群级建议。完整内容、确认与铃铛在「AI 巡检
+            与下方 VictoriaLogs 总览互补：平台周期抓取 apiserver/etcd 等日志并由已配置的 AI Provider 输出集群级建议。完整内容、确认与铃铛在「AI 巡检
             → Dashboard」。
           </CardDescription>
         </CardHeader>
@@ -288,7 +288,7 @@ const AiInspectLogs: React.FC = () => {
               <OpenClawChatMarkdown source={clusterAdvisoryQ.data.markdown} />
             </div>
           ) : (
-            <p className="text-xs text-slate-500">尚无周期分析结果；请确认后台任务节点已启用且 AI 巡检 OpenClaw 已配置。</p>
+            <p className="text-xs text-slate-500">尚无周期分析结果；请确认后台任务节点已启用且 AI Provider 已启用。</p>
           )}
         </CardContent>
       </Card>

@@ -218,13 +218,13 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
         label: en ? "kube-apiserver request rate" : "kube-apiserver 请求速率",
         q: "sum(rate(apiserver_request_total[5m]))",
       },
-      { label: "etcd leader", q: "etcd_server_has_leader" },
+      { label: en ? "etcd leader" : "etcd 主节点", q: "etcd_server_has_leader" },
       {
         label: en ? "Pods by phase" : "Pod 按阶段",
         q: "sum by (phase) (kube_pod_status_phase)",
       },
       {
-        label: en ? "Node Ready" : "Node Ready",
+        label: en ? "Node Ready" : "节点 Ready",
         q: 'kube_node_status_condition{condition="Ready",status="true"}',
       },
     ],
@@ -400,7 +400,7 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
 
               <div className="space-y-2">
                 <Label>
-                  {en ? "Base URL (scheme + host + port)" : "自定义 Base URL（含协议与端口）"}
+                  {en ? "Base URL (scheme + host + port)" : "自定义根地址（含协议与端口）"}
                 </Label>
                 <Input
                   placeholder="http://prometheus-k8s.monitoring.svc:9090"
@@ -409,26 +409,48 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
                   onChange={(e) => setPromBase(e.target.value)}
                 />
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {cfg?.setupInitialized && (
-                  <Button type="button" size="sm" variant="secondary" onClick={() => setDsOpen(true)}>
-                    {en ? "Data source (Prometheus / VM)…" : "监控数据源（Prometheus / VictoriaMetrics）…"}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="whitespace-nowrap"
+                    title={en ? "Data source (Prometheus / VM)" : "监控数据源（Prometheus / VictoriaMetrics）"}
+                    onClick={() => setDsOpen(true)}
+                  >
+                    {en ? "Data source" : "监控数据源"}
                   </Button>
                 )}
-                <Button type="button" size="sm" onClick={() => void savePrometheus()}>
-                  {en ? "Save URL (session)" : "保存地址（进程内）"}
+                <Button
+                  type="button"
+                  size="sm"
+                  className="whitespace-nowrap"
+                  title={en ? "Save URL (session override)" : "保存地址（进程内覆盖）"}
+                  onClick={() => void savePrometheus()}
+                >
+                  {en ? "Save URL" : "保存地址"}
                 </Button>
                 {cfg?.setupInitialized && (
                   <Button
                     type="button"
                     size="sm"
                     variant="default"
+                    className="whitespace-nowrap"
+                    title={en ? "Save and persist to MySQL dynamic config" : "保存并写入 MySQL 动态配置"}
                     onClick={() => void persistPrometheusToRuntime()}
                   >
-                    {en ? "Save & persist (MySQL)" : "保存并写入动态配置"}
+                    {en ? "Persist config" : "写入动态配置"}
                   </Button>
                 )}
-                <Button type="button" size="sm" variant="outline" onClick={() => void clearPrometheus()}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="whitespace-nowrap"
+                  title={en ? "Clear session override" : "清除进程内覆盖"}
+                  onClick={() => void clearPrometheus()}
+                >
                   {en ? "Clear override" : "清除覆盖"}
                 </Button>
               </div>

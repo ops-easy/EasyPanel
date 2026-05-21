@@ -121,7 +121,7 @@ export default function AppCenterCloudVmBootstrap() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto w-full space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="sm" asChild className="gap-1.5">
           <Link to="/cluster/apps/cloud-vm">

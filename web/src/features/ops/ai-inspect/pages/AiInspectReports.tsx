@@ -219,7 +219,7 @@ function AiInspectReportsPlatform() {
       <div>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">平台级巡检报告</h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          全集群与多数据源汇总（K8s、vCenter、Prometheus、日志、Redis、SSH、云主机、OpenClaw 探针等）；由「巡检配置」页的定时或立即执行生成。
+          全集群与多数据源汇总（K8s、vCenter、Prometheus、日志、Redis、SSH、云主机、AI Provider 探针等）；由「巡检配置」页的定时或立即执行生成。
         </p>
       </div>
       {repQ.isLoading ? (

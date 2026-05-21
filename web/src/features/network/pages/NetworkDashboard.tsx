@@ -123,6 +123,7 @@ const NetworkDashboard: React.FC = () => {
 
   const ikuaiCount = (devicesQ.data?.devices ?? []).filter((x) => x.kind === "ikuai").length;
   const openwrtCount = (devicesQ.data?.devices ?? []).filter((x) => x.kind === "openwrt").length;
+  const openwrtConfigured = openwrtCount > 0;
   const families = statusQ.data?.families ?? {};
   const familyReadyCount = familyLabels.filter(([k]) => Boolean(families[k])).length;
 
@@ -140,12 +141,20 @@ const NetworkDashboard: React.FC = () => {
               iKuai 继续使用现有 Prometheus 图表能力，OpenWrt 先按 node/openwrt 指标族探测系统、接口、DHCP、Wi-Fi 与连接指标。
             </p>
           </div>
-          <Button asChild className="w-fit gap-2 bg-cyan-600 hover:bg-cyan-700">
-            <Link to="/cluster/network/ikuai/dashboard">
-              iKuai 图表
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild className="w-fit gap-2 bg-cyan-600 hover:bg-cyan-700">
+              <Link to={openwrtConfigured ? "/cluster/network/openwrt/dashboard" : "/cluster/network/dashboard?kind=openwrt"}>
+                {openwrtConfigured ? "OpenWrt 总览" : "配置 OpenWrt"}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-fit gap-2">
+              <Link to="/cluster/network/ikuai/dashboard">
+                iKuai 图表
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -160,9 +169,30 @@ const NetworkDashboard: React.FC = () => {
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs text-slate-500">OpenWrt</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950">{openwrtCount}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950">
+            {devicesQ.isLoading ? "…" : openwrtConfigured ? openwrtCount : "未配置"}
+          </p>
         </div>
       </section>
+
+      {devicesQ.isSuccess && !openwrtConfigured ? (
+        <section className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-amber-950">OpenWrt 未配置</h2>
+              <p className="mt-1 text-sm leading-6 text-amber-900/80">
+                当前还没有登记 OpenWrt 设备。请在左侧新增网络设备时选择 OpenWrt，并填写 Prometheus scope、instance 或 job 标签。
+              </p>
+            </div>
+            <Button asChild variant="outline" className="w-fit gap-2 border-amber-300 bg-white text-amber-900 hover:bg-amber-100">
+              <Link to="/cluster/network/dashboard?kind=openwrt">
+                配置 OpenWrt
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </section>
+      ) : null}
 
       <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
         <aside className="space-y-4">

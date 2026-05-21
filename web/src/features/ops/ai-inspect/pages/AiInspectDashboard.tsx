@@ -138,7 +138,7 @@ const AiInspectDashboard: React.FC = () => {
           Dashboard
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
-          以下为<strong>监控中心</strong>、<strong>告警中心</strong>与<strong>巡检配置</strong>（OpenClaw / 定时巡检）的摘要；点击卡片进入对应页面。与左侧「总览」同级，顶栏「Dashboard」也会进入本页。
+          以下为<strong>监控中心</strong>、<strong>告警中心</strong>与<strong>巡检配置</strong>（AI Provider / 定时巡检）的摘要；点击卡片进入对应页面。与左侧「总览」同级，顶栏「Dashboard」也会进入本页。
         </p>
         {isAdmin ? (
           <Button type="button" variant="outline" size="sm" className="mt-4 border-cyan-200 bg-white/90" asChild>
@@ -169,7 +169,7 @@ const AiInspectDashboard: React.FC = () => {
               </CardTitle>
               <CardDescription className="text-xs leading-relaxed">
                 约每 30 分钟后台汇总 apiserver / etcd / scheduler / controller / coredns 等日志，并结合集群 Pod 计数与 Prometheus
-                是否接入，由巡检 OpenClaw 给出评级与处置建议。处理完成后请点击「已处理」；若评级为 critical，顶栏铃铛会持续提示直至在「通知」中确认。
+                是否接入，由已配置的 AI Provider 给出评级与处置建议。处理完成后请点击「已处理」；若评级为 critical，顶栏铃铛会持续提示直至在「通知」中确认。
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -324,7 +324,7 @@ const AiInspectDashboard: React.FC = () => {
         >
           {!isAdmin ? (
             <p>
-              OpenClaw 与定时巡检、模型与巡检范围仅管理员可配。请使用左侧<strong>监控中心</strong>查看 Prometheus 监控图。
+              AI Provider 与定时巡检、模型与巡检范围仅管理员可配。请使用左侧<strong>监控中心</strong>查看 Prometheus 监控图。
             </p>
           ) : openclawQ.isLoading ? (
             <span className="text-slate-400">加载中…</span>

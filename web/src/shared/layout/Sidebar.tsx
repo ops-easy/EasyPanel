@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Server,
@@ -40,10 +41,19 @@ import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
 import { WORKSPACE_STORAGE_KEY, type WorkspaceId } from "@/lib/workspace";
 import { cn } from "@/lib/utils";
 import { menuItemVisible, moduleVisible, workspaceMenuVisible } from "@/lib/platform-permissions";
-import type { K8sSidebarMenuItem } from "@/lib/api";
+import { apiGetJson, type K8sSidebarMenuItem } from "@/lib/api";
 import { APP_CENTER_MODULE_NAV_ITEMS, isAppCenterNavItemActive } from "@/features/app-center/layout/appCenterNavigation";
 
 type SidebarWorkspace = WorkspaceId;
+
+type PVETarget = {
+  id: string;
+};
+
+type NetworkDevice = {
+  id: string;
+  kind: "ikuai" | "openwrt" | string;
+};
 
 function readWorkspace(): SidebarWorkspace {
   try {
@@ -191,6 +201,19 @@ function iconTint(isActive: boolean, tint: "blue" | "violet" | "amber" | "emeral
     slate: "text-slate-600",
   };
   return m[tint];
+}
+
+function NavItemText({ label, hint }: { label: string; hint?: string }) {
+  return (
+    <span className="flex min-w-0 flex-col leading-tight">
+      <span className="truncate">{label}</span>
+      {hint ? (
+        <span className="mt-0.5 truncate text-[10px] font-normal leading-3 text-gray-400">
+          {hint}
+        </span>
+      ) : null}
+    </span>
+  );
 }
 
 type K8sNavItem = {
@@ -429,6 +452,71 @@ const Sidebar: React.FC = () => {
   const statusLoading = runtimeQ.isLoading;
   const isViewer = cfg?.dashboardRole === "viewer" || cfg?.viewer === true;
   const showPlatformAudit = !isViewer && navRole === "admin";
+  const canFetchShellStatus = authStatus?.loggedIn === true || authStatus?.authRequired === false;
+
+  const pveTargetsQ = useQuery({
+    queryKey: ["pve-targets-shell"],
+    queryFn: ({ signal }) => apiGetJson<{ targets: PVETarget[] }>("/api/pve/targets", { signal }),
+    enabled: canFetchShellStatus && showComputeNav,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const networkDevicesQ = useQuery({
+    queryKey: ["network-devices-shell"],
+    queryFn: ({ signal }) => apiGetJson<{ devices: NetworkDevice[] }>("/api/network/devices", { signal }),
+    enabled: canFetchShellStatus && showNetworkNav,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const pveTargetCount = pveTargetsQ.data?.targets?.length ?? 0;
+  const pveStatusLoading = canFetchShellStatus && showComputeNav && pveTargetsQ.isLoading;
+  const pveDotClass = pveStatusLoading
+    ? "bg-slate-300"
+    : pveTargetsQ.isError
+      ? "bg-amber-500"
+      : pveTargetCount > 0
+        ? "bg-emerald-500"
+        : "bg-slate-400";
+  const pveStatusLabel = pveStatusLoading
+    ? "PVE …"
+    : pveTargetsQ.isError
+      ? "PVE 状态未知"
+      : pveTargetCount > 0
+        ? `PVE ${pveTargetCount} 目标`
+        : "PVE 未配置";
+  const pveEntryHint = pveStatusLoading
+    ? "PVE 检查中"
+    : pveTargetsQ.isError
+      ? "PVE 状态未知"
+      : pveTargetCount > 0
+        ? `PVE ${pveTargetCount} 目标`
+        : "PVE 未配置";
+
+  const openWrtDeviceCount =
+    networkDevicesQ.data?.devices?.filter((device) => device.kind === "openwrt").length ?? 0;
+  const openWrtStatusLoading = canFetchShellStatus && showNetworkNav && networkDevicesQ.isLoading;
+  const openWrtDotClass = openWrtStatusLoading
+    ? "bg-slate-300"
+    : networkDevicesQ.isError
+      ? "bg-amber-500"
+      : openWrtDeviceCount > 0
+        ? "bg-emerald-500"
+        : "bg-slate-400";
+  const openWrtStatusLabel = openWrtStatusLoading
+    ? "OpenWrt …"
+    : networkDevicesQ.isError
+      ? "OpenWrt 状态未知"
+      : openWrtDeviceCount > 0
+        ? `OpenWrt ${openWrtDeviceCount} 设备`
+        : "OpenWrt 未配置";
+  const openWrtEntryHint = openWrtStatusLoading
+    ? "OpenWrt 检查中"
+    : networkDevicesQ.isError
+      ? "OpenWrt 状态未知"
+      : openWrtDeviceCount > 0
+        ? `OpenWrt ${openWrtDeviceCount} 设备`
+        : "OpenWrt 未配置";
 
   const k8sLive = cfg?.k8sConfigured === true;
   const k8sFile = cfg?.k8sRuntimeConfigured === true;
@@ -725,13 +813,13 @@ const Sidebar: React.FC = () => {
             {showComputeNav && (
               <Link to="/cluster/compute/dashboard" className={navLinkTint(false, "violet")}>
                 <Monitor size={20} className="text-gray-400" />
-                <span>虚拟化与主机</span>
+                <NavItemText label="虚拟化与主机" hint={pveEntryHint} />
               </Link>
             )}
             {showNetworkNav && (
               <Link to="/cluster/network/dashboard" className={navLinkTint(false, "slate")}>
                 <Network size={20} className="text-gray-400" />
-                <span>网络设备</span>
+                <NavItemText label="网络设备" hint={openWrtEntryHint} />
               </Link>
             )}
             {showBaotaNav && (
@@ -824,7 +912,7 @@ const Sidebar: React.FC = () => {
                   size={20}
                   className={iconTint(location.pathname === "/cluster/settings", "blue")}
                 />
-                <span>Cluster Settings</span>
+                <span>集群设置</span>
               </Link>
             ) : null}
           </>
@@ -883,7 +971,7 @@ const Sidebar: React.FC = () => {
                 size={20}
                 className={iconTint(computePveActive, "violet")}
               />
-              <span>PVE</span>
+              <NavItemText label="PVE" hint={pveEntryHint} />
             </Link>
             {showVcCloud ? (
               <Link
@@ -947,7 +1035,7 @@ const Sidebar: React.FC = () => {
                 size={20}
                 className={iconTint(networkOpenWrtActive, "slate")}
               />
-              <span>OpenWrt</span>
+              <NavItemText label="OpenWrt" hint={openWrtEntryHint} />
             </Link>
           </>
         ) : showBaotaNav && isBaota ? (
@@ -1105,6 +1193,18 @@ const Sidebar: React.FC = () => {
               <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${vcDotClass}`} />
               <span className="text-xs text-gray-600">{vcStatusLabel}</span>
             </div>
+            {showComputeNav ? (
+              <div className="flex items-center gap-2">
+                <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${pveDotClass}`} />
+                <span className="text-xs text-gray-600">{pveStatusLabel}</span>
+              </div>
+            ) : null}
+            {showNetworkNav ? (
+              <div className="flex items-center gap-2">
+                <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${openWrtDotClass}`} />
+                <span className="text-xs text-gray-600">{openWrtStatusLabel}</span>
+              </div>
+            ) : null}
             <div className="flex items-center gap-2">
               <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${redisDotClass}`} />
               <span

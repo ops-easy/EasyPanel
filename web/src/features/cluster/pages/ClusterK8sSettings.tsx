@@ -8,9 +8,9 @@ import SettingsRuntimeSection from "@/features/settings/components/SettingsRunti
 
 const ClusterK8sSettings: React.FC = () => {
   return (
-    <div className="mx-auto max-w-4xl space-y-8 pb-12">
+    <div className="mx-auto w-full space-y-8 pb-12">
       <div>
-        <h1 className="mb-2 text-2xl font-bold text-gray-900">Cluster settings</h1>
+        <h1 className="mb-2 text-2xl font-bold text-gray-900">集群设置</h1>
         <p className="text-sm text-gray-500">
           Kubernetes API、Prometheus、VictoriaMetrics（vmselect）与 VictoriaLogs（VMLog）等。保存至 <code className="text-xs">MySQL 动态配置</code>。右下角「使用文档」第四节有详细说明。
         </p>
@@ -35,7 +35,7 @@ const ClusterK8sSettings: React.FC = () => {
       <ClusterK8sDashboardMonitoringSection />
       <ClusterK8sVmLogSection />
       <SettingsRuntimeSection variant="k8s" />
-      <SettingsPrometheusSection locale="en" />
+      <SettingsPrometheusSection />
     </div>
   );
 };

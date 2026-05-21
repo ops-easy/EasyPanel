@@ -141,6 +141,19 @@ function fmtMB(mb: number): string {
   return `${mb} MB`;
 }
 
+function formatAIProviderName(provider?: string): string {
+  switch ((provider || "custom").toLowerCase()) {
+    case "openclaw":
+      return "OpenClaw";
+    case "hermes":
+      return "Hermes";
+    case "custom":
+      return "OpenAI 兼容";
+    default:
+      return provider || "AI Provider";
+  }
+}
+
 const HomeHub: React.FC = () => {
   const { status: authStatus } = useAuth();
   const runtimeQ = useRuntimeStatusQuery();
@@ -320,6 +333,15 @@ const HomeHub: React.FC = () => {
   const nPveTargets = pveTargetsQ.data?.targets?.length ?? 0;
   const computeOk = vcOk || nPveTargets > 0;
   const computeLoading = cfgLoading || (!vcOk && pveTargetsQ.isLoading);
+  const pveHubStatus = pveTargetsQ.isLoading
+    ? "…"
+    : nPveTargets > 0
+      ? nPveTargets
+      : "未配置";
+  const pveHubHint =
+    !pveTargetsQ.isLoading && nPveTargets === 0
+      ? "PVE 未配置：请先在 PVE 目标页登记 Proxmox VE API 地址与凭据，之后节点、虚拟机和存储摘要会自动汇总。"
+      : "";
   const k8sMetricValue = (value?: number): number | string => {
     if (cfgLoading) return "…";
     if (!k8sOk) return 0;
@@ -364,6 +386,15 @@ const HomeHub: React.FC = () => {
   const nNetworkDevices = networkDevices.length;
   const nIkuaiDevices = networkDevices.filter((device) => device.kind === "ikuai").length;
   const nOpenWrtDevices = networkDevices.filter((device) => device.kind === "openwrt").length;
+  const openWrtHubStatus = networkDevicesQ.isLoading
+    ? "…"
+    : nOpenWrtDevices > 0
+      ? nOpenWrtDevices
+      : "未配置";
+  const openWrtHubHint =
+    !networkDevicesQ.isLoading && nOpenWrtDevices === 0
+      ? "OpenWrt 未配置：请先登记 OpenWrt 设备的 Prometheus scope、instance 或 job 标签，避免进入子页后才发现没有数据源。"
+      : "";
 
   // 堡垒机 / AI 巡检聚合（useMemo：与无关 hub 卡片解耦）
   const {
@@ -378,6 +409,7 @@ const HomeHub: React.FC = () => {
     aiReports,
     aiPanels,
     aiProviderEnabled,
+    aiProviderName,
     aiProviderModel,
     aiPromK8s,
     aiPromVc,
@@ -402,6 +434,7 @@ const HomeHub: React.FC = () => {
       aiReports: aiReportsQ.data?.reports?.length ?? 0,
       aiPanels: aiPanelsQ.data?.panels?.length ?? 0,
       aiProviderEnabled: aiProviderQ.data?.endpoint?.enabled ?? false,
+      aiProviderName: formatAIProviderName(aiProviderQ.data?.endpoint?.provider),
       aiProviderModel: aiProviderQ.data?.endpoint?.model,
       aiPromK8s: aiPromQ.data?.scopes?.k8s?.configured ?? false,
       aiPromVc: aiPromQ.data?.scopes?.vcenter?.configured ?? false,
@@ -479,18 +512,26 @@ const HomeHub: React.FC = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-violet-700 text-white">
                 <Monitor size={20} strokeWidth={2.2} />
               </div>
-              <StatusBadge ok={computeOk} loading={computeLoading} />
+              {!pveTargetsQ.isLoading && nPveTargets === 0 ? (
+                <HubStatusPill tone="amber" icon={<AlertCircle size={11} />}>
+                  PVE 未配置
+                </HubStatusPill>
+              ) : (
+                <StatusBadge ok={computeOk} loading={computeLoading} />
+              )}
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">虚拟化与主机</h2>
             <p className="mt-0.5 text-xs text-gray-400">vCenter、PVE、公有云与堡垒机</p>
             <HubMetricGrid>
               <MetricItem label="vCenter VM" value={!vcOk || vcLoading ? (vcLoading ? "…" : 0) : nVcVm} />
               <MetricItem label="ESXi 主机" value={!vcOk || vcLoading ? (vcLoading ? "…" : 0) : nVcHost} />
-              <MetricItem label="PVE 目标" value={pveTargetsQ.isLoading ? "…" : nPveTargets} />
+              <MetricItem label="PVE 目标" value={pveHubStatus} />
               <MetricItem label="云主机" value={cloudVmQ.isLoading ? "…" : nCloudVm} />
             </HubMetricGrid>
             <HubCardHint>
-              {!computeOk && !computeLoading
+              {pveHubHint
+                ? pveHubHint
+                : !computeOk && !computeLoading
                 ? "请先接入 vCenter 或新增 PVE 目标，摘要会保持同一版式并显示纳管数量。"
                 : vcOk && !vcLoading && vcMemTotalMB > 0
                   ? `宿主机内存 ${fmtMB(vcMemUsedMB)} / ${fmtMB(vcMemTotalMB)}，剩余 ${fmtMB(vcMemFreeMB)}。`
@@ -513,21 +554,26 @@ const HomeHub: React.FC = () => {
                 <Network size={20} strokeWidth={2.2} />
               </div>
               <HubStatusPill
-                tone={networkDevicesQ.isLoading || nNetworkDevices === 0 ? "slate" : "cyan"}
+                tone={networkDevicesQ.isLoading ? "slate" : nOpenWrtDevices > 0 ? "cyan" : "amber"}
+                icon={!networkDevicesQ.isLoading && nOpenWrtDevices === 0 ? <AlertCircle size={11} /> : undefined}
               >
-                {networkDevicesQ.isLoading ? "加载中..." : `${nNetworkDevices} 设备`}
+                {networkDevicesQ.isLoading
+                  ? "加载中..."
+                  : nOpenWrtDevices > 0
+                    ? `${nOpenWrtDevices} OpenWrt`
+                    : "OpenWrt 未配置"}
               </HubStatusPill>
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">网络设备</h2>
             <p className="mt-0.5 text-xs text-gray-400">iKuai、OpenWrt</p>
             <HubMetricGrid>
               <MetricItem label="iKuai" value={networkDevicesQ.isLoading ? "…" : nIkuaiDevices} />
-              <MetricItem label="OpenWrt" value={networkDevicesQ.isLoading ? "…" : nOpenWrtDevices} />
+              <MetricItem label="OpenWrt" value={openWrtHubStatus} />
               <MetricItem label="纳管设备" value={networkDevicesQ.isLoading ? "…" : nNetworkDevices} />
               <MetricItem label="数据源" value={nNetworkDevices > 0 ? "已接入" : "待接入"} />
             </HubMetricGrid>
             <HubCardHint>
-              网络设备按 iKuai 与 OpenWrt 分组展示，进入后可查看接口、客户端与监控数据源。
+              {openWrtHubHint || "网络设备按 iKuai 与 OpenWrt 分组展示，进入后可查看接口、客户端与监控数据源。"}
             </HubCardHint>
             <span className={cn(hubEntryClass, "text-cyan-700")}>
               进入 <ArrowRight size={13} />
@@ -649,14 +695,14 @@ const HomeHub: React.FC = () => {
                 <HubStatusPill tone="slate">检查中…</HubStatusPill>
               ) : isAdmin ? (
                 <HubStatusPill tone={aiProviderEnabled ? "cyan" : "slate"}>
-                  {aiProviderEnabled ? `大模型 ${aiProviderModel ? `· ${aiProviderModel}` : "已启用"}` : "大模型未启用"}
+                  {aiProviderEnabled ? `${aiProviderName}${aiProviderModel ? ` · ${aiProviderModel}` : " · 已启用"}` : "AI Provider 未启用"}
                 </HubStatusPill>
               ) : (
                 <HubStatusPill tone="cyan">已就绪</HubStatusPill>
               )}
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">AI 巡检</h2>
-            <p className="mt-0.5 text-xs text-gray-400">OpenClaw 巡检、监控告警、日志查询与采集</p>
+            <p className="mt-0.5 text-xs text-gray-400">AI Provider 巡检、监控告警、日志查询与采集</p>
 
             <HubMetricGrid>
               <MetricItem label="K8s 数据源" value={aiLoading ? "…" : aiPromK8s ? "已配置" : "未配置"} />

@@ -324,7 +324,7 @@ export const VM_LOG_CATEGORIES: LogCategory[] = [
   {
     id: "aiinspect",
     label: "AI 巡检",
-    short: "监控、告警、OpenClaw 等（按 grafana、prometheus、alert、inspect 等粗筛）。",
+    short: "监控、告警、AI 巡检等（按 grafana、prometheus、alert、inspect 等粗筛）。",
     ingest: [
       {
         title: "运维组件",

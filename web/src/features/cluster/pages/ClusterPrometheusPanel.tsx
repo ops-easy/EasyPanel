@@ -643,7 +643,7 @@ const ClusterPrometheusPanel: React.FC<{ compactIntro?: boolean }> = ({ compactI
             to="/cluster/settings"
             className="mt-2 inline-block text-sm font-semibold text-amber-950 underline underline-offset-2"
           >
-            前往 Cluster settings → Monitoring
+            前往集群设置 → 监控
           </Link>
         </div>
       </div>

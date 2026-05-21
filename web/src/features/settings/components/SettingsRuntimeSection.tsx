@@ -149,16 +149,16 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
       // idracInsecure 默认 true；undefined 会被 JSON.stringify 省略，后端会当成 false，与开关「!== false」不一致
       payload.idracInsecure = form.idracInsecure !== false;
       await apiPutJson("/api/settings/runtime", payload);
-      const msg = variant === "k8s" ? "Saved and reloaded." : "已保存并重载配置";
+      const msg = "已保存并重载配置";
       setOk(msg);
-      toast.success(variant === "k8s" ? "Saved successfully." : "保存成功");
+      toast.success("保存成功");
       await queryClient.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: ["runtime-status"] });
       await load();
     } catch (e) {
       const m = (e as Error).message;
       setErr(m);
-      toast.error(variant === "k8s" ? `Save failed: ${m}` : `保存失败：${m}`);
+      toast.error(`保存失败：${m}`);
     } finally {
       setSaving(false);
     }
@@ -169,7 +169,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
       <div className="flex items-center gap-2 py-8 text-sm text-gray-500">
         <Loader2 className="h-4 w-4 animate-spin" />
         {variant === "k8s"
-          ? "Loading runtime settings…"
+          ? "加载运行时配置…"
           : variant === "baota"
             ? "加载宝塔与 Ingress 配置…"
             : "加载运行时配置…"}
@@ -671,14 +671,14 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-base font-bold text-gray-900">
-            {v === "k8s" && "Cluster connection"}
+            {v === "k8s" && "集群连接"}
             {v === "vcenter" && "vCenter"}
             {v === "full" && "运行时配置（MySQL 动态配置）"}
           </h2>
           <p className="mt-1 text-xs text-gray-500">
             {v === "full" &&
               "在此补充 K8s、vCenter 等；MySQL 连接来自静态 config.yaml 或环境变量，页面不写入这部分。Redis 仅需 IP、端口、密码；密钥类留空表示不修改原值。宝塔与 Ingress 请在「宝塔」工作区 → 宝塔设置中配置。"}
-            {v === "k8s" && "Use in-cluster credentials or paste kubeconfig. Applied after save."}
+            {v === "k8s" && "使用集群内凭据或粘贴 kubeconfig，保存后生效。"}
             {v === "vcenter" && "vCenter 与虚拟机 SSH 默认；保存后热重载。"}
           </p>
         </div>
@@ -1041,7 +1041,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                 <DialogHeader>
                   <DialogTitle>配置 Kubernetes 菜单</DialogTitle>
                   <DialogDescription>
-                    仅影响桌面端 Kubernetes 左侧一级菜单。Dashboard 与 Cluster Settings 不在本次可隐藏范围内。
+                    仅影响桌面端 Kubernetes 左侧一级菜单。Dashboard 与集群设置不在本次可隐藏范围内。
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3">
@@ -1262,7 +1262,9 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
-                  <Label>harborBaseUrl</Label>
+                  <Label>
+                    Harbor 根地址 <code className="text-[11px]">harborBaseUrl</code>
+                  </Label>
                   <Input
                     className="font-mono text-xs"
                     placeholder="https://harbor.example.com"
@@ -1271,7 +1273,9 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>harborUsername</Label>
+                  <Label>
+                    Harbor 账号 <code className="text-[11px]">harborUsername</code>
+                  </Label>
                   <Input
                     className="font-mono text-xs"
                     value={String(form.harborUsername ?? "")}
@@ -1279,7 +1283,9 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>harborPassword（*** 表示已设置，留空保留）</Label>
+                  <Label>
+                    Harbor 密码 <code className="text-[11px]">harborPassword</code>（*** 表示已设置，留空保留）
+                  </Label>
                   <Input
                     type="password"
                     autoComplete="off"
@@ -1290,7 +1296,9 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                   />
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 sm:col-span-2">
-                  <span className="text-gray-700">harborSkipTls（自签证书）</span>
+                  <span className="text-gray-700">
+                    跳过 TLS 证书校验 <code className="text-[11px]">harborSkipTls</code>（自签证书）
+                  </span>
                   <Switch
                     checked={Boolean(form.harborSkipTls)}
                     onCheckedChange={(x) => setField("harborSkipTls", x)}
@@ -1518,12 +1526,12 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {v === "k8s" ? "Saving…" : "保存中…"}
+                保存中…
               </>
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                {v === "k8s" ? "Save" : "保存运行时配置"}
+                {v === "k8s" ? "保存" : "保存运行时配置"}
               </>
             )}
           </Button>

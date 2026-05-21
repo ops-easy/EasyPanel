@@ -868,7 +868,7 @@ const AiInspectLogDetails: React.FC = () => {
                   <OpenClawChatMarkdown source={clusterAdvisoryQ.data.markdown} />
                 </div>
               ) : (
-                <p className="text-xs text-slate-500">暂无周期分析；请稍候或检查巡检 OpenClaw 与后台任务是否启用。</p>
+                <p className="text-xs text-slate-500">暂无周期分析；请稍候或检查 AI Provider 与后台任务是否启用。</p>
               )}
             </CardContent>
           </Card>

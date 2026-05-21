@@ -9,6 +9,7 @@ const sidebarSource = read("../src/shared/layout/Sidebar.tsx");
 const computeSubNavSource = read("../src/features/compute/layout/ComputeSubNav.tsx");
 const computeRoutesSource = read("../src/app/routes/compute-routes.tsx");
 const computeDashboardSource = read("../src/features/compute/pages/ComputeDashboard.tsx");
+const networkDashboardSource = read("../src/features/network/pages/NetworkDashboard.tsx");
 const vcenterRoutesSource = read("../src/app/routes/vcenter-routes.tsx");
 const clusterRoutesSource = read("../src/app/routes/cluster-routes.tsx");
 const clusterLayoutSource = read("../src/features/cluster/pages/ClusterLayout.tsx");
@@ -160,6 +161,24 @@ test("home hub keeps Kubernetes and compute cards summarized before configuratio
   assert.doesNotMatch(computeCard, /\{vcOk && \(/);
   assert.match(k8sCard, /<MetricItem/);
   assert.match(computeCard, /<MetricItem/);
+});
+
+test("main shell surfaces PVE and OpenWrt setup status before drilling in", () => {
+  assert.match(sidebarSource, /apiGetJson<\{ targets: PVETarget\[\] \}>\("\/api\/pve\/targets"/);
+  assert.match(sidebarSource, /apiGetJson<\{ devices: NetworkDevice\[\] \}>\("\/api\/network\/devices"/);
+  assert.match(sidebarSource, /PVE 未配置/);
+  assert.match(sidebarSource, /OpenWrt 未配置/);
+
+  assert.match(homeHubSource, /PVE 未配置/);
+  assert.match(homeHubSource, /OpenWrt 未配置/);
+  assert.match(homeHubSource, /\/api\/pve\/targets/);
+  assert.match(homeHubSource, /\/api\/network\/devices/);
+
+  assert.match(computeDashboardSource, /\/api\/pve\/targets/);
+  assert.match(computeDashboardSource, /配置 PVE 目标|PVE 未配置/);
+
+  assert.match(networkDashboardSource, /\/api\/network\/devices/);
+  assert.match(networkDashboardSource, /配置 OpenWrt|OpenWrt 未配置/);
 });
 
 test("network workspace does not link internal toolbox back into vCenter", () => {

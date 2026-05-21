@@ -3,15 +3,20 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity as ActivityIcon,
+  AlertCircle,
   AppWindow,
   BookOpen,
   ChevronRight,
+  CheckCircle2,
+  Clock3,
+  Database,
   Eye,
   EyeOff,
   Layers,
   LogIn,
   Monitor,
   Network,
+  RefreshCw,
   Server,
   Shield,
   Sparkles,
@@ -36,8 +41,24 @@ type LoginChallenge = {
   question?: string;
 };
 
+type LoginRuntimeSummary = {
+  k8sConnected?: boolean;
+  k8sRuntimeConfigured?: boolean;
+  vcenterConfigured?: boolean;
+  vcenterRuntimeConfigured?: boolean;
+  redisConfigured?: boolean;
+  redisConnected?: boolean;
+  mysqlDsnConfigured?: boolean;
+  mysqlReachable?: boolean;
+  baotaConfigured?: boolean;
+  ddnsConfigured?: boolean;
+  ingressBaotaSyncEnabled?: boolean;
+  syncIntervalSec?: number;
+};
+
 type LoginPublicPayload = {
   systemCheck: SystemCheck;
+  runtime?: LoginRuntimeSummary;
 };
 
 async function fetchLoginChallenge(): Promise<LoginChallenge> {
@@ -178,6 +199,16 @@ type PublicStatusSummary = {
   tone: "ok" | "warn" | "pending" | "hidden";
 };
 
+type LoginStatusTone = PublicStatusSummary["tone"];
+
+type LoginStatusTile = {
+  label: string;
+  state: string;
+  detail: string;
+  tone: LoginStatusTone;
+  icon: React.ReactNode;
+};
+
 function normalizeProbeStatus(status?: string): string {
   return (status || "").trim().toLowerCase().replaceAll("-", "_").replaceAll(" ", "_");
 }
@@ -244,84 +275,251 @@ function ingressStatusSummary(k8s: SystemCheck["k8s"] | undefined): PublicStatus
   return { label: "未检测", hint: "未检测到 Ingress 控制器", tone: "pending" };
 }
 
-function LoginLeftStatusPanel({ sc, loading }: { sc: SystemCheck | undefined; loading: boolean }) {
-  const baota = sc?.baota;
-  const ddns = sc?.ddns;
-  const k8s = sc?.k8s;
-  const baotaSummary = serviceStatusSummary("baota", baota);
-  const ddnsSummary = serviceStatusSummary("ddns", ddns);
-  const ingressSummary = ingressStatusSummary(k8s);
-
-  const metrics = [
-    {
-      label: "宝塔",
-      value: loading ? "…" : baotaSummary.label,
-      sub: !loading ? baotaSummary.hint : undefined,
-      tone: baotaSummary.tone,
-      icon: <ActivityIcon className="h-3.5 w-3.5" />,
+function statusToneClasses(tone: LoginStatusTone) {
+  const map: Record<LoginStatusTone, { card: string; icon: string; dot: string; chip: string }> = {
+    ok: {
+      card: "border-emerald-100 bg-emerald-50/70 dark:border-emerald-500/20 dark:bg-emerald-500/10",
+      icon: "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300",
+      dot: "bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)]",
+      chip: "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300",
     },
-    {
-      label: "DDNS",
-      value: loading ? "…" : ddnsSummary.label,
-      sub: !loading ? ddnsSummary.hint : undefined,
-      tone: ddnsSummary.tone,
-      icon: <Server className="h-3.5 w-3.5" />,
+    warn: {
+      card: "border-amber-100 bg-amber-50/80 dark:border-amber-500/20 dark:bg-amber-500/10",
+      icon: "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
+      dot: "bg-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.13)]",
+      chip: "bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300",
     },
-    {
-      label: "Ingress",
-      value: loading ? "…" : ingressSummary.label,
-      sub: !loading ? ingressSummary.hint : undefined,
-      tone: ingressSummary.tone,
-      icon: <Layers className="h-3.5 w-3.5" />,
+    pending: {
+      card: "border-slate-200 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-800/50",
+      icon: "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300",
+      dot: "bg-slate-400",
+      chip: "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300",
     },
-  ];
+    hidden: {
+      card: "border-slate-200 bg-white/80 dark:border-slate-700 dark:bg-slate-900/50",
+      icon: "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300",
+      dot: "bg-slate-300 dark:bg-slate-600",
+      chip: "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300",
+    },
+  };
+  return map[tone];
+}
 
-  const allOk = !loading && sc && baotaSummary.tone === "ok" && ddnsSummary.tone === "ok";
+function formatRuntimeInterval(sec?: number): string {
+  if (!sec || sec <= 0) return "未设置";
+  if (sec < 60) return `${sec}s`;
+  if (sec % 60 === 0) return `${sec / 60}min`;
+  return `${Math.floor(sec / 60)}min ${sec % 60}s`;
+}
 
-  const anyErr = !loading && metrics.some((m) => m.tone === "warn");
-  const hasPending = !loading && metrics.some((m) => m.tone === "pending");
+function publicServiceTile(
+  label: string,
+  summary: PublicStatusSummary,
+  configured: boolean | undefined,
+  icon: React.ReactNode
+): LoginStatusTile {
+  if (!configured || summary.tone === "pending") {
+    return {
+      label,
+      state: "未配置",
+      detail: label === "宝塔" ? "面板 API 待接入" : "域名解析待接入",
+      tone: "pending",
+      icon,
+    };
+  }
+  if (summary.tone === "ok") {
+    return { label, state: "已接入", detail: summary.hint ?? "探活正常", tone: "ok", icon };
+  }
+  if (summary.tone === "warn") {
+    return { label, state: summary.label, detail: summary.hint ?? "需要检查", tone: "warn", icon };
+  }
+  return { label, state: summary.label, detail: summary.hint ?? "登录后查看详情", tone: summary.tone, icon };
+}
+
+function runtimeConnectionTile({
+  label,
+  configured,
+  connected,
+  configuredDetail,
+  pendingDetail,
+  icon,
+}: {
+  label: string;
+  configured?: boolean;
+  connected?: boolean;
+  configuredDetail: string;
+  pendingDetail: string;
+  icon: React.ReactNode;
+}): LoginStatusTile {
+  if (connected) return { label, state: "已连接", detail: configuredDetail, tone: "ok", icon };
+  if (configured) return { label, state: "连接异常", detail: "配置存在，当前进程未连通", tone: "warn", icon };
+  return { label, state: "未配置", detail: pendingDetail, tone: "pending", icon };
+}
+
+function LoginRuntimeStatusPanel({
+  payload,
+  loading,
+  error,
+}: {
+  payload: LoginPublicPayload | undefined;
+  loading: boolean;
+  error: Error | null;
+}) {
+  const rt = payload?.runtime;
+  const baotaSummary = serviceStatusSummary("baota", payload?.systemCheck?.baota);
+  const ddnsSummary = serviceStatusSummary("ddns", payload?.systemCheck?.ddns);
+  const ingressSummary = ingressStatusSummary(payload?.systemCheck?.k8s);
+
+  const tiles: LoginStatusTile[] = loading
+    ? [
+        "Kubernetes",
+        "vCenter",
+        "Redis",
+        "MySQL",
+        "宝塔",
+        "DDNS",
+      ].map((label) => ({
+        label,
+        state: "检查中",
+        detail: "正在读取公开状态",
+        tone: "hidden" as const,
+        icon:
+          label === "Kubernetes" ? (
+            <Layers className="h-4 w-4" />
+          ) : label === "vCenter" ? (
+            <Monitor className="h-4 w-4" />
+          ) : label === "Redis" ? (
+            <Server className="h-4 w-4" />
+          ) : label === "MySQL" ? (
+            <Database className="h-4 w-4" />
+          ) : label === "宝塔" ? (
+            <ActivityIcon className="h-4 w-4" />
+          ) : (
+            <Network className="h-4 w-4" />
+          ),
+      }))
+    : [
+        runtimeConnectionTile({
+          label: "Kubernetes",
+          configured: rt?.k8sRuntimeConfigured,
+          connected: rt?.k8sConnected,
+          configuredDetail: "集群客户端已就绪",
+          pendingDetail: "请在集群设置接入",
+          icon: <Layers className="h-4 w-4" />,
+        }),
+        {
+          label: "vCenter",
+          state: rt?.vcenterConfigured ? "已配置" : "未配置",
+          detail: rt?.vcenterConfigured ? "凭据与地址已保存" : rt?.vcenterRuntimeConfigured ? "凭据不完整" : "虚拟化入口待接入",
+          tone: rt?.vcenterConfigured ? "ok" : rt?.vcenterRuntimeConfigured ? "warn" : "pending",
+          icon: <Monitor className="h-4 w-4" />,
+        },
+        runtimeConnectionTile({
+          label: "Redis",
+          configured: rt?.redisConfigured,
+          connected: rt?.redisConnected,
+          configuredDetail: "缓存与镜像通道可用",
+          pendingDetail: "缓存能力待接入",
+          icon: <Server className="h-4 w-4" />,
+        }),
+        runtimeConnectionTile({
+          label: "MySQL",
+          configured: rt?.mysqlDsnConfigured,
+          connected: rt?.mysqlReachable,
+          configuredDetail: "平台元数据可写入",
+          pendingDetail: "平台元数据未持久化",
+          icon: <Database className="h-4 w-4" />,
+        }),
+        publicServiceTile("宝塔", baotaSummary, rt?.baotaConfigured, <ActivityIcon className="h-4 w-4" />),
+        publicServiceTile("DDNS", ddnsSummary, rt?.ddnsConfigured, <Network className="h-4 w-4" />),
+      ];
+
+  const readyCount = tiles.filter((item) => item.tone === "ok").length;
+  const warnCount = tiles.filter((item) => item.tone === "warn").length;
+  const pendingCount = tiles.filter((item) => item.tone === "pending").length;
+  const overallTone: LoginStatusTone = loading ? "hidden" : warnCount > 0 ? "warn" : pendingCount > 0 ? "pending" : "ok";
+  const overallClass = statusToneClasses(overallTone);
+  const headline = loading
+    ? "正在检查运行状态"
+    : error
+      ? "状态暂不可用"
+      : warnCount > 0
+        ? `${warnCount} 项需要处理`
+        : pendingCount > 0
+          ? `${readyCount}/${tiles.length} 项已就绪`
+          : "核心链路已就绪";
 
   return (
-    <div
-      className="login-v2-fade-in-up login-v2-d300 flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-slate-50/80 px-5 py-4 dark:border-slate-700 dark:bg-slate-900/50 min-[420px]:flex-row min-[420px]:flex-wrap min-[420px]:items-center min-[420px]:gap-5 sm:px-6 sm:py-5"
+    <section
+      className="login-v2-fade-in-up login-v2-d300 w-full rounded-2xl border border-slate-200/90 bg-white/90 p-4 shadow-sm shadow-slate-200/50 dark:border-slate-700 dark:bg-slate-900/60 dark:shadow-black/20"
       aria-label="运行状态"
+      aria-live="polite"
     >
-      <div className="flex shrink-0 items-center gap-2">
-        <span
-          className={cn(
-            "h-2 w-2 rounded-full",
-            loading ? "bg-slate-300" : anyErr ? "bg-amber-500" : allOk ? "bg-emerald-500" : "bg-sky-500"
-          )}
-          style={
-            !loading && allOk
-              ? { boxShadow: "0 0 6px rgba(22,163,74,0.65)" }
-              : !loading && anyErr
-                ? { boxShadow: "0 0 6px rgba(245,158,11,0.55)" }
-                : undefined
-          }
-        />
-        <span className="text-[11px] font-medium text-slate-600 sm:text-xs dark:text-slate-300">
-          {loading ? "状态加载中…" : anyErr ? "存在告警" : hasPending ? "存在未配置项" : allOk ? "各链路正常" : "部分待确认"}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <ActivityIcon className="h-3.5 w-3.5 text-[#4a8c3a]" aria-hidden />
+            运行状态
+          </div>
+          <h2 className="mt-2 text-lg font-bold tracking-tight text-slate-950 dark:text-slate-50 sm:text-xl">{headline}</h2>
+        </div>
+        <div className={cn("inline-flex shrink-0 items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold", overallClass.chip)}>
+          <span className={cn("h-2 w-2 rounded-full", overallClass.dot)} aria-hidden />
+          {loading ? "检查中" : warnCount > 0 ? "有告警" : pendingCount > 0 ? "待完善" : "健康"}
+        </div>
+      </div>
+
+      {error ? (
+        <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-200">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <span>公开状态读取失败：{error.message}</span>
+        </div>
+      ) : (
+        <div className="mt-4 grid grid-cols-1 gap-2 min-[460px]:grid-cols-2">
+          {tiles.map((item) => {
+            const toneClass = statusToneClasses(item.tone);
+            return (
+              <div key={item.label} className={cn("flex min-h-[52px] items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors", toneClass.card)}>
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", toneClass.icon)}>{item.icon}</span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{item.label}</p>
+                    <p className="truncate text-[11px] leading-snug text-slate-500 dark:text-slate-400" title={item.detail}>
+                      {item.detail}
+                    </p>
+                  </div>
+                </div>
+                <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold", toneClass.chip)}>
+                  {item.tone === "ok" ? (
+                    <CheckCircle2 className="h-3 w-3" aria-hidden />
+                  ) : item.tone === "warn" ? (
+                    <AlertCircle className="h-3 w-3" aria-hidden />
+                  ) : (
+                    <Clock3 className="h-3 w-3" aria-hidden />
+                  )}
+                  {item.state}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2 text-[11px] font-medium text-slate-500 dark:border-slate-800 dark:text-slate-400">
+        <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-50 px-2 py-1 dark:bg-slate-800/80">
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+          同步间隔 {loading ? "…" : formatRuntimeInterval(rt?.syncIntervalSec)}
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-50 px-2 py-1 dark:bg-slate-800/80">
+          <Layers className="h-3.5 w-3.5" aria-hidden />
+          Ingress {loading ? "检查中" : ingressSummary.label}
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-50 px-2 py-1 dark:bg-slate-800/80">
+          <Clock3 className="h-3.5 w-3.5" aria-hidden />
+          宝塔同步 {loading ? "检查中" : rt?.ingressBaotaSyncEnabled ? "已启用" : "未启用"}
         </span>
       </div>
-      <div className="hidden h-6 w-px shrink-0 bg-slate-200 min-[420px]:block dark:bg-slate-700" />
-      <div className="grid min-w-0 flex-1 grid-cols-1 gap-4 min-[380px]:grid-cols-3 sm:flex sm:flex-wrap sm:items-start sm:gap-x-6 sm:gap-y-3">
-        {metrics.map((m) => (
-          <div key={m.label} className="flex min-w-0 flex-col gap-1 min-[380px]:max-w-none sm:max-w-[220px]">
-            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-              <span className="text-[var(--login-v2-primary,#1a5ec8)]">{m.icon}</span>
-              <span className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{m.value}</span>
-            </div>
-            <span className="text-xs text-slate-500 dark:text-slate-400">{m.label}</span>
-            {m.sub ? (
-              <span className="line-clamp-2 text-xs leading-snug text-slate-400 dark:text-slate-500" title={m.sub}>
-                {m.sub}
-              </span>
-            ) : null}
-          </div>
-        ))}
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -632,11 +830,6 @@ const Login: React.FC = () => {
     );
   }
 
-  const sc = pubQ.data?.systemCheck;
-  const baotaPublic = serviceStatusSummary("baota", sc?.baota);
-  const ddnsPublic = serviceStatusSummary("ddns", sc?.ddns);
-  const ingressPublic = ingressStatusSummary(sc?.k8s);
-
   return (
     <div className="login-page-v2 relative min-h-[100dvh] min-h-screen w-full overflow-x-hidden overflow-y-auto bg-white lg:overflow-y-hidden dark:bg-slate-950">
       <div className="login-page-v2-grid-bg login-page-v2-grid-bg--pulse pointer-events-none absolute inset-0 opacity-60" />
@@ -661,7 +854,7 @@ const Login: React.FC = () => {
         <div className="grid w-full grid-cols-1 content-start gap-y-10 gap-x-0 py-6 sm:gap-y-12 sm:py-8 md:py-10 lg:min-h-[100dvh] lg:grid-cols-[minmax(0,1.14fr)_minmax(0,0.86fr)] lg:content-center lg:items-center lg:gap-x-12 lg:gap-y-0 lg:py-14 xl:gap-x-16 2xl:gap-x-20">
         {/* 左栏：大屏在左；小屏排在登录表单之后 */}
         <div className="order-2 flex min-h-0 w-full flex-col justify-center border-t border-slate-200/80 pt-8 dark:border-slate-800/80 lg:order-none lg:border-t-0 lg:border-r lg:border-b-0 lg:pt-0 lg:pb-0 lg:pr-10 xl:pr-14">
-          <div className="mx-auto flex w-full max-w-xl flex-col space-y-7 sm:space-y-8 lg:mx-0 lg:max-w-[min(100%,46rem)] xl:max-w-[50rem]">
+          <div className="mx-auto flex w-full max-w-xl flex-col space-y-5 sm:space-y-6 lg:mx-0 lg:max-w-[min(100%,46rem)] xl:max-w-[50rem]">
             <div className="login-v2-fade-in-up login-v2-d100 mb-5 flex flex-wrap items-center gap-2 sm:mb-8 sm:gap-3">
               <img src={BRAND_LOGO} alt="Kube-BT-Sync" className="h-10 w-auto max-w-[220px] object-contain sm:h-11" />
               <span
@@ -687,6 +880,12 @@ const Login: React.FC = () => {
               </p>
             </div>
 
+            <LoginRuntimeStatusPanel
+              payload={pubQ.data}
+              loading={pubQ.isPending}
+              error={pubQ.isError ? (pubQ.error as Error) : null}
+            />
+
             <div className="login-v2-fade-in-up login-v2-d200 grid w-full grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4">
               {HERO_MODULE_ITEMS.map((item) => (
                 <TechBadge
@@ -701,57 +900,6 @@ const Login: React.FC = () => {
                 </TechBadge>
               ))}
             </div>
-
-            <div
-              className="login-v2-fade-in-up login-v2-d300 w-full rounded-2xl border border-slate-200/90 bg-white/90 px-5 py-4 shadow-sm sm:px-6 sm:py-5 dark:border-slate-700 dark:bg-slate-900/60"
-              style={{ borderLeft: "3px solid #6ab04c" }}
-            >
-              <div className="mb-3 flex flex-wrap items-center gap-2 sm:mb-4">
-                <ActivityIcon className="h-4 w-4 text-[#4a8c3a]" aria-hidden />
-                <span className="text-xs font-bold uppercase tracking-wider text-[#4a8c3a]">接入状态</span>
-                <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                  未登录可见
-                </span>
-              </div>
-              <p className="mb-4 text-xs leading-relaxed text-slate-500 sm:text-sm dark:text-slate-400">
-                未登录页仅展示模块接入结果，<strong className="text-slate-700 dark:text-slate-200">不展示面板地址、域名、节点 IP 或底层连接日志</strong>。
-              </p>
-              {pubQ.isError ? (
-                <p className="text-sm text-amber-700 dark:text-amber-300">状态暂不可用（{String(pubQ.error?.message ?? "错误")}）</p>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">宝塔</p>
-                    <p className="mt-0.5 text-base font-semibold text-slate-900 dark:text-slate-100">
-                      {pubQ.isPending ? "…" : baotaPublic.label}
-                    </p>
-                    {baotaPublic.hint && !pubQ.isPending ? (
-                      <p className="mt-2 line-clamp-3 text-xs text-slate-500 dark:text-slate-400">{baotaPublic.hint}</p>
-                    ) : null}
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">DDNS</p>
-                    <p className="mt-0.5 text-base font-semibold text-slate-900 dark:text-slate-100">
-                      {pubQ.isPending ? "…" : ddnsPublic.label}
-                    </p>
-                    {ddnsPublic.hint && !pubQ.isPending ? (
-                      <p className="mt-2 line-clamp-3 text-xs text-slate-500 dark:text-slate-400">{ddnsPublic.hint}</p>
-                    ) : null}
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Ingress</p>
-                    <p className="mt-0.5 text-base font-semibold text-slate-900 dark:text-slate-100">
-                      {pubQ.isPending ? "…" : ingressPublic.label}
-                    </p>
-                    {ingressPublic.hint && !pubQ.isPending ? (
-                      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{ingressPublic.hint}</p>
-                    ) : null}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <LoginLeftStatusPanel sc={sc} loading={pubQ.isPending} />
           </div>
         </div>
 
