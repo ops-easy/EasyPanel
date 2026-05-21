@@ -68,8 +68,8 @@ import {
   type VmLogDetailsRes,
   type VmLogNamespacesRes,
   type VmLogNginxNamedCount,
-  type VmLogOpenClawAnalyzeRes,
-  type VmLogOpenClawAnalyzeRowRes,
+  type VmLogAIAnalyzeRes,
+  type VmLogAIAnalyzeRowRes,
   type VmLogStats,
   type VmLogStatus,
   VM_LOG_BUCKET_OPTIONS,
@@ -207,8 +207,8 @@ const AiInspectLogDetails: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = (searchParams.get("tab") as LogOverviewScope) || DEFAULT_TAB;
   const [selectedRow, setSelectedRow] = useState<VmLogDetailRow | null>(null);
-  const [openclawAnalyze, setOpenclawAnalyze] = useState<VmLogOpenClawAnalyzeRes | null>(null);
-  const [rowAnalyze, setRowAnalyze] = useState<VmLogOpenClawAnalyzeRowRes | null>(null);
+  const [openclawAnalyze, setOpenclawAnalyze] = useState<VmLogAIAnalyzeRes | null>(null);
+  const [rowAnalyze, setRowAnalyze] = useState<VmLogAIAnalyzeRowRes | null>(null);
 
   const setParam = useCallback((patch: Record<string, string | null>) => {
     const next = new URLSearchParams(searchParams);
@@ -344,7 +344,7 @@ const AiInspectLogDetails: React.FC = () => {
 
   const openclawAnalyzeMut = useMutation({
     mutationFn: () =>
-      apiPostJson<VmLogOpenClawAnalyzeRes>("/api/ops/vmlog/openclaw-analyze", {
+      apiPostJson<VmLogAIAnalyzeRes>("/api/ops/vmlog/ai-analyze", {
         ...statsBody,
         sampleLimit: 90,
         clearKnownIssues: false,
@@ -366,7 +366,7 @@ const AiInspectLogDetails: React.FC = () => {
 
   const clearVmlogDedupeMut = useMutation({
     mutationFn: () =>
-      apiPostJson<VmLogOpenClawAnalyzeRes>("/api/ops/vmlog/openclaw-analyze", {
+      apiPostJson<VmLogAIAnalyzeRes>("/api/ops/vmlog/ai-analyze", {
         ...statsBody,
         clearKnownIssues: true,
       }),
@@ -379,7 +379,7 @@ const AiInspectLogDetails: React.FC = () => {
 
   const rowAnalyzeMut = useMutation({
     mutationFn: (row: VmLogDetailRow) =>
-      apiPostJson<VmLogOpenClawAnalyzeRowRes>("/api/ops/vmlog/openclaw-analyze-row", {
+      apiPostJson<VmLogAIAnalyzeRowRes>("/api/ops/vmlog/ai-analyze-row", {
         scope: tab,
         k8sNamespace: tab === "pod" || tab === "nginx" ? k8sNs.trim() : "",
         k8sPodName: tab === "pod" || tab === "nginx" ? k8sPodName.trim() : "",

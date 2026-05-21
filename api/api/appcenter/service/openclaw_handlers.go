@@ -504,7 +504,7 @@ func handleAppOpenClawSyncInspect(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "实例不存在"})
 		return
 	}
-	bundle, err := loadOpsOpenClawBundle(app.PlatformKV())
+	bundle, err := loadOpsAIProviderBundle(app.PlatformKV())
 	if err != nil {
 		RespondAPIError500(c, err.Error())
 		return
@@ -514,9 +514,10 @@ func handleAppOpenClawSyncInspect(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	bundle.OpenClaw.EndpointSource = "appInstance"
-	bundle.OpenClaw.AppInstanceID = inst.ID
-	bundle.OpenClaw.BaseURL = strings.TrimSpace(inst.ClusterV1BaseURL)
+	bundle.Endpoint.Provider = "openclaw"
+	bundle.Endpoint.Source = "appCenter"
+	bundle.Endpoint.InstanceID = inst.ID
+	bundle.Endpoint.BaseURL = strings.TrimSpace(inst.ClusterV1BaseURL)
 	tok, err := decryptSecret(key, inst.GatewayTokenEnc)
 	if err != nil || strings.TrimSpace(tok) == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无法读取网关 Token"})
@@ -527,10 +528,13 @@ func handleAppOpenClawSyncInspect(c *gin.Context, app *ServerApp) {
 		RespondAPIError500(c, err.Error())
 		return
 	}
-	bundle.OpenClaw.APIKeyEnc = enc
-	bundle.OpenClaw.Model = mapModelPresetToAPI(inst.ModelPreset)
-	bundle.OpenClaw.Enabled = true
-	if err := saveOpsOpenClawBundle(app.PlatformKV(), bundle); err != nil {
+	bundle.Endpoint.APIKeyEnc = enc
+	bundle.Endpoint.Model = MapOpenClawInstanceGatewayModelRef(inst)
+	bundle.Endpoint.Enabled = true
+	if bundle.Endpoint.TimeoutSec <= 0 {
+		bundle.Endpoint.TimeoutSec = 120
+	}
+	if err := saveOpsAIProviderBundle(app.PlatformKV(), bundle); err != nil {
 		RespondAPIError500(c, err.Error())
 		return
 	}

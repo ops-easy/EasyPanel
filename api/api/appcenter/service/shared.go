@@ -29,8 +29,8 @@ type ServerApp = appctx.ServerApp
 type Config = appctx.Config
 type PlatformKV = appctx.PlatformKV
 type RedisLight = appctx.RedisLight
-type OpsOpenClawBundle = appcentermodel.OpsOpenClawBundle
-type OpenClawConfig = appcentermodel.OpenClawConfig
+type OpsAIProviderBundle = appcentermodel.OpsAIProviderBundle
+type OpsAIProviderEndpoint = appcentermodel.OpsAIProviderEndpoint
 
 const (
 	DashboardRoleAdmin             = authz.DashboardRoleAdmin
@@ -155,12 +155,12 @@ func opsEncryptionKey(cfg Config) ([]byte, error) {
 	return appcenterprovider.OpsEncryptionKey(cfg)
 }
 
-func loadOpsOpenClawBundle(kv PlatformKV) (OpsOpenClawBundle, error) {
-	return appcenterprovider.LoadOpsOpenClawBundle(kv)
+func loadOpsAIProviderBundle(kv PlatformKV) (OpsAIProviderBundle, error) {
+	return appcenterprovider.LoadOpsAIProviderBundle(kv)
 }
 
-func saveOpsOpenClawBundle(kv PlatformKV, b OpsOpenClawBundle) error {
-	return appcenterprovider.SaveOpsOpenClawBundle(kv, b)
+func saveOpsAIProviderBundle(kv PlatformKV, b OpsAIProviderBundle) error {
+	return appcenterprovider.SaveOpsAIProviderBundle(kv, b)
 }
 
 var execUpgrader = appcenterprovider.ExecUpgrader

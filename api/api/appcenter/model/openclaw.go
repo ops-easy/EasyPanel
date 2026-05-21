@@ -2,5 +2,5 @@ package model
 
 import core "kube-bt-sync/common/core"
 
-type OpsOpenClawBundle = core.OpsOpenClawBundle
-type OpenClawConfig = core.OpenClawConfig
+type OpsAIProviderBundle = core.OpsAIProviderBundle
+type OpsAIProviderEndpoint = core.OpsAIProviderEndpoint
