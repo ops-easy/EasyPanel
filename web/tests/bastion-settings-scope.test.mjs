@@ -20,6 +20,7 @@ test("bastion home explains ssh settings per target type instead of implying vCe
   assert.match(homeSource, /打开策略与额外主机/);
   assert.match(homeSource, /打开云主机/);
   assert.match(homeSource, /打开 Redis/);
+  assert.doesNotMatch(homeSource, />\s*vCenter VM 全局 SSH\s*<\/Link>/);
   assert.doesNotMatch(homeSource, /请确认 vCenter 已配置/);
 });
 
