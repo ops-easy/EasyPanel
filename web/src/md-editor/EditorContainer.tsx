@@ -58,12 +58,21 @@ type ApiDocRow = {
   updatedAt: string;
   createdAt?: string;
   contentKind?: string;
+  guide?: {
+    guideKey: string;
+    routePattern: string;
+    matchType: string;
+    enabled: boolean;
+    sortOrder?: number;
+  };
 };
 
 type ApiDocDetail = Record<string, unknown> & {
   hasSharePassword?: boolean;
   contentKind?: string;
 };
+
+type GuideMatchType = "prefix" | "exact" | "global";
 
 function toMs(iso?: string): number {
   if (!iso) return Date.now();
@@ -89,8 +98,11 @@ export default function MdEditorPage() {
   const { status } = useAuth();
   const isAdmin = status?.role === "admin";
 
+  const guideDocMatch = matchPath({ path: "/docs/guides/doc/:docId", end: true }, location.pathname);
   const docMatch = matchPath({ path: "/docs/doc/:docId", end: true }, location.pathname);
-  const docId = docMatch?.params.docId ?? null;
+  const isGuideMode = location.pathname === "/docs/guides" || Boolean(guideDocMatch);
+  const docsScope = isGuideMode ? "guides" : "regular";
+  const docId = guideDocMatch?.params.docId ?? docMatch?.params.docId ?? null;
   const activeNumericId = docId && /^\d+$/.test(docId) ? docId : null;
 
   const [editorTitle, setEditorTitle] = useState("");
@@ -109,8 +121,8 @@ export default function MdEditorPage() {
   const [contentKind, setContentKind] = useState<"markdown" | "excalidraw">("markdown");
 
   const listQ = useQuery({
-    queryKey: ["docs-list", ""],
-    queryFn: ({ signal }) => apiGetJson<{ docs: ApiDocRow[] }>("/api/docs", { signal }),
+    queryKey: ["docs-list", docsScope],
+    queryFn: ({ signal }) => apiGetJson<{ docs: ApiDocRow[] }>(`/api/docs?scope=${docsScope}`, { signal }),
     enabled: isAdmin,
   });
 
@@ -226,6 +238,7 @@ export default function MdEditorPage() {
           title: editorTitle.trim() || "未命名",
           content: editorBody,
           contentKind,
+          guide: d.guide,
           created: toMs(d.createdAt ?? d.updatedAt),
           updated: toMs(d.updatedAt),
         };
@@ -235,6 +248,7 @@ export default function MdEditorPage() {
         title: d.title || "未命名",
         content: "",
         contentKind: rowKind,
+        guide: d.guide,
         created: toMs(d.createdAt ?? d.updatedAt),
         updated: toMs(d.updatedAt),
       };
@@ -245,6 +259,33 @@ export default function MdEditorPage() {
     if (!activeNumericId) return null;
     return documents.find((x) => x.id === activeNumericId) ?? null;
   }, [documents, activeNumericId]);
+  const currentGuide = currentDoc?.guide ?? null;
+  const [guideRoutePattern, setGuideRoutePattern] = useState("");
+  const [guideMatchType, setGuideMatchType] = useState<GuideMatchType>("prefix");
+  const [guideEnabled, setGuideEnabled] = useState(true);
+  const [guideSortOrder, setGuideSortOrder] = useState("0");
+
+  useEffect(() => {
+    if (!currentGuide) {
+      setGuideRoutePattern("");
+      setGuideMatchType("prefix");
+      setGuideEnabled(true);
+      setGuideSortOrder("0");
+      return;
+    }
+    setGuideRoutePattern(currentGuide.routePattern || "/");
+    setGuideMatchType(
+      currentGuide.matchType === "exact" || currentGuide.matchType === "global" ? currentGuide.matchType : "prefix"
+    );
+    setGuideEnabled(currentGuide.enabled);
+    setGuideSortOrder(String(currentGuide.sortOrder ?? 0));
+  }, [
+    currentGuide?.enabled,
+    currentGuide?.guideKey,
+    currentGuide?.matchType,
+    currentGuide?.routePattern,
+    currentGuide?.sortOrder,
+  ]);
 
   const uploadFile = async (file: File, kind: string) => {
     const fd = new FormData();
@@ -369,9 +410,34 @@ export default function MdEditorPage() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["docs-list"] });
       showNotification("文档已删除", "success");
-      navigate("/docs", { replace: true });
+      navigate(isGuideMode ? "/docs/guides" : "/docs", { replace: true });
     },
     onError: (e) => showNotification(e instanceof ApiHttpError ? e.serverMessage : String(e), "error"),
+  });
+
+  const guideMetaMut = useMutation({
+    mutationFn: () => {
+      if (!currentGuide || !activeNumericId) throw new Error("未选择页面指南");
+      const sortOrder = Number.parseInt(guideSortOrder.trim(), 10);
+      return apiPutJson(`/api/docs/guides/${encodeURIComponent(currentGuide.guideKey)}`, {
+        docId: Number(activeNumericId),
+        routePattern: guideRoutePattern.trim() || "/",
+        matchType: guideMatchType,
+        enabled: guideEnabled,
+        sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
+      });
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["docs-list", docsScope] });
+      void qc.invalidateQueries({ queryKey: ["page-guide"] });
+      showNotification("页面指南标识已保存", "success");
+      toast.success("页面指南标识已保存");
+    },
+    onError: (e) => {
+      const msg = e instanceof ApiHttpError ? e.serverMessage : String(e);
+      showNotification(msg, "error");
+      toast.error(msg);
+    },
   });
 
   const shareSaveMut = useMutation({
@@ -488,9 +554,9 @@ export default function MdEditorPage() {
 
   const onSelect = useCallback(
     (doc: EduMdDocument) => {
-      navigate(`/docs/doc/${doc.id}`);
+      navigate(isGuideMode ? `/docs/guides/doc/${doc.id}` : `/docs/doc/${doc.id}`);
     },
-    [navigate]
+    [isGuideMode, navigate]
   );
 
   if (!isAdmin) {
@@ -513,18 +579,26 @@ export default function MdEditorPage() {
         onExportMd={handleExportMd}
         onShare={() => setShareOpen(true)}
         disabled={!activeNumericId || saveMut.isPending}
-        shareDisabled={!activeNumericId || !published}
+        shareDisabled={isGuideMode || !activeNumericId || !published}
         exportDisabled={contentKind === "excalidraw"}
         showExternalPromo={false}
+        showCreateButtons={!isGuideMode}
+        modeTitle={isGuideMode ? "页面指南" : "文档文库"}
+        modeDescription={
+          isGuideMode
+            ? "系统指南与路由联动；正文可编辑，右下角帮助实时读取"
+            : "Markdown 与 Excalidraw 画布；保存入库，可发布分享页；Ctrl+S 保存"
+        }
         attachmentStorageSummary={attachmentStorageSummary}
       />
 
       {activeNumericId ? (
+        <>
         <div className="flex flex-wrap items-end gap-x-4 gap-y-3 border-b border-slate-200 bg-slate-50/90 px-4 py-3">
           <Button variant="outline" size="sm" className="h-9 shrink-0" asChild>
-            <Link to="/docs" className="gap-1.5">
+            <Link to={isGuideMode ? "/docs/guides" : "/docs"} className="gap-1.5">
               <Library className="h-3.5 w-3.5 opacity-80" aria-hidden />
-              文档库
+              {isGuideMode ? "页面指南" : "文档库"}
             </Link>
           </Button>
 
@@ -611,6 +685,78 @@ export default function MdEditorPage() {
             版本
           </Button>
         </div>
+        {isGuideMode && currentGuide ? (
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-3 border-b border-violet-100 bg-violet-50/60 px-4 py-3">
+            <div className="flex min-w-[10rem] max-w-[14rem] flex-1 flex-col gap-1">
+              <Label htmlFor="guide-key" className="text-xs font-medium text-violet-900">
+                系统标识
+              </Label>
+              <Input id="guide-key" className="h-9 bg-white text-xs" value={currentGuide.guideKey} readOnly />
+            </div>
+
+            <div className="flex min-w-[12rem] max-w-[22rem] flex-[1.4] flex-col gap-1">
+              <Label htmlFor="guide-route" className="text-xs font-medium text-violet-900">
+                匹配路由
+              </Label>
+              <Input
+                id="guide-route"
+                className="h-9 bg-white font-mono text-xs"
+                value={guideRoutePattern}
+                onChange={(e) => setGuideRoutePattern(e.target.value)}
+                placeholder="/cluster/apps"
+              />
+            </div>
+
+            <div className="flex min-w-[8rem] max-w-[10rem] flex-col gap-1">
+              <Label htmlFor="guide-match-type" className="text-xs font-medium text-violet-900">
+                匹配方式
+              </Label>
+              <Select value={guideMatchType} onValueChange={(v) => setGuideMatchType(v as GuideMatchType)}>
+                <SelectTrigger id="guide-match-type" className="h-9 bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="prefix">前缀</SelectItem>
+                  <SelectItem value="exact">精确</SelectItem>
+                  <SelectItem value="global">全局</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex min-w-[6rem] flex-col gap-1">
+              <Label htmlFor="guide-enabled" className="text-xs font-medium text-violet-900">
+                状态
+              </Label>
+              <div className="flex h-9 items-center gap-2 rounded-md border border-violet-100 bg-white px-2.5">
+                <Switch id="guide-enabled" checked={guideEnabled} onCheckedChange={setGuideEnabled} />
+                <span className="text-xs text-slate-600">{guideEnabled ? "启用" : "停用"}</span>
+              </div>
+            </div>
+
+            <div className="flex min-w-[5rem] max-w-[6rem] flex-col gap-1">
+              <Label htmlFor="guide-sort-order" className="text-xs font-medium text-violet-900">
+                排序
+              </Label>
+              <Input
+                id="guide-sort-order"
+                className="h-9 bg-white text-xs"
+                inputMode="numeric"
+                value={guideSortOrder}
+                onChange={(e) => setGuideSortOrder(e.target.value)}
+              />
+            </div>
+
+            <Button
+              type="button"
+              className="h-9 shrink-0 bg-violet-600 hover:bg-violet-700"
+              disabled={guideMetaMut.isPending}
+              onClick={() => guideMetaMut.mutate()}
+            >
+              保存标识
+            </Button>
+          </div>
+        ) : null}
+        </>
       ) : null}
 
       <div className="md-editor-inner min-h-0 flex-1">
@@ -619,6 +765,8 @@ export default function MdEditorPage() {
           currentDoc={currentDoc}
           onSelect={onSelect}
           onDelete={deleteDoc}
+          mode={isGuideMode ? "guides" : "regular"}
+          allowDelete={!isGuideMode}
         />
 
         <div className="md-editor-panel min-h-0 min-w-0 flex-1">
@@ -649,28 +797,32 @@ export default function MdEditorPage() {
           ) : (
             <div className="md-editor-placeholder">
               <BookOpen className="mb-2 h-14 w-14 text-slate-300" strokeWidth={1.25} aria-hidden />
-              <p className="text-base font-medium text-slate-700">文档仓库</p>
+              <p className="text-base font-medium text-slate-700">{isGuideMode ? "页面指南" : "文档仓库"}</p>
               <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-500">
-                选择左侧文档编辑，或使用下方新建。Markdown 支持 GFM / 公式 / Mermaid；画布使用 Excalidraw。保存后可发布飞书风分享页。
+                {isGuideMode
+                  ? "选择左侧系统指南编辑正文；这些文档带有路由标识，会被右下角使用文档按当前页面读取。"
+                  : "选择左侧文档编辑，或使用下方新建。Markdown 支持 GFM / 公式 / Mermaid；画布使用 Excalidraw。保存后可发布飞书风分享页。"}
               </p>
-              <div className="mt-5 flex flex-wrap justify-center gap-2">
-                <Button
-                  type="button"
-                  className="bg-violet-600 hover:bg-violet-700"
-                  onClick={createNewMarkdown}
-                  disabled={createMarkdownMut.isPending}
-                >
-                  新建 Markdown
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={createNewCanvas}
-                  disabled={createExcalidrawMut.isPending}
-                >
-                  新建画布
-                </Button>
-              </div>
+              {isGuideMode ? null : (
+                <div className="mt-5 flex flex-wrap justify-center gap-2">
+                  <Button
+                    type="button"
+                    className="bg-violet-600 hover:bg-violet-700"
+                    onClick={createNewMarkdown}
+                    disabled={createMarkdownMut.isPending}
+                  >
+                    新建 Markdown
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={createNewCanvas}
+                    disabled={createExcalidrawMut.isPending}
+                  >
+                    新建画布
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>

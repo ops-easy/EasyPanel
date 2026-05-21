@@ -547,6 +547,8 @@ const Sidebar: React.FC = () => {
 
   const docsMediaActive =
     location.pathname === "/docs/media" || location.pathname.startsWith("/docs/media/");
+  const docsGuidesActive =
+    location.pathname === "/docs/guides" || location.pathname.startsWith("/docs/guides/");
 
   const computeVcenterDashboardActive =
     location.pathname === "/cluster/compute/vcenter/dashboard" ||
@@ -704,6 +706,10 @@ const Sidebar: React.FC = () => {
             <Link to="/docs/media" className={navLinkTint(docsMediaActive, "violet")}>
               <FileText size={20} className={iconTint(docsMediaActive, "violet")} />
               <span>媒体与附件</span>
+            </Link>
+            <Link to="/docs/guides" className={navLinkTint(docsGuidesActive, "violet")}>
+              <ClipboardList size={20} className={iconTint(docsGuidesActive, "violet")} />
+              <span>页面指南</span>
             </Link>
           </>
         ) : null}

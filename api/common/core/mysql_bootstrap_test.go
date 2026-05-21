@@ -112,3 +112,28 @@ func TestMySQLBootstrapDDLsDoNotDefaultLargeTextColumns(t *testing.T) {
 		t.Fatalf("large text/json columns cannot have DEFAULT in MySQL:\n%s", strings.Join(bad, "\n"))
 	}
 }
+
+func TestMySQLBootstrapIncludesDocumentGuidesTable(t *testing.T) {
+	var ddl string
+	for _, item := range mysqlBootstrapTableDDLs {
+		if item.Label == "kubebt_doc_guides" {
+			ddl = item.SQL
+			break
+		}
+	}
+	if ddl == "" {
+		t.Fatalf("mysqlBootstrapTableDDLs missing kubebt_doc_guides")
+	}
+	for _, want := range []string{
+		"guide_key VARCHAR(128) NOT NULL",
+		"route_pattern VARCHAR(255) NOT NULL",
+		"match_type VARCHAR(16) NOT NULL DEFAULT 'prefix'",
+		"doc_id BIGINT UNSIGNED NOT NULL",
+		"UNIQUE KEY uq_doc_guides_key (guide_key)",
+		"UNIQUE KEY uq_doc_guides_route (route_pattern, match_type)",
+	} {
+		if !strings.Contains(ddl, want) {
+			t.Fatalf("kubebt_doc_guides DDL missing %q:\n%s", want, ddl)
+		}
+	}
+}

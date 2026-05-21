@@ -56,6 +56,11 @@ func registerDocsRoutes(api *gin.RouterGroup, app *ServerApp) {
 	g.POST("/categories", AdminOnlyMiddleware(app), func(c *gin.Context) { docsCreateCategory(c, app) })
 	g.GET("/tags", func(c *gin.Context) { docsListTags(c, app) })
 	g.POST("/tags", AdminOnlyMiddleware(app), func(c *gin.Context) { docsCreateTag(c, app) })
+	g.GET("/guides", AdminOnlyMiddleware(app), func(c *gin.Context) { docsGuidesList(c, app) })
+	g.POST("/guides", AdminOnlyMiddleware(app), func(c *gin.Context) { docsGuidesCreate(c, app) })
+	g.GET("/guides/resolve", func(c *gin.Context) { docsGuidesResolve(c, app) })
+	g.PUT("/guides/:guideKey", AdminOnlyMiddleware(app), func(c *gin.Context) { docsGuidesUpdate(c, app) })
+	g.DELETE("/guides/:guideKey", AdminOnlyMiddleware(app), func(c *gin.Context) { docsGuidesDelete(c, app) })
 	// 列表必须用 GET /docs（与 POST /docs 创建同路径不同方法），勿使用 /docs/list，否则易被 /:id 误匹配为 id=list →「无效 id」。
 	g.GET("", func(c *gin.Context) { docsList(c, app) })
 	g.POST("", AdminOnlyMiddleware(app), func(c *gin.Context) { docsCreate(c, app) })
@@ -355,9 +360,10 @@ func docsList(c *gin.Context, app *ServerApp) {
 	category := strings.TrimSpace(c.Query("categoryId"))
 	tag := strings.TrimSpace(c.Query("tag"))
 	q := strings.TrimSpace(c.Query("q"))
+	scope := docsNormalizeListScope(c.Query("scope"))
 	rctx, rcancel := docsRedisOpContext()
 	listRev := docsListRevFromRedis(rctx, app)
-	if hit := docsTryListCache(rctx, app, listRev, category, tag, q); len(hit) > 0 {
+	if hit := docsTryListCache(rctx, app, listRev, scope, category, tag, q); len(hit) > 0 {
 		rcancel()
 		c.Data(http.StatusOK, "application/json", hit)
 		return
@@ -367,6 +373,13 @@ func docsList(c *gin.Context, app *ServerApp) {
 	defer dbCancel()
 	args := make([]interface{}, 0)
 	where := "1=1"
+	switch scope {
+	case "guides":
+		where += " AND EXISTS (SELECT 1 FROM kubebt_doc_guides g WHERE g.doc_id=d.id)"
+	case "all":
+	default:
+		where += " AND NOT EXISTS (SELECT 1 FROM kubebt_doc_guides g WHERE g.doc_id=d.id)"
+	}
 	if category != "" {
 		where += " AND d.category_id = ?"
 		args = append(args, category)
@@ -380,7 +393,12 @@ func docsList(c *gin.Context, app *ServerApp) {
 		args = append(args, "%"+q+"%", "%"+q+"%")
 	}
 	sqlStr := `SELECT d.id, d.title, d.category_id, d.author, d.published, d.created_at, d.updated_at, d.content_kind,
-		(SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ',') FROM kubebt_doc_tag_map m JOIN kubebt_doc_tags t ON t.id=m.tag_id WHERE m.doc_id=d.id) AS tags
+		(SELECT GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ',') FROM kubebt_doc_tag_map m JOIN kubebt_doc_tags t ON t.id=m.tag_id WHERE m.doc_id=d.id) AS tags,
+		(SELECT g.guide_key FROM kubebt_doc_guides g WHERE g.doc_id=d.id ORDER BY g.sort_order ASC, g.id ASC LIMIT 1) AS guide_key,
+		(SELECT g.route_pattern FROM kubebt_doc_guides g WHERE g.doc_id=d.id ORDER BY g.sort_order ASC, g.id ASC LIMIT 1) AS route_pattern,
+		(SELECT g.match_type FROM kubebt_doc_guides g WHERE g.doc_id=d.id ORDER BY g.sort_order ASC, g.id ASC LIMIT 1) AS match_type,
+		(SELECT g.enabled FROM kubebt_doc_guides g WHERE g.doc_id=d.id ORDER BY g.sort_order ASC, g.id ASC LIMIT 1) AS guide_enabled,
+		(SELECT g.sort_order FROM kubebt_doc_guides g WHERE g.doc_id=d.id ORDER BY g.sort_order ASC, g.id ASC LIMIT 1) AS guide_sort_order
 		FROM kubebt_docs d WHERE ` + where + ` ORDER BY d.updated_at DESC LIMIT 500`
 	rows, err := db.QueryContext(dbCtx, sqlStr, args...)
 	if err != nil {
@@ -396,7 +414,9 @@ func docsList(c *gin.Context, app *ServerApp) {
 		var pub int
 		var created, updated time.Time
 		var tags sql.NullString
-		if err := rows.Scan(&id, &title, &cat, &author, &pub, &created, &updated, &contentKind, &tags); err != nil {
+		var guideKey, routePattern, matchType sql.NullString
+		var guideEnabled, guideSortOrder sql.NullInt64
+		if err := rows.Scan(&id, &title, &cat, &author, &pub, &created, &updated, &contentKind, &tags, &guideKey, &routePattern, &matchType, &guideEnabled, &guideSortOrder); err != nil {
 			RespondAPIError500(c, err.Error())
 			return
 		}
@@ -413,6 +433,15 @@ func docsList(c *gin.Context, app *ServerApp) {
 		} else {
 			h["tags"] = []string{}
 		}
+		if guideKey.Valid && strings.TrimSpace(guideKey.String) != "" {
+			h["guide"] = gin.H{
+				"guideKey":     guideKey.String,
+				"routePattern": routePattern.String,
+				"matchType":    docsNormalizeGuideMatchType(matchType.String),
+				"enabled":      guideEnabled.Valid && guideEnabled.Int64 != 0,
+				"sortOrder":    guideSortOrder.Int64,
+			}
+		}
 		list = append(list, h)
 	}
 	payload := gin.H{"docs": list}
@@ -420,11 +449,11 @@ func docsList(c *gin.Context, app *ServerApp) {
 	if app.Redis() != nil {
 		if jb, err := json.Marshal(payload); err == nil {
 			rev := listRev
-			go func(b []byte, cat, tg, qq string, r int64) {
+			go func(b []byte, sc, cat, tg, qq string, r int64) {
 				c2, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 				defer cancel()
-				docsStoreListCache(c2, app, r, cat, tg, qq, b)
-			}(jb, category, tag, q, rev)
+				docsStoreListCache(c2, app, r, sc, cat, tg, qq, b)
+			}(jb, scope, category, tag, q, rev)
 		}
 	}
 }
@@ -446,6 +475,17 @@ func docsNormalizeContentKind(s string) string {
 		return "excalidraw"
 	default:
 		return "markdown"
+	}
+}
+
+func docsNormalizeListScope(s string) string {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "guides":
+		return "guides"
+	case "all":
+		return "all"
+	default:
+		return "regular"
 	}
 }
 
@@ -1001,6 +1041,15 @@ func docsDelete(c *gin.Context, app *ServerApp) {
 	id, err := strconv.ParseUint(strings.TrimSpace(c.Param("id")), 10, 64)
 	if err != nil || id == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 id"})
+		return
+	}
+	var guideRefs int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM kubebt_doc_guides WHERE doc_id=?`, id).Scan(&guideRefs); err != nil {
+		RespondAPIError500(c, err.Error())
+		return
+	}
+	if guideRefs > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "系统指南文档需先在「页面指南」中解除关联后再删除"})
 		return
 	}
 	tx, err := db.Begin()
