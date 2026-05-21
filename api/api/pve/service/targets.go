@@ -30,16 +30,29 @@ func savePVETargets(kv PlatformKV, list []pvemodel.Target) error {
 }
 
 func pveTargetListItem(x pvemodel.Target, key []byte) pvemodel.TargetListItem {
+	authMethod := pveprovider.TargetAuthMethod(x)
+	username := x.Username
+	realm := x.Realm
+	if authMethod == pveprovider.AuthMethodPassword {
+		username, realm = pveprovider.PasswordIdentity(x)
+	}
 	item := pvemodel.TargetListItem{
 		ID:             x.ID,
 		Name:           x.Name,
 		BaseURL:        x.BaseURL,
+		AuthMethod:     authMethod,
+		Username:       username,
+		Realm:          realm,
+		PasswordSet:    strings.TrimSpace(x.PasswordEnc) != "",
 		TokenID:        x.TokenID,
 		TokenSecretSet: strings.TrimSpace(x.TokenSecretEnc) != "",
 		SkipTLS:        x.SkipTLS,
 		PrometheusJob:  x.PrometheusJob,
 		CreatedAt:      x.CreatedAt,
 		UpdatedAt:      x.UpdatedAt,
+	}
+	if authMethod == pveprovider.AuthMethodPassword && item.PasswordSet {
+		item.PasswordPreview = "已保存"
 	}
 	if key != nil && strings.TrimSpace(x.TokenSecretEnc) != "" {
 		if plain, err := pveprovider.DecryptTargetSecret(key, x); err == nil {
@@ -95,6 +108,14 @@ func decryptPVETargetSecret(app *ServerApp, target pvemodel.Target) (string, err
 		return "", err
 	}
 	return pveprovider.DecryptTargetSecret(key, target)
+}
+
+func decryptPVETargetCredential(app *ServerApp, target pvemodel.Target) (string, error) {
+	key, err := pveEncryptionKey(app)
+	if err != nil {
+		return "", err
+	}
+	return pveprovider.DecryptTargetCredential(key, target)
 }
 
 func handlePVETargetsList(c *gin.Context, app *ServerApp) {
@@ -218,9 +239,9 @@ func pveClientForRequest(c *gin.Context, app *ServerApp) (*pveAPIClient, pvemode
 		c.JSON(http.StatusNotFound, gin.H{"error": "PVE 目标不存在"})
 		return nil, pvemodel.Target{}, false
 	}
-	plain, err := decryptPVETargetSecret(app, *target)
+	plain, err := decryptPVETargetCredential(app, *target)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无法解密 PVE Token: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无法解密 PVE 凭据: " + err.Error()})
 		return nil, pvemodel.Target{}, false
 	}
 	client, err := newPVEAPIClient(*target, plain)

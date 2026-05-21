@@ -56,6 +56,74 @@ func TestPVEGuestPowerActionValidation(t *testing.T) {
 	}
 }
 
+func TestPVEGuestDetailAndMetricsPaths(t *testing.T) {
+	status, config, err := pveGuestDetailPaths("pve-a", "vm", "101")
+	if err != nil {
+		t.Fatalf("pveGuestDetailPaths returned error: %v", err)
+	}
+	if status != "/nodes/pve-a/qemu/101/status/current" {
+		t.Fatalf("status path=%q", status)
+	}
+	if config != "/nodes/pve-a/qemu/101/config" {
+		t.Fatalf("config path=%q", config)
+	}
+
+	metrics, err := pveGuestMetricsPath("pve-a", "ct", "102")
+	if err != nil {
+		t.Fatalf("pveGuestMetricsPath returned error: %v", err)
+	}
+	if metrics != "/nodes/pve-a/lxc/102/rrddata" {
+		t.Fatalf("metrics path=%q", metrics)
+	}
+}
+
+func TestPVENodeDetailAndMetricsPaths(t *testing.T) {
+	status, version, err := pveNodeDetailPaths("pve-a")
+	if err != nil {
+		t.Fatalf("pveNodeDetailPaths returned error: %v", err)
+	}
+	if status != "/nodes/pve-a/status" {
+		t.Fatalf("status path=%q", status)
+	}
+	if version != "/nodes/pve-a/version" {
+		t.Fatalf("version path=%q", version)
+	}
+
+	metrics, err := pveNodeMetricsPath("pve-a")
+	if err != nil {
+		t.Fatalf("pveNodeMetricsPath returned error: %v", err)
+	}
+	if metrics != "/nodes/pve-a/rrddata" {
+		t.Fatalf("metrics path=%q", metrics)
+	}
+}
+
+func TestPVEFullTakeoverPaths(t *testing.T) {
+	console, err := pveGuestConsoleWebSocketPath("pve-a", "qemu", "101")
+	if err != nil {
+		t.Fatalf("console path: %v", err)
+	}
+	if console != "/nodes/pve-a/qemu/101/vncwebsocket" {
+		t.Fatalf("console path=%q", console)
+	}
+
+	resize, err := pveGuestDiskResizePath("pve-a", "lxc", "102")
+	if err != nil {
+		t.Fatalf("resize path: %v", err)
+	}
+	if resize != "/nodes/pve-a/lxc/102/resize" {
+		t.Fatalf("resize path=%q", resize)
+	}
+
+	snapshots, err := pveGuestSnapshotsPath("pve-a", "vm", "103")
+	if err != nil {
+		t.Fatalf("snapshots path: %v", err)
+	}
+	if snapshots != "/nodes/pve-a/qemu/103/snapshot" {
+		t.Fatalf("snapshots path=%q", snapshots)
+	}
+}
+
 func TestRequirePVEAdminAllowsCustomComputeRW(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())

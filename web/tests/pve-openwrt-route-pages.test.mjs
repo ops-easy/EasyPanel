@@ -12,7 +12,9 @@ const pvePageNames = [
   "PveDashboard",
   "PveTargets",
   "PveNodes",
+  "PveNodeDetail",
   "PveGuests",
+  "PveGuestDetail",
   "PveStorage",
   "PveTasks",
 ];
@@ -72,6 +74,27 @@ test("PVE 与 OpenWrt 子导航覆盖所有新子页面", () => {
 
   assert.match(networkRoutes, /const OpenWrtExporter = lazy/);
   assert.match(networkRoutes, /path="openwrt\/exporter"[\s\S]*<OpenWrtExporter \/>/);
+});
+
+test("PVE 接管能力包含节点和虚拟机详情路由", () => {
+  const routes = read("../src/app/routes/compute-routes.tsx");
+  const pveWorkspace = read("../src/features/compute/pve/pages/PveWorkspace.tsx");
+  const guestDetail = read("../src/features/compute/pve/pages/PveGuestDetail.tsx");
+  const nodeDetail = read("../src/features/compute/pve/pages/PveNodeDetail.tsx");
+
+  assert.match(routes, /const PveGuestDetail = lazy/);
+  assert.match(routes, /const PveNodeDetail = lazy/);
+  assert.match(routes, /path="pve\/guests\/:targetId\/:node\/:guestType\/:vmid"[\s\S]*<PveGuestDetail \/>/);
+  assert.match(routes, /path="pve\/nodes\/:targetId\/:node"[\s\S]*<PveNodeDetail \/>/);
+  assert.match(pveWorkspace, /\/cluster\/compute\/pve\/guests\/\$\{encodeURIComponent\(activeId\)\}/);
+  assert.match(pveWorkspace, /\/cluster\/compute\/pve\/nodes\/\$\{encodeURIComponent\(activeId\)\}/);
+  assert.match(guestDetail, /\/api\/pve\/targets\/\$\{encodeURIComponent\(targetId\)\}\/guests\/\$\{encodeURIComponent\(vmid\)\}/);
+  assert.match(guestDetail, /\/metrics\?/);
+  assert.match(guestDetail, /VCenterSshTerminal/);
+  assert.match(guestDetail, /VCenterBastionSftpPanel/);
+  assert.match(guestDetail, /pve:\$\{targetId\}:\$\{node\}:\$\{canonicalGuestType\}:\$\{vmid\}/);
+  assert.match(nodeDetail, /\/api\/pve\/targets\/\$\{encodeURIComponent\(targetId\)\}\/nodes\/\$\{encodeURIComponent\(node\)\}/);
+  assert.match(nodeDetail, /\/metrics\?/);
 });
 
 test("route-specific 页面复用现有 PVE/OpenWrt 数据接口", () => {

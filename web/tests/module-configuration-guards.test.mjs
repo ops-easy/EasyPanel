@@ -80,3 +80,19 @@ test("PVE 和 OpenWrt 工作区有明确的未配置主状态", () => {
   assert.match(openWrtWorkspace, /openWrtNeedsSetup/);
   assert.match(openWrtWorkspace, /OpenWrtSetupPanel/);
 });
+
+test("PVE 目标首屏等待接口返回后再选择未配置或工作区布局", () => {
+  const pveWorkspace = read("../src/features/compute/pve/pages/PveWorkspace.tsx");
+
+  assert.match(pveWorkspace, /const pveTargetsInitialLoading = targetsQ\.isLoading && !targetsQ\.data;/);
+  assert.match(pveWorkspace, /const pveNeedsSetup = !pveTargetsInitialLoading && pveTargets\.length === 0;/);
+  assert.match(pveWorkspace, /\{pveTargetsInitialLoading \? \(/);
+  assert.match(pveWorkspace, /<PveTargetsLoadingPanel \/>/);
+});
+
+test("PVE 已有目标后的常规布局不默认展示新增连接表单", () => {
+  const pveWorkspace = read("../src/features/compute/pve/pages/PveWorkspace.tsx");
+
+  assert.doesNotMatch(pveWorkspace, /<aside className="space-y-4">\s*<TargetForm/);
+  assert.match(pveWorkspace, /showCreateForm \? \(/);
+});

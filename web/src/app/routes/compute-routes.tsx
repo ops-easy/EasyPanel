@@ -27,7 +27,9 @@ const VCenterPrometheusGate = lazy(() =>
 const PveDashboard = lazy(() => import("@/features/compute/pve/pages/PveDashboard"));
 const PveTargets = lazy(() => import("@/features/compute/pve/pages/PveTargets"));
 const PveGuests = lazy(() => import("@/features/compute/pve/pages/PveGuests"));
+const PveGuestDetail = lazy(() => import("@/features/compute/pve/pages/PveGuestDetail"));
 const PveNodes = lazy(() => import("@/features/compute/pve/pages/PveNodes"));
+const PveNodeDetail = lazy(() => import("@/features/compute/pve/pages/PveNodeDetail"));
 const PveStorage = lazy(() => import("@/features/compute/pve/pages/PveStorage"));
 const PveTasks = lazy(() => import("@/features/compute/pve/pages/PveTasks"));
 const VCenterVMDetail = lazy(() => import("@/features/vcenter/pages/VCenterVMDetail"));
@@ -178,10 +180,26 @@ export function computeRoutes(): ReactNode {
         }
       />
       <Route
+        path="pve/nodes/:targetId/:node"
+        element={
+          <RouteSuspense>
+            <PveNodeDetail />
+          </RouteSuspense>
+        }
+      />
+      <Route
         path="pve/guests"
         element={
           <RouteSuspense>
             <PveGuests />
+          </RouteSuspense>
+        }
+      />
+      <Route
+        path="pve/guests/:targetId/:node/:guestType/:vmid"
+        element={
+          <RouteSuspense>
+            <PveGuestDetail />
           </RouteSuspense>
         }
       />

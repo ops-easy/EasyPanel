@@ -45,6 +45,15 @@ type VCenterSshTerminalProps = {
   onBridgeStatus?: (p: { status: BastionTerminalSessionStatus; errMsg: string | null }) => void;
   /** 当前标签是否可见；从 false→true 时自动聚焦终端（多标签切换场景） */
   visible?: boolean;
+  sshSettingsPath?: string;
+  sshSettingsLabel?: string;
+  targetIpSourceLabel?: string;
+  targetIpMissingHint?: string;
+};
+
+type BastionTargetSSHSettingsResponse = {
+  canConnect?: boolean;
+  encryptionError?: string;
 };
 
 const VCenterSshTerminal: React.FC<VCenterSshTerminalProps> = ({
@@ -59,8 +68,22 @@ const VCenterSshTerminal: React.FC<VCenterSshTerminalProps> = ({
   fontFamilyOverride,
   onBridgeStatus,
   visible,
+  sshSettingsPath = "/cluster/compute/vcenter/settings",
+  sshSettingsLabel = "vCenter 设置",
+  targetIpSourceLabel = "vCenter Guest 信息",
+  targetIpMissingHint = "（请确保已安装 Tools 并拿到 IP）",
 }) => {
   const cfgQ = useAppConfig();
+  const targetSettingsQ = useQuery({
+    queryKey: ["bastion-target-ssh-settings", targetId],
+    queryFn: ({ signal }) =>
+      apiGetJson<BastionTargetSSHSettingsResponse>(
+        `/api/bastion/targets/ssh-settings?target=${encodeURIComponent(targetId ?? "")}`,
+        { signal }
+      ),
+    enabled: Boolean(targetId),
+    staleTime: 10_000,
+  });
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<import("@xterm/xterm").Terminal | null>(null);
@@ -250,7 +273,10 @@ const VCenterSshTerminal: React.FC<VCenterSshTerminalProps> = ({
     };
   }, [started, moref, bastionExtraId, targetId, cfgQ.data, fontSizeOverride, fontFamilyOverride]);
 
-  const sshOk = cfgQ.data?.vcenterVmSshConfigured === true;
+  const sshOk = targetId
+    ? cfgQ.data?.vcenterVmSshConfigured === true || targetSettingsQ.data?.canConnect === true
+    : cfgQ.data?.vcenterVmSshConfigured === true;
+  const sshConfigLoading = Boolean(targetId && targetSettingsQ.isLoading);
 
   useEffect(() => {
     const t = targetId ?? bastionExtraId ?? moref;
@@ -266,7 +292,7 @@ const VCenterSshTerminal: React.FC<VCenterSshTerminalProps> = ({
     if (!sshOk) {
       return (
         <div className="flex h-full min-h-[200px] items-center justify-center px-4 text-center text-sm text-slate-500">
-          未配置虚拟机 SSH（VCENTER_VM_SSH_* 或存储中的逐台凭据），请见 vCenter 设置。
+          {sshConfigLoading ? "正在读取 SSH 凭据..." : `未配置虚拟机 SSH（VCENTER_VM_SSH_* 或存储中的逐台凭据），请见 ${sshSettingsLabel}。`}
         </div>
       );
     }
@@ -286,21 +312,27 @@ const VCenterSshTerminal: React.FC<VCenterSshTerminalProps> = ({
     <div className="space-y-3">
       <PlatformRelayBanner />
 
-      {!sshOk && (
+      {sshConfigLoading && (
+        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+          正在读取 SSH 凭据...
+        </div>
+      )}
+
+      {!sshConfigLoading && !sshOk && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="font-medium">未启用 SSH 终端</p>
           <p className="mt-2 text-xs leading-relaxed">
             在服务端配置 SSH 用户名与密码即可（端口默认 22）。已初始化时可在{" "}
             <Link
-              to="/cluster/compute/vcenter/settings"
+              to={sshSettingsPath}
               className="font-medium text-amber-950 underline underline-offset-2"
             >
-              vCenter 设置
+              {sshSettingsLabel}
             </Link>{" "}
             中填写「虚拟机 SSH 终端」；也可设置环境变量{" "}
             <code className="rounded bg-white px-1">VCENTER_VM_SSH_USER</code> 与{" "}
             <code className="rounded bg-white px-1">VCENTER_VM_SSH_PASSWORD</code>。
-            SSH 由<strong>平台服务端</strong>转发至 vCenter 上报的 Guest IP；您的浏览器不直连虚拟机，凭据也不经过浏览器。
+            SSH 由<strong>平台服务端</strong>转发至{targetIpSourceLabel}；您的浏览器不直连虚拟机，凭据也不经过浏览器。
           </p>
         </div>
       )}
@@ -309,13 +341,13 @@ const VCenterSshTerminal: React.FC<VCenterSshTerminalProps> = ({
         <>
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-600">
             <span>
-              目标 IP 由 vCenter Guest 信息决定
+              目标 IP 由 {targetIpSourceLabel} 决定
               {guestIpHint ? (
                 <>
                   ，当前上报：<span className="font-mono text-gray-900">{guestIpHint}</span>
                 </>
               ) : (
-                "（请确保已安装 Tools 并拿到 IP）"
+                targetIpMissingHint
               )}
             </span>
             <div className="flex gap-2">

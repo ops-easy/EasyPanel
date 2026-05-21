@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, Cpu, Database, HardDrive, Loader2, PlugZap, Power, RefreshCw, Server, ShieldCheck, Trash2 } from "lucide-react";
+import { Activity, ChevronUp, Cpu, Database, HardDrive, Loader2, PlugZap, Plus, Power, RefreshCw, Server, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -18,7 +19,12 @@ type PVETarget = {
   id: string;
   name: string;
   baseUrl: string;
-  tokenId: string;
+  authMethod?: string;
+  username?: string;
+  realm?: string;
+  passwordSet?: boolean;
+  passwordPreview?: string;
+  tokenId?: string;
   tokenSecretSet?: boolean;
   tokenSecretPreview?: string;
   skipTls?: boolean;
@@ -29,8 +35,9 @@ type PVETarget = {
 type PveTargetFormState = {
   name: string;
   baseUrl: string;
-  tokenId: string;
-  tokenSecret: string;
+  authMethod: "password";
+  username: string;
+  password: string;
   prometheusJob: string;
   skipTls: boolean;
 };
@@ -59,7 +66,7 @@ const pageMeta: Record<PveView, { title: string; desc: string; icon: typeof Serv
   },
   targets: {
     title: "PVE 目标",
-    desc: "维护 Proxmox VE API Token、Prometheus job 与 TLS 选项，并支持连通性探测。",
+    desc: "维护 Proxmox VE 账号密码、Prometheus job 与 TLS 选项，并支持连通性探测。",
     icon: PlugZap,
   },
   nodes: {
@@ -206,15 +213,17 @@ function PveStats({
 function PveWorkspace({ view }: { view: PveView }) {
   const qc = useQueryClient();
   const { status } = useAuth();
-  const canWrite = status?.role === "admin";
+  const canWrite = status?.role === "admin" || status?.permissions?.compute === "rw" || status?.permissions?.vcenter === "rw";
   const meta = pageMeta[view];
   const Icon = meta.icon;
   const [activeId, setActiveId] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [form, setForm] = useState({
     name: "PVE",
     baseUrl: "",
-    tokenId: "",
-    tokenSecret: "",
+    authMethod: "password" as const,
+    username: "root",
+    password: "",
     prometheusJob: "",
     skipTls: true,
   });
@@ -225,7 +234,8 @@ function PveWorkspace({ view }: { view: PveView }) {
   });
 
   const pveTargets = useMemo(() => targetsQ.data?.targets ?? [], [targetsQ.data?.targets]);
-  const pveNeedsSetup = !targetsQ.isLoading && pveTargets.length === 0;
+  const pveTargetsInitialLoading = targetsQ.isLoading && !targetsQ.data;
+  const pveNeedsSetup = !pveTargetsInitialLoading && pveTargets.length === 0;
 
   useEffect(() => {
     if (!activeId && pveTargets.length > 0) setActiveId(pveTargets[0].id);
@@ -284,7 +294,8 @@ function PveWorkspace({ view }: { view: PveView }) {
     onSuccess: (res) => {
       toast.success("PVE 目标已保存");
       setActiveId(res.target.id);
-      setForm((f) => ({ ...f, tokenSecret: "" }));
+      setShowCreateForm(false);
+      setForm((f) => ({ ...f, password: "" }));
       void qc.invalidateQueries({ queryKey: ["pve-targets"] });
     },
     onError: (e) => toast.error(String(e)),
@@ -354,24 +365,26 @@ function PveWorkspace({ view }: { view: PveView }) {
         </div>
       </section>
 
-      {pveNeedsSetup ? (
-        <PveSetupPanel
-          form={form}
-          setForm={setForm}
-          canWrite={canWrite}
-          pending={createMut.isPending}
-          onSubmit={() => createMut.mutate()}
-        />
+      {pveTargetsInitialLoading ? (
+        <PveTargetsLoadingPanel />
       ) : (
         <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
           <aside className="space-y-4">
-            <TargetForm form={form} setForm={setForm} canWrite={canWrite} pending={createMut.isPending} onSubmit={() => createMut.mutate()} />
             <TargetList
               targets={pveTargets}
               activeId={activeId}
               loading={targetsQ.isLoading}
               onSelect={setActiveId}
+              canWrite={canWrite}
+              createOpen={showCreateForm}
+              onToggleCreate={() => setShowCreateForm((v) => !v)}
             />
+            {showCreateForm ? (
+              <TargetForm form={form} setForm={setForm} canWrite={canWrite} pending={createMut.isPending} onSubmit={() => createMut.mutate()} />
+            ) : null}
+            {!showCreateForm && pveNeedsSetup ? (
+              <PveSetupPanel form={form} setForm={setForm} canWrite={canWrite} pending={createMut.isPending} onSubmit={() => createMut.mutate()} />
+            ) : null}
           </aside>
 
           <main className="space-y-4">
@@ -407,7 +420,7 @@ function PveWorkspace({ view }: { view: PveView }) {
                 deletePending={deleteMut.isPending}
               />
             ) : null}
-            {view === "nodes" ? <PveNodesPanel rows={nodes} loading={nodesQ.isLoading} /> : null}
+            {view === "nodes" ? <PveNodesPanel rows={nodes} loading={nodesQ.isLoading} activeId={activeId} /> : null}
             {view === "guests" ? (
               <PveGuestsPanel
                 rows={guests}
@@ -427,6 +440,21 @@ function PveWorkspace({ view }: { view: PveView }) {
   );
 }
 
+function PveTargetsLoadingPanel() {
+  return (
+    <ComputeSetupPanel
+      kind="pve"
+      title="正在读取 PVE 目标"
+      description="正在确认是否已有 Proxmox VE API 目标，完成后会显示目标工作区或新增表单。"
+    >
+      <div className="flex items-center gap-2 text-sm text-slate-600">
+        <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
+        加载中...
+      </div>
+    </ComputeSetupPanel>
+  );
+}
+
 function PveSetupPanel({
   form,
   setForm,
@@ -441,20 +469,13 @@ function PveSetupPanel({
   onSubmit: () => void;
 }) {
   return (
-    <ComputeSetupPanel
-      kind="pve"
-      title="请先新增 PVE 目标"
-      description="PVE 的节点、虚拟机、存储和任务页都需要先保存 Proxmox VE API 地址与 Token。新增目标后，各子页会自动切换到该目标的数据视图。"
-    >
-      <TargetForm
-        form={form}
-        setForm={setForm}
-        canWrite={canWrite}
-        pending={pending}
-        onSubmit={onSubmit}
-        embedded
-      />
-    </ComputeSetupPanel>
+    <TargetForm
+      form={form}
+      setForm={setForm}
+      canWrite={canWrite}
+      pending={pending}
+      onSubmit={onSubmit}
+    />
   );
 }
 
@@ -486,12 +507,12 @@ function TargetForm({
           <Input className="font-mono text-sm" placeholder="https://pve.example.com:8006" value={form.baseUrl} onChange={(e) => setForm({ ...form, baseUrl: e.target.value })} />
         </div>
         <div className="space-y-1.5">
-          <Label>Token ID</Label>
-          <Input className="font-mono text-sm" placeholder="root@pam!kubebt" value={form.tokenId} onChange={(e) => setForm({ ...form, tokenId: e.target.value })} />
+          <Label>用户名</Label>
+          <Input className="font-mono text-sm" placeholder="root" autoComplete="username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
         </div>
         <div className="space-y-1.5">
-          <Label>Token Secret</Label>
-          <Input type="password" autoComplete="off" value={form.tokenSecret} onChange={(e) => setForm({ ...form, tokenSecret: e.target.value })} />
+          <Label>密码</Label>
+          <Input type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         </div>
         <div className="space-y-1.5">
           <Label>Prometheus job（可选）</Label>
@@ -515,15 +536,29 @@ function TargetList({
   activeId,
   loading,
   onSelect,
+  canWrite,
+  createOpen,
+  onToggleCreate,
 }: {
   targets: PVETarget[];
   activeId: string;
   loading: boolean;
   onSelect: (id: string) => void;
+  canWrite: boolean;
+  createOpen: boolean;
+  onToggleCreate: () => void;
 }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-950">已保存目标</h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-slate-950">已保存目标</h2>
+        {canWrite ? (
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" onClick={onToggleCreate}>
+            {createOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+            {createOpen ? "收起" : "新增目标"}
+          </Button>
+        ) : null}
+      </div>
       <div className="mt-3 space-y-2">
         {targets.map((t) => (
           <button
@@ -534,9 +569,12 @@ function TargetList({
           >
             <div className="flex items-center justify-between gap-2">
               <span className="truncate text-sm font-medium text-slate-950">{t.name}</span>
-              <Badge variant={t.tokenSecretSet ? "secondary" : "outline"}>{t.tokenSecretSet ? "Token 已保存" : "无 Token"}</Badge>
+              <Badge variant={t.passwordSet || t.tokenSecretSet ? "secondary" : "outline"}>
+                {t.passwordSet ? "密码已保存" : t.tokenSecretSet ? "Token 已保存" : "未保存"}
+              </Badge>
             </div>
             <p className="mt-1 truncate font-mono text-xs text-slate-500">{t.baseUrl}</p>
+            {t.username || t.tokenId ? <p className="mt-1 truncate font-mono text-xs text-slate-500">{t.username || t.tokenId}</p> : null}
           </button>
         ))}
         {loading ? <p className="rounded-lg border border-dashed border-slate-200 px-3 py-6 text-center text-sm text-slate-500">加载中...</p> : null}
@@ -691,7 +729,7 @@ function PveTargetsPanel({
             <TableRow>
               <TableHead>名称</TableHead>
               <TableHead>API 地址</TableHead>
-              <TableHead>Token</TableHead>
+              <TableHead>账号</TableHead>
               <TableHead>Prometheus job</TableHead>
               <TableHead>更新时间</TableHead>
               <TableHead className="text-right">操作</TableHead>
@@ -709,8 +747,13 @@ function PveTargetsPanel({
                       </button>
                     </TableCell>
                     <TableCell className="min-w-64 font-mono text-xs">{t.baseUrl}</TableCell>
-                    <TableCell>
-                      <Badge variant={t.tokenSecretSet ? "secondary" : "outline"}>{t.tokenSecretSet ? t.tokenSecretPreview || "已保存" : "未保存"}</Badge>
+                    <TableCell className="font-mono text-xs">
+                      <div className="flex flex-col gap-1">
+                        <span>{t.username || t.tokenId || "-"}</span>
+                        <Badge className="w-fit" variant={t.passwordSet || t.tokenSecretSet ? "secondary" : "outline"}>
+                          {t.passwordSet ? t.passwordPreview || "密码已保存" : t.tokenSecretSet ? t.tokenSecretPreview || "Token 已保存" : "未保存"}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell className="font-mono text-xs">{t.prometheusJob || "-"}</TableCell>
                     <TableCell className="font-mono text-xs">{fmtUpdatedAt(t.updatedAt)}</TableCell>
@@ -736,7 +779,7 @@ function PveTargetsPanel({
   );
 }
 
-function PveNodesPanel({ rows, loading }: { rows: PveRecord[]; loading: boolean }) {
+function PveNodesPanel({ rows, loading, activeId }: { rows: PveRecord[]; loading: boolean; activeId: string }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <h2 className="mb-3 text-sm font-semibold text-slate-950">节点列表</h2>
@@ -757,8 +800,19 @@ function PveNodesPanel({ rows, loading }: { rows: PveRecord[]; loading: boolean 
             {!loading && rows.length === 0 ? <EmptyCell colSpan={6} label="暂无 PVE 节点数据" /> : null}
             {!loading
               ? rows.map((row) => (
-                  <TableRow key={text(row.node ?? row.name)}>
-                    <TableCell className="font-mono text-xs">{text(row.node ?? row.name)}</TableCell>
+                    <TableRow key={text(row.node ?? row.name)}>
+                      <TableCell className="font-mono text-xs">
+                        {activeId && text(row.node ?? row.name) !== "-" ? (
+                          <Link
+                            className="font-medium text-amber-700 hover:underline"
+                            to={`/cluster/compute/pve/nodes/${encodeURIComponent(activeId)}/${encodeURIComponent(text(row.node ?? row.name))}`}
+                          >
+                            {text(row.node ?? row.name)}
+                          </Link>
+                        ) : (
+                          text(row.node ?? row.name)
+                        )}
+                      </TableCell>
                     <TableCell><StatusBadge value={row.status} /></TableCell>
                     <TableCell className="font-mono text-xs">{fmtPercent(row.cpu)}</TableCell>
                     <TableCell className="font-mono text-xs">{fmtBytes(row.mem)} / {fmtBytes(row.maxmem)}</TableCell>
@@ -816,7 +870,18 @@ function PveGuestsPanel({
                   const type = String(g.type ?? "qemu");
                   return (
                     <TableRow key={`${node}-${vmid}`}>
-                      <TableCell className="font-medium">{g.name || vmid}</TableCell>
+                      <TableCell className="font-medium">
+                        {activeId && vmid && node ? (
+                          <Link
+                            className="text-amber-700 hover:underline"
+                            to={`/cluster/compute/pve/guests/${encodeURIComponent(activeId)}/${encodeURIComponent(node)}/${encodeURIComponent(type)}/${encodeURIComponent(vmid)}`}
+                          >
+                            {g.name || vmid}
+                          </Link>
+                        ) : (
+                          g.name || vmid
+                        )}
+                      </TableCell>
                       <TableCell className="font-mono text-xs">{vmid || "-"}</TableCell>
                       <TableCell className="font-mono text-xs">{node || "-"}</TableCell>
                       <TableCell>{type}</TableCell>

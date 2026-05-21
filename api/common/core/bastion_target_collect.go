@@ -98,7 +98,7 @@ func collectPVEBastionTargets(ctx context.Context, app *ServerApp) ([]BastionTar
 	q := url.Values{}
 	q.Set("type", "vm")
 	for _, target := range targetDefs {
-		secret, err := pveprovider.DecryptTargetSecret(key, target)
+		secret, err := pveprovider.DecryptTargetCredential(key, target)
 		if err != nil {
 			warnings = append(warnings, "PVE "+target.Name+": "+err.Error())
 			continue

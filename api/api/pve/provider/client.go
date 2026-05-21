@@ -19,9 +19,11 @@ import (
 )
 
 type Client struct {
-	target     pvemodel.Target
-	tokenPlain string
-	httpClient *http.Client
+	target      pvemodel.Target
+	secretPlain string
+	ticket      string
+	csrfToken   string
+	httpClient  *http.Client
 }
 
 func NormalizeBaseURL(raw string) (string, error) {
@@ -85,9 +87,9 @@ func NewClient(target pvemodel.Target, tokenPlain string) (*Client, error) {
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint:gosec // 用户显式允许内网自签证书。
 	}
 	return &Client{
-		target:     target,
-		tokenPlain: strings.TrimSpace(tokenPlain),
-		httpClient: &http.Client{Timeout: 20 * time.Second, Transport: tr},
+		target:      target,
+		secretPlain: tokenPlain,
+		httpClient:  &http.Client{Timeout: 20 * time.Second, Transport: tr},
 	}, nil
 }
 
@@ -99,23 +101,137 @@ func (c *Client) apiURL(path string, query url.Values) string {
 	return base
 }
 
-func (c *Client) Do(ctx context.Context, method, path string, query url.Values, body any) (json.RawMessage, error) {
-	var reader io.Reader
-	if body != nil {
-		b, err := json.Marshal(body)
-		if err != nil {
+func (c *Client) APIWebSocketURL(path string, query url.Values) (string, error) {
+	u, err := url.Parse(c.target.BaseURL)
+	if err != nil {
+		return "", err
+	}
+	switch u.Scheme {
+	case "https":
+		u.Scheme = "wss"
+	case "http":
+		u.Scheme = "ws"
+	default:
+		return "", fmt.Errorf("unsupported PVE API scheme: %s", u.Scheme)
+	}
+	cleanPath := strings.TrimPrefix(path, "/")
+	if strings.Contains(cleanPath, "?") {
+		return "", errors.New("pve websocket path must not contain query")
+	}
+	u.Path = "/api2/json/" + cleanPath
+	if len(query) > 0 {
+		u.RawQuery = query.Encode()
+	}
+	return u.String(), nil
+}
+
+func (c *Client) WebSocketAuthHeader(ctx context.Context) (http.Header, error) {
+	header := http.Header{}
+	if TargetAuthMethod(c.target) == AuthMethodPassword {
+		if err := c.ensurePasswordTicket(ctx); err != nil {
 			return nil, err
 		}
-		reader = bytes.NewReader(b)
+		header.Add("Cookie", (&http.Cookie{Name: "PVEAuthCookie", Value: c.ticket}).String())
+		if strings.TrimSpace(c.csrfToken) != "" {
+			header.Set("CSRFPreventionToken", c.csrfToken)
+		}
+		return header, nil
+	}
+	header.Set("Authorization", BuildAuthHeader(c.target.TokenID, c.secretPlain))
+	return header, nil
+}
+
+func (c *Client) SkipTLSVerify() bool {
+	return c.target.SkipTLS
+}
+
+func (c *Client) ensurePasswordTicket(ctx context.Context) error {
+	if strings.TrimSpace(c.ticket) != "" {
+		return nil
+	}
+	username := strings.TrimSpace(PasswordLoginUsername(c.target))
+	if username == "" {
+		return errors.New("PVE 用户名不能为空")
+	}
+	if strings.TrimSpace(c.secretPlain) == "" {
+		return errors.New("PVE 密码不能为空")
+	}
+	form := url.Values{}
+	form.Set("username", username)
+	form.Set("password", c.secretPlain)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.apiURL("/access/ticket", nil), strings.NewReader(form.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	b, _ := io.ReadAll(io.LimitReader(res.Body, 4<<20))
+	if res.StatusCode == http.StatusUnauthorized || res.StatusCode == http.StatusForbidden {
+		return fmt.Errorf("PVE 账号密码无效或权限不足（HTTP %d）", res.StatusCode)
+	}
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return fmt.Errorf("PVE 登录失败（HTTP %d）: %s", res.StatusCode, strings.TrimSpace(string(b)))
+	}
+	var wrapper struct {
+		Data struct {
+			Ticket              string `json:"ticket"`
+			CSRFPreventionToken string `json:"CSRFPreventionToken"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(b, &wrapper); err != nil {
+		return fmt.Errorf("PVE 登录返回 JSON 无效: %w", err)
+	}
+	if strings.TrimSpace(wrapper.Data.Ticket) == "" {
+		return errors.New("PVE 登录返回 ticket 为空")
+	}
+	c.ticket = wrapper.Data.Ticket
+	c.csrfToken = wrapper.Data.CSRFPreventionToken
+	return nil
+}
+
+func (c *Client) Do(ctx context.Context, method, path string, query url.Values, body any) (json.RawMessage, error) {
+	authMethod := TargetAuthMethod(c.target)
+	if authMethod == AuthMethodPassword {
+		if err := c.ensurePasswordTicket(ctx); err != nil {
+			return nil, err
+		}
+	}
+	var reader io.Reader
+	contentType := ""
+	if body != nil {
+		switch v := body.(type) {
+		case url.Values:
+			reader = strings.NewReader(v.Encode())
+			contentType = "application/x-www-form-urlencoded"
+		default:
+			b, err := json.Marshal(body)
+			if err != nil {
+				return nil, err
+			}
+			reader = bytes.NewReader(b)
+			contentType = "application/json"
+		}
 	}
 	req, err := http.NewRequestWithContext(ctx, method, c.apiURL(path, query), reader)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", BuildAuthHeader(c.target.TokenID, c.tokenPlain))
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+	if authMethod == AuthMethodPassword {
+		req.AddCookie(&http.Cookie{Name: "PVEAuthCookie", Value: c.ticket})
+		if method != http.MethodGet && strings.TrimSpace(c.csrfToken) != "" {
+			req.Header.Set("CSRFPreventionToken", c.csrfToken)
+		}
+	} else {
+		req.Header.Set("Authorization", BuildAuthHeader(c.target.TokenID, c.secretPlain))
+	}
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 	res, err := c.httpClient.Do(req)
 	if err != nil {
@@ -124,6 +240,9 @@ func (c *Client) Do(ctx context.Context, method, path string, query url.Values, 
 	defer res.Body.Close()
 	b, _ := io.ReadAll(io.LimitReader(res.Body, 4<<20))
 	if res.StatusCode == http.StatusUnauthorized || res.StatusCode == http.StatusForbidden {
+		if authMethod == AuthMethodPassword {
+			return nil, fmt.Errorf("PVE 账号密码无效或权限不足（HTTP %d）", res.StatusCode)
+		}
 		return nil, fmt.Errorf("PVE Token 无效或权限不足（HTTP %d）", res.StatusCode)
 	}
 	if res.StatusCode < 200 || res.StatusCode >= 300 {

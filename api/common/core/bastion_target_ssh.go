@@ -131,7 +131,7 @@ func bastionPVEClientMaterial(app *ServerApp, targetID string) (pvemodel.Target,
 		if err != nil {
 			return pvemodel.Target{}, "", err
 		}
-		secret, err := pveprovider.DecryptTargetSecret(key, target)
+		secret, err := pveprovider.DecryptTargetCredential(key, target)
 		if err != nil {
 			return pvemodel.Target{}, "", err
 		}
