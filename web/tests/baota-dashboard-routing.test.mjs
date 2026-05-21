@@ -8,6 +8,7 @@ const appSource = read("../src/App.tsx");
 const clusterRoutesSource = read("../src/app/routes/cluster-routes.tsx");
 const headerSource = read("../src/shared/layout/Header.tsx");
 const sidebarSource = read("../src/shared/layout/Sidebar.tsx");
+const homeHubSource = read("../src/pages/HomeHub.tsx");
 const baotaSyncSource = read("../src/features/baota/pages/BaotaSync.tsx");
 const baotaDashboardUrl = new URL("../src/features/baota/pages/BaotaDashboard.tsx", import.meta.url);
 const baotaDashboardSource = existsSync(baotaDashboardUrl) ? read("../src/features/baota/pages/BaotaDashboard.tsx") : "";
@@ -35,6 +36,11 @@ test("baota workspace opens the module dashboard instead of ingress sync", () =>
   const hubBaotaItem = sourceBetween(sidebarSource, "{showBaotaNav && (", "{showAppCenterNav && (");
   assert.match(hubBaotaItem, /to="\/cluster\/baota"/);
   assert.doesNotMatch(hubBaotaItem, /\/cluster\/baota\/sync/);
+
+  const homeHubBaotaCard = sourceBetween(homeHubSource, "{showBaota && (", "{showAppCenter && (");
+  assert.match(homeHubBaotaCard, /to="\/cluster\/baota"/);
+  assert.doesNotMatch(homeHubBaotaCard, /baotaEntryTo|\/cluster\/baota\/sync|\/cluster\/baota\/settings/);
+  assert.doesNotMatch(homeHubSource, /const baotaEntryTo/);
 
   assert.ok(baotaDashboardSource.length > 0, "BaotaDashboard.tsx should exist");
   assert.match(baotaDashboardSource, /宝塔工作台|宝塔概览/);

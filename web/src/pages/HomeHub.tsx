@@ -336,7 +336,6 @@ const HomeHub: React.FC = () => {
   const baotaReachable = check?.baota.status === "success";
   const nBaotaTargets = cfg?.baotaTargets?.filter((t) => Boolean(t.url && t.hasApiKey)).length ?? (baotaOk ? 1 : 0);
   const ddnsOk = Boolean(cfg?.ddnsHost?.trim());
-  const baotaEntryTo = baotaOk ? "/cluster/baota/sync" : "/cluster/baota/settings";
 
   const { nRedis, nKafka, nCloudVm, nOpenClaw, nHermes, nOpenSearch, nDomains, appCenterTotal } = useMemo(() => {
     const nr = redisQ.data?.instances?.length ?? 0;
@@ -544,7 +543,7 @@ const HomeHub: React.FC = () => {
         {/* 宝塔 */}
         {showBaota && (
           <Link
-            to={baotaEntryTo}
+            to="/cluster/baota"
             className={cn(hubCardClass, "hover:border-amber-200")}
           >
             <div className="flex items-center justify-between">
@@ -564,10 +563,10 @@ const HomeHub: React.FC = () => {
             <HubCardHint>
               {baotaOk
                 ? "同步入口、Ingress 列表与宝塔设置使用同一工作区，未连通时会显示异常状态。"
-                : "默认地址只是占位；填写宝塔面板地址与 API Key 后才会启用同步。"}
+                : "进入宝塔工作台后会先看到模块 Dashboard，并在其中按需进入宝塔设置。"}
             </HubCardHint>
             <span className={cn(hubEntryClass, "text-amber-700")}>
-              {baotaOk ? "进入" : "去配置"} <ArrowRight size={13} />
+              进入 <ArrowRight size={13} />
             </span>
           </Link>
         )}
