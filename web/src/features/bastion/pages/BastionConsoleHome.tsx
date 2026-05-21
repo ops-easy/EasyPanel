@@ -15,8 +15,14 @@ import { useAuth } from "@/auth/auth-context";
 import { apiGetJson, type AppConfig } from "@/lib/api";
 import { menuItemVisible, moduleVisible } from "@/lib/platform-permissions";
 
-type VMRow = { moref: string; name: string; powerState?: string; ip?: string };
-type ExtraHostRow = { id: string; name: string; address: string };
+type BastionTargetRow = {
+  id: string;
+  provider: "vcenter" | "pve" | "extra" | string;
+  name: string;
+  kind?: string;
+  powerState?: string;
+  address?: string;
+};
 
 /**
  * 堡垒机控制台首页：与 Orion「工作台」类似，汇总本平台已同步的主机/虚拟机数据（来自 vCenter 与策略中的额外主机）。
@@ -33,9 +39,9 @@ const BastionConsoleHome: React.FC = () => {
   );
 
   const bastionQ = useQuery({
-    queryKey: ["bastion-console-vms"],
+    queryKey: ["bastion-console-targets"],
     queryFn: ({ signal }) =>
-      apiGetJson<{ vms: VMRow[]; extraHosts?: ExtraHostRow[] }>("/api/vcenter/bastion/vms", { signal }),
+      apiGetJson<{ targets: BastionTargetRow[]; warnings?: string[] }>("/api/bastion/targets", { signal }),
     staleTime: 60_000,
     gcTime: 120_000,
     refetchOnWindowFocus: false,
@@ -76,8 +82,10 @@ const BastionConsoleHome: React.FC = () => {
     staleTime: 30_000,
   });
 
-  const vms = bastionQ.data?.vms ?? [];
-  const extras = bastionQ.data?.extraHosts ?? [];
+  const targets = bastionQ.data?.targets ?? [];
+  const vms = targets.filter((t) => t.provider === "vcenter");
+  const pveTargets = targets.filter((t) => t.provider === "pve");
+  const extras = targets.filter((t) => t.provider === "extra");
   const poweredOn = vms.filter((v) => String(v.powerState).toLowerCase().includes("on")).length;
   const nHosts = hostsQ.data?.hosts?.length ?? 0;
 
@@ -151,6 +159,17 @@ const BastionConsoleHome: React.FC = () => {
             </p>
             <p className="mt-1 text-xs text-slate-500">清单中可连接目标（含分组过滤前总数）</p>
             <p className="mt-2 text-xs text-emerald-600/90">已开机约 {bastionQ.isLoading ? "—" : poweredOn} 台</p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-[#12161c] p-4">
+            <div className="mb-2 flex items-center gap-2 text-slate-400">
+              <Server className="h-4 w-4" />
+              <span className="text-xs font-medium uppercase tracking-wide">PVE VM / CT</span>
+            </div>
+            <p className="text-2xl font-semibold text-slate-100">
+              {bastionQ.isLoading ? "..." : pveTargets.length}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">From saved Proxmox VE targets</p>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-[#12161c] p-4">

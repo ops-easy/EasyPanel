@@ -109,8 +109,11 @@ type BastionPolicy = {
   userVms: Record<string, string[]>;
   extraHosts?: ExtraHostRow[];
   manualVmGroups?: { name: string; morefs: string[] }[];
+  targetGroups?: { name: string; targetIds: string[] }[];
   hiddenVmMorefs?: string[];
+  hiddenTargetIds?: string[];
   vmRdpWebEmbeds?: { moref: string; url: string }[];
+  targetRdpWebEmbeds?: { targetId: string; url: string }[];
   nativeSshEnabled?: boolean;
   nativeSshPort?: number;
 };
@@ -164,6 +167,39 @@ function draftManualVmGroupsToPayload(rows: ManualVmGroupDraftRow[]): { name: st
     .filter((x): x is { name: string; morefs: string[] } => x != null);
 }
 
+type ManualTargetGroupDraftRow = {
+  clientId: string;
+  name: string;
+  targetIdsText: string;
+};
+
+function newManualTargetGroupDraftRow(): ManualTargetGroupDraftRow {
+  return {
+    clientId: globalThis.crypto?.randomUUID?.() ?? `tg-${Date.now()}`,
+    name: "",
+    targetIdsText: "",
+  };
+}
+
+function manualTargetGroupDraftFromApi(g: { name: string; targetIds: string[] }): ManualTargetGroupDraftRow {
+  return {
+    clientId: globalThis.crypto?.randomUUID?.() ?? `tg-${g.name}`,
+    name: g.name ?? "",
+    targetIdsText: (g.targetIds ?? []).join("\n"),
+  };
+}
+
+function draftManualTargetGroupsToPayload(rows: ManualTargetGroupDraftRow[]): { name: string; targetIds: string[] }[] {
+  return rows
+    .map((r) => {
+      const name = r.name.trim();
+      if (!name) return null;
+      const targetIds = parseMorefsLines(r.targetIdsText);
+      return { name, targetIds };
+    })
+    .filter((x): x is { name: string; targetIds: string[] } => x != null);
+}
+
 type VmRdpWebDraftRow = {
   clientId: string;
   moref: string;
@@ -174,6 +210,20 @@ function newVmRdpWebDraftRow(): VmRdpWebDraftRow {
   return {
     clientId: globalThis.crypto?.randomUUID?.() ?? `vr-${Date.now()}`,
     moref: "",
+    url: "",
+  };
+}
+
+type TargetRdpWebDraftRow = {
+  clientId: string;
+  targetId: string;
+  url: string;
+};
+
+function newTargetRdpWebDraftRow(): TargetRdpWebDraftRow {
+  return {
+    clientId: globalThis.crypto?.randomUUID?.() ?? `tr-${Date.now()}`,
+    targetId: "",
     url: "",
   };
 }
@@ -254,8 +304,11 @@ const VCenterBastionAdmin: React.FC = () => {
   const [manualGroupVmFilter, setManualGroupVmFilter] = useState<Record<string, string>>({});
   const [extraHostsDraft, setExtraHostsDraft] = useState<ExtraHostDraftRow[]>([]);
   const [manualVmGroupsDraft, setManualVmGroupsDraft] = useState<ManualVmGroupDraftRow[]>([]);
+  const [manualTargetGroupsDraft, setManualTargetGroupsDraft] = useState<ManualTargetGroupDraftRow[]>([]);
   const [hiddenVmMorefsDraft, setHiddenVmMorefsDraft] = useState<string[]>([]);
+  const [hiddenTargetIdsDraft, setHiddenTargetIdsDraft] = useState<string[]>([]);
   const [vmRdpWebDraft, setVmRdpWebDraft] = useState<VmRdpWebDraftRow[]>([]);
+  const [targetRdpWebDraft, setTargetRdpWebDraft] = useState<TargetRdpWebDraftRow[]>([]);
   const [nativeSshEnabled, setNativeSshEnabled] = useState(false);
   const [nativeSshPort, setNativeSshPort] = useState("2222");
 
@@ -263,6 +316,14 @@ const VCenterBastionAdmin: React.FC = () => {
     queryKey: ["vcenter-bastion-vms-policy"],
     queryFn: ({ signal }) =>
       apiGetJson<{ vms: { moref: string; name: string }[] }>("/api/vcenter/bastion/vms?policy=1", { signal }),
+    enabled: isAdmin,
+    staleTime: 60_000,
+  });
+
+  const policyTargetsQ = useQuery({
+    queryKey: ["bastion-targets-policy"],
+    queryFn: ({ signal }) =>
+      apiGetJson<{ targets: { id: string; provider: string; name: string; moref?: string; sourceId?: string }[] }>("/api/bastion/targets?policy=1", { signal }),
     enabled: isAdmin,
     staleTime: 60_000,
   });
@@ -283,7 +344,10 @@ const VCenterBastionAdmin: React.FC = () => {
     setExtraHostsDraft(list.length > 0 ? list.map(extraHostDraftFromApi) : []);
     const mg = p.manualVmGroups ?? [];
     setManualVmGroupsDraft(mg.length > 0 ? mg.map(manualVmGroupDraftFromApi) : []);
+    const tg = p.targetGroups ?? [];
+    setManualTargetGroupsDraft(tg.length > 0 ? tg.map(manualTargetGroupDraftFromApi) : []);
     setHiddenVmMorefsDraft(Array.isArray(p.hiddenVmMorefs) ? [...p.hiddenVmMorefs] : []);
+    setHiddenTargetIdsDraft(Array.isArray(p.hiddenTargetIds) ? [...p.hiddenTargetIds] : []);
     setNativeSshEnabled(!!p.nativeSshEnabled);
     const nsp = p.nativeSshPort;
     setNativeSshPort(nsp && nsp > 0 && nsp <= 65535 ? String(nsp) : "2222");
@@ -297,17 +361,32 @@ const VCenterBastionAdmin: React.FC = () => {
           }))
         : []
     );
+    const tr = p.targetRdpWebEmbeds ?? [];
+    setTargetRdpWebDraft(
+      tr.length > 0
+        ? tr.map((x) => ({
+            clientId: globalThis.crypto?.randomUUID?.() ?? `tr-${x.targetId}`,
+            targetId: x.targetId ?? "",
+            url: x.url ?? "",
+          }))
+        : []
+    );
   }, [policyQ.data]);
 
   const aclPickTargets = useMemo(() => {
-    const vms = policyVmsQ.data?.vms ?? EMPTY_VMS;
-    const vmOpts = vms
-      .filter((vm) => String(vm.moref ?? "").trim() !== "")
-      .map((vm) => ({
-        key: String(vm.moref).trim(),
-        label: `${vm.name} · ${String(vm.moref).trim()}`,
-        kind: "vm" as const,
-      }));
+    const targets = policyTargetsQ.data?.targets ?? [];
+    const vmOpts = targets
+      .filter((target) => target.provider !== "extra" && String(target.id ?? "").trim() !== "")
+      .map((target) => {
+        const key = target.provider === "vcenter"
+          ? String(target.moref ?? target.sourceId ?? target.id.replace(/^vcenter:/, "")).trim()
+          : String(target.id).trim();
+        return {
+          key,
+          label: `${target.name} · ${target.provider} · ${key}`,
+          kind: "vm" as const,
+        };
+      });
     const ex = extraHostsDraft
       .filter((r) => r.id.trim() !== "")
       .map((r) => ({
@@ -316,7 +395,40 @@ const VCenterBastionAdmin: React.FC = () => {
         kind: "extra" as const,
       }));
     return [...ex, ...vmOpts];
-  }, [policyVmsQ.data?.vms, extraHostsDraft]);
+  }, [policyTargetsQ.data?.targets, extraHostsDraft]);
+
+  const policyTargetOptions = useMemo(() => {
+    const out: { key: string; label: string; provider: string }[] = [];
+    const seen = new Set<string>();
+    const add = (key: string, label: string, provider: string) => {
+      const k = key.trim();
+      if (!k) return;
+      const lk = k.toLowerCase();
+      if (seen.has(lk)) return;
+      seen.add(lk);
+      out.push({ key: k, label, provider });
+    };
+    for (const target of policyTargetsQ.data?.targets ?? []) {
+      const provider = String(target.provider ?? "");
+      const key =
+        provider === "vcenter"
+          ? String(target.id ?? (target.moref ? `vcenter:${target.moref}` : "")).trim()
+          : String(target.id ?? "").trim();
+      add(key, `${target.name} · ${provider} · ${key}`, provider);
+    }
+    for (const row of extraHostsDraft) {
+      const id = row.id.trim();
+      if (!id) continue;
+      const key = `extra:${id}`;
+      add(key, `${row.name.trim() || id} · extra · ${key}`, "extra");
+    }
+    return out;
+  }, [policyTargetsQ.data?.targets, extraHostsDraft]);
+
+  const nonVCenterTargetOptions = useMemo(
+    () => policyTargetOptions.filter((target) => target.provider !== "vcenter"),
+    [policyTargetOptions]
+  );
 
   const savePolicy = useMutation({
     mutationFn: async () => {
@@ -358,6 +470,13 @@ const VCenterBastionAdmin: React.FC = () => {
         if (seenGroup.has(k)) throw new Error(`手动分组名称重复：${g.name}`);
         seenGroup.add(k);
       }
+      const targetGroups = draftManualTargetGroupsToPayload(manualTargetGroupsDraft);
+      const seenTargetGroup = new Set<string>();
+      for (const g of targetGroups) {
+        const k = g.name.toLowerCase();
+        if (seenTargetGroup.has(k)) throw new Error(`目标分组名称重复：${g.name}`);
+        seenTargetGroup.add(k);
+      }
       const vmRdpWebEmbeds = vmRdpWebDraft
         .map((r) => ({ moref: r.moref.trim(), url: r.url.trim() }))
         .filter((r) => r.moref && r.url);
@@ -367,14 +486,26 @@ const VCenterBastionAdmin: React.FC = () => {
         if (seenMf.has(lk)) throw new Error(`内嵌页：moRef 重复 ${r.moref}`);
         seenMf.add(lk);
       }
+      const targetRdpWebEmbeds = targetRdpWebDraft
+        .map((r) => ({ targetId: r.targetId.trim(), url: r.url.trim() }))
+        .filter((r) => r.targetId && r.url);
+      const seenTargetRdp = new Set<string>();
+      for (const r of targetRdpWebEmbeds) {
+        const lk = r.targetId.toLowerCase();
+        if (seenTargetRdp.has(lk)) throw new Error(`目标 RDP URL 重复：${r.targetId}`);
+        seenTargetRdp.add(lk);
+      }
       const pNum = Math.min(65535, Math.max(1, parseInt(String(nativeSshPort).trim(), 10) || 2222));
       await apiPutJson("/api/vcenter/bastion/policy", {
         enableAcl,
         userVms,
         extraHosts,
         manualVmGroups,
+        targetGroups,
         hiddenVmMorefs: hiddenVmMorefsDraft,
+        hiddenTargetIds: hiddenTargetIdsDraft,
         vmRdpWebEmbeds,
+        targetRdpWebEmbeds,
         nativeSshEnabled,
         nativeSshPort: pNum,
       });
@@ -384,6 +515,7 @@ const VCenterBastionAdmin: React.FC = () => {
       await qc.invalidateQueries({ queryKey: ["vcenter-bastion-policy"] });
       await qc.invalidateQueries({ queryKey: ["vcenter-bastion-vms"] });
       await qc.invalidateQueries({ queryKey: ["vcenter-bastion-vms-policy"] });
+      await qc.invalidateQueries({ queryKey: ["bastion-targets-policy"] });
       await qc.invalidateQueries({ queryKey: ["vcenter-bastion-native-ssh"] });
     },
     onError: (e: unknown) => {
@@ -732,6 +864,47 @@ const VCenterBastionAdmin: React.FC = () => {
                       </label>
                     );
                   })}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2 rounded-lg border border-slate-800 bg-[#0a0d12] p-3">
+            <Label className="text-xs text-slate-500">统一目标隐藏（PVE / 额外主机）</Label>
+            <p className="text-[11px] text-slate-600">
+              这里控制非 vCenter 目标在堡垒机侧栏中的显示；ACL 仍按上方授权规则独立判断。
+            </p>
+            {nonVCenterTargetOptions.length === 0 ? (
+              <p className="rounded border border-dashed border-slate-700 px-3 py-4 text-center text-xs text-slate-500">
+                暂无 PVE 或额外主机目标
+              </p>
+            ) : (
+              <div className="max-h-[min(45vh,360px)] space-y-1 overflow-y-auto">
+                {nonVCenterTargetOptions.map((target) => {
+                  const hidden = hiddenTargetIdsDraft.some((id) => id.toLowerCase() === target.key.toLowerCase());
+                  return (
+                    <label
+                      key={`hide-${target.key}`}
+                      className="flex cursor-pointer items-start gap-2 rounded px-1 py-0.5 hover:bg-slate-900/60"
+                    >
+                      <Checkbox
+                        checked={hidden}
+                        onCheckedChange={(v) => {
+                          const wantHidden = v === true;
+                          setHiddenTargetIdsDraft((prev) => {
+                            const has = prev.some((id) => id.toLowerCase() === target.key.toLowerCase());
+                            if (wantHidden && !has) return [...prev, target.key];
+                            if (!wantHidden && has) {
+                              return prev.filter((id) => id.toLowerCase() !== target.key.toLowerCase());
+                            }
+                            return prev;
+                          });
+                        }}
+                        className="mt-0.5 border-slate-600"
+                      />
+                      <span className="min-w-0 flex-1 text-xs text-slate-300">{target.label}</span>
+                    </label>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1097,6 +1270,117 @@ const VCenterBastionAdmin: React.FC = () => {
           <div className="space-y-2 border-t border-slate-800 pt-4">
             <div className="flex items-end justify-between">
               <div>
+                <Label className="text-sm text-slate-300">统一目标手动分组（PVE / 额外主机）</Label>
+                <p className="text-[11px] text-slate-600">
+                  写入 canonical target id，例如 pve:target:node:qemu:101 或 extra:router01。
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 border-slate-600 bg-slate-900 text-xs"
+                onClick={() => setManualTargetGroupsDraft((prev) => [...prev, newManualTargetGroupDraftRow()])}
+              >
+                <Plus className="mr-1 size-3.5" />
+                添加目标分组
+              </Button>
+            </div>
+            <div className="max-h-[min(60vh,560px)] space-y-2 overflow-y-auto">
+              {manualTargetGroupsDraft.map((row) => (
+                <div key={row.clientId} className="rounded-lg border border-slate-700 bg-[#0a0d12] p-3">
+                  <div className="mb-2 flex justify-between gap-2">
+                    <Input
+                      value={row.name}
+                      onChange={(e) =>
+                        setManualTargetGroupsDraft((prev) =>
+                          prev.map((x) => (x.clientId === row.clientId ? { ...x, name: e.target.value } : x))
+                        )
+                      }
+                      placeholder="分组名"
+                      className="h-8 max-w-xs border-slate-700 bg-[#080a0e] text-xs"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-400"
+                      onClick={() =>
+                        setManualTargetGroupsDraft((prev) => prev.filter((x) => x.clientId !== row.clientId))
+                      }
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
+                  <Collapsible className="mb-2">
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 gap-1 border-slate-600 bg-slate-900 text-[11px] text-slate-300"
+                      >
+                        <ChevronDown className="size-3.5" />
+                        从统一目标列表勾选
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2 rounded border border-slate-800 bg-[#080a0e] p-2">
+                      {nonVCenterTargetOptions.length === 0 ? (
+                        <p className="text-xs text-slate-500">暂无 PVE 或额外主机目标</p>
+                      ) : (
+                        <div className="max-h-52 space-y-1 overflow-y-auto">
+                          {nonVCenterTargetOptions.map((target) => {
+                            const checked = morefListContains(row.targetIdsText, target.key);
+                            return (
+                              <label
+                                key={`${row.clientId}-${target.key}`}
+                                className="flex cursor-pointer items-start gap-2 rounded px-1 py-0.5 hover:bg-slate-900/70"
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(v) => {
+                                    const on = v === true;
+                                    setManualTargetGroupsDraft((prev) =>
+                                      prev.map((x) =>
+                                        x.clientId === row.clientId
+                                          ? {
+                                              ...x,
+                                              targetIdsText: toggleMorefInMultilineText(x.targetIdsText, target.key, on),
+                                            }
+                                          : x
+                                      )
+                                    );
+                                  }}
+                                  className="mt-0.5 border-slate-600"
+                                />
+                                <span className="min-w-0 flex-1 text-[11px] text-slate-300">{target.label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                  <Label className="text-[10px] text-slate-500">target id 列表（可编辑）</Label>
+                  <Textarea
+                    value={row.targetIdsText}
+                    onChange={(e) =>
+                      setManualTargetGroupsDraft((prev) =>
+                        prev.map((x) => (x.clientId === row.clientId ? { ...x, targetIdsText: e.target.value } : x))
+                      )
+                    }
+                    rows={3}
+                    placeholder="pve:main:pve01:qemu:101"
+                    className="mt-1 border-slate-700 bg-[#080a0e] font-mono text-[11px]"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2 border-t border-slate-800 pt-4">
+            <div className="flex items-end justify-between">
+              <div>
                 <Label className="text-sm text-slate-300">Windows 虚拟机 · JumpServer RDP</Label>
                 <p className="text-[11px] text-slate-600">
                   每台 Windows VM 一行：moRef 对应虚拟机，URL 填 JumpServer Luna 的 RDP 网页地址，前台用 iframe 内嵌打开。
@@ -1188,6 +1472,99 @@ const VCenterBastionAdmin: React.FC = () => {
                     <Trash2 className="size-3.5" />
                   </Button>
                 </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-2 border-t border-slate-800 pt-4">
+            <div className="flex items-end justify-between">
+              <div>
+                <Label className="text-sm text-slate-300">统一目标 · JumpServer RDP</Label>
+                <p className="text-[11px] text-slate-600">
+                  给 PVE Windows VM 或额外 Windows 主机绑定 JumpServer Luna 的 HTTPS RDP 页面。
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 border-slate-600 bg-slate-900 text-xs"
+                onClick={() => setTargetRdpWebDraft((prev) => [...prev, newTargetRdpWebDraftRow()])}
+              >
+                <Plus className="mr-1 size-3.5" />
+                添加
+              </Button>
+            </div>
+            <div className="max-h-[min(50vh,520px)] space-y-2 overflow-y-auto">
+              {targetRdpWebDraft.map((row) => {
+                const idTrim = row.targetId.trim();
+                const selectVal =
+                  idTrim && nonVCenterTargetOptions.some((target) => target.key === idTrim) ? idTrim : "__custom__";
+                return (
+                  <div key={row.clientId} className="flex flex-wrap items-end gap-2 rounded-lg border border-slate-700 bg-[#0a0d12] p-2">
+                    <div className="min-w-[180px] flex-[1.2] space-y-1">
+                      <Label className="text-[10px] text-slate-500">target id</Label>
+                      {nonVCenterTargetOptions.length > 0 ? (
+                        <Select
+                          value={selectVal}
+                          onValueChange={(v) =>
+                            setTargetRdpWebDraft((prev) =>
+                              prev.map((x) =>
+                                x.clientId === row.clientId
+                                  ? { ...x, targetId: v === "__custom__" ? x.targetId : v }
+                                  : x
+                              )
+                            )
+                          }
+                        >
+                          <SelectTrigger className="h-8 border-slate-700 bg-[#080a0e] text-xs">
+                            <SelectValue placeholder="选择目标" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__custom__">自定义（下方输入）</SelectItem>
+                            {nonVCenterTargetOptions.map((target) => (
+                              <SelectItem key={target.key} value={target.key}>
+                                {target.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : null}
+                      <Input
+                        value={row.targetId}
+                        onChange={(e) =>
+                          setTargetRdpWebDraft((prev) =>
+                            prev.map((x) => (x.clientId === row.clientId ? { ...x, targetId: e.target.value } : x))
+                          )
+                        }
+                        placeholder="pve:main:pve01:qemu:101"
+                        className="h-8 border-slate-700 bg-[#080a0e] font-mono text-xs"
+                      />
+                    </div>
+                    <div className="min-w-[220px] flex-[2] space-y-1">
+                      <Label className="text-[10px] text-slate-500">JumpServer RDP HTTPS URL</Label>
+                      <Input
+                        value={row.url}
+                        onChange={(e) =>
+                          setTargetRdpWebDraft((prev) =>
+                            prev.map((x) => (x.clientId === row.clientId ? { ...x, url: e.target.value } : x))
+                          )
+                        }
+                        placeholder="https://jump.example.com/luna/..."
+                        className="h-8 border-slate-700 bg-[#080a0e] font-mono text-[11px]"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-400"
+                      onClick={() => setTargetRdpWebDraft((prev) => prev.filter((x) => x.clientId !== row.clientId))}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
                 );
               })}
             </div>

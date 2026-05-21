@@ -1,0 +1,112 @@
+package core
+
+import "testing"
+
+func TestParseBastionTargetKey(t *testing.T) {
+	cases := []struct {
+		in       string
+		provider string
+		legacy   bool
+	}{
+		{in: "vm-42", provider: "vcenter", legacy: true},
+		{in: "vcenter:vm-42", provider: "vcenter"},
+		{in: "extra:router01", provider: "extra"},
+		{in: "pve:target-a:node1:qemu:101", provider: "pve"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.in, func(t *testing.T) {
+			got, err := parseBastionTargetKey(tc.in)
+			if err != nil {
+				t.Fatalf("parseBastionTargetKey(%q): %v", tc.in, err)
+			}
+			if got.Provider != tc.provider || got.LegacyVCenter != tc.legacy {
+				t.Fatalf("parseBastionTargetKey(%q)=%+v", tc.in, got)
+			}
+		})
+	}
+}
+
+func TestBastionPolicyAcceptsLegacyVCenterAndCanonicalTargets(t *testing.T) {
+	pol := &VCenterBastionPolicy{
+		EnableACL: true,
+		UserVMs: map[string][]string{
+			"alice": {"vm-1", "pve:t1:n1:qemu:101", "extra:router"},
+		},
+	}
+	if !bastionMayAccessTarget(pol, "alice", "vcenter:vm-1", false) {
+		t.Fatal("legacy vm-1 should allow vcenter:vm-1")
+	}
+	if !bastionMayAccessTarget(pol, "alice", "pve:t1:n1:qemu:101", false) {
+		t.Fatal("canonical pve target should be allowed")
+	}
+	if !bastionMayAccessTarget(pol, "alice", "extra:router", false) {
+		t.Fatal("extra target should be allowed")
+	}
+}
+
+func TestBastionTargetSSHStoreKey(t *testing.T) {
+	got := bastionTargetSSHStoreKey("pve:t1:n1:qemu:101")
+	want := "bastion-target:pve:t1:n1:qemu:101"
+	if got != want {
+		t.Fatalf("got %q want %q", got, want)
+	}
+}
+
+func TestNormalizeBastionPolicyTargetFields(t *testing.T) {
+	groups := normalizeBastionTargetGroups([]BastionManualTargetGroup{
+		{Name: " core ", TargetIDs: []string{"pve:t1:n1:qemu:101", "PVE:t1:n1:QEMU:101", "extra:Router", ""}},
+		{Name: "", TargetIDs: []string{"pve:t1:n1:lxc:102"}},
+	})
+	if len(groups) != 1 {
+		t.Fatalf("unexpected groups: %+v", groups)
+	}
+	if groups[0].Name != "core" {
+		t.Fatalf("unexpected group name %q", groups[0].Name)
+	}
+	wantIDs := []string{"pve:t1:n1:qemu:101", "extra:router"}
+	if len(groups[0].TargetIDs) != len(wantIDs) {
+		t.Fatalf("unexpected target ids: %+v", groups[0].TargetIDs)
+	}
+	for i := range wantIDs {
+		if groups[0].TargetIDs[i] != wantIDs[i] {
+			t.Fatalf("target id[%d]=%q want %q", i, groups[0].TargetIDs[i], wantIDs[i])
+		}
+	}
+
+	hidden := normalizeBastionTargetIDList([]string{"vm-1", "vcenter:vm-1", "pve:t1:n1:lxc:102"})
+	if len(hidden) != 2 || hidden[0] != "vcenter:vm-1" || hidden[1] != "pve:t1:n1:lxc:102" {
+		t.Fatalf("unexpected hidden ids: %+v", hidden)
+	}
+
+	rdp := normalizeBastionTargetRdpEmbeds([]BastionTargetRdpWebEmbed{
+		{TargetID: "vm-1", URL: " https://rdp.example/a "},
+		{TargetID: "vcenter:vm-1", URL: "https://rdp.example/b"},
+		{TargetID: "pve:t1:n1:qemu:101", URL: ""},
+	})
+	if len(rdp) != 1 || rdp[0].TargetID != "vcenter:vm-1" || rdp[0].URL != "https://rdp.example/a" {
+		t.Fatalf("unexpected rdp embeds: %+v", rdp)
+	}
+}
+
+func TestDecodePVEGuestRowsUseNumberAndInferVMID(t *testing.T) {
+	rows, err := decodePVEGuestRows([]byte(`[{"id":"qemu/101","vmid":101,"name":"app","node":"pve01","type":"qemu","status":"running"}]`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 || rows[0].VMID != "101" || rows[0].Node != "pve01" {
+		t.Fatalf("unexpected rows: %+v", rows)
+	}
+	id := canonicalPVETargetID("target-a", rows[0].Node, normalizePVEGuestType(rows[0].Type, rows[0].ID), rows[0].VMID)
+	if id != "pve:target-a:pve01:qemu:101" {
+		t.Fatalf("unexpected id %q", id)
+	}
+}
+
+func TestUsableGuestIPv4SkipsLoopbackAndCIDR(t *testing.T) {
+	if got := usableGuestIPv4("127.0.0.1"); got != "" {
+		t.Fatalf("loopback should be skipped, got %q", got)
+	}
+	if got := usableGuestIPv4("192.168.10.21/24"); got != "192.168.10.21" {
+		t.Fatalf("got %q", got)
+	}
+}

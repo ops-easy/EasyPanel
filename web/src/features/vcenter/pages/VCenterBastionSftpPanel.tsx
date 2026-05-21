@@ -12,11 +12,15 @@ type Entry = {
 
 export type BastionSftpTarget =
   | { kind: "vm"; moref: string }
-  | { kind: "extra"; id: string };
+  | { kind: "extra"; id: string }
+  | { kind: "target"; targetId: string };
 
 function sftpWsUrl(target: BastionSftpTarget): string {
   if (target.kind === "vm") {
     return wsUrlForApiPath(`/api/vcenter/vms/${encodeURIComponent(target.moref)}/sftp/ws`);
+  }
+  if (target.kind === "target") {
+    return wsUrlForApiPath(`/api/bastion/sftp/ws?target=${encodeURIComponent(target.targetId)}`);
   }
   return wsUrlForApiPath(`/api/vcenter/bastion/extra/${encodeURIComponent(target.id)}/sftp/ws`);
 }
@@ -41,7 +45,7 @@ const VCenterBastionSftpPanel: React.FC<Props> = ({ target }) => {
   const pathRef = useRef("/");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const targetKey = target.kind === "vm" ? `vm:${target.moref}` : `extra:${target.id}`;
+  const targetKey = target.kind === "vm" ? `vm:${target.moref}` : target.kind === "extra" ? `extra:${target.id}` : target.targetId;
 
   useEffect(() => {
     pathRef.current = path;

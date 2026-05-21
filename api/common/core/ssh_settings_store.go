@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -73,7 +74,19 @@ type fileSSHStore struct {
 
 func (s *fileSSHStore) Backend() SSHSettingsBackend { return SSHBackendFile }
 
+func sshStoreFileName(key string) string {
+	encoded := base64.RawURLEncoding.EncodeToString([]byte(strings.TrimSpace(key)))
+	if encoded == "" {
+		encoded = "_"
+	}
+	return encoded + ".json"
+}
+
 func (s *fileSSHStore) path(moref string) string {
+	return filepath.Join(s.dir, sshStoreFileName(moref))
+}
+
+func (s *fileSSHStore) legacyPath(moref string) string {
 	safe := strings.ReplaceAll(moref, string(os.PathSeparator), "_")
 	safe = strings.ReplaceAll(safe, "..", "")
 	return filepath.Join(s.dir, safe+".json")
@@ -83,7 +96,14 @@ func (s *fileSSHStore) readFileVM(moref string, encKey []byte) (*SSHVMStored, er
 	raw, err := os.ReadFile(s.path(moref))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			raw, err = os.ReadFile(s.legacyPath(moref))
+			if err != nil {
+				if os.IsNotExist(err) {
+					return nil, nil
+				}
+				return nil, err
+			}
+			return decodeSSHVMJSON(raw, encKey)
 		}
 		return nil, err
 	}
@@ -202,10 +222,17 @@ func (s *fileSSHStore) DeleteVM(ctx context.Context, moref string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	err := os.Remove(s.path(moref))
-	if os.IsNotExist(err) {
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	legacyErr := os.Remove(s.legacyPath(moref))
+	if legacyErr != nil && !os.IsNotExist(legacyErr) {
+		return legacyErr
+	}
+	if os.IsNotExist(err) && os.IsNotExist(legacyErr) {
 		return nil
 	}
-	return err
+	return nil
 }
 
 // OpenSSHSettingsStore 根据 cfg 打开存储；未配置后端返回 nil。

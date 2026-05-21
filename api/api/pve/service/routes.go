@@ -52,7 +52,7 @@ func handlePVEProbe(c *gin.Context, app *ServerApp) {
 	if !ok {
 		return
 	}
-	data, err := client.do(c.Request.Context(), http.MethodGet, "/version", nil, nil)
+	data, err := client.Do(c.Request.Context(), http.MethodGet, "/version", nil, nil)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"ok": false, "error": err.Error()})
 		return
@@ -65,7 +65,7 @@ func handlePVEForwardGet(c *gin.Context, app *ServerApp, path string, q url.Valu
 	if !ok {
 		return
 	}
-	data, err := client.do(c.Request.Context(), http.MethodGet, path, q, nil)
+	data, err := client.Do(c.Request.Context(), http.MethodGet, path, q, nil)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
@@ -78,13 +78,13 @@ func handlePVESummary(c *gin.Context, app *ServerApp) {
 	if !ok {
 		return
 	}
-	nodes, nodeErr := client.do(c.Request.Context(), http.MethodGet, "/nodes", nil, nil)
+	nodes, nodeErr := client.Do(c.Request.Context(), http.MethodGet, "/nodes", nil, nil)
 	qVM := url.Values{}
 	qVM.Set("type", "vm")
-	guests, guestErr := client.do(c.Request.Context(), http.MethodGet, "/cluster/resources", qVM, nil)
+	guests, guestErr := client.Do(c.Request.Context(), http.MethodGet, "/cluster/resources", qVM, nil)
 	qStorage := url.Values{}
 	qStorage.Set("type", "storage")
-	storage, storageErr := client.do(c.Request.Context(), http.MethodGet, "/cluster/resources", qStorage, nil)
+	storage, storageErr := client.Do(c.Request.Context(), http.MethodGet, "/cluster/resources", qStorage, nil)
 	if nodeErr != nil || guestErr != nil || storageErr != nil {
 		parts := []string{}
 		if nodeErr != nil {
@@ -130,7 +130,7 @@ func handlePVEGuestPower(c *gin.Context, app *ServerApp) {
 	if !ok {
 		return
 	}
-	data, err := client.do(c.Request.Context(), http.MethodPost, path, nil, map[string]string{})
+	data, err := client.Do(c.Request.Context(), http.MethodPost, path, nil, map[string]string{})
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return

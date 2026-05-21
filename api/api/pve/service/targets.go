@@ -1,57 +1,32 @@
 package service
 
 import (
-	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 
 	pvemodel "kube-bt-sync/api/pve/model"
+	pveprovider "kube-bt-sync/api/pve/provider"
 	"kube-bt-sync/common/appctx"
 	"kube-bt-sync/common/authz"
 	sharedcrypto "kube-bt-sync/common/crypto"
 	"kube-bt-sync/common/result"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type ServerApp = appctx.ServerApp
 type PlatformKV = appctx.PlatformKV
 
-const kvKeyPVETargets = "kubebt_pve_targets_v1"
+const kvKeyPVETargets = pveprovider.KVKeyTargets
 
-type pveTargetsPayload struct {
-	Targets []pvemodel.Target `json:"targets"`
-}
+type pveTargetBody = pveprovider.TargetBody
 
 func loadPVETargets(kv PlatformKV) ([]pvemodel.Target, error) {
-	if kv == nil {
-		return nil, errors.New("platform_kv 不可用")
-	}
-	raw, ok := kv.Get(kvKeyPVETargets)
-	if !ok || strings.TrimSpace(raw) == "" {
-		return []pvemodel.Target{}, nil
-	}
-	var p pveTargetsPayload
-	if err := json.Unmarshal([]byte(raw), &p); err != nil {
-		return nil, err
-	}
-	if p.Targets == nil {
-		return []pvemodel.Target{}, nil
-	}
-	return p.Targets, nil
+	return pveprovider.LoadTargets(kv)
 }
 
 func savePVETargets(kv PlatformKV, list []pvemodel.Target) error {
-	if kv == nil {
-		return errors.New("platform_kv 不可用")
-	}
-	b, err := json.Marshal(pveTargetsPayload{Targets: list})
-	if err != nil {
-		return err
-	}
-	return kv.Set(kvKeyPVETargets, string(b))
+	return pveprovider.SaveTargets(kv, list)
 }
 
 func pveTargetListItem(x pvemodel.Target, key []byte) pvemodel.TargetListItem {
@@ -67,7 +42,7 @@ func pveTargetListItem(x pvemodel.Target, key []byte) pvemodel.TargetListItem {
 		UpdatedAt:      x.UpdatedAt,
 	}
 	if key != nil && strings.TrimSpace(x.TokenSecretEnc) != "" {
-		if plain, err := sharedcrypto.DecryptSecret(key, x.TokenSecretEnc); err == nil {
+		if plain, err := pveprovider.DecryptTargetSecret(key, x); err == nil {
 			item.TokenSecretPreview = maskPVESecretPreview(plain)
 		}
 	}
@@ -100,51 +75,8 @@ func pveEncryptionKey(app *ServerApp) ([]byte, error) {
 	return sharedcrypto.DeriveAESKey(app.Cfg().EncryptionKey)
 }
 
-type pveTargetBody struct {
-	Name          string `json:"name"`
-	BaseURL       string `json:"baseUrl"`
-	TokenID       string `json:"tokenId"`
-	TokenSecret   string `json:"tokenSecret"`
-	SkipTLS       bool   `json:"skipTls"`
-	PrometheusJob string `json:"prometheusJob"`
-}
-
 func normalizePVETargetFromBody(body pveTargetBody, cur *pvemodel.Target, key []byte) (pvemodel.Target, error) {
-	now := NowBeijingRFC3339()
-	out := pvemodel.Target{}
-	if cur != nil {
-		out = *cur
-	} else {
-		out.ID = uuid.NewString()
-		out.CreatedAt = now
-	}
-	out.Name = strings.TrimSpace(body.Name)
-	if out.Name == "" {
-		out.Name = "PVE"
-	}
-	base, err := normalizePVEBaseURL(body.BaseURL)
-	if err != nil {
-		return out, err
-	}
-	out.BaseURL = base
-	out.TokenID = strings.TrimSpace(body.TokenID)
-	if out.TokenID == "" {
-		return out, errors.New("tokenId 不能为空")
-	}
-	if strings.TrimSpace(body.TokenSecret) != "" && body.TokenSecret != "***" {
-		enc, err := sharedcrypto.EncryptSecret(key, body.TokenSecret)
-		if err != nil {
-			return out, err
-		}
-		out.TokenSecretEnc = enc
-	}
-	if strings.TrimSpace(out.TokenSecretEnc) == "" {
-		return out, errors.New("tokenSecret 不能为空")
-	}
-	out.SkipTLS = body.SkipTLS
-	out.PrometheusJob = strings.TrimSpace(body.PrometheusJob)
-	out.UpdatedAt = now
-	return out, nil
+	return pveprovider.NormalizeTargetFromBody(body, cur, key, NowBeijingRFC3339())
 }
 
 func findPVETarget(list []pvemodel.Target, id string) (*pvemodel.Target, int) {
@@ -162,7 +94,7 @@ func decryptPVETargetSecret(app *ServerApp, target pvemodel.Target) (string, err
 	if err != nil {
 		return "", err
 	}
-	return sharedcrypto.DecryptSecret(key, target.TokenSecretEnc)
+	return pveprovider.DecryptTargetSecret(key, target)
 }
 
 func handlePVETargetsList(c *gin.Context, app *ServerApp) {

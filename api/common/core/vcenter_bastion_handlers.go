@@ -31,14 +31,17 @@ type bastionVmRdpWebPutJSON struct {
 }
 
 type bastionPolicyPutJSON struct {
-	EnableACL        bool                      `json:"enableAcl"`
-	UserVMs          map[string][]string       `json:"userVms"`
-	ExtraHosts       []bastionExtraHostPutJSON `json:"extraHosts"`
-	ManualVmGroups   []BastionManualVmGroup    `json:"manualVmGroups"`
-	HiddenVmMorefs   []string                  `json:"hiddenVmMorefs"`
-	VmRdpWebEmbeds   []bastionVmRdpWebPutJSON  `json:"vmRdpWebEmbeds"`
-	NativeSshEnabled *bool                     `json:"nativeSshEnabled"`
-	NativeSshPort    *int                      `json:"nativeSshPort"`
+	EnableACL          bool                       `json:"enableAcl"`
+	UserVMs            map[string][]string        `json:"userVms"`
+	ExtraHosts         []bastionExtraHostPutJSON  `json:"extraHosts"`
+	ManualVmGroups     []BastionManualVmGroup     `json:"manualVmGroups"`
+	TargetGroups       []BastionManualTargetGroup `json:"targetGroups"`
+	HiddenVmMorefs     []string                   `json:"hiddenVmMorefs"`
+	HiddenTargetIDs    []string                   `json:"hiddenTargetIds"`
+	VmRdpWebEmbeds     []bastionVmRdpWebPutJSON   `json:"vmRdpWebEmbeds"`
+	TargetRdpWebEmbeds []BastionTargetRdpWebEmbed `json:"targetRdpWebEmbeds"`
+	NativeSshEnabled   *bool                      `json:"nativeSshEnabled"`
+	NativeSshPort      *int                       `json:"nativeSshPort"`
 }
 
 func handleGetVCenterBastionPolicy(c *gin.Context, app *ServerApp) {
@@ -204,6 +207,18 @@ func handlePutVCenterBastionPolicy(c *gin.Context, app *ServerApp) {
 	}
 
 	prev := loadVCenterBastionPolicy(kv)
+	targetGroupsOut := prev.TargetGroups
+	if body.TargetGroups != nil {
+		targetGroupsOut = normalizeBastionTargetGroups(body.TargetGroups)
+	}
+	hiddenTargetOut := prev.HiddenTargetIDs
+	if body.HiddenTargetIDs != nil {
+		hiddenTargetOut = normalizeBastionTargetIDList(body.HiddenTargetIDs)
+	}
+	targetRdpOut := prev.TargetRdpWebEmbeds
+	if body.TargetRdpWebEmbeds != nil {
+		targetRdpOut = normalizeBastionTargetRdpEmbeds(body.TargetRdpWebEmbeds)
+	}
 	nsEn, nsPort := prev.NativeSshEnabled, prev.NativeSshPort
 	if nsPort <= 0 {
 		nsPort = 2222
@@ -216,14 +231,17 @@ func handlePutVCenterBastionPolicy(c *gin.Context, app *ServerApp) {
 	}
 
 	outPol := VCenterBastionPolicy{
-		EnableACL:        body.EnableACL,
-		UserVMs:          norm,
-		ExtraHosts:       hosts,
-		ManualVmGroups:   manualOut,
-		HiddenVmMorefs:   hiddenOut,
-		VmRdpWebEmbeds:   vmRdpOut,
-		NativeSshEnabled: nsEn,
-		NativeSshPort:    nsPort,
+		EnableACL:          body.EnableACL,
+		UserVMs:            norm,
+		ExtraHosts:         hosts,
+		ManualVmGroups:     manualOut,
+		TargetGroups:       targetGroupsOut,
+		HiddenVmMorefs:     hiddenOut,
+		HiddenTargetIDs:    hiddenTargetOut,
+		VmRdpWebEmbeds:     vmRdpOut,
+		TargetRdpWebEmbeds: targetRdpOut,
+		NativeSshEnabled:   nsEn,
+		NativeSshPort:      nsPort,
 	}
 	raw, err := json.Marshal(&outPol)
 	if err != nil {
@@ -258,7 +276,7 @@ func bastionRemoveOrphanExtraSSHSecrets(ctx context.Context, app *ServerApp, old
 	}
 }
 
-func handleGetVCenterBastionVMs(c *gin.Context, app *ServerApp) {
+func handleGetVCenterBastionVMsLegacyVCenterOnly(c *gin.Context, app *ServerApp) {
 	ctx := c.Request.Context()
 	force := c.Query("refresh") == "1" || c.Query("refresh") == "true"
 	payload, _, folderPathPending, err := vcenterVMListSnapshotBytes(ctx, app, force, true)
@@ -351,4 +369,51 @@ func handleGetVCenterBastionVMs(c *gin.Context, app *ServerApp) {
 	}
 	c.Header("X-VCenter-Bastion-Filter", "1")
 	c.Data(http.StatusOK, "application/json", out)
+}
+
+func handleGetVCenterBastionVMs(c *gin.Context, app *ServerApp) {
+	ctx := c.Request.Context()
+	force := c.Query("refresh") == "1" || c.Query("refresh") == "true"
+	res := collectBastionTargets(ctx, app, force)
+	pol := loadVCenterBastionPolicy(app.PlatformKV())
+	user := dashboardUsernameFromGin(c)
+	admin := getDashboardRoleFromGin(c) == DashboardRoleAdmin
+	wantPolicy := c.Query("policy") == "1" || c.Query("policy") == "true"
+	if wantPolicy && !admin {
+		RespondAPIPermissionDenied(c)
+		return
+	}
+	targets := filterBastionTargetsForUser(res.Targets, pol, user, admin, admin && wantPolicy)
+	out, err := json.Marshal(gin.H{
+		"vms":               bastionTargetsToLegacyVMs(targets),
+		"extraHosts":        bastionTargetsToLegacyExtras(targets, pol),
+		"folderPathPending": res.FolderPathPending,
+		"warnings":          res.Warnings,
+	})
+	if err != nil {
+		RespondAPIError500(c, err.Error())
+		return
+	}
+	c.Header("X-VCenter-Bastion-Filter", "1")
+	c.Data(http.StatusOK, "application/json", out)
+}
+
+func handleGetBastionTargets(c *gin.Context, app *ServerApp) {
+	ctx := c.Request.Context()
+	force := c.Query("refresh") == "1" || c.Query("refresh") == "true"
+	res := collectBastionTargets(ctx, app, force)
+	pol := loadVCenterBastionPolicy(app.PlatformKV())
+	user := dashboardUsernameFromGin(c)
+	admin := getDashboardRoleFromGin(c) == DashboardRoleAdmin
+	wantPolicy := c.Query("policy") == "1" || c.Query("policy") == "true"
+	if wantPolicy && !admin {
+		RespondAPIPermissionDenied(c)
+		return
+	}
+	targets := filterBastionTargetsForUser(res.Targets, pol, user, admin, admin && wantPolicy)
+	c.JSON(http.StatusOK, gin.H{
+		"targets":           targets,
+		"folderPathPending": res.FolderPathPending,
+		"warnings":          res.Warnings,
+	})
 }

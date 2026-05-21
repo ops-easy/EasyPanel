@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, PlugZap, Power, RefreshCw, Server, ShieldCheck, Trash2 } from "lucide-react";
+import { Loader2, PlugZap, Power, RefreshCw, Server, ShieldCheck, SquareTerminal, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -279,6 +280,7 @@ const PVEPage: React.FC = () => {
                     const vmid = String(g.vmid ?? g.id ?? "");
                     const node = String(g.node ?? "");
                     const type = String(g.type ?? "qemu");
+                    const bastionTargetId = activeId && node && type && vmid ? `pve:${activeId}:${node}:${type}:${vmid}` : "";
                     return (
                       <TableRow key={`${node}-${vmid}`}>
                         <TableCell className="font-medium">{g.name || vmid}</TableCell>
@@ -291,6 +293,14 @@ const PVEPage: React.FC = () => {
                         <TableCell className="font-mono text-xs">{fmtBytes(g.disk)} / {fmtBytes(g.maxdisk)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
+                            {bastionTargetId ? (
+                              <Button variant="ghost" size="sm" className="h-8 gap-1 px-2" asChild>
+                                <Link to={`/cluster/bastion/session?target=${encodeURIComponent(bastionTargetId)}`}>
+                                  <SquareTerminal className="h-3.5 w-3.5" />
+                                  SSH
+                                </Link>
+                              </Button>
+                            ) : null}
                             {["start", "shutdown", "reboot", "stop"].map((action) => (
                               <Button
                                 key={action}

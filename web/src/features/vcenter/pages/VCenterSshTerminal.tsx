@@ -19,11 +19,16 @@ function buildBastionExtraSshWsUrl(extraId: string): string {
   return wsUrlForApiPath(`/api/vcenter/bastion/extra/${encodeURIComponent(extraId)}/ssh/ws`);
 }
 
+function buildBastionTargetSshWsUrl(targetId: string): string {
+  return wsUrlForApiPath(`/api/bastion/ssh/ws?target=${encodeURIComponent(targetId)}`);
+}
+
 type VCenterSshTerminalProps = {
   /** vCenter 虚拟机 moRef */
   moref?: string;
   /** 堡垒机策略中的非 vCenter 主机 id */
   bastionExtraId?: string;
+  targetId?: string;
   /** 展示用：vCenter 上报的 Guest 主 IP */
   guestIpHint?: string;
   /** 满足条件时自动开始连接（如堡垒机嵌入） */
@@ -45,6 +50,7 @@ type VCenterSshTerminalProps = {
 const VCenterSshTerminal: React.FC<VCenterSshTerminalProps> = ({
   moref,
   bastionExtraId,
+  targetId,
   guestIpHint,
   autoConnect = false,
   hostClassName,
@@ -101,7 +107,7 @@ const VCenterSshTerminal: React.FC<VCenterSshTerminalProps> = ({
     prev?.();
     disposeRef.current = null;
 
-    const sshTarget = bastionExtraId ?? moref;
+    const sshTarget = targetId ?? bastionExtraId ?? moref;
     if (!started || !sshTarget) {
       setStatus("idle");
       setErrMsg(null);
@@ -136,9 +142,11 @@ const VCenterSshTerminal: React.FC<VCenterSshTerminalProps> = ({
       setStatus("connecting");
       setErrMsg(null);
 
-      const wsUrl = bastionExtraId
-        ? buildBastionExtraSshWsUrl(bastionExtraId)
-        : buildVCenterSshWsUrl(moref!);
+      const wsUrl = targetId
+        ? buildBastionTargetSshWsUrl(targetId)
+        : bastionExtraId
+          ? buildBastionExtraSshWsUrl(bastionExtraId)
+          : buildVCenterSshWsUrl(moref!);
       const ws = new WebSocket(wsUrl);
       ws.binaryType = "arraybuffer";
       wsRef.current = ws;
@@ -240,15 +248,15 @@ const VCenterSshTerminal: React.FC<VCenterSshTerminalProps> = ({
       disposeRef.current?.();
       disposeRef.current = null;
     };
-  }, [started, moref, bastionExtraId, cfgQ.data, fontSizeOverride, fontFamilyOverride]);
+  }, [started, moref, bastionExtraId, targetId, cfgQ.data, fontSizeOverride, fontFamilyOverride]);
 
   const sshOk = cfgQ.data?.vcenterVmSshConfigured === true;
 
   useEffect(() => {
-    const t = bastionExtraId ?? moref;
+    const t = targetId ?? bastionExtraId ?? moref;
     if (!autoConnect || !sshOk || !t) return;
     setStarted(true);
-  }, [autoConnect, sshOk, moref, bastionExtraId]);
+  }, [autoConnect, sshOk, moref, bastionExtraId, targetId]);
 
   const hostCls =
     hostClassName ??

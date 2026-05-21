@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppConfig } from "@/hooks/use-app-config";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -16,7 +16,7 @@ import {
   SquareTerminal,
 } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
-import { apiGetJson, type AppConfig } from "@/lib/api";
+import { apiDelete, apiGetJson, apiPutJson, type AppConfig } from "@/lib/api";
 import { menuItemVisible, moduleVisible } from "@/lib/platform-permissions";
 import CloudVmSshTerminalSheet from "@/features/app-center/cloudvm/components/CloudVmSshTerminalSheet";
 import RedisCliTerminalSheet from "@/features/app-center/redis/components/RedisCliTerminalSheet";
@@ -31,6 +31,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
@@ -57,6 +58,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import { Switch } from "@/shared/ui/switch";
+import { Textarea } from "@/shared/ui/textarea";
 import { cn } from "@/lib/utils";
 import { BastionOsBadge, bastionGroupAccent } from "@/lib/bastionGuestOs";
 
@@ -95,17 +98,74 @@ type ExtraHostRow = {
   rdpWebUrl?: string;
 };
 
-type BastionVMListRes = {
-  vms: VMRow[];
-  extraHosts?: ExtraHostRow[];
+type BastionTargetRow = {
+  id: string;
+  provider: "vcenter" | "pve" | "extra" | string;
+  sourceId?: string;
+  moref?: string;
+  name: string;
+  kind?: string;
+  guestType?: string;
+  powerState?: string;
+  address?: string;
+  node?: string;
+  folderPath?: string;
+  manualGroup?: string;
+  guestId?: string;
+  rdpWebUrl?: string;
+};
+
+type BastionTargetsRes = {
+  targets: BastionTargetRow[];
   folderPathPending?: boolean;
+  warnings?: string[];
+};
+
+type BastionTargetSSHSettings = {
+  target: string;
+  provider: string;
+  backend?: string;
+  writable?: boolean;
+  encryptionReady?: boolean;
+  encryptionError?: string;
+  sshHost?: string;
+  user?: string;
+  port?: number;
+  insecureHostKey?: boolean;
+  stored?: boolean;
+  passwordSet?: boolean;
+  privateKeySet?: boolean;
+  canConnect?: boolean;
+};
+
+type BastionTargetSSHForm = {
+  sshHost: string;
+  user: string;
+  port: string;
+  password: string;
+  privateKeyPem: string;
+  keyPassphrase: string;
+  insecureHostKey: boolean;
 };
 
 const EMPTY_VMS: VMRow[] = [];
 const EMPTY_EXTRAS: ExtraHostRow[] = [];
+const EMPTY_TARGET_SSH_FORM: BastionTargetSSHForm = {
+  sshHost: "",
+  user: "",
+  port: "22",
+  password: "",
+  privateKeyPem: "",
+  keyPassphrase: "",
+  insecureHostKey: true,
+};
 
 /** 独立堡垒机路由（与 vCenter 菜单解耦） */
 export const BASTION_ROUTE_BASE = "/cluster/bastion";
+
+function bastionTargetSSHSettingsPath(targetId: string): string {
+  return `/api/bastion/targets/ssh-settings?target=${encodeURIComponent(targetId)}`;
+}
 
 function bastionSidebarExcludeVmByFolder(vm: VMRow): boolean {
   if (vm.manualGroup?.trim()) return false;
@@ -121,10 +181,11 @@ function bastionSidebarExcludeVmByFolder(vm: VMRow): boolean {
   return false;
 }
 
-function parseSel(key: string | null): { kind: "vm"; moref: string } | { kind: "extra"; id: string } | null {
+function parseSel(key: string | null): { kind: "vm"; moref: string } | { kind: "extra"; id: string } | { kind: "target"; id: string } | null {
   if (!key) return null;
   if (key.startsWith("extra:")) return { kind: "extra", id: key.slice(6) };
   if (key.startsWith("vm:")) return { kind: "vm", moref: key.slice(3) };
+  if (key.startsWith("pve:")) return { kind: "target", id: key };
   return null;
 }
 
@@ -184,6 +245,10 @@ const VCenterBastion: React.FC = () => {
   const [winWorkTab, setWinWorkTab] = useState<"remote" | "ssh">("remote");
   const [openDirs, setOpenDirs] = useState<Record<string, boolean>>({});
   const [sftpOpen, setSftpOpen] = useState(false);
+  const [targetSshSettingsOpen, setTargetSshSettingsOpen] = useState(false);
+  const [targetSshSettingsSaving, setTargetSshSettingsSaving] = useState(false);
+  const [targetSshSettingsForm, setTargetSshSettingsForm] =
+    useState<BastionTargetSSHForm>(EMPTY_TARGET_SSH_FORM);
   const [sshSessions, setSshSessions] = useState<SshSession[]>([]);
   const [activeSshKey, setActiveSshKey] = useState<string | null>(null);
   const [rdpUrlDraft, setRdpUrlDraft] = useState("");
@@ -197,6 +262,7 @@ const VCenterBastion: React.FC = () => {
     Record<string, { status: BastionTerminalSessionStatus; errMsg: string | null }>
   >({});
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [searchParams] = useSearchParams();
 
   const sshFontFamilyCss = useMemo(
     () => BASTION_SSH_FONT_PRESETS.find((p) => p.id === sshFontPresetId)?.css ?? BASTION_SSH_FONT_PRESETS[0].css,
@@ -236,16 +302,48 @@ const VCenterBastion: React.FC = () => {
   });
 
   const vmsQ = useQuery({
-    queryKey: ["vcenter-bastion-vms"],
-    queryFn: ({ signal }) => apiGetJson<BastionVMListRes>("/api/vcenter/bastion/vms", { signal }),
+    queryKey: ["bastion-targets"],
+    queryFn: ({ signal }) => apiGetJson<BastionTargetsRes>("/api/bastion/targets", { signal }),
     staleTime: 1000 * 60 * 15,
     gcTime: 1000 * 60 * 120,
     refetchOnWindowFocus: false,
     refetchInterval: (q) => (q.state.data?.folderPathPending ? 5000 : 1000 * 60 * 10),
   });
 
-  const vms = vmsQ.data?.vms ?? EMPTY_VMS;
-  const extraHosts = vmsQ.data?.extraHosts ?? EMPTY_EXTRAS;
+  const bastionTargets = vmsQ.data?.targets ?? [];
+  const vms = useMemo(
+    () =>
+      bastionTargets
+        .filter((t) => t.provider === "vcenter")
+        .map((t): VMRow => ({
+          moref: t.moref ?? t.sourceId ?? t.id.replace(/^vcenter:/, ""),
+          name: t.name,
+          powerState: t.powerState,
+          guestId: t.guestId ?? t.guestType,
+          ip: t.address,
+          folderPath: t.folderPath,
+          manualGroup: t.manualGroup,
+          rdpWebUrl: t.rdpWebUrl,
+        })),
+    [bastionTargets]
+  );
+  const extraHosts = useMemo(
+    () =>
+      bastionTargets
+        .filter((t) => t.provider === "extra")
+        .map((t): ExtraHostRow => ({
+          id: t.sourceId ?? t.id.replace(/^extra:/, ""),
+          name: t.name,
+          address: t.address ?? "",
+          kind: t.kind,
+          rdpWebUrl: t.rdpWebUrl,
+        })),
+    [bastionTargets]
+  );
+  const pveTargets = useMemo(
+    () => bastionTargets.filter((t) => t.provider === "pve"),
+    [bastionTargets]
+  );
   const folderPathPending = vmsQ.data?.folderPathPending === true;
 
   /** 选中 VM 的 QuickStats 轮询（每 20s，仅在选中 VM 时启用） */
@@ -310,6 +408,18 @@ const VCenterBastion: React.FC = () => {
     );
   }, [extraHosts, search]);
 
+  const filteredPVETargets = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return pveTargets;
+    return pveTargets.filter(
+      (t) =>
+        t.name.toLowerCase().includes(s) ||
+        t.id.toLowerCase().includes(s) ||
+        (t.node && t.node.toLowerCase().includes(s)) ||
+        (t.powerState && t.powerState.toLowerCase().includes(s))
+    );
+  }, [pveTargets, search]);
+
   type VmSidebarGroup = { key: string; label: string; manual: boolean; list: VMRow[] };
 
   const vmGroups = useMemo((): VmSidebarGroup[] => {
@@ -366,6 +476,34 @@ const VCenterBastion: React.FC = () => {
     };
   }, [selectedVmBase, quickStatsQ.data]);
   const selectedExtra = sel?.kind === "extra" ? extraHosts.find((h) => h.id === sel.id) ?? null : null;
+  const selectedTarget = sel?.kind === "target" ? pveTargets.find((t) => t.id === sel.id) ?? null : null;
+
+  const targetSshSettingsQ = useQuery({
+    queryKey: ["bastion-target-ssh-settings", selectedTarget?.id],
+    queryFn: ({ signal }) =>
+      apiGetJson<BastionTargetSSHSettings>(bastionTargetSSHSettingsPath(selectedTarget!.id), { signal }),
+    enabled: targetSshSettingsOpen && !!selectedTarget?.id,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (!targetSshSettingsOpen) return;
+    const data = targetSshSettingsQ.data;
+    if (!data) {
+      setTargetSshSettingsForm(EMPTY_TARGET_SSH_FORM);
+      return;
+    }
+    setTargetSshSettingsForm({
+      sshHost: data.sshHost ?? "",
+      user: data.user ?? "",
+      port: String(data.port && data.port > 0 ? data.port : 22),
+      password: "",
+      privateKeyPem: "",
+      keyPassphrase: "",
+      insecureHostKey: Boolean(data.insecureHostKey),
+    });
+  }, [targetSshSettingsOpen, targetSshSettingsQ.data]);
 
   const isWin =
     selectedVm != null
@@ -402,7 +540,9 @@ const VCenterBastion: React.FC = () => {
       ? ({ kind: "vm" as const, moref: sel.moref })
       : sel?.kind === "extra"
         ? ({ kind: "extra" as const, id: sel.id })
-        : null;
+        : sel?.kind === "target"
+          ? ({ kind: "target" as const, targetId: sel.id })
+          : null;
 
   const addOrFocusSshSession = useCallback(
     (key: string, label: string) => {
@@ -414,6 +554,16 @@ const VCenterBastion: React.FC = () => {
     },
     []
   );
+
+  useEffect(() => {
+    const target = searchParams.get("target")?.trim();
+    if (!target || selectedKey) return;
+    const match = bastionTargets.find((t) => t.id === target);
+    if (match) {
+      setSelectedKey(target);
+      addOrFocusSshSession(target, match.name || target);
+    }
+  }, [searchParams, selectedKey, bastionTargets, addOrFocusSshSession]);
 
   const closeSshSession = useCallback(
     (key: string) => {
@@ -437,9 +587,11 @@ const VCenterBastion: React.FC = () => {
     const label =
       sel.kind === "vm"
         ? vms.find((v) => v.moref === sel.moref)?.name ?? sel.moref
-        : extraHosts.find((h) => h.id === sel.id)?.name ?? sel.id;
+        : sel.kind === "extra"
+          ? extraHosts.find((h) => h.id === sel.id)?.name ?? sel.id
+          : pveTargets.find((t) => t.id === sel.id)?.name ?? sel.id;
     addOrFocusSshSession(selectedKey, label);
-  }, [selectedKey, sel, vms, extraHosts, addOrFocusSshSession]);
+  }, [selectedKey, sel, vms, extraHosts, pveTargets, addOrFocusSshSession]);
 
   const onSidebarPick = (key: string) => {
     setSelectedKey(key);
@@ -448,13 +600,75 @@ const VCenterBastion: React.FC = () => {
     const label =
       p.kind === "vm"
         ? vms.find((v) => v.moref === p.moref)?.name ?? p.moref
-        : extraHosts.find((h) => h.id === p.id)?.name ?? p.id;
+        : p.kind === "extra"
+          ? extraHosts.find((h) => h.id === p.id)?.name ?? p.id
+          : pveTargets.find((t) => t.id === p.id)?.name ?? p.id;
     addOrFocusSshSession(key, label);
   };
 
   const onSshTabClick = (key: string) => {
     setActiveSshKey(key);
     setSelectedKey(key);
+  };
+
+  const saveTargetSshSettings = async () => {
+    if (!selectedTarget) return;
+    const portText = targetSshSettingsForm.port.trim();
+    const port = Number.parseInt(portText, 10);
+    if (!Number.isFinite(port) || port <= 0 || port > 65535) {
+      toast.error("SSH 端口必须在 1-65535 之间");
+      return;
+    }
+    const user = targetSshSettingsForm.user.trim();
+    const password = targetSshSettingsForm.password;
+    const privateKeyPem = targetSshSettingsForm.privateKeyPem.trim();
+    const keyPassphrase = targetSshSettingsForm.keyPassphrase;
+    const credentialTouched = password.trim() !== "" || privateKeyPem !== "" || keyPassphrase.trim() !== "";
+    if (credentialTouched && !user) {
+      toast.error("保存凭据时必须填写 SSH 用户");
+      return;
+    }
+    const body: Record<string, unknown> = {
+      sshHost: targetSshSettingsForm.sshHost.trim(),
+      port,
+      user,
+    };
+    if (password.trim() !== "") body.password = password;
+    if (privateKeyPem !== "") body.privateKeyPem = privateKeyPem;
+    if (keyPassphrase.trim() !== "") body.keyPassphrase = keyPassphrase;
+    if (targetSshSettingsForm.insecureHostKey !== Boolean(targetSshSettingsQ.data?.insecureHostKey)) {
+      if (!user) {
+        toast.error("修改 HostKey 校验时必须填写 SSH 用户");
+        return;
+      }
+      body.insecureHostKey = targetSshSettingsForm.insecureHostKey;
+    }
+    setTargetSshSettingsSaving(true);
+    try {
+      await apiPutJson(bastionTargetSSHSettingsPath(selectedTarget.id), body);
+      toast.success("PVE SSH 设置已保存");
+      await targetSshSettingsQ.refetch();
+      setTargetSshSettingsOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTargetSshSettingsSaving(false);
+    }
+  };
+
+  const clearTargetSshSettings = async () => {
+    if (!selectedTarget) return;
+    setTargetSshSettingsSaving(true);
+    try {
+      await apiDelete(bastionTargetSSHSettingsPath(selectedTarget.id));
+      toast.success("PVE SSH 设置已清空");
+      setTargetSshSettingsForm(EMPTY_TARGET_SSH_FORM);
+      await targetSshSettingsQ.refetch();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTargetSshSettingsSaving(false);
+    }
   };
 
   return (
@@ -589,6 +803,50 @@ const VCenterBastion: React.FC = () => {
               </div>
             ) : null}
 
+            {filteredPVETargets.length > 0 ? (
+              <div className="border-b border-[#3c3c3c]/80">
+                <p className="px-2.5 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wide text-[#6e7681]">
+                  PVE
+                </p>
+                <ul className="space-y-px px-1 pb-2">
+                  {filteredPVETargets.map((t) => {
+                    const k = t.id;
+                    const active = selectedKey === k;
+                    return (
+                      <li key={t.id}>
+                        <button
+                          type="button"
+                          onClick={() => onSidebarPick(k)}
+                          className={cn(
+                            "group flex w-full items-start gap-2 border-l-2 border-l-amber-400/40 py-1.5 pl-2 pr-1.5 text-left transition-colors",
+                            active ? "border-[#1890ff] bg-[#2a2d2e]" : "hover:bg-amber-500/[0.07]",
+                          )}
+                        >
+                          <Server
+                            className="mt-0.5 size-3.5 shrink-0 text-amber-300 group-hover:text-amber-200"
+                            aria-hidden
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-start justify-between gap-2">
+                              <span className="truncate text-[13px] font-medium leading-snug text-[#e6edf3]">
+                                {t.name || t.id}
+                              </span>
+                              <BastionSidebarServiceChip className="bg-amber-500/15 text-amber-200">
+                                {t.guestType || t.kind || "PVE"}
+                              </BastionSidebarServiceChip>
+                            </span>
+                            <span className="mt-0.5 block truncate font-mono text-[11px] leading-tight text-[#8c8c8c]">
+                              {t.node || t.id}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : null}
+
             {showAppShortcuts &&
             ((redisListQ.data?.instances?.length ?? 0) > 0 ||
               (cloudVmListQ.data?.instances?.length ?? 0) > 0) ? (
@@ -667,7 +925,7 @@ const VCenterBastion: React.FC = () => {
               <p className="px-3 py-2.5 text-[13px] text-[#f85149]">{(vmsQ.error as Error).message}</p>
             )}
 
-            {!vmsQ.isLoading && vmGroups.length === 0 && filteredExtras.length === 0 ? (
+            {!vmsQ.isLoading && vmGroups.length === 0 && filteredExtras.length === 0 && filteredPVETargets.length === 0 ? (
               <p className="px-3 py-2.5 text-[13px] text-[#8c8c8c]">无可用目标</p>
             ) : null}
 
@@ -762,10 +1020,10 @@ const VCenterBastion: React.FC = () => {
             <>
               <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[#303030] bg-[#252526] px-2 py-1.5">
                 <span className="truncate text-[13px] font-medium text-[#e8e8e8]">
-                  {selectedVm?.name ?? selectedExtra?.name ?? selectedExtra?.id}
+                  {selectedVm?.name ?? selectedExtra?.name ?? selectedTarget?.name ?? selectedExtra?.id ?? selectedTarget?.id}
                 </span>
                 <span className="font-mono text-[10px] text-[#858585]">
-                  {sel.kind === "vm" ? sel.moref : `extra:${sel.id}`}
+                  {sel.kind === "vm" ? sel.moref : sel.kind === "extra" ? `extra:${sel.id}` : sel.id}
                 </span>
                 <div className="ml-auto flex flex-wrap items-center gap-1">
                   <Button
@@ -777,6 +1035,18 @@ const VCenterBastion: React.FC = () => {
                   >
                     SFTP
                   </Button>
+                  {selectedTarget ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 border-[#3c3c3c] bg-[#1e1e1e] px-2 text-xs text-[#cccccc] hover:bg-[#2d2d2d]"
+                      onClick={() => setTargetSshSettingsOpen(true)}
+                    >
+                      <Settings className="mr-1 size-3" />
+                      SSH 设置
+                    </Button>
+                  ) : null}
                   {isWin ? (
                     <div className="flex rounded border border-[#3c3c3c] bg-[#1e1e1e] p-0.5">
                       <button
@@ -941,6 +1211,7 @@ const VCenterBastion: React.FC = () => {
                       if (!p) return null;
                       const vm = p.kind === "vm" ? vms.find((v) => v.moref === p.moref) : null;
                       const ex = p.kind === "extra" ? extraHosts.find((h) => h.id === p.id) : null;
+                      const tg = p.kind === "target" ? pveTargets.find((t) => t.id === p.id) : null;
                       const hint = vm?.ip && vm.ip !== "—" ? vm.ip : ex?.address;
                       const visible = activeSshKey === s.key;
                       return (
@@ -962,7 +1233,8 @@ const VCenterBastion: React.FC = () => {
                               key={`${s.key}-f${sshTermFontSize}-${sshFontPresetId}-${sshTermThemeId}`}
                               moref={p.kind === "vm" ? p.moref : undefined}
                               bastionExtraId={p.kind === "extra" ? p.id : undefined}
-                              guestIpHint={hint}
+                              targetId={p.kind === "target" ? p.id : undefined}
+                              guestIpHint={p.kind === "target" ? (tg?.address || tg?.node || p.id) : hint}
                               autoConnect
                               showOuterChrome={false}
                               visible={visible}
@@ -1075,6 +1347,148 @@ const VCenterBastion: React.FC = () => {
           {sftpTarget ? (
             <div className="h-[min(70vh,520px)] min-h-[300px]">
               <VCenterBastionSftpPanel key={selectedKey ?? ""} target={sftpTarget} />
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={targetSshSettingsOpen} onOpenChange={setTargetSshSettingsOpen}>
+        <DialogContent className="max-h-[92vh] max-w-[min(96vw,680px)] overflow-y-auto border-slate-800 bg-[#0f1419] text-slate-200">
+          <DialogHeader>
+            <DialogTitle>PVE SSH 设置</DialogTitle>
+          </DialogHeader>
+          {selectedTarget ? (
+            <div className="grid gap-4">
+              <div className="rounded border border-slate-800 bg-[#0b1016] px-3 py-2">
+                <p className="truncate text-sm font-medium text-slate-100">{selectedTarget.name}</p>
+                <p className="mt-1 truncate font-mono text-[11px] text-slate-500">{selectedTarget.id}</p>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  {selectedTarget.node ? `Node: ${selectedTarget.node}` : "Node: -"}
+                  {selectedTarget.address ? ` · Guest IP: ${selectedTarget.address}` : ""}
+                </p>
+              </div>
+
+              {targetSshSettingsQ.error ? (
+                <div className="rounded border border-red-900/70 bg-red-950/30 px-3 py-2 text-xs text-red-200">
+                  {targetSshSettingsQ.error instanceof Error ? targetSshSettingsQ.error.message : String(targetSshSettingsQ.error)}
+                </div>
+              ) : null}
+              {targetSshSettingsQ.data?.encryptionError ? (
+                <div className="rounded border border-amber-900/70 bg-amber-950/30 px-3 py-2 text-xs text-amber-100">
+                  {targetSshSettingsQ.data.encryptionError}
+                </div>
+              ) : null}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-xs text-slate-400">SSH Host 覆盖</Label>
+                  <Input
+                    value={targetSshSettingsForm.sshHost}
+                    onChange={(e) =>
+                      setTargetSshSettingsForm((prev) => ({ ...prev, sshHost: e.target.value }))
+                    }
+                    placeholder="留空时优先使用 PVE Guest Agent / LXC interfaces"
+                    className="border-slate-700 bg-[#080a0e] font-mono text-xs text-slate-200"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-400">SSH 用户</Label>
+                  <Input
+                    value={targetSshSettingsForm.user}
+                    onChange={(e) =>
+                      setTargetSshSettingsForm((prev) => ({ ...prev, user: e.target.value }))
+                    }
+                    className="border-slate-700 bg-[#080a0e] font-mono text-xs text-slate-200"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-400">SSH 端口</Label>
+                  <Input
+                    value={targetSshSettingsForm.port}
+                    onChange={(e) =>
+                      setTargetSshSettingsForm((prev) => ({ ...prev, port: e.target.value }))
+                    }
+                    inputMode="numeric"
+                    className="border-slate-700 bg-[#080a0e] font-mono text-xs text-slate-200"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-400">密码</Label>
+                  <Input
+                    value={targetSshSettingsForm.password}
+                    onChange={(e) =>
+                      setTargetSshSettingsForm((prev) => ({ ...prev, password: e.target.value }))
+                    }
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder={targetSshSettingsQ.data?.passwordSet ? "已保存，留空不修改" : "留空不保存密码"}
+                    className="border-slate-700 bg-[#080a0e] font-mono text-xs text-slate-200"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-400">私钥口令</Label>
+                  <Input
+                    value={targetSshSettingsForm.keyPassphrase}
+                    onChange={(e) =>
+                      setTargetSshSettingsForm((prev) => ({ ...prev, keyPassphrase: e.target.value }))
+                    }
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="可选"
+                    className="border-slate-700 bg-[#080a0e] font-mono text-xs text-slate-200"
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-xs text-slate-400">私钥 PEM</Label>
+                  <Textarea
+                    value={targetSshSettingsForm.privateKeyPem}
+                    onChange={(e) =>
+                      setTargetSshSettingsForm((prev) => ({ ...prev, privateKeyPem: e.target.value }))
+                    }
+                    placeholder={targetSshSettingsQ.data?.privateKeySet ? "已保存，留空不修改" : "-----BEGIN OPENSSH PRIVATE KEY-----"}
+                    className="min-h-[120px] border-slate-700 bg-[#080a0e] font-mono text-xs text-slate-200"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded border border-slate-800 bg-[#0b1016] px-3 py-2">
+                <div>
+                  <Label className="text-xs text-slate-300">跳过 HostKey 校验</Label>
+                  <p className="mt-1 text-[11px] text-slate-500">内网动态 IP 或临时主机可开启；生产固定主机建议关闭。</p>
+                </div>
+                <Switch
+                  checked={targetSshSettingsForm.insecureHostKey}
+                  onCheckedChange={(checked) =>
+                    setTargetSshSettingsForm((prev) => ({ ...prev, insecureHostKey: checked }))
+                  }
+                />
+              </div>
+
+              <p className="text-[11px] leading-relaxed text-slate-500">
+                状态：
+                {targetSshSettingsQ.isLoading ? "加载中" : targetSshSettingsQ.data?.stored ? "已保存独立凭据" : "使用全局 SSH 凭据"}
+                {targetSshSettingsQ.data?.backend ? ` · backend=${targetSshSettingsQ.data.backend}` : ""}
+              </p>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-red-900/70 bg-red-950/20 text-red-100 hover:bg-red-950/40"
+                  disabled={targetSshSettingsSaving}
+                  onClick={clearTargetSshSettings}
+                >
+                  清空
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={targetSshSettingsSaving || targetSshSettingsQ.isLoading}
+                  onClick={saveTargetSshSettings}
+                >
+                  {targetSshSettingsSaving ? "保存中..." : "保存设置"}
+                </Button>
+              </DialogFooter>
             </div>
           ) : null}
         </DialogContent>

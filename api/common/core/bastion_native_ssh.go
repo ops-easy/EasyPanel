@@ -458,10 +458,7 @@ func bastionNativeSshRunMenuAndForward(
 		if lab == "" {
 			lab = t.id
 		}
-		kind := "vm"
-		if t.kind == "extra" {
-			kind = "linux.extra"
-		}
+		kind := t.kind
 		_, _ = b.WriteString(fmt.Sprintf("  %2d) [%s] %s  (%s)\r\n", i+1, kind, lab, t.id))
 	}
 	b.WriteString(`说明：已开 TOTP 时密码写为 密码+6 位 或 密码|6 位` + "\r\n")
@@ -491,7 +488,9 @@ func bastionNativeSshRunMenuAndForward(
 	}
 	var rcli *ssh.Client
 	var dialErr error
-	if tg.kind == "vm" {
+	if tg.kind == "pve" || strings.HasPrefix(tg.id, "pve:") {
+		rcli, dialErr = bastionDialSSHToTarget(ctx, app, tg.id)
+	} else if tg.kind == "vm" {
 		vc := app.VCenter()
 		if vc == nil || !vc.cfg.vCenterConfigured() {
 			_, _ = io.WriteString(ch, "vCenter 未就绪.\r\n")
@@ -584,6 +583,13 @@ func nativeSshBuildMenuTargets(ctx context.Context, app *ServerApp, userLower st
 			continue
 		}
 		out = append(out, nativeSshTarget{kind: "extra", id: h.ID, name: h.Name})
+	}
+	pveTargets, _ := collectPVEBastionTargets(ctx, app)
+	for _, target := range filterBastionTargetsForUser(pveTargets, pol, userLower, isAdmin, false) {
+		if target.ID == "" {
+			continue
+		}
+		out = append(out, nativeSshTarget{kind: "pve", id: target.ID, name: target.Name})
 	}
 	return out, nil
 }
