@@ -23,8 +23,13 @@ func RegisterHermesRoutes(api *gin.RouterGroup, app *ServerApp) {
 	g.GET("/instances/:id", func(c *gin.Context) { handleAppHermesGet(c, app) })
 	g.GET("/instances/:id/file", func(c *gin.Context) { handleAppHermesFileGet(c, app) })
 	g.PUT("/instances/:id/file", func(c *gin.Context) { handleAppHermesFilePut(c, app) })
-	g.POST("/instances/:id/probe", func(c *gin.Context) { handleAppHermesProbe(c, app) })
+	g.POST("/instances/:id/probe", func(c *gin.Context) { handleAppHermesRuntimeProbe(c, app) })
 	g.POST("/instances/:id/restart", func(c *gin.Context) { handleAppHermesRestart(c, app) })
+	g.POST("/instances/:id/upgrade", func(c *gin.Context) { handleAppHermesUpgrade(c, app) })
+	g.POST("/instances/:id/rollback", func(c *gin.Context) { handleAppHermesRollback(c, app) })
+	g.GET("/instances/:id/logs", func(c *gin.Context) { handleAppHermesLogs(c, app) })
+	g.GET("/instances/:id/events", func(c *gin.Context) { handleAppHermesEvents(c, app) })
+	g.PUT("/instances/:id/exposure", func(c *gin.Context) { handleAppHermesExposurePut(c, app) })
 	g.POST("/instances/:id/migrate-openclaw-dry-run", func(c *gin.Context) { handleAppHermesMigrateDryRun(c, app) })
 	g.POST("/instances/:id/migrate-openclaw", func(c *gin.Context) { handleAppHermesMigrate(c, app) })
 	g.DELETE("/instances/:id", func(c *gin.Context) { handleAppHermesDelete(c, app) })
@@ -55,6 +60,8 @@ type hermesDeployBody struct {
 	ExposeMode      string            `json:"exposeMode"`
 	IngressHost     string            `json:"ingressHost"`
 	PublicURL       string            `json:"publicUrl"`
+	NodePort        int32             `json:"nodePort"`
+	Replicas        int32             `json:"replicas"`
 	SecretPlaintext map[string]string `json:"secretPlaintext"`
 }
 
@@ -112,6 +119,9 @@ func handleAppHermesDeploy(c *gin.Context, app *ServerApp) {
 		SecretName:     secret,
 		ConfigMapName:  cm,
 		StorageSize:    body.StorageSize,
+		ExposeMode:     body.ExposeMode,
+		NodePort:       body.NodePort,
+		Replicas:       body.Replicas,
 	}); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -131,8 +141,19 @@ func handleAppHermesDeploy(c *gin.Context, app *ServerApp) {
 		ExposeMode:     strings.TrimSpace(body.ExposeMode),
 		IngressHost:    strings.TrimSpace(body.IngressHost),
 		PublicURL:      strings.TrimSpace(body.PublicURL),
+		NodePort:       body.NodePort,
+		Replicas:       body.Replicas,
 		CreatedAt:      now,
 		UpdatedAt:      now,
+	}
+	if inst.ExposeMode == "" {
+		inst.ExposeMode = "clusterIP"
+	}
+	if inst.Replicas == 0 {
+		inst.Replicas = 1
+	}
+	if inst.ExposeMode == "ingress" && inst.IngressName == "" {
+		inst.IngressName = dep
 	}
 	if inst.DisplayName == "" {
 		inst.DisplayName = dep
@@ -147,6 +168,9 @@ func handleAppHermesDeploy(c *gin.Context, app *ServerApp) {
 		SecretName:     secret,
 		ConfigMapName:  cm,
 		StorageSize:    body.StorageSize,
+		ExposeMode:     inst.ExposeMode,
+		NodePort:       inst.NodePort,
+		Replicas:       inst.Replicas,
 	}
 	secretPlain := map[string]string{}
 	for k, v := range body.SecretPlaintext {
@@ -187,6 +211,12 @@ func handleAppHermesDeploy(c *gin.Context, app *ServerApp) {
 	if err := upsertService(ctx, app.K8s(), buildHermesService(k8sOpts)); err != nil {
 		RespondAPIError500(c, "Service: "+err.Error())
 		return
+	}
+	if inst.ExposeMode == "ingress" {
+		if err := upsertHermesIngress(ctx, app.K8s(), buildHermesIngress(inst)); err != nil {
+			RespondAPIError500(c, "Ingress: "+err.Error())
+			return
+		}
 	}
 	inst, err = appendHermesInstance(app.PlatformKV(), inst)
 	if err != nil {
@@ -480,11 +510,19 @@ func collectHermesK8sStatus(ctx context.Context, app *ServerApp, inst HermesInst
 	if svc, err := app.K8s().CoreV1().Services(inst.Namespace).Get(ctx, inst.ServiceName, metav1.GetOptions{}); err == nil {
 		out["serviceFound"] = true
 		out["clusterIP"] = svc.Spec.ClusterIP
+		out["serviceType"] = hermesServiceTypeLabel(svc)
 		ports := []gin.H{}
 		for _, p := range svc.Spec.Ports {
-			ports = append(ports, gin.H{"name": p.Name, "port": p.Port, "targetPort": p.TargetPort.String()})
+			ports = append(ports, gin.H{"name": p.Name, "port": p.Port, "targetPort": p.TargetPort.String(), "nodePort": p.NodePort})
 		}
 		out["ports"] = ports
+	}
+	if strings.TrimSpace(inst.IngressName) != "" {
+		if ing, err := app.K8s().NetworkingV1().Ingresses(inst.Namespace).Get(ctx, inst.IngressName, metav1.GetOptions{}); err == nil {
+			out["ingressFound"] = true
+			out["ingressHost"] = inst.IngressHost
+			out["ingressName"] = ing.Name
+		}
 	}
 	ready := dep.Status.ReadyReplicas > 0
 	out["ready"] = ready
@@ -615,6 +653,9 @@ func deleteHermesK8sResources(ctx context.Context, app *ServerApp, inst HermesIn
 	}
 	if strings.TrimSpace(inst.ConfigMapName) != "" {
 		_ = k8s.CoreV1().ConfigMaps(ns).Delete(ctx, inst.ConfigMapName, deleteOpts)
+	}
+	if strings.TrimSpace(inst.IngressName) != "" {
+		_ = k8s.NetworkingV1().Ingresses(ns).Delete(ctx, inst.IngressName, deleteOpts)
 	}
 }
 

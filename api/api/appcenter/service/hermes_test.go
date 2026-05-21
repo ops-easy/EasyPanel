@@ -1,6 +1,12 @@
 package service
 
-import "testing"
+import (
+	"strings"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	corev1 "k8s.io/api/core/v1"
+)
 
 func TestHermesBuildDeploymentModeCommands(t *testing.T) {
 	cases := []struct {
@@ -119,4 +125,93 @@ func TestHermesMigrationCommand(t *testing.T) {
 			t.Fatalf("run command=%v, want %v", run, wantRun)
 		}
 	}
+}
+
+func TestHermesFullTakeoverRoutesAreRegistered(t *testing.T) {
+	router := gin.New()
+	api := router.Group("/api")
+	RegisterHermesRoutes(api, nil)
+
+	want := []struct {
+		method string
+		path   string
+	}{
+		{"POST", "/api/app-center/hermes/instances/:id/probe"},
+		{"POST", "/api/app-center/hermes/instances/:id/upgrade"},
+		{"POST", "/api/app-center/hermes/instances/:id/rollback"},
+		{"GET", "/api/app-center/hermes/instances/:id/logs"},
+		{"GET", "/api/app-center/hermes/instances/:id/events"},
+		{"PUT", "/api/app-center/hermes/instances/:id/exposure"},
+	}
+	for _, route := range want {
+		found := false
+		for _, got := range router.Routes() {
+			if got.Method == route.method && got.Path == route.path {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("missing route %s %s", route.method, route.path)
+		}
+	}
+}
+
+func TestHermesExposureServiceTypes(t *testing.T) {
+	nodePort := buildHermesService(HermesK8sDeployOpts{
+		Namespace:      "hermes",
+		DeploymentName: "hermes-agent",
+		ServiceName:    "hermes-agent",
+		Mode:           "gateway-dashboard",
+		ExposeMode:     "nodePort",
+		NodePort:       30042,
+	})
+	if nodePort.Spec.Type != corev1.ServiceTypeNodePort {
+		t.Fatalf("service type=%s, want NodePort", nodePort.Spec.Type)
+	}
+	if len(nodePort.Spec.Ports) == 0 || nodePort.Spec.Ports[0].NodePort != 30042 {
+		t.Fatalf("nodePort not applied: %+v", nodePort.Spec.Ports)
+	}
+
+	lb := buildHermesService(HermesK8sDeployOpts{Namespace: "hermes", DeploymentName: "hermes-agent", ServiceName: "hermes-agent", Mode: "dashboard", ExposeMode: "loadBalancer"})
+	if lb.Spec.Type != corev1.ServiceTypeLoadBalancer {
+		t.Fatalf("service type=%s, want LoadBalancer", lb.Spec.Type)
+	}
+}
+
+func TestHermesProbeCommandsUseRuntimeHTTP(t *testing.T) {
+	gateway := buildHermesProbeCommand("gateway")
+	if len(gateway) != 3 || gateway[2] == "" || !containsAll(gateway[2], "/v1/models", "API_SERVER_KEY") {
+		t.Fatalf("gateway probe command=%v", gateway)
+	}
+	dashboard := buildHermesProbeCommand("dashboard")
+	if len(dashboard) != 3 || !containsAll(dashboard[2], "127.0.0.1:9119") {
+		t.Fatalf("dashboard probe command=%v", dashboard)
+	}
+}
+
+func TestHermesBuildIngress(t *testing.T) {
+	ing := buildHermesIngress(HermesInstance{
+		Namespace:      "hermes",
+		DeploymentName: "hermes-agent",
+		ServiceName:    "hermes-agent",
+		Mode:           "gateway-dashboard",
+		IngressHost:    "hermes.example.com",
+	})
+	if ing.Spec.Rules[0].Host != "hermes.example.com" {
+		t.Fatalf("ingress host=%q", ing.Spec.Rules[0].Host)
+	}
+	gotSvc := ing.Spec.Rules[0].HTTP.Paths[0].Backend.Service
+	if gotSvc == nil || gotSvc.Name != "hermes-agent" || gotSvc.Port.Name != "dashboard" {
+		t.Fatalf("unexpected ingress backend: %+v", gotSvc)
+	}
+}
+
+func containsAll(s string, parts ...string) bool {
+	for _, part := range parts {
+		if !strings.Contains(s, part) {
+			return false
+		}
+	}
+	return true
 }

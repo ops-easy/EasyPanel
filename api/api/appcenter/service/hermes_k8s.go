@@ -29,6 +29,9 @@ type HermesK8sDeployOpts struct {
 	SecretName     string
 	ConfigMapName  string
 	StorageSize    string
+	ExposeMode     string
+	NodePort       int32
+	Replicas       int32
 }
 
 func hermesLabels(name string) map[string]string {
@@ -118,7 +121,10 @@ func buildHermesDeployment(opts HermesK8sDeployOpts) (*appsv1.Deployment, error)
 		)
 	}
 	labels := hermesLabels(name)
-	replicas := int32(1)
+	replicas := opts.Replicas
+	if replicas == 0 {
+		replicas = 1
+	}
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns, Labels: labels},
 		Spec: appsv1.DeploymentSpec{
@@ -175,13 +181,28 @@ func buildHermesService(opts HermesK8sDeployOpts) *corev1.Service {
 	if mode == "dashboard" || mode == "gateway-dashboard" {
 		ports = append(ports, corev1.ServicePort{Name: "dashboard", Port: hermesDashboardPort, TargetPort: intstr.FromInt(int(hermesDashboardPort))})
 	}
-	return &corev1.Service{
+	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: opts.Namespace, Labels: hermesLabels(opts.DeploymentName)},
 		Spec: corev1.ServiceSpec{
-			Type:     corev1.ServiceTypeClusterIP,
+			Type:     hermesServiceTypeFromExposeMode(opts.ExposeMode),
 			Selector: hermesLabels(opts.DeploymentName),
 			Ports:    ports,
 		},
+	}
+	if opts.NodePort > 0 && svc.Spec.Type == corev1.ServiceTypeNodePort && len(svc.Spec.Ports) > 0 {
+		svc.Spec.Ports[0].NodePort = opts.NodePort
+	}
+	return svc
+}
+
+func hermesServiceTypeFromExposeMode(mode string) corev1.ServiceType {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case "nodeport", "node-port":
+		return corev1.ServiceTypeNodePort
+	case "loadbalancer", "load-balancer":
+		return corev1.ServiceTypeLoadBalancer
+	default:
+		return corev1.ServiceTypeClusterIP
 	}
 }
 

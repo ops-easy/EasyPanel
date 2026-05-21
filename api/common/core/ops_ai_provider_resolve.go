@@ -84,6 +84,9 @@ func resolveOpsAIProviderHermes(app *ServerApp, cfg Config, ep *OpsAIProviderEnd
 	if !appHermesGatewayModeReady(inst) {
 		return fmt.Errorf("Hermes 实例未启用 gateway 模式，不能作为 AI 巡检模型端点")
 	}
+	if !inst.Ready {
+		return fmt.Errorf("Hermes 实例尚未通过真实网关探测，不能作为 AI 巡检模型端点")
+	}
 	base := appHermesGatewayBaseURL(inst)
 	if base == "" {
 		return fmt.Errorf("Hermes 实例缺少 Service 或 Namespace")

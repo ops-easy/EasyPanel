@@ -46,7 +46,14 @@ type HermesInstance struct {
 	ConfigMapName  string `json:"configMapName"`
 	ExposeMode     string `json:"exposeMode,omitempty"`
 	IngressHost    string `json:"ingressHost,omitempty"`
+	IngressName    string `json:"ingressName,omitempty"`
 	PublicURL      string `json:"publicUrl,omitempty"`
+	NodePort       int32  `json:"nodePort,omitempty"`
+	Replicas       int32  `json:"replicas,omitempty"`
+	PreviousImage  string `json:"previousImage,omitempty"`
+	Ready          bool   `json:"ready"`
+	LastProbeAt    string `json:"lastProbeAt,omitempty"`
+	LastProbeError string `json:"lastProbeError,omitempty"`
 	CreatedAt      string `json:"createdAt"`
 	UpdatedAt      string `json:"updatedAt"`
 }
@@ -64,7 +71,7 @@ func normalizeHermesMode(mode string) (string, error) {
 	case "gateway", "dashboard", "gateway-dashboard":
 		return m, nil
 	default:
-		return "", errors.New("mode 须为 gateway、dashboard 或 gateway-dashboard")
+		return "", errors.New("mode 必须为 gateway、dashboard 或 gateway-dashboard")
 	}
 }
 
@@ -164,8 +171,26 @@ func appendHermesInstance(kv PlatformKV, inst HermesInstance) (HermesInstance, e
 	if strings.TrimSpace(inst.ID) == "" {
 		inst.ID = uuid.NewString()
 	}
+	if inst.Replicas == 0 {
+		inst.Replicas = 1
+	}
 	list = append([]HermesInstance{inst}, list...)
 	return inst, saveHermesInstances(kv, list)
+}
+
+func patchHermesInstance(kv PlatformKV, id string, patch func(*HermesInstance)) (HermesInstance, error) {
+	list, err := loadHermesInstances(kv)
+	if err != nil {
+		return HermesInstance{}, err
+	}
+	for i := range list {
+		if list[i].ID == strings.TrimSpace(id) {
+			patch(&list[i])
+			list[i].UpdatedAt = NowBeijingRFC3339()
+			return list[i], saveHermesInstances(kv, list)
+		}
+	}
+	return HermesInstance{}, errors.New("Hermes 实例不存在")
 }
 
 func findHermesInstance(list []HermesInstance, id string) *HermesInstance {

@@ -23,6 +23,9 @@ type AppHermesInstance struct {
 	ModelProvider  string `json:"modelProvider,omitempty"`
 	ModelName      string `json:"modelName,omitempty"`
 	SecretName     string `json:"secretName"`
+	Ready          bool   `json:"ready"`
+	LastProbeAt    string `json:"lastProbeAt,omitempty"`
+	LastProbeError string `json:"lastProbeError,omitempty"`
 }
 
 type appHermesInstancesPayload struct {
