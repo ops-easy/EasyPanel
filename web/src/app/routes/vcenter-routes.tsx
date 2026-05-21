@@ -67,6 +67,7 @@ export function vcenterRoutes(): ReactNode {
         <Route path="console/:moref" element={<VCenterBastionConsoleEmbed />} />
       </Route>
       <Route path="vcenter/tools/ip-scan" element={<Navigate to="/cluster/compute/tools/ip-scan" replace />} />
+      <Route path="vcenter/prometheus" element={<Navigate to="/cluster/compute/vcenter/dashboard" replace />} />
       <Route path="vcenter/router" element={<Navigate to="/cluster/network/ikuai/dashboard" replace />} />
       <Route path="vcenter" element={<Navigate to="/cluster/compute/vcenter/vms" replace />} />
       <Route path="vcenter/:moref" element={<LegacyVcenterVmRedirect />} />

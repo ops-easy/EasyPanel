@@ -197,7 +197,7 @@ const Header: React.FC = () => {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-[228px]">
-            {moduleVisible(perm, "k8s") ? (
+            {headerShowK8s ? (
             <DropdownMenuItem
               className="cursor-pointer gap-2 py-2.5"
               onSelect={() => navigate("/cluster")}

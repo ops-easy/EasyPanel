@@ -1,6 +1,15 @@
 package service
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	core "kube-bt-sync/common/core"
+	transportauthz "kube-bt-sync/common/transport/authz"
+
+	"github.com/gin-gonic/gin"
+)
 
 func TestNetworkKindValidation(t *testing.T) {
 	for _, kind := range []string{"ikuai", "openwrt"} {
@@ -34,6 +43,38 @@ func TestNetworkPrometheusScopeValidation(t *testing.T) {
 	}
 	if _, err := normalizeNetworkPrometheusScope("cloud"); err == nil {
 		t.Fatalf("normalizeNetworkPrometheusScope(cloud) returned nil error, want error")
+	}
+}
+
+func TestRequireNetworkAdminAllowsCustomNetworkRW(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/network/devices", nil)
+	c.Set(transportauthz.GinKeyDashboardRole, core.DashboardRoleViewer)
+	core.SetDashboardPermissionsGin(c, &core.EffectiveDashboardPermissions{
+		Network: core.ModuleAccessRW,
+	})
+
+	if !requireNetworkAdmin(c) {
+		t.Fatalf("network=rw viewer should be allowed to write network devices")
+	}
+}
+
+func TestRequireNetworkAdminRejectsCustomNetworkRO(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/network/devices", nil)
+	c.Set(transportauthz.GinKeyDashboardRole, core.DashboardRoleViewer)
+	core.SetDashboardPermissionsGin(c, &core.EffectiveDashboardPermissions{
+		Network: core.ModuleAccessRO,
+	})
+
+	if requireNetworkAdmin(c) {
+		t.Fatalf("network=ro viewer should not be allowed to write network devices")
+	}
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("network=ro response status=%d, want %d", w.Code, http.StatusForbidden)
 	}
 }
 

@@ -1,6 +1,13 @@
 package core
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+)
 
 func TestAPIModulePrefixCoversComputeAndNetworkFeatures(t *testing.T) {
 	tests := []struct {
@@ -76,6 +83,40 @@ func TestPrometheusReadQueriesAreAllowedForNonK8sFeatureModules(t *testing.T) {
 	none := effectivePermissionsFromJSON(DashboardRoleViewer, `{"k8s":"none","vcenter":"none","compute":"none","network":"none","baota":"none","appcenter":"none"}`)
 	if !permissionEndpointForbidden("POST", "/api/prometheus/query_range", none) {
 		t.Fatalf("all modules none should block Prometheus read queries")
+	}
+}
+
+func TestPrometheusQueryScopeVisibilityFollowsOwningModule(t *testing.T) {
+	eff := effectivePermissionsFromJSON(DashboardRoleViewer, `{"k8s":"none","vcenter":"none","compute":"none","network":"ro","baota":"none","appcenter":"none"}`)
+
+	if prometheusScopeForbidden("network", eff) {
+		t.Fatalf("network=ro should allow Prometheus network scope")
+	}
+	if !prometheusScopeForbidden("vcenter", eff) {
+		t.Fatalf("compute=none should block Prometheus vCenter scope")
+	}
+	if !prometheusScopeForbidden("k8s", eff) {
+		t.Fatalf("k8s=none should block Prometheus k8s scope")
+	}
+}
+
+func TestPrometheusQueryHandlerRejectsScopeWithoutModulePermission(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	app := &ServerApp{}
+	eff := effectivePermissionsFromJSON(DashboardRoleViewer, `{"k8s":"none","vcenter":"none","compute":"none","network":"ro","baota":"none","appcenter":"none"}`)
+	r.POST("/api/prometheus/query", func(c *gin.Context) {
+		SetDashboardPermissionsGin(c, eff)
+		handlePrometheusQuery(c, app)
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/prometheus/query", strings.NewReader(`{"scope":"vcenter","q":"up"}`))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("POST /api/prometheus/query scope=vcenter status=%d, want %d; body=%s", w.Code, http.StatusForbidden, w.Body.String())
 	}
 }
 

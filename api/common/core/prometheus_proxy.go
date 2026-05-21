@@ -543,6 +543,10 @@ func handlePrometheusQuery(c *gin.Context, app *ServerApp) {
 	if scope == "" {
 		scope = "k8s"
 	}
+	if prometheusScopeForbidden(scope, getEffectiveDashboardPermissionsFromGin(c)) {
+		RespondAPIPermissionDenied(c)
+		return
+	}
 	if q == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "缺少查询参数 q（PromQL）；推荐使用 POST /api/prometheus/query，body 含 scope 与 q，避免在 URL/访问日志中暴露 PromQL"})
 		return
@@ -611,6 +615,10 @@ func handlePrometheusQueryRange(c *gin.Context, app *ServerApp) {
 	}
 	if scope == "" {
 		scope = "k8s"
+	}
+	if prometheusScopeForbidden(scope, getEffectiveDashboardPermissionsFromGin(c)) {
+		RespondAPIPermissionDenied(c)
+		return
 	}
 	if q == "" || start == "" || end == "" || step == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "需要 q、start、end、step；推荐使用 POST /api/prometheus/query_range，body 传参"})

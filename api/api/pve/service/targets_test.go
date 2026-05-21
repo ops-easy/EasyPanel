@@ -1,6 +1,15 @@
 package service
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	core "kube-bt-sync/common/core"
+	transportauthz "kube-bt-sync/common/transport/authz"
+
+	"github.com/gin-gonic/gin"
+)
 
 func TestPVENormalizeBaseURL(t *testing.T) {
 	cases := []struct {
@@ -44,5 +53,37 @@ func TestPVEGuestPowerActionValidation(t *testing.T) {
 		if err := validatePVEGuestPowerAction(action); err == nil {
 			t.Fatalf("validatePVEGuestPowerAction(%q) returned nil, want error", action)
 		}
+	}
+}
+
+func TestRequirePVEAdminAllowsCustomComputeRW(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/pve/targets", nil)
+	c.Set(transportauthz.GinKeyDashboardRole, core.DashboardRoleViewer)
+	core.SetDashboardPermissionsGin(c, &core.EffectiveDashboardPermissions{
+		Compute: core.ModuleAccessRW,
+	})
+
+	if !requirePVEAdmin(c) {
+		t.Fatalf("compute=rw viewer should be allowed to write PVE targets")
+	}
+}
+
+func TestRequirePVEAdminRejectsCustomComputeRO(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/pve/targets", nil)
+	c.Set(transportauthz.GinKeyDashboardRole, core.DashboardRoleViewer)
+	core.SetDashboardPermissionsGin(c, &core.EffectiveDashboardPermissions{
+		Compute: core.ModuleAccessRO,
+	})
+
+	if requirePVEAdmin(c) {
+		t.Fatalf("compute=ro viewer should not be allowed to write PVE targets")
+	}
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("compute=ro response status=%d, want %d", w.Code, http.StatusForbidden)
 	}
 }

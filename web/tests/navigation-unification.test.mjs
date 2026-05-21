@@ -55,6 +55,27 @@ test("IP scan has a compute-owned route and legacy routes redirect to it", () =>
   assert.match(clusterRoutesSource, /path="tools\/ip-scan"[\s\S]*to="\/cluster\/compute\/tools\/ip-scan"/);
 });
 
+test("legacy vCenter routes redirect before falling through to VM details", () => {
+  assert.match(vcenterRoutesSource, /path="vcenter\/prometheus"[\s\S]*to="\/cluster\/compute\/vcenter\/dashboard"/);
+  assert.match(vcenterRoutesSource, /path="vcenter\/router"[\s\S]*to="\/cluster\/network\/ikuai\/dashboard"/);
+  assert.match(vcenterRoutesSource, /path="vcenter"[\s\S]*to="\/cluster\/compute\/vcenter\/vms"/);
+  assert.match(vcenterRoutesSource, /path="vcenter\/:moref"[\s\S]*<LegacyVcenterVmRedirect \/>/);
+  assert.ok(
+    vcenterRoutesSource.indexOf('path="vcenter/prometheus"') <
+      vcenterRoutesSource.indexOf('path="vcenter/:moref"'),
+    "legacy vcenter/prometheus must be declared before vcenter/:moref"
+  );
+});
+
+test("header and home hub entries use the same permission gates as sidebar", () => {
+  assert.match(headerSource, /const headerShowK8s = menuItemVisible\(perm, "kubernetes"/);
+  assert.match(headerSource, /\{headerShowK8s \? \(/);
+  assert.doesNotMatch(headerSource, /\{moduleVisible\(perm, "k8s"\) \? \(/);
+  assert.match(homeHubSource, /enabled: cfg\?\.k8sConfigured === true && showK8s/);
+  assert.match(homeHubSource, /enabled: cfg\?\.vcenterConfigured === true && showVc/);
+  assert.match(homeHubSource, /enabled: loggedIn && showNetwork/);
+});
+
 test("network workspace does not link internal toolbox back into vCenter", () => {
   assert.doesNotMatch(sidebarSource, /showVcTools[\s\S]{0,240}to="\/cluster\/vcenter\/tools\/ip-scan"/);
   assert.doesNotMatch(sidebarSource, /<span>爱快路由<\/span>/);

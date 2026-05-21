@@ -89,6 +89,9 @@ func requirePVEAdmin(c *gin.Context) bool {
 	if authz.DashboardRoleFromGin(c) == authz.DashboardRoleAdmin {
 		return true
 	}
+	if authz.EffectiveDashboardPermissionsFromGin(c).Compute == authz.ModuleAccessRW {
+		return true
+	}
 	result.PermissionDenied(c)
 	return false
 }

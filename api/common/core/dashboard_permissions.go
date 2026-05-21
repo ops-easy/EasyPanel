@@ -343,6 +343,26 @@ func anyPrometheusConsumerModuleVisible(eff *EffectiveDashboardPermissions) bool
 		eff.AppCenter != ModuleAccessNone
 }
 
+func prometheusScopeForbidden(scope string, eff *EffectiveDashboardPermissions) bool {
+	if eff == nil {
+		eff = defaultEffectiveLegacyViewer()
+	}
+	switch strings.ToLower(strings.TrimSpace(scope)) {
+	case "", "k8s", "kubernetes":
+		return eff.K8s == ModuleAccessNone
+	case "vcenter", "vm":
+		return eff.Compute == ModuleAccessNone
+	case "network", "ikuai", "openwrt":
+		return eff.Network == ModuleAccessNone
+	case "cloud", "public":
+		return eff.Compute == ModuleAccessNone
+	case "global", "default":
+		return !anyPrometheusConsumerModuleVisible(eff)
+	default:
+		return !anyPrometheusConsumerModuleVisible(eff)
+	}
+}
+
 // cloudVMPathIsHysteriaReveal POST 校验密码后返回 Hysteria2 客户端敏感配置，不修改集群资源。
 func cloudVMPathIsHysteriaReveal(path string) bool {
 	return strings.Contains(path, "/api/app-center/cloud-vm/instances/") && strings.HasSuffix(path, "/reveal-hysteria-client")

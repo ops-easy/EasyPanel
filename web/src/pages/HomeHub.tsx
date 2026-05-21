@@ -100,25 +100,40 @@ const HomeHub: React.FC = () => {
 
   const cfgLoading = runtimeQ.isLoading;
 
+  const showK8s = menuItemVisible(perm, "kubernetes", hubRole, moduleVisible(perm, "k8s"));
+  const showVc = menuItemVisible(perm, "compute", hubRole, moduleVisible(perm, "compute"));
+  const showNetwork = menuItemVisible(perm, "network", hubRole, moduleVisible(perm, "network"));
+  const showBaota = menuItemVisible(perm, "baota", hubRole, moduleVisible(perm, "baota"));
+  const showAppCenter = menuItemVisible(perm, "appcenter", hubRole, moduleVisible(perm, "appcenter"));
+  const showBastion = menuItemVisible(
+    perm,
+    "vcenter_bastion",
+    hubRole,
+    moduleVisible(perm, "compute") || moduleVisible(perm, "appcenter")
+  );
+  const showAiInspect = menuItemVisible(perm, "aiInspect", hubRole, true);
+  const showDocs = menuItemVisible(perm, "docs", hubRole, true);
+  const showHub = menuItemVisible(perm, "hub", hubRole, true);
+
   // K8s summary
   const k8sQ = useQuery({
     queryKey: ["k8s-summary-hub"],
     queryFn: ({ signal }) => apiGetJson<K8sSummary>("/api/k8s/summary", { signal }),
-    enabled: cfg?.k8sConfigured === true,
+    enabled: cfg?.k8sConfigured === true && showK8s,
   });
 
   // vCenter
   const vcVmsQ = useQuery({
     queryKey: ["vcenter-vms-hub"],
     queryFn: ({ signal }) => apiGetJson<VCenterVMsResponse>("/api/vcenter/vms", { signal }),
-    enabled: cfg?.vcenterConfigured === true,
+    enabled: cfg?.vcenterConfigured === true && showVc,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
   const vcHostsQ = useQuery({
     queryKey: ["vcenter-hosts-hub"],
     queryFn: ({ signal }) => apiGetJson<VCenterHostsResponse>("/api/vcenter/hosts", { signal }),
-    enabled: cfg?.vcenterConfigured === true,
+    enabled: cfg?.vcenterConfigured === true && showVc,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -211,21 +226,6 @@ const HomeHub: React.FC = () => {
       ),
     enabled: loggedIn,
   });
-
-  const showK8s = menuItemVisible(perm, "kubernetes", hubRole, moduleVisible(perm, "k8s"));
-  const showVc = menuItemVisible(perm, "compute", hubRole, moduleVisible(perm, "compute"));
-  const showNetwork = menuItemVisible(perm, "network", hubRole, moduleVisible(perm, "network"));
-  const showBaota = menuItemVisible(perm, "baota", hubRole, moduleVisible(perm, "baota"));
-  const showAppCenter = menuItemVisible(perm, "appcenter", hubRole, moduleVisible(perm, "appcenter"));
-  const showBastion = menuItemVisible(
-    perm,
-    "vcenter_bastion",
-    hubRole,
-    moduleVisible(perm, "compute") || moduleVisible(perm, "appcenter")
-  );
-  const showAiInspect = menuItemVisible(perm, "aiInspect", hubRole, true);
-  const showDocs = menuItemVisible(perm, "docs", hubRole, true);
-  const showHub = menuItemVisible(perm, "hub", hubRole, true);
 
   const networkDevicesQ = useQuery({
     queryKey: ["network-devices-hub"],
