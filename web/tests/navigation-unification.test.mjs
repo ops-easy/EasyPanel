@@ -83,6 +83,8 @@ test("compute sidebar follows the same coarse order as compute top navigation", 
 test("header workspace switcher opens bastion module home before terminal sessions", () => {
   assert.doesNotMatch(headerSource, /navigate\("\/cluster\/bastion\/session"\)/);
   assert.match(headerSource, /navigate\("\/cluster\/bastion"\)/);
+  assert.doesNotMatch(headerSource, /vCenter 终端|应用中心 SSH\/Redis/);
+  assert.match(headerSource, /SSH \/ RDP \/ Redis CLI/);
 });
 
 test("legacy vCenter paths belong to the unified compute workspace", () => {

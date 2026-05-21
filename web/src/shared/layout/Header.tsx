@@ -275,9 +275,9 @@ const Header: React.FC = () => {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-600 to-emerald-800">
                 <SquareTerminal className="text-white" size={17} strokeWidth={2.25} />
               </div>
-              <div className="flex flex-col gap-0.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="font-medium">堡垒机</span>
-                <span className="text-xs text-muted-foreground">vCenter 终端 · 应用中心 SSH/Redis</span>
+                <span className="truncate text-xs text-muted-foreground">SSH / RDP / Redis CLI</span>
               </div>
             </DropdownMenuItem>
             ) : null}
