@@ -1,13 +1,13 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "frontend-api-uses",
-  "routeCount": 841,
+  "routeCount": 843,
   "routes": [
     {
       "method": "UNKNOWN",
       "pathPattern": "/api",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 615,
+      "sourceLine": 681,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -399,7 +399,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/app-center/hermes/instances",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 207,
+      "sourceLine": 211,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -1223,7 +1223,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 187,
+      "sourceLine": 191,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1567,7 +1567,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances/k8s-status",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 213,
+      "sourceLine": 217,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2518,6 +2518,14 @@
     {
       "method": "GET",
       "pathPattern": "/api/config",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sSettings.tsx",
+      "sourceLine": 193,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/config",
       "sourceFile": "web/src/hooks/use-app-config.ts",
       "sourceLine": 20,
       "needsManualReview": false,
@@ -3015,7 +3023,7 @@
       "method": "GET",
       "pathPattern": "/api/docs/guides/resolve",
       "sourceFile": "web/src/shared/layout/UserGuideSheet.tsx",
-      "sourceLine": 62,
+      "sourceLine": 68,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3424,6 +3432,14 @@
       "pathPattern": "/api/k8s/addons/status",
       "sourceFile": "web/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
       "sourceLine": 136,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/addons/status",
+      "sourceFile": "web/src/features/cluster/pages/ClusterK8sSettings.tsx",
+      "sourceLine": 198,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3967,7 +3983,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/pods",
       "sourceFile": "web/src/shared/layout/GlobalSearchBar.tsx",
-      "sourceLine": 56,
+      "sourceLine": 61,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4879,7 +4895,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 162,
+      "sourceLine": 166,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4895,7 +4911,7 @@
       "method": "PUT",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 267,
+      "sourceLine": 275,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5039,7 +5055,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/inspect/run",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 278,
+      "sourceLine": 286,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5047,7 +5063,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/tasks",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 178,
+      "sourceLine": 182,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5055,7 +5071,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/tasks/:param",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 168,
+      "sourceLine": 172,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5063,7 +5079,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/tasks/${encodeURIComponent(inspectTaskId",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 168,
+      "sourceLine": 172,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5359,7 +5375,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/query",
       "sourceFile": "web/src/lib/api.ts",
-      "sourceLine": 630,
+      "sourceLine": 639,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5375,7 +5391,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/query_range",
       "sourceFile": "web/src/lib/api.ts",
-      "sourceLine": 643,
+      "sourceLine": 652,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5495,7 +5511,7 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets",
       "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
-      "sourceLine": 33,
+      "sourceLine": 67,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5535,7 +5551,7 @@
       "method": "POST",
       "pathPattern": "/api/pve/targets",
       "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
-      "sourceLine": 50,
+      "sourceLine": 84,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5559,7 +5575,7 @@
       "method": "DELETE",
       "pathPattern": "/api/pve/targets/:param",
       "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
-      "sourceLine": 61,
+      "sourceLine": 95,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5575,7 +5591,7 @@
       "method": "PUT",
       "pathPattern": "/api/pve/targets/:param",
       "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
-      "sourceLine": 48,
+      "sourceLine": 82,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5719,7 +5735,7 @@
       "method": "POST",
       "pathPattern": "/api/pve/targets/:param/probe",
       "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
-      "sourceLine": 72,
+      "sourceLine": 106,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5791,7 +5807,7 @@
       "method": "PUT",
       "pathPattern": "/api/pve/targets/${encodeURIComponent(active.id",
       "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
-      "sourceLine": 48,
+      "sourceLine": 82,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5823,7 +5839,7 @@
       "method": "DELETE",
       "pathPattern": "/api/pve/targets/${encodeURIComponent(id",
       "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
-      "sourceLine": 61,
+      "sourceLine": 95,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5847,7 +5863,7 @@
       "method": "POST",
       "pathPattern": "/api/pve/targets/${encodeURIComponent(id",
       "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
-      "sourceLine": 72,
+      "sourceLine": 106,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -6071,7 +6087,7 @@
       "method": "GET",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "web/src/features/settings/components/SettingsRuntimeSection.tsx",
-      "sourceLine": 98,
+      "sourceLine": 205,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -6127,7 +6143,7 @@
       "method": "PUT",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "web/src/features/settings/components/SettingsRuntimeSection.tsx",
-      "sourceLine": 155,
+      "sourceLine": 302,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -6463,7 +6479,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/vms",
       "sourceFile": "web/src/shared/layout/GlobalSearchBar.tsx",
-      "sourceLine": 49,
+      "sourceLine": 54,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -6727,7 +6743,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/r/:param.html",
       "sourceFile": "web/src/shared/layout/UserGuideSheet.tsx",
-      "sourceLine": 75,
+      "sourceLine": 81,
       "needsManualReview": true,
       "kind": "literal"
     }
