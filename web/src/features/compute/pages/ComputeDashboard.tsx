@@ -1,31 +1,60 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ArrowRight, Database, Monitor, Server, Settings } from "lucide-react";
-import { Badge } from "@/shared/ui/badge";
+import { Activity, AlertTriangle, ArrowRight, Database, Monitor, Server, Settings } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { apiGetJson } from "@/lib/api";
+import ComputePageHeader from "@/features/compute/components/ComputePageHeader";
+import ComputeProviderHealthStrip from "@/features/compute/components/ComputeProviderHealthStrip";
+import ComputeStatusBadge from "@/features/compute/components/ComputeStatusBadge";
+import type { ComputeProvider } from "@/features/compute/components/compute-resource-types";
 import { cn } from "@/lib/utils";
 
-type ComputeProvider = {
-  provider: "vcenter" | "pve" | string;
-  targetId?: string;
-  name?: string;
-  configured?: boolean;
-  hint?: string;
-  baseUrl?: string;
+type ComputeSummaryCounts = {
+  guests?: number;
+  hosts?: number;
+  storage?: number;
+  activity?: number;
+  warnings?: number;
 };
 
-type ComputeRowsResponse<T extends string> = {
-  [key: string]: unknown;
+type ComputeSummaryHealth = {
+  ok?: number;
+  idle?: number;
+  warning?: number;
+  critical?: number;
+  unknown?: number;
+};
+
+type ComputeSummaryItem = {
+  kind?: string;
+  provider?: string;
+  resourceId?: string | number;
+  name?: string;
+  health?: string;
+  status?: string;
+};
+
+type ComputeSummaryResponse = {
+  providers?: ComputeProvider[];
+  counts?: ComputeSummaryCounts;
+  health?: ComputeSummaryHealth;
+  hotspots?: ComputeSummaryItem[];
+  recentFailures?: ComputeSummaryItem[];
   warnings?: string[];
-} & Record<T, unknown[] | undefined>;
+  warningCount?: number;
+};
+
+type ComputeProvidersResponse = {
+  providers?: ComputeProvider[];
+  warnings?: string[];
+};
 
 const resourceCards = [
   {
     key: "guests",
     label: "虚拟机 / CT",
-    desc: "统一进入 VM、QEMU 与 LXC 的详情、控制台、SSH、硬件和快照操作。",
+    desc: "查看电源状态、节点、IP、规格，并进入控制台、SSH、硬件和快照操作。",
     to: "/cluster/compute/guests",
     icon: Monitor,
     tint: "border-violet-200 bg-violet-50 text-violet-800",
@@ -33,7 +62,7 @@ const resourceCards = [
   {
     key: "hosts",
     label: "宿主机 / 节点",
-    desc: "聚合 ESXi 宿主机和 PVE 节点，按运行资源而不是平台入口组织。",
+    desc: "聚合 ESXi 宿主机和 PVE 节点，优先发现连接和资源压力。",
     to: "/cluster/compute/hosts",
     icon: Server,
     tint: "border-sky-200 bg-sky-50 text-sky-800",
@@ -49,137 +78,148 @@ const resourceCards = [
   {
     key: "activity",
     label: "任务活动",
-    desc: "汇总 vCenter 事件和 PVE 任务，便于追踪最近的运维动作。",
+    desc: "汇总 vCenter 事件和 PVE 任务，追踪失败、变更和近期运维动作。",
     to: "/cluster/compute/activity",
     icon: Activity,
     tint: "border-amber-200 bg-amber-50 text-amber-900",
   },
 ] as const;
 
-function ProviderBadge({ provider }: { provider: ComputeProvider }) {
-  const configured = provider.configured === true;
-  const label = provider.provider === "vcenter" ? "vCenter" : provider.provider === "pve" ? "PVE" : provider.name || provider.provider;
+function countText(value: unknown): string {
+  return typeof value === "number" && Number.isFinite(value) ? String(value) : "0";
+}
+
+function MiniMetric({ label, value, tone }: { label: string; value: React.ReactNode; tone?: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-slate-900">{label}</p>
-        <p className="truncate text-[11px] text-slate-500" title={provider.baseUrl || provider.hint || ""}>
-          {provider.baseUrl || provider.hint || "未填写接入信息"}
-        </p>
-      </div>
-      <Badge
-        variant="outline"
-        className={cn(
-          "shrink-0 font-normal",
-          configured ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-100 text-slate-600"
-        )}
-      >
-        {configured ? "已接入" : "未接入"}
-      </Badge>
+    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+      <p className="text-[11px] text-slate-500">{label}</p>
+      <p className={cn("mt-1 text-lg font-semibold tabular-nums text-slate-950", tone)}>{value}</p>
     </div>
   );
 }
 
-function useComputeCount<T extends "guests" | "hosts" | "storage" | "activity">(key: T, enabled: boolean) {
-  return useQuery({
-    queryKey: ["compute-dashboard-count", key],
-    queryFn: ({ signal }) => apiGetJson<ComputeRowsResponse<T>>(`/api/compute/${key}`, { signal }),
-    enabled,
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-  });
+function SummaryList({ title, empty, items }: { title: string; empty: string; items: ComputeSummaryItem[] }) {
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-center gap-2">
+        <AlertTriangle className="h-4 w-4 text-amber-600" />
+        <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
+      </div>
+      {items.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-slate-200 px-3 py-6 text-center text-sm text-slate-500">{empty}</p>
+      ) : (
+        <div className="space-y-2">
+          {items.slice(0, 6).map((item, index) => (
+            <div key={`${item.provider}:${item.resourceId}:${index}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-slate-950">{item.name || item.resourceId || "-"}</p>
+                <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                  {item.provider || "未知来源"} · {item.kind || "resource"}
+                </p>
+              </div>
+              <ComputeStatusBadge status={item.status} health={item.health} />
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 }
 
 const ComputeDashboard: React.FC = () => {
   const providersQ = useQuery({
     queryKey: ["compute-dashboard-providers"],
-    queryFn: ({ signal }) => apiGetJson<{ providers?: ComputeProvider[] }>("/api/compute/providers", { signal }),
-    staleTime: 60_000,
+    queryFn: ({ signal }) => apiGetJson<ComputeProvidersResponse>("/api/compute/providers", { signal }),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+  const summaryQ = useQuery({
+    queryKey: ["compute-dashboard-summary"],
+    queryFn: ({ signal }) => apiGetJson<ComputeSummaryResponse>("/api/compute/summary", { signal }),
+    staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
 
-  const providers = providersQ.data?.providers ?? [];
-  const providerConfigured = providers.some((p) => p.configured === true);
-  const guestsQ = useComputeCount("guests", providerConfigured);
-  const hostsQ = useComputeCount("hosts", providerConfigured);
-  const storageQ = useComputeCount("storage", providerConfigured);
-  const activityQ = useComputeCount("activity", providerConfigured);
-
-  const counts = useMemo(
-    () => ({
-      guests: guestsQ.data?.guests?.length ?? 0,
-      hosts: hostsQ.data?.hosts?.length ?? 0,
-      storage: storageQ.data?.storage?.length ?? 0,
-      activity: activityQ.data?.activity?.length ?? 0,
-    }),
-    [activityQ.data?.activity?.length, guestsQ.data?.guests?.length, hostsQ.data?.hosts?.length, storageQ.data?.storage?.length]
-  );
+  const summary = summaryQ.data;
+  const providers = providersQ.data?.providers ?? summary?.providers ?? [];
+  const providerConfigured = providers.some((provider) => provider.configured === true);
+  const counts = summary?.counts ?? {};
+  const health = summary?.health ?? {};
+  const abnormalCount = (health.warning ?? 0) + (health.critical ?? 0);
+  const warnings = [...(providersQ.data?.warnings ?? []), ...(summary?.warnings ?? [])];
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,92rem)] space-y-6 pb-10">
-      <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">Compute Center</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">虚拟主机资源中心</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              日常入口按资源对象组织：先看虚拟机、宿主机、存储和任务活动，再在详情里进入原平台能力。未接入的平台只在配置页出现。
-            </p>
-          </div>
-          <Button asChild className="w-fit gap-2 bg-violet-600 hover:bg-violet-700">
+    <div className="mx-auto w-full max-w-[min(100%,92rem)] space-y-5 pb-10">
+      <ComputePageHeader
+        eyebrow="Compute Center"
+        title="虚拟主机资源中心"
+        description="面向日常运维的统一入口：先看接入源健康、异常资源、容量热点和最近活动，再进入虚拟机、宿主机、存储和任务活动。"
+        refreshing={summaryQ.isFetching || providersQ.isFetching}
+        onRefresh={() => {
+          void providersQ.refetch();
+          void summaryQ.refetch();
+        }}
+        action={
+          <Button asChild className="h-9 gap-2 bg-violet-600 hover:bg-violet-700">
             <Link to={providerConfigured ? "/cluster/compute/guests" : "/cluster/compute/config"}>
               {providerConfigured ? "进入虚拟机" : "打开配置"}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
-        </div>
-      </section>
+        }
+      />
 
-      <section className="grid gap-3 md:grid-cols-2">
-        {providersQ.isLoading ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-5 text-sm text-slate-500 shadow-sm">
-            正在读取接入源...
-          </div>
-        ) : providers.length === 0 ? (
-          <ProviderBadge provider={{ provider: "vcenter", name: "vCenter", configured: false }} />
-        ) : (
-          providers.map((provider) => <ProviderBadge key={`${provider.provider}:${provider.targetId ?? ""}`} provider={provider} />)
-        )}
-      </section>
+      <ComputeProviderHealthStrip providers={providers} loading={summaryQ.isLoading || providersQ.isLoading} warnings={warnings} />
 
-      {providerConfigured ? (
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {resourceCards.map(({ key, label, desc, to, icon: Icon, tint }) => (
-            <Link
-              key={key}
-              to={to}
-              className="group rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-            >
-              <div className={cn("mb-4 flex h-11 w-11 items-center justify-center rounded-lg border", tint)}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">{label}</h2>
-                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-700">
-                  {counts[key]}
-                </span>
-              </div>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{desc}</p>
-            </Link>
-          ))}
-        </section>
-      ) : (
+      {!providerConfigured && !summaryQ.isLoading ? (
         <section className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
           <Settings className="mx-auto h-8 w-8 text-slate-400" />
           <p className="mt-3 text-sm font-medium text-slate-900">先接入 vCenter 或 PVE</p>
-          <p className="mt-2 text-sm text-slate-500">
-            接入完成后，这里会只展示已配置来源的资源入口，不再铺开一堆 PVE 或 vCenter 子页面。
-          </p>
-          <Button asChild className="mt-4 bg-violet-600 hover:bg-violet-700">
-            <Link to="/cluster/compute/config">去配置</Link>
-          </Button>
+          <p className="mt-2 text-sm text-slate-500">接入后这里会展示资源状态、容量热点和最近活动。</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button asChild className="bg-violet-600 hover:bg-violet-700">
+              <Link to="/cluster/compute/config">配置接入源</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/cluster/compute/config">配置监控数据源</Link>
+            </Button>
+          </div>
         </section>
-      )}
+      ) : null}
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <MiniMetric label="虚拟机 / CT" value={countText(counts.guests)} />
+        <MiniMetric label="宿主机 / 节点" value={countText(counts.hosts)} />
+        <MiniMetric label="存储" value={countText(counts.storage)} />
+        <MiniMetric label="最近活动" value={countText(counts.activity)} />
+        <MiniMetric label="异常资源" value={abnormalCount} tone={abnormalCount > 0 ? "text-rose-700" : "text-emerald-700"} />
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <SummaryList title="容量热点" empty="暂无需要关注的宿主机或存储压力。" items={summary?.hotspots ?? []} />
+        <SummaryList title="最近活动" empty="暂无失败任务或异常事件。" items={summary?.recentFailures ?? []} />
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {resourceCards.map(({ key, label, desc, to, icon: Icon, tint }) => (
+          <Link
+            key={key}
+            to={to}
+            className="group rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50"
+          >
+            <div className={cn("mb-4 flex h-11 w-11 items-center justify-center rounded-lg border", tint)}>
+              <Icon className="h-5 w-5" />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-slate-950">{label}</h2>
+              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-700">
+                {countText(counts[key])}
+              </span>
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{desc}</p>
+          </Link>
+        ))}
+      </section>
     </div>
   );
 };
