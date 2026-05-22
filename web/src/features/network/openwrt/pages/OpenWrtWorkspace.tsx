@@ -9,6 +9,17 @@ import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import NetworkDeviceSetupPanel from "@/features/network/components/NetworkDeviceSetupPanel";
 import { singleNetworkDeviceByKind, deviceQueryHint } from "@/features/network/components/networkDeviceSingleton";
+import {
+  EmptyTableRow,
+  formatDateTime,
+  formatDurationSeconds,
+  LoadingTableRow,
+  NetworkErrorList,
+  NetworkMetricCard,
+  networkText,
+  NetworkStatusBadge,
+  RawDataDisclosure,
+} from "@/features/network/components/NetworkOpsPrimitives";
 import OpenWrtActionPanel from "./OpenWrtActionPanel";
 import OpenWrtInstancePanel, { type OpenWrtTargetForm } from "./OpenWrtTargetPanel";
 
@@ -48,6 +59,15 @@ type OpenWrtStatus = {
   source?: string;
 };
 
+type OpenWrtSystemSummary = {
+  hostname: string;
+  model: string;
+  release: string;
+  kernel: string;
+  uptime: string;
+  localTime: string;
+};
+
 type OpenWrtOverview = {
   device?: NetworkDevice;
   board?: Record<string, unknown>;
@@ -58,6 +78,15 @@ type OpenWrtOverview = {
   checkedAt?: string;
 };
 
+type OpenWrtInterfaceRow = {
+  name: string;
+  proto: string;
+  device: string;
+  up?: boolean;
+  ipv4: string;
+  uptime: string;
+};
+
 type OpenWrtInterfaces = {
   interfaceDump?: { interface?: Array<Record<string, unknown>> };
   ipAddr?: Array<Record<string, unknown>>;
@@ -66,12 +95,12 @@ type OpenWrtInterfaces = {
   errors?: string[];
 };
 
-type ClientLease = { expires?: string; mac?: string; ip?: string; host?: string; id?: string; source?: string };
-type Neighbor = { ip?: string; dev?: string; mac?: string; state?: string; source?: string };
+type OpenWrtClientRow = { host?: string; ip?: string; mac?: string; expires?: string; source?: string };
+type NeighborRow = { ip?: string; dev?: string; mac?: string; state?: string; source?: string };
 
 type OpenWrtClients = {
-  leases?: ClientLease[];
-  neighbors?: Neighbor[];
+  leases?: OpenWrtClientRow[];
+  neighbors?: NeighborRow[];
   raw?: Record<string, string>;
   errors?: string[];
 };
@@ -113,62 +142,57 @@ const familyLabels: Array<[keyof OpenWrtFamilies, string]> = [
   ["netstat", "连接"],
 ];
 
-function text(v: unknown): string {
-  if (v == null || v === "") return "-";
-  return String(v);
+function releaseText(value: unknown): string {
+  if (value && typeof value === "object") {
+    const row = value as Record<string, unknown>;
+    return networkText(row.description ?? row.version);
+  }
+  return networkText(value);
 }
 
-function fmtTime(v: unknown): string {
-  const s = String(v ?? "").trim();
-  if (!s) return "-";
-  const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? s : d.toLocaleString("zh-CN", { hour12: false });
+function mapSystemSummary(data?: OpenWrtOverview): OpenWrtSystemSummary {
+  const board = data?.board ?? {};
+  const system = data?.system ?? {};
+  return {
+    hostname: networkText(board.hostname),
+    model: networkText(board.model),
+    release: releaseText(board.release),
+    kernel: networkText(board.kernel),
+    uptime: formatDurationSeconds(system.uptime),
+    localTime: formatDateTime(system.localtime),
+  };
 }
 
-function JsonBlock({ value }: { value: unknown }) {
-  return (
-    <pre className="max-h-72 overflow-auto rounded border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700">
-      {JSON.stringify(value ?? {}, null, 2)}
-    </pre>
-  );
+function formatIPv4List(value: unknown): string {
+  if (!Array.isArray(value)) return "-";
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object") return "";
+      const row = item as Record<string, unknown>;
+      const address = String(row.address ?? "").trim();
+      const mask = String(row.mask ?? "").trim();
+      return address ? `${address}${mask ? `/${mask}` : ""}` : "";
+    })
+    .filter(Boolean)
+    .join(", ") || "-";
 }
 
-function LoadingRow({ colSpan }: { colSpan: number }) {
-  return (
-    <TableRow>
-      <TableCell colSpan={colSpan} className="py-8 text-center text-sm text-slate-500">
-        加载中...
-      </TableCell>
-    </TableRow>
-  );
-}
-
-function EmptyRow({ colSpan, label }: { colSpan: number; label: string }) {
-  return (
-    <TableRow>
-      <TableCell colSpan={colSpan} className="py-8 text-center text-sm text-slate-500">
-        {label}
-      </TableCell>
-    </TableRow>
-  );
-}
-
-function ErrorList({ errors }: { errors?: string[] }) {
-  const rows = errors?.filter(Boolean) ?? [];
-  if (rows.length === 0) return null;
-  return (
-    <div className="rounded border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">
-      {rows.map((err) => (
-        <p key={err}>{err}</p>
-      ))}
-    </div>
-  );
+function mapInterfaceRows(data?: OpenWrtInterfaces): OpenWrtInterfaceRow[] {
+  return (data?.interfaceDump?.interface ?? []).map((row) => ({
+    name: networkText(row.interface),
+    proto: networkText(row.proto),
+    device: networkText(row.device ?? row.l3_device),
+    up: Boolean(row.up),
+    ipv4: formatIPv4List(row["ipv4-address"]),
+    uptime: formatDurationSeconds(row.uptime),
+  }));
 }
 
 function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
   const qc = useQueryClient();
   const { status } = useAuth();
   const canWrite = status?.role === "admin" || status?.permissions?.network === "rw";
+  const canViewRaw = status?.role === "admin";
   const meta = pageMeta[view];
   const Icon = meta.icon;
 
@@ -317,10 +341,10 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
           <div className="space-y-5">
             <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="grid gap-3 md:grid-cols-4">
-                <Metric label="当前目标" value={active?.name || "未选择"} hint={active?.host || active?.apiUrl || "-"} />
-                <Metric label="受管目标" value={openWrtDevices.length} hint="OpenWrt" />
-                <Metric label="SSH 凭据" value={active?.passwordSet || active?.privateKeySet ? "已保存" : "未保存"} hint={active?.username || "root"} />
-                <Metric label="监控指标族" value={`${readyFamilies}/5`} hint={deviceQueryHint(active)} />
+                <NetworkMetricCard label="当前目标" value={active?.name || "未选择"} hint={active?.host || active?.apiUrl || "-"} tone="cyan" />
+                <NetworkMetricCard label="受管目标" value={openWrtDevices.length} hint="OpenWrt 单实例" />
+                <NetworkMetricCard label="SSH 凭据" value={active?.passwordSet || active?.privateKeySet ? "已保存" : "未保存"} hint={active?.username || "root"} tone={active?.passwordSet || active?.privateKeySet ? "emerald" : "amber"} />
+                <NetworkMetricCard label="监控指标族" value={`${readyFamilies}/5`} hint={deviceQueryHint(active)} tone="emerald" />
               </div>
             </section>
 
@@ -330,13 +354,13 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
               </section>
             ) : null}
 
-            {active && view === "dashboard" ? <DashboardPanel data={overviewQ.data} loading={overviewQ.isLoading} /> : null}
-            {active && view === "interfaces" ? <InterfacesPanel data={interfacesQ.data} loading={interfacesQ.isLoading} /> : null}
-            {active && view === "clients" ? <ClientsPanel data={clientsQ.data} loading={clientsQ.isLoading} /> : null}
-            {active && view === "connections" ? <FirewallPanel data={firewallQ.data} loading={firewallQ.isLoading} /> : null}
-            {active && view === "wireless" ? <WirelessPanel data={wirelessQ.data} loading={wirelessQ.isLoading} /> : null}
+            {active && view === "dashboard" ? <DashboardPanel data={overviewQ.data} loading={overviewQ.isLoading} canViewRaw={canViewRaw} /> : null}
+            {active && view === "interfaces" ? <InterfacesPanel data={interfacesQ.data} loading={interfacesQ.isLoading} canViewRaw={canViewRaw} /> : null}
+            {active && view === "clients" ? <ClientsPanel data={clientsQ.data} loading={clientsQ.isLoading} canViewRaw={canViewRaw} /> : null}
+            {active && view === "connections" ? <FirewallPanel data={firewallQ.data} loading={firewallQ.isLoading} canViewRaw={canViewRaw} /> : null}
+            {active && view === "wireless" ? <WirelessPanel data={wirelessQ.data} loading={wirelessQ.isLoading} canViewRaw={canViewRaw} /> : null}
             {active && view === "exporter" ? (
-              <ExporterPanel data={exporterQ.data} loading={exporterQ.isLoading} families={families} hints={missingHints} metricNames={metricNames} />
+              <ExporterPanel data={exporterQ.data} loading={exporterQ.isLoading} families={families} hints={missingHints} metricNames={metricNames} canViewRaw={canViewRaw} />
             ) : null}
           </div>
         </div>
@@ -373,169 +397,6 @@ function OpenWrtSetupPanel() {
   );
 }
 
-function Metric({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 p-3">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-slate-950">{value}</p>
-      <p className="mt-1 truncate text-xs text-slate-500">{hint || "-"}</p>
-    </div>
-  );
-}
-
-function DashboardPanel({ data, loading }: { data?: OpenWrtOverview; loading: boolean }) {
-  const board = data?.board ?? {};
-  const system = data?.system ?? {};
-  return (
-    <Panel title="系统状态" icon={<Network className="h-4 w-4 text-cyan-700" />}>
-      {loading ? <InlineLoading /> : null}
-      <div className="grid gap-3 md:grid-cols-3">
-        <Metric label="主机名" value={text(board.hostname)} hint={text(board.model)} />
-        <Metric label="系统版本" value={text(board.release && typeof board.release === "object" ? (board.release as Record<string, unknown>).description : board.release)} hint={text(board.kernel)} />
-        <Metric label="运行时间" value={text(system.uptime)} hint="秒" />
-      </div>
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <JsonBlock value={board} />
-        <JsonBlock value={system} />
-      </div>
-      <ErrorList errors={data?.errors} />
-    </Panel>
-  );
-}
-
-function InterfacesPanel({ data, loading }: { data?: OpenWrtInterfaces; loading: boolean }) {
-  const rows = data?.interfaceDump?.interface ?? [];
-  return (
-    <Panel title="接口列表" icon={<Cable className="h-4 w-4 text-cyan-700" />}>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>接口</TableHead>
-            <TableHead>协议</TableHead>
-            <TableHead>设备</TableHead>
-            <TableHead>状态</TableHead>
-            <TableHead>IPv4</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {loading ? <LoadingRow colSpan={5} /> : null}
-          {!loading && rows.length === 0 ? <EmptyRow colSpan={5} label="未从 ubus 读取到接口" /> : null}
-          {!loading
-            ? rows.map((row, idx) => (
-                <TableRow key={String(row.interface ?? row.ifname ?? idx)}>
-                  <TableCell className="font-mono text-xs">{text(row.interface)}</TableCell>
-                  <TableCell>{text(row.proto)}</TableCell>
-                  <TableCell className="font-mono text-xs">{text(row.device ?? row.l3_device)}</TableCell>
-                  <TableCell>
-                    <Badge variant={row.up ? "default" : "outline"}>{row.up ? "up" : "down"}</Badge>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">{Array.isArray(row["ipv4-address"]) ? JSON.stringify(row["ipv4-address"]) : "-"}</TableCell>
-                </TableRow>
-              ))
-            : null}
-        </TableBody>
-      </Table>
-      <ErrorList errors={data?.errors} />
-    </Panel>
-  );
-}
-
-function ClientsPanel({ data, loading }: { data?: OpenWrtClients; loading: boolean }) {
-  const leases = data?.leases ?? [];
-  const neighbors = data?.neighbors ?? [];
-  return (
-    <Panel title="客户端" icon={<Users className="h-4 w-4 text-cyan-700" />}>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>主机名</TableHead>
-            <TableHead>IP</TableHead>
-            <TableHead>MAC</TableHead>
-            <TableHead>租约</TableHead>
-            <TableHead>来源</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {loading ? <LoadingRow colSpan={5} /> : null}
-          {!loading && leases.length === 0 ? <EmptyRow colSpan={5} label="未发现 DHCP 租约" /> : null}
-          {!loading
-            ? leases.map((row, idx) => (
-                <TableRow key={`${row.mac}-${row.ip}-${idx}`}>
-                  <TableCell>{text(row.host)}</TableCell>
-                  <TableCell className="font-mono text-xs">{text(row.ip)}</TableCell>
-                  <TableCell className="font-mono text-xs">{text(row.mac)}</TableCell>
-                  <TableCell className="font-mono text-xs">{text(row.expires)}</TableCell>
-                  <TableCell>{text(row.source)}</TableCell>
-                </TableRow>
-              ))
-            : null}
-        </TableBody>
-      </Table>
-      <div className="mt-4">
-        <h3 className="mb-2 text-sm font-medium text-slate-900">邻居表</h3>
-        <JsonBlock value={neighbors} />
-      </div>
-      <ErrorList errors={data?.errors} />
-    </Panel>
-  );
-}
-
-function WirelessPanel({ data, loading }: { data?: OpenWrtWireless; loading: boolean }) {
-  return (
-    <Panel title="无线配置与客户端" icon={<Wifi className="h-4 w-4 text-cyan-700" />}>
-      {loading ? <InlineLoading /> : null}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div>
-          <h3 className="mb-2 text-sm font-medium text-slate-900">wireless UCI</h3>
-          <JsonBlock value={data?.radios ?? []} />
-        </div>
-        <div>
-          <h3 className="mb-2 text-sm font-medium text-slate-900">关联客户端</h3>
-          <JsonBlock value={data?.stations ?? []} />
-        </div>
-      </div>
-      <ErrorList errors={data?.errors} />
-    </Panel>
-  );
-}
-
-function FirewallPanel({ data, loading }: { data?: OpenWrtFirewall; loading: boolean }) {
-  return (
-    <Panel title="防火墙与连接" icon={<Activity className="h-4 w-4 text-cyan-700" />}>
-      {loading ? <InlineLoading /> : null}
-      <div className="grid gap-3 md:grid-cols-2">
-        <Metric label="conntrack" value={data?.conntrackCount || "-"} hint="/proc/sys/net/netfilter/nf_conntrack_count" />
-        <Metric label="firewall 配置项" value={data?.firewallConfig?.length ?? 0} hint="uci show firewall" />
-      </div>
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <JsonBlock value={data?.firewallConfig ?? []} />
-        <JsonBlock value={data?.raw?.ruleset ?? ""} />
-      </div>
-      <ErrorList errors={data?.errors} />
-    </Panel>
-  );
-}
-
-function ExporterPanel({ data, loading, families, hints, metricNames }: { data?: OpenWrtStatus; loading: boolean; families: OpenWrtFamilies; hints: string[]; metricNames: string[] }) {
-  return (
-    <Panel title="Prometheus 监控增强" icon={<Gauge className="h-4 w-4 text-cyan-700" />}>
-      {loading ? <InlineLoading /> : null}
-      <div className="mb-4 flex flex-wrap gap-2">
-        {familyLabels.map(([key, label]) => (
-          <Badge key={key} variant={families[key] ? "default" : "outline"}>
-            {label}: {families[key] ? "已发现" : "缺失"}
-          </Badge>
-        ))}
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <JsonBlock value={hints} />
-        <JsonBlock value={metricNames} />
-      </div>
-      <p className="mt-3 text-xs text-slate-500">当前状态：{data?.prometheusConfigured ? "Prometheus 已配置" : "Prometheus 未配置或未返回指标"}</p>
-    </Panel>
-  );
-}
-
 function Panel({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -553,6 +414,345 @@ function InlineLoading() {
     <div className="mb-3 flex items-center gap-2 text-sm text-slate-500">
       <Loader2 className="h-4 w-4 animate-spin" />
       加载中...
+    </div>
+  );
+}
+
+function KeyValueGrid({ rows }: { rows: Array<[string, React.ReactNode]> }) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      {rows.map(([label, value]) => (
+        <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <p className="text-xs text-slate-500">{label}</p>
+          <p className="mt-1 truncate text-sm font-medium text-slate-900" title={String(value ?? "")}>{value}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DashboardPanel({ data, loading, canViewRaw }: { data?: OpenWrtOverview; loading: boolean; canViewRaw: boolean }) {
+  const summary = mapSystemSummary(data);
+  return (
+    <Panel title="系统状态" icon={<Network className="h-4 w-4 text-cyan-700" />}>
+      {loading ? <InlineLoading /> : null}
+      <div className="grid gap-3 md:grid-cols-3">
+        <NetworkMetricCard label="主机名" value={summary.hostname} hint={summary.model} tone="cyan" />
+        <NetworkMetricCard label="系统版本" value={summary.release} hint={summary.kernel} />
+        <NetworkMetricCard label="运行时间" value={summary.uptime} hint={summary.localTime} tone="emerald" />
+      </div>
+      <div className="mt-4">
+        <KeyValueGrid
+          rows={[
+            ["数据来源", data?.source || "SSH/ubus"],
+            ["检查时间", formatDateTime(data?.checkedAt)],
+            ["设备型号", summary.model],
+            ["内核版本", summary.kernel],
+          ]}
+        />
+      </div>
+      <div className="mt-4 space-y-3">
+        <NetworkErrorList errors={data?.errors} />
+        <RawDataDisclosure value={{ board: data?.board, system: data?.system, raw: data?.raw }} visible={canViewRaw} />
+      </div>
+    </Panel>
+  );
+}
+
+function InterfacesPanel({ data, loading, canViewRaw }: { data?: OpenWrtInterfaces; loading: boolean; canViewRaw: boolean }) {
+  const rows = mapInterfaceRows(data);
+  return (
+    <Panel title="接口列表" icon={<Cable className="h-4 w-4 text-cyan-700" />}>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>接口</TableHead>
+              <TableHead>协议</TableHead>
+              <TableHead>设备</TableHead>
+              <TableHead>状态</TableHead>
+              <TableHead>IPv4</TableHead>
+              <TableHead>运行时间</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? <LoadingTableRow colSpan={6} /> : null}
+            {!loading && rows.length === 0 ? <EmptyTableRow colSpan={6} label="未从 ubus 读取到接口" /> : null}
+            {!loading
+              ? rows.map((row) => (
+                  <TableRow key={row.name}>
+                    <TableCell className="font-mono text-xs">{row.name}</TableCell>
+                    <TableCell>{row.proto}</TableCell>
+                    <TableCell className="font-mono text-xs">{row.device}</TableCell>
+                    <TableCell>
+                      <NetworkStatusBadge ok={row.up} label={row.up ? "up" : "down"} />
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{row.ipv4}</TableCell>
+                    <TableCell>{row.uptime}</TableCell>
+                  </TableRow>
+                ))
+              : null}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="mt-4 space-y-3">
+        <NetworkErrorList errors={data?.errors} />
+        <RawDataDisclosure value={{ ipAddr: data?.ipAddr, ipRoute: data?.ipRoute, raw: data?.raw }} visible={canViewRaw} />
+      </div>
+    </Panel>
+  );
+}
+
+function ClientsPanel({ data, loading, canViewRaw }: { data?: OpenWrtClients; loading: boolean; canViewRaw: boolean }) {
+  const leases = data?.leases ?? [];
+  const neighbors = data?.neighbors ?? [];
+  return (
+    <Panel title="客户端" icon={<Users className="h-4 w-4 text-cyan-700" />}>
+      <div className="mb-4 grid gap-3 md:grid-cols-3">
+        <NetworkMetricCard label="DHCP 租约" value={leases.length} hint="leases" tone="cyan" />
+        <NetworkMetricCard label="邻居表" value={neighbors.length} hint="ip neigh" tone="emerald" />
+        <NetworkMetricCard label="数据来源" value={leases[0]?.source || neighbors[0]?.source || "-"} hint="SSH" />
+      </div>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>主机名</TableHead>
+              <TableHead>IP</TableHead>
+              <TableHead>MAC</TableHead>
+              <TableHead>租约</TableHead>
+              <TableHead>来源</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? <LoadingTableRow colSpan={5} /> : null}
+            {!loading && leases.length === 0 ? <EmptyTableRow colSpan={5} label="未发现 DHCP 租约" /> : null}
+            {!loading
+              ? leases.map((row, idx) => (
+                  <TableRow key={`${row.mac}-${row.ip}-${idx}`}>
+                    <TableCell>{networkText(row.host)}</TableCell>
+                    <TableCell className="font-mono text-xs">{networkText(row.ip)}</TableCell>
+                    <TableCell className="font-mono text-xs">{networkText(row.mac)}</TableCell>
+                    <TableCell className="font-mono text-xs">{networkText(row.expires)}</TableCell>
+                    <TableCell>{networkText(row.source)}</TableCell>
+                  </TableRow>
+                ))
+              : null}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="mt-5 overflow-x-auto">
+        <h3 className="mb-2 text-sm font-medium text-slate-900">邻居表</h3>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>IP</TableHead>
+              <TableHead>接口</TableHead>
+              <TableHead>MAC</TableHead>
+              <TableHead>状态</TableHead>
+              <TableHead>来源</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {!loading && neighbors.length === 0 ? <EmptyTableRow colSpan={5} label="未读取到邻居表" /> : null}
+            {neighbors.map((row, idx) => (
+              <TableRow key={`${row.ip}-${row.mac}-${idx}`}>
+                <TableCell className="font-mono text-xs">{networkText(row.ip)}</TableCell>
+                <TableCell>{networkText(row.dev)}</TableCell>
+                <TableCell className="font-mono text-xs">{networkText(row.mac)}</TableCell>
+                <TableCell>{networkText(row.state)}</TableCell>
+                <TableCell>{networkText(row.source)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="mt-4 space-y-3">
+        <NetworkErrorList errors={data?.errors} />
+        <RawDataDisclosure value={{ raw: data?.raw }} visible={canViewRaw} />
+      </div>
+    </Panel>
+  );
+}
+
+function WirelessPanel({ data, loading, canViewRaw }: { data?: OpenWrtWireless; loading: boolean; canViewRaw: boolean }) {
+  const radios = data?.radios ?? [];
+  const stations = data?.stations ?? [];
+  return (
+    <Panel title="无线配置与客户端" icon={<Wifi className="h-4 w-4 text-cyan-700" />}>
+      {loading ? <InlineLoading /> : null}
+      <div className="mb-4 grid gap-3 md:grid-cols-3">
+        <NetworkMetricCard label="UCI 配置项" value={radios.length} hint="wireless" tone="cyan" />
+        <NetworkMetricCard label="关联客户端" value={stations.length} hint="hostapd" tone="emerald" />
+        <NetworkMetricCard label="无线接口" value={data?.ifaces?.length ?? 0} hint={data?.ifaces?.join(", ") || "-"} />
+      </div>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <TableBlock title="wireless UCI">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Section</TableHead>
+                <TableHead>Option</TableHead>
+                <TableHead>Value</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {!loading && radios.length === 0 ? <EmptyTableRow colSpan={3} label="未读取到 wireless UCI" /> : null}
+              {radios.slice(0, 80).map((row, idx) => (
+                <TableRow key={`${row.section}-${row.option}-${idx}`}>
+                  <TableCell className="font-mono text-xs">{networkText(row.section)}</TableCell>
+                  <TableCell className="font-mono text-xs">{networkText(row.option ?? row.key)}</TableCell>
+                  <TableCell className="max-w-[260px] truncate font-mono text-xs" title={networkText(row.value)}>{networkText(row.value)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableBlock>
+        <TableBlock title="关联客户端">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>接口</TableHead>
+                <TableHead>MAC</TableHead>
+                <TableHead>信号</TableHead>
+                <TableHead>速率</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {!loading && stations.length === 0 ? <EmptyTableRow colSpan={4} label="未发现无线关联客户端" /> : null}
+              {stations.map((row, idx) => (
+                <TableRow key={`${row.interface}-${row.mac}-${idx}`}>
+                  <TableCell>{networkText(row.interface)}</TableCell>
+                  <TableCell className="font-mono text-xs">{networkText(row.mac)}</TableCell>
+                  <TableCell>{networkText(row.signal)}</TableCell>
+                  <TableCell>{networkText(row.rxRate)} / {networkText(row.txRate)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableBlock>
+      </div>
+      <div className="mt-4 space-y-3">
+        <NetworkErrorList errors={data?.errors} />
+        <RawDataDisclosure value={{ raw: data?.raw }} visible={canViewRaw} />
+      </div>
+    </Panel>
+  );
+}
+
+function FirewallPanel({ data, loading, canViewRaw }: { data?: OpenWrtFirewall; loading: boolean; canViewRaw: boolean }) {
+  const config = data?.firewallConfig ?? [];
+  const ruleset = data?.raw?.ruleset ?? "";
+  return (
+    <Panel title="防火墙与连接" icon={<Activity className="h-4 w-4 text-cyan-700" />}>
+      {loading ? <InlineLoading /> : null}
+      <div className="grid gap-3 md:grid-cols-2">
+        <NetworkMetricCard label="conntrack" value={data?.conntrackCount || "-"} hint="/proc/sys/net/netfilter/nf_conntrack_count" tone="cyan" />
+        <NetworkMetricCard label="firewall 配置项" value={config.length} hint="uci show firewall" tone="emerald" />
+      </div>
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <TableBlock title="firewall UCI">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Section</TableHead>
+                <TableHead>Option</TableHead>
+                <TableHead>Value</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {!loading && config.length === 0 ? <EmptyTableRow colSpan={3} label="未读取到 firewall UCI" /> : null}
+              {config.slice(0, 100).map((row, idx) => (
+                <TableRow key={`${row.section}-${row.option}-${idx}`}>
+                  <TableCell className="font-mono text-xs">{networkText(row.section)}</TableCell>
+                  <TableCell className="font-mono text-xs">{networkText(row.option ?? row.key)}</TableCell>
+                  <TableCell className="max-w-[280px] truncate font-mono text-xs" title={networkText(row.value)}>{networkText(row.value)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableBlock>
+        <div>
+          <h3 className="mb-2 text-sm font-medium text-slate-900">规则摘要</h3>
+          <pre className="max-h-80 overflow-auto rounded-lg border border-slate-200 bg-slate-950 p-3 text-xs leading-5 text-slate-100">
+            {ruleset || "未读取到 nft/iptables 规则输出"}
+          </pre>
+        </div>
+      </div>
+      <div className="mt-4 space-y-3">
+        <NetworkErrorList errors={data?.errors} />
+        <RawDataDisclosure value={{ raw: data?.raw }} visible={canViewRaw} />
+      </div>
+    </Panel>
+  );
+}
+
+function ExporterPanel({
+  data,
+  loading,
+  families,
+  hints,
+  metricNames,
+  canViewRaw,
+}: {
+  data?: OpenWrtStatus;
+  loading: boolean;
+  families: OpenWrtFamilies;
+  hints: string[];
+  metricNames: string[];
+  canViewRaw: boolean;
+}) {
+  return (
+    <Panel title="Prometheus 监控增强" icon={<Gauge className="h-4 w-4 text-cyan-700" />}>
+      {loading ? <InlineLoading /> : null}
+      <div className="mb-4 grid gap-3 sm:grid-cols-5">
+        {familyLabels.map(([key, label]) => (
+          <div key={key} className="rounded-lg border border-slate-200 p-3">
+            <p className="text-xs text-slate-500">{label}</p>
+            <div className="mt-2">
+              <NetworkStatusBadge ok={families[key]} label={families[key] ? "已发现" : "缺失"} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-4 xl:grid-cols-[1fr_1.4fr]">
+        <div className="rounded-lg border border-slate-200 p-3">
+          <h3 className="text-sm font-medium text-slate-900">缺失提示</h3>
+          {hints.length === 0 ? (
+            <p className="mt-3 text-sm text-slate-500">暂无缺失提示。</p>
+          ) : (
+            <ul className="mt-3 space-y-2 text-sm leading-5 text-amber-800">
+              {hints.map((hint) => (
+                <li key={hint}>• {hint}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="rounded-lg border border-slate-200 p-3">
+          <h3 className="text-sm font-medium text-slate-900">已发现指标</h3>
+          <div className="mt-3 flex max-h-56 flex-wrap gap-2 overflow-auto">
+            {metricNames.length === 0 ? <p className="text-sm text-slate-500">Prometheus 未返回 OpenWrt 指标。</p> : null}
+            {metricNames.map((name) => (
+              <Badge key={name} variant="outline" className="font-mono text-[11px]">
+                {name}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </div>
+      <p className="mt-3 text-xs text-slate-500">当前状态：{data?.prometheusConfigured ? "Prometheus 已配置" : "Prometheus 未配置或未返回指标"}</p>
+      <div className="mt-4">
+        <RawDataDisclosure value={data} visible={canViewRaw} />
+      </div>
+    </Panel>
+  );
+}
+
+function TableBlock({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="overflow-x-auto">
+      <h3 className="mb-2 text-sm font-medium text-slate-900">{title}</h3>
+      {children}
     </div>
   );
 }

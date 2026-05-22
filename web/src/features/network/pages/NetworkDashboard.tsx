@@ -2,9 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Activity,
   ArrowRight,
-  CheckCircle2,
-  Database,
+  Cable,
+  Gauge,
   Loader2,
   Network,
   RadioTower,
@@ -14,6 +15,7 @@ import {
   Settings2,
   ShieldCheck,
   Trash2,
+  Users,
   Wifi,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -30,8 +32,20 @@ import {
   type NetworkDeviceKind,
   type SingletonNetworkDevice,
 } from "@/features/network/components/networkDeviceSingleton";
+import {
+  formatDateTime,
+  NetworkMetricCard,
+  NetworkStatusBadge,
+  RawDataDisclosure,
+} from "@/features/network/components/NetworkOpsPrimitives";
 
 type NetworkDevice = SingletonNetworkDevice & {
+  apiUrl?: string;
+  host?: string;
+  port?: number;
+  username?: string;
+  passwordSet?: boolean;
+  privateKeySet?: boolean;
   notes?: string;
   updatedAt?: string;
 };
@@ -50,6 +64,7 @@ type OpenWrtStatus = {
   missingHints?: string[];
   metricNames?: string[];
   note?: string;
+  source?: string;
 };
 
 type DeviceForm = {
@@ -91,6 +106,16 @@ const familyLabels: Array<[keyof OpenWrtFamilies, string]> = [
   ["netstat", "连接"],
 ];
 
+const networkQuickLinks = [
+  { label: "iKuai 总览", to: "/cluster/network/ikuai/dashboard", icon: Router },
+  { label: "iKuai 接口", to: "/cluster/network/ikuai/interfaces", icon: Cable },
+  { label: "iKuai 客户端", to: "/cluster/network/ikuai/clients", icon: Users },
+  { label: "OpenWrt 总览", to: "/cluster/network/openwrt/dashboard", icon: Wifi },
+  { label: "OpenWrt 接口", to: "/cluster/network/openwrt/interfaces", icon: RadioTower },
+  { label: "连接跟踪", to: "/cluster/network/openwrt/connections", icon: Activity },
+  { label: "数据源", to: "/cluster/network/openwrt/exporter", icon: Gauge },
+] as const;
+
 function defaultForm(kind: NetworkDeviceKind, device?: NetworkDevice): DeviceForm {
   return {
     name: device?.name ?? kindMeta[kind].fallbackName,
@@ -101,26 +126,16 @@ function defaultForm(kind: NetworkDeviceKind, device?: NetworkDevice): DeviceFor
   };
 }
 
-function configuredLabel(device?: NetworkDevice): string {
-  return device ? "已配置" : "未配置";
-}
-
 function updatedLabel(device?: NetworkDevice): string {
   if (!device?.updatedAt) return "尚未保存";
-  const date = new Date(device.updatedAt);
-  if (Number.isNaN(date.getTime())) return device.updatedAt;
-  return date.toLocaleString("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(device.updatedAt);
 }
 
 const NetworkDashboard: React.FC = () => {
   const qc = useQueryClient();
   const { status } = useAuth();
-  const canWrite = status?.role === "admin";
+  const canWrite = status?.role === "admin" || status?.permissions?.network === "rw";
+  const canViewRaw = status?.role === "admin";
   const [params] = useSearchParams();
   const kindParam = params.get("kind");
   const [selectedKind, setSelectedKind] = useState<NetworkDeviceKind>(
@@ -140,14 +155,8 @@ const NetworkDashboard: React.FC = () => {
   });
 
   const devices = useMemo(() => devicesQ.data?.devices ?? [], [devicesQ.data?.devices]);
-  const ikuaiDevice = useMemo(
-    () => singleNetworkDeviceByKind(devices, "ikuai"),
-    [devices]
-  );
-  const openWrtDevice = useMemo(
-    () => singleNetworkDeviceByKind(devices, "openwrt"),
-    [devices]
-  );
+  const ikuaiDevice = useMemo(() => singleNetworkDeviceByKind(devices, "ikuai"), [devices]);
+  const openWrtDevice = useMemo(() => singleNetworkDeviceByKind(devices, "openwrt"), [devices]);
   const selectedDevice = selectedKind === "ikuai" ? ikuaiDevice : openWrtDevice;
 
   useEffect(() => {
@@ -162,26 +171,18 @@ const NetworkDashboard: React.FC = () => {
     refetchInterval: openWrtDevice?.id ? 60_000 : false,
   });
 
-  const overviewQ = useQuery({
-    queryKey: ["network-device-overview", selectedDevice?.id],
-    queryFn: ({ signal }) =>
-      apiGetJson<Record<string, unknown>>(`/api/network/devices/${selectedDevice?.id}/overview`, { signal }),
-    enabled: Boolean(selectedDevice?.id),
-    refetchInterval: selectedDevice?.id ? 60_000 : false,
-  });
-
-  const upsertDevice = useMutation({
+  const upsertIkuaiDevice = useMutation({
     mutationFn: () =>
       apiPostJson<{ device: NetworkDevice }>("/api/network/devices", {
-        kind: selectedKind,
-        name: form.name.trim() || kindMeta[selectedKind].fallbackName,
+        kind: "ikuai",
+        name: form.name.trim() || kindMeta.ikuai.fallbackName,
         prometheusScope: form.prometheusScope.trim() || "network",
         instanceLabel: form.instanceLabel.trim(),
         jobLabel: form.jobLabel.trim(),
         notes: form.notes.trim(),
       }),
     onSuccess: () => {
-      toast.success(`${kindMeta[selectedKind].label} 实例已保存`);
+      toast.success("iKuai 实例已保存");
       void qc.invalidateQueries({ queryKey: ["network-devices"] });
     },
     onError: (e) => toast.error(String(e)),
@@ -199,10 +200,11 @@ const NetworkDashboard: React.FC = () => {
   const families = openWrtStatusQ.data?.families ?? {};
   const openWrtReadyCount = familyLabels.filter(([key]) => Boolean(families[key])).length;
   const configuredCount = Number(Boolean(ikuaiDevice)) + Number(Boolean(openWrtDevice));
+  const sshReady = Boolean(openWrtDevice?.passwordSet || openWrtDevice?.privateKeySet);
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,92rem)] space-y-5">
-      <section className="border-b border-slate-200 bg-white px-5 py-5 shadow-sm">
+      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">Network</p>
@@ -211,18 +213,12 @@ const NetworkDashboard: React.FC = () => {
               网络设备
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              iKuai 和 OpenWrt 各保留一个实例，保存新配置会覆盖同类型旧配置。
+              统一接管 iKuai 与 OpenWrt：这里看配置、健康和入口，子页面负责接口、客户端、无线、连接跟踪与监控数据。
             </p>
           </div>
-          <div className="grid min-w-[220px] grid-cols-2 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 text-center">
-            <div className="px-4 py-3">
-              <p className="text-xs text-slate-500">已配置</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-slate-950">{configuredCount}/2</p>
-            </div>
-            <div className="border-l border-slate-200 px-4 py-3">
-              <p className="text-xs text-slate-500">当前编辑</p>
-              <p className="mt-1 text-xl font-semibold text-slate-950">{kindMeta[selectedKind].label}</p>
-            </div>
+          <div className="grid min-w-[260px] grid-cols-2 gap-3">
+            <NetworkMetricCard label="已配置" value={`${configuredCount}/2`} hint="iKuai / OpenWrt" tone="cyan" />
+            <NetworkMetricCard label="OpenWrt 指标族" value={`${openWrtReadyCount}/5`} hint="Prometheus" tone="emerald" />
           </div>
         </div>
       </section>
@@ -231,204 +227,185 @@ const NetworkDashboard: React.FC = () => {
         <IkuaiInstanceCard
           device={ikuaiDevice}
           selected={selectedKind === "ikuai"}
-          deleting={deleteDevice.isPending}
+          statusOk={Boolean(ikuaiDevice?.instanceLabel || ikuaiDevice?.jobLabel)}
+          statusLabel={ikuaiDevice ? "已登记" : "未配置"}
+          details={[
+            ["数据源", deviceQueryHint(ikuaiDevice)],
+            ["最近更新", updatedLabel(ikuaiDevice)],
+            ["备注", ikuaiDevice?.notes || "-"],
+          ]}
           canWrite={canWrite}
+          deleting={deleteDevice.isPending}
           onSelect={() => setSelectedKind("ikuai")}
           onDelete={(id) => deleteDevice.mutate(id)}
         />
         <OpenWrtInstanceCard
           device={openWrtDevice}
           selected={selectedKind === "openwrt"}
-          readyCount={openWrtReadyCount}
-          status={openWrtStatusQ.data}
-          statusLoading={openWrtStatusQ.isFetching}
-          deleting={deleteDevice.isPending}
+          statusOk={Boolean(openWrtDevice && sshReady)}
+          statusLabel={openWrtDevice ? (sshReady ? "SSH 可管理" : "缺少凭据") : "OpenWrt 未配置"}
+          details={[
+            ["管理地址", openWrtDevice?.host || openWrtDevice?.apiUrl || "配置 OpenWrt"],
+            ["指标族", openWrtDevice ? `${openWrtReadyCount}/${familyLabels.length}` : "-"],
+            ["最近更新", updatedLabel(openWrtDevice)],
+          ]}
           canWrite={canWrite}
+          deleting={deleteDevice.isPending}
           onSelect={() => setSelectedKind("openwrt")}
-          onRefresh={() => openWrtStatusQ.refetch()}
           onDelete={(id) => deleteDevice.mutate(id)}
         />
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[380px_1fr]">
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                <Settings2 className="h-4 w-4 text-cyan-700" />
-                新增网络设备
-              </h2>
-              <p className="mt-1 text-xs text-slate-500">保存后按类型覆盖旧实例</p>
-            </div>
-            <Badge variant="outline">{kindMeta[selectedKind].label}</Badge>
-          </div>
+      <section className="grid gap-5 xl:grid-cols-[380px_1fr]">
+        <DeviceConfigurationPanel
+          selectedKind={selectedKind}
+          form={form}
+          canWrite={canWrite}
+          saving={upsertIkuaiDevice.isPending}
+          onSelect={setSelectedKind}
+          onChange={setForm}
+          onSubmit={() => upsertIkuaiDevice.mutate()}
+        />
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {(["ikuai", "openwrt"] as NetworkDeviceKind[]).map((kind) => (
-              <button
-                key={kind}
-                type="button"
-                onClick={() => setSelectedKind(kind)}
-                className={`flex min-h-10 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition ${
-                  selectedKind === kind
-                    ? "border-cyan-300 bg-cyan-50 text-cyan-950"
-                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                {kindMeta[kind].icon}
-                {kindMeta[kind].label}
-              </button>
-            ))}
-          </div>
-
-          <form
-            className="mt-4 space-y-3"
-            onSubmit={(event) => {
-              event.preventDefault();
-              upsertDevice.mutate();
-            }}
-          >
-            <div className="space-y-1.5">
-              <Label>显示名称</Label>
-              <Input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder={kindMeta[selectedKind].fallbackName}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Prometheus scope</Label>
-              <Input
-                value={form.prometheusScope}
-                onChange={(e) => setForm({ ...form, prometheusScope: e.target.value })}
-                placeholder="network"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>instance 标签</Label>
-              <Input
-                className="font-mono text-sm"
-                value={form.instanceLabel}
-                onChange={(e) => setForm({ ...form, instanceLabel: e.target.value })}
-                placeholder={selectedKind === "ikuai" ? "192.168.1.1:9100" : "openwrt:9100"}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>job 标签</Label>
-              <Input
-                value={form.jobLabel}
-                onChange={(e) => setForm({ ...form, jobLabel: e.target.value })}
-                placeholder="可选"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>备注</Label>
-              <Textarea
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                className="min-h-20 resize-none"
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full gap-2 bg-cyan-700 hover:bg-cyan-800"
-              disabled={!canWrite || upsertDevice.isPending}
-            >
-              {upsertDevice.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              保存 {kindMeta[selectedKind].label} 实例
-            </Button>
-          </form>
-        </section>
-
-        <main className="space-y-4">
+        <div className="space-y-5">
           <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-slate-950">当前实例</h2>
+                <h2 className="text-sm font-semibold text-slate-950">接管入口</h2>
                 <p className="mt-1 text-xs text-slate-500">
-                  {selectedDevice ? deviceQueryHint(selectedDevice) : `${kindMeta[selectedKind].label} 未配置`}
+                  当前关注：{kindMeta[selectedKind].label} · {selectedDevice ? deviceQueryHint(selectedDevice) : "未配置"}
                 </p>
               </div>
-              {selectedDevice ? (
-                <Button asChild variant="outline" size="sm" className="gap-1.5">
-                  <Link to={kindMeta[selectedKind].route}>
-                    打开面板
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              ) : null}
+              <Button asChild variant="outline" size="sm" className="gap-1.5">
+                <Link to={kindMeta[selectedKind].route}>
+                  打开面板
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
-            <DeviceDetails
-              device={selectedDevice}
-              loading={devicesQ.isLoading}
-              overview={overviewQ.data}
-              overviewLoading={overviewQ.isFetching}
-            />
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {networkQuickLinks.map(({ label, to, icon: Icon }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-700 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-900"
+                >
+                  <span className="inline-flex min-w-0 items-center gap-2">
+                    <Icon className="h-4 w-4 shrink-0 text-cyan-700" />
+                    <span className="truncate">{label}</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0" />
+                </Link>
+              ))}
+            </div>
           </section>
 
-          {selectedKind === "openwrt" ? (
-            <OpenWrtSignalPanel
-              device={openWrtDevice}
-              status={openWrtStatusQ.data}
-              loading={openWrtStatusQ.isFetching}
-              readyCount={openWrtReadyCount}
-              onRefresh={() => openWrtStatusQ.refetch()}
-            />
-          ) : (
-            <IkuaiSignalPanel device={ikuaiDevice} />
-          )}
-        </main>
-      </div>
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                <ShieldCheck className="h-4 w-4 text-emerald-700" />
+                OpenWrt 指标族
+              </h2>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                disabled={!openWrtDevice || openWrtStatusQ.isFetching}
+                onClick={() => openWrtStatusQ.refetch()}
+              >
+                {openWrtStatusQ.isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                刷新
+              </Button>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-5">
+              {familyLabels.map(([key, label]) => (
+                <div key={key} className="rounded-lg border border-slate-200 p-3">
+                  <p className="text-xs text-slate-500">{label}</p>
+                  <div className="mt-2">
+                    <NetworkStatusBadge ok={openWrtDevice ? Boolean(families[key]) : undefined} label={families[key] ? "已发现" : "缺失"} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
+              {openWrtDevice
+                ? openWrtStatusQ.data?.missingHints?.join("；") || "指标覆盖正常，未发现缺失提示。"
+                : "配置 OpenWrt 后会自动检查系统、接口、DHCP/邻居、Wi-Fi 和连接指标。"}
+            </div>
+            <RawDataDisclosure value={openWrtStatusQ.data} visible={canViewRaw} />
+          </section>
+        </div>
+      </section>
     </div>
   );
 };
 
-type InstanceCardProps = {
+type DeviceOverviewCardProps = {
+  kind: NetworkDeviceKind;
   device?: NetworkDevice;
   selected: boolean;
+  statusOk: boolean;
+  statusLabel: string;
+  details: Array<[string, React.ReactNode]>;
   canWrite: boolean;
   deleting: boolean;
   onSelect: () => void;
   onDelete: (id: string) => void;
 };
 
-function IkuaiInstanceCard({
+function IkuaiInstanceCard(props: Omit<DeviceOverviewCardProps, "kind">) {
+  return <DeviceOverviewCard kind="ikuai" {...props} />;
+}
+
+function OpenWrtInstanceCard(props: Omit<DeviceOverviewCardProps, "kind">) {
+  return <DeviceOverviewCard kind="openwrt" {...props} />;
+}
+
+function DeviceOverviewCard({
+  kind,
   device,
   selected,
+  statusOk,
+  statusLabel,
+  details,
   canWrite,
   deleting,
   onSelect,
   onDelete,
-}: InstanceCardProps) {
+}: DeviceOverviewCardProps) {
   return (
     <section className={`rounded-lg border bg-white p-4 shadow-sm ${selected ? "border-cyan-300" : "border-slate-200"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-md bg-cyan-50 text-cyan-700">
-            <Router className="h-5 w-5" />
+            {kindMeta[kind].icon}
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-slate-950">iKuai 实例</h2>
-            <p className="mt-1 text-xs text-slate-500">{device?.name ?? "等待配置"}</p>
+            <h2 className="text-sm font-semibold text-slate-950">{kindMeta[kind].label} 实例</h2>
+            <p className="mt-1 text-xs text-slate-500">{device?.name ?? (kind === "openwrt" ? "OpenWrt 未配置" : "等待配置")}</p>
           </div>
         </div>
-        <Badge variant={device ? "default" : "outline"}>{configuredLabel(device)}</Badge>
+        <NetworkStatusBadge ok={device ? statusOk : undefined} label={statusLabel} />
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <MiniFact label="scope" value={device?.prometheusScope ?? "network"} />
-        <MiniFact label="instance" value={device?.instanceLabel || "未绑定"} mono />
-        <MiniFact label="更新" value={updatedLabel(device)} />
+      <div className="mt-4 grid gap-2">
+        {details.map(([label, value]) => (
+          <div key={label} className="grid grid-cols-[88px_1fr] gap-3 rounded-md bg-slate-50 px-3 py-2 text-xs">
+            <span className="text-slate-500">{label}</span>
+            <span className="truncate font-medium text-slate-800" title={String(value ?? "")}>{value}</span>
+          </div>
+        ))}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Button type="button" variant={selected ? "default" : "outline"} size="sm" onClick={onSelect}>
-          {selected ? "正在编辑" : device ? "编辑配置" : "配置 iKuai"}
+          {selected ? "正在查看" : device ? "查看状态" : `配置 ${kindMeta[kind].label}`}
         </Button>
         <Button asChild variant="outline" size="sm" className="gap-1.5">
-          <Link to="/cluster/network/ikuai/dashboard">
+          <Link to={kindMeta[kind].route}>
             <RadioTower className="h-4 w-4" />
-            图表
+            进入工作区
           </Link>
         </Button>
         {device ? (
@@ -449,218 +426,128 @@ function IkuaiInstanceCard({
   );
 }
 
-function OpenWrtInstanceCard({
-  device,
-  selected,
+function DeviceConfigurationPanel({
+  selectedKind,
+  form,
   canWrite,
-  deleting,
-  readyCount,
-  status,
-  statusLoading,
+  saving,
   onSelect,
-  onRefresh,
-  onDelete,
-}: InstanceCardProps & {
-  readyCount: number;
-  status?: OpenWrtStatus;
-  statusLoading: boolean;
-  onRefresh: () => void;
-}) {
-  return (
-    <section className={`rounded-lg border bg-white p-4 shadow-sm ${selected ? "border-cyan-300" : "border-slate-200"}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">
-            <Wifi className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-slate-950">OpenWrt 实例</h2>
-            <p className="mt-1 text-xs text-slate-500">{device?.name ?? "等待配置"}</p>
-          </div>
-        </div>
-        <Badge variant={device ? "default" : "outline"}>{configuredLabel(device)}</Badge>
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <MiniFact label="scope" value={device?.prometheusScope ?? "network"} />
-        <MiniFact label="instance" value={device?.instanceLabel || "未绑定"} mono />
-        <MiniFact label="指标族" value={device ? `${readyCount}/${familyLabels.length}` : "未检测"} />
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button type="button" variant={selected ? "default" : "outline"} size="sm" onClick={onSelect}>
-          {selected ? "正在编辑" : device ? "编辑配置" : "配置 OpenWrt"}
-        </Button>
-        <Button asChild variant="outline" size="sm" className="gap-1.5">
-          <Link to="/cluster/network/openwrt/dashboard">
-            <ShieldCheck className="h-4 w-4" />
-            面板
-          </Link>
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-1.5"
-          disabled={!device || statusLoading}
-          onClick={onRefresh}
-        >
-          {statusLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          探测
-        </Button>
-        {device ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="gap-1.5 text-red-700"
-            disabled={!canWrite || deleting}
-            onClick={() => onDelete(device.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-            删除
-          </Button>
-        ) : null}
-      </div>
-      {device ? (
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-500">
-          <CheckCircle2 className={`h-3.5 w-3.5 ${status?.prometheusConfigured ? "text-emerald-600" : "text-slate-400"}`} />
-          {status?.prometheusConfigured ? "Prometheus 已发现 OpenWrt 指标" : "等待 Prometheus 指标"}
-        </p>
-      ) : null}
-    </section>
-  );
-}
-
-function IkuaiSignalPanel({ device }: { device?: NetworkDevice }) {
-  return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-        <Database className="h-4 w-4 text-cyan-700" />
-        iKuai 数据源
-      </h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <MiniFact label="实例" value={device?.name ?? "未配置"} />
-        <MiniFact label="查询标签" value={deviceQueryHint(device)} mono />
-        <MiniFact label="面板" value="iKuai 图表" />
-      </div>
-    </section>
-  );
-}
-
-function OpenWrtSignalPanel({
-  device,
-  status,
-  loading,
-  readyCount,
-  onRefresh,
+  onChange,
+  onSubmit,
 }: {
-  device?: NetworkDevice;
-  status?: OpenWrtStatus;
-  loading: boolean;
-  readyCount: number;
-  onRefresh: () => void;
+  selectedKind: NetworkDeviceKind;
+  form: DeviceForm;
+  canWrite: boolean;
+  saving: boolean;
+  onSelect: (kind: NetworkDeviceKind) => void;
+  onChange: (form: DeviceForm) => void;
+  onSubmit: () => void;
 }) {
-  const hints = status?.missingHints ?? [];
-
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-          <ShieldCheck className="h-4 w-4 text-emerald-700" />
-          OpenWrt 指标族
-        </h2>
-        <Button type="button" variant="outline" size="sm" className="gap-1.5" disabled={!device || loading} onClick={onRefresh}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          刷新
-        </Button>
+        <div>
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+            <Settings2 className="h-4 w-4 text-cyan-700" />
+            新增网络设备
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">iKuai 数据源在这里维护 Prometheus 标签；OpenWrt 在工作区维护 SSH 凭据。</p>
+        </div>
+        <Badge variant="outline">{kindMeta[selectedKind].label}</Badge>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-5">
-        {familyLabels.map(([key, label]) => (
-          <div key={key} className="rounded-md border border-slate-200 p-3">
-            <p className="text-xs text-slate-500">{label}</p>
-            <p className={`mt-1 text-sm font-semibold ${status?.families?.[key] ? "text-emerald-700" : "text-slate-500"}`}>
-              {status?.families?.[key] ? "已发现" : "未发现"}
-            </p>
-          </div>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {(["ikuai", "openwrt"] as NetworkDeviceKind[]).map((kind) => (
+          <button
+            key={kind}
+            type="button"
+            onClick={() => onSelect(kind)}
+            className={`flex min-h-10 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition ${
+              selectedKind === kind
+                ? "border-cyan-300 bg-cyan-50 text-cyan-950"
+                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {kindMeta[kind].icon}
+            {kindMeta[kind].label}
+          </button>
         ))}
       </div>
 
-      <p className="mt-3 text-xs leading-5 text-slate-500">
-        已发现 {readyCount}/{familyLabels.length} 类指标。{hints.length > 0 ? hints.join("；") : "暂无缺失提示"}
-      </p>
+      {selectedKind === "openwrt" ? (
+        <div className="mt-4 rounded-lg border border-cyan-100 bg-cyan-50 p-4 text-sm leading-6 text-cyan-950">
+          <p className="font-medium">配置 OpenWrt</p>
+          <p className="mt-1 text-xs text-cyan-900">
+            OpenWrt 需要 SSH Host、端口和凭据。请进入 OpenWrt 工作区保存完整目标后，再回到总览查看健康状态。
+          </p>
+          <Button asChild className="mt-3 gap-2 bg-cyan-700 hover:bg-cyan-800">
+            <Link to="/cluster/network/openwrt/dashboard">
+              打开 OpenWrt 配置
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <form
+          className="mt-4 space-y-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSubmit();
+          }}
+        >
+          <div className="space-y-1.5">
+            <Label>显示名称</Label>
+            <Input
+              value={form.name}
+              disabled={!canWrite}
+              onChange={(e) => onChange({ ...form, name: e.target.value })}
+              placeholder={kindMeta.ikuai.fallbackName}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Prometheus scope</Label>
+            <Input
+              value={form.prometheusScope}
+              disabled={!canWrite}
+              onChange={(e) => onChange({ ...form, prometheusScope: e.target.value })}
+              placeholder="network"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>instance 标签</Label>
+            <Input
+              className="font-mono text-sm"
+              value={form.instanceLabel}
+              disabled={!canWrite}
+              onChange={(e) => onChange({ ...form, instanceLabel: e.target.value })}
+              placeholder="192.168.1.1:9100"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>job 标签</Label>
+            <Input
+              value={form.jobLabel}
+              disabled={!canWrite}
+              onChange={(e) => onChange({ ...form, jobLabel: e.target.value })}
+              placeholder="可选"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>备注</Label>
+            <Textarea
+              value={form.notes}
+              disabled={!canWrite}
+              onChange={(e) => onChange({ ...form, notes: e.target.value })}
+              className="min-h-20 resize-none"
+            />
+          </div>
+          <Button type="submit" className="w-full gap-2 bg-cyan-700 hover:bg-cyan-800" disabled={!canWrite || saving}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            保存 iKuai 实例
+          </Button>
+        </form>
+      )}
     </section>
-  );
-}
-
-function DeviceDetails({
-  device,
-  loading,
-  overview,
-  overviewLoading,
-}: {
-  device?: NetworkDevice;
-  loading: boolean;
-  overview?: Record<string, unknown>;
-  overviewLoading: boolean;
-}) {
-  if (loading) {
-    return (
-      <div className="mt-4 flex items-center gap-2 rounded-md border border-slate-200 px-3 py-6 text-sm text-slate-500">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        加载实例...
-      </div>
-    );
-  }
-
-  if (!device) {
-    return (
-      <div className="mt-4 rounded-md border border-dashed border-slate-200 px-3 py-8 text-center text-sm text-slate-500">
-        当前类型还没有保存实例
-      </div>
-    );
-  }
-
-  const rows: Array<[string, React.ReactNode]> = [
-    ["ID", device.id],
-    ["名称", device.name],
-    ["类型", device.kind],
-    ["Prometheus scope", device.prometheusScope],
-    ["instance", device.instanceLabel || "-"],
-    ["job", device.jobLabel || "-"],
-    ["备注", device.notes || "-"],
-    ["更新", updatedLabel(device)],
-  ];
-
-  return (
-    <div className="mt-4 space-y-4">
-      <div className="overflow-hidden rounded-md border border-slate-200">
-        {rows.map(([label, value]) => (
-          <div key={label} className="grid grid-cols-[150px_1fr] border-b border-slate-100 last:border-b-0">
-            <div className="bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500">{label}</div>
-            <div className="break-all px-3 py-2 font-mono text-xs text-slate-800">{value}</div>
-          </div>
-        ))}
-      </div>
-      <div>
-        <p className="mb-2 text-xs font-medium text-slate-500">概览响应</p>
-        <pre className="max-h-52 overflow-auto rounded-md border border-slate-200 bg-slate-950 p-3 text-xs leading-5 text-slate-100">
-          {overviewLoading ? "刷新中..." : JSON.stringify(overview ?? {}, null, 2)}
-        </pre>
-      </div>
-    </div>
-  );
-}
-
-function MiniFact({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
-  return (
-    <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className={`mt-1 truncate text-sm font-semibold text-slate-950 ${mono ? "font-mono" : ""}`} title={String(value ?? "")}>
-        {value}
-      </p>
-    </div>
   );
 }
 
