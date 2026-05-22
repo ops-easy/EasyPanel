@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, Database, Loader2, Plug, Router, Save, Settings, Trash2, Wifi } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Database, Loader2, Plug, Router, Save, Settings, Trash2, Wifi } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -8,34 +8,16 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
-import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
+import { apiDelete, apiPostJson } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/auth/auth-context";
-import {
-  deviceQueryHint,
-  singleNetworkDeviceByKind,
-  type NetworkDeviceKind,
-  type SingletonNetworkDevice,
-} from "@/features/network/components/networkDeviceSingleton";
+import { useNetworkDevices } from "@/features/network/hooks/useNetworkDevices";
+import { deviceQueryHint, type NetworkDeviceKind } from "@/features/network/components/networkDeviceSingleton";
 import { formatDateTime } from "@/features/network/components/NetworkOpsPrimitives";
-import OpenWrtActionPanel from "@/features/network/openwrt/pages/OpenWrtActionPanel";
+import type { NetworkDevice } from "@/features/network/model/networkTypes";
 import OpenWrtInstancePanel, { type OpenWrtTargetForm } from "@/features/network/openwrt/pages/OpenWrtTargetPanel";
 
 const OPENWRT_PROBE_ENDPOINT = "/api/network/devices/openwrt/probe";
 const IKUAI_PROBE_ENDPOINT = "/api/network/devices/ikuai/probe";
-
-type NetworkDevice = SingletonNetworkDevice & {
-  apiUrl?: string;
-  host?: string;
-  port?: number;
-  authType?: string;
-  username?: string;
-  passwordSet?: boolean;
-  privateKeySet?: boolean;
-  skipTlsVerify?: boolean;
-  notes?: string;
-  updatedAt?: string;
-};
 
 type ConfigSection = "ikuai" | "openwrt" | "monitoring";
 
@@ -57,24 +39,24 @@ const sectionItems: Array<{
   key: ConfigSection;
   label: string;
   desc: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: typeof Router;
 }> = [
   {
     key: "ikuai",
     label: "iKuai 数据源",
-    desc: "维护 Prometheus scope、instance、job 与备注。",
+    desc: "维护 HTTP Web/API 地址、登录凭据和 Prometheus 查询标签。",
     icon: Router,
   },
   {
     key: "openwrt",
     label: "OpenWrt 接入",
-    desc: "维护 SSH/API 地址、凭据、探测与设备操作。",
+    desc: "维护 SSH/API 地址、账号凭据、探测状态和监控标签。",
     icon: Wifi,
   },
   {
     key: "monitoring",
     label: "监控标签",
-    desc: "核对 iKuai 与 OpenWrt 当前用于查询的标签。",
+    desc: "核对 iKuai 与 OpenWrt 当前用于查询的 Prometheus 标签。",
     icon: Database,
   },
 ];
@@ -99,26 +81,30 @@ function updatedLabel(device?: NetworkDevice): string {
   return device?.updatedAt ? formatDateTime(device.updatedAt) : "尚未保存";
 }
 
+function providerReady(kind: NetworkDeviceKind, device?: NetworkDevice): boolean {
+  if (!device) return false;
+  if (kind === "ikuai") return Boolean(device.apiUrl || device.host || device.instanceLabel || device.jobLabel || device.prometheusScope);
+  return Boolean(device.host || device.apiUrl || device.passwordSet || device.privateKeySet);
+}
+
 function ProviderSummary({
-  label,
   kind,
+  label,
   device,
 }: {
-  label: string;
   kind: NetworkDeviceKind;
+  label: string;
   device?: NetworkDevice;
 }) {
-  const ready =
-    kind === "ikuai"
-      ? Boolean(device?.prometheusScope || device?.instanceLabel || device?.jobLabel)
-      : Boolean(device?.host || device?.apiUrl || device?.passwordSet || device?.privateKeySet);
+  const ready = providerReady(kind, device);
+  const hint = kind === "ikuai" ? device?.apiUrl || device?.host || deviceQueryHint(device) : device?.host || device?.apiUrl || "未配置管理地址";
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-950">{label}</p>
-          <p className="mt-1 truncate text-xs text-slate-500" title={kind === "ikuai" ? deviceQueryHint(device) : device?.host || device?.apiUrl || ""}>
-            {kind === "ikuai" ? deviceQueryHint(device) : device?.host || device?.apiUrl || "未配置管理地址"}
+          <p className="mt-1 truncate text-xs text-slate-500" title={hint}>
+            {hint}
           </p>
         </div>
         <Badge
@@ -136,9 +122,15 @@ function ProviderSummary({
   );
 }
 
-function SectionNav({ active, onActiveChange }: { active: ConfigSection; onActiveChange: (section: ConfigSection) => void }) {
+function SectionNav({
+  active,
+  onActiveChange,
+}: {
+  active: ConfigSection;
+  onActiveChange: (section: ConfigSection) => void;
+}) {
   return (
-    <div className="grid gap-2">
+    <div className="grid content-start gap-2 self-start">
       {sectionItems.map((item) => {
         const Icon = item.icon;
         const selected = active === item.key;
@@ -195,20 +187,22 @@ function IkuaiConfigPanel({
   onDelete: (id: string) => void;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 text-base font-semibold text-slate-950">
             <Router className="h-5 w-5 text-cyan-700" />
             iKuai 数据源
           </h2>
-          <p className="mt-1 text-sm leading-6 text-slate-600">这里维护 Prometheus 查询标签，资源页会用它读取接口、终端和连接数据。</p>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            这里保存平台访问 iKuai Web/API 与 Prometheus 的接入信息。终端备注、限速、端口映射等路由器配置请从资源页进入。
+          </p>
         </div>
         <Badge variant={device ? "default" : "outline"}>{device ? "已保存" : "未配置"}</Badge>
       </div>
 
       <form
-        className="mt-5 grid gap-4"
+        className="mt-5 grid min-w-0 gap-4"
         onSubmit={(event) => {
           event.preventDefault();
           onSave();
@@ -216,12 +210,7 @@ function IkuaiConfigPanel({
       >
         <div className="grid gap-2">
           <Label>显示名称</Label>
-          <Input
-            value={form.name}
-            disabled={!canWrite}
-            onChange={(event) => onChange({ ...form, name: event.target.value })}
-            placeholder="主路由 iKuai"
-          />
+          <Input value={form.name} disabled={!canWrite} onChange={(event) => onChange({ ...form, name: event.target.value })} />
         </div>
         <div className="grid gap-2">
           <Label>iKuai 管理地址</Label>
@@ -235,91 +224,50 @@ function IkuaiConfigPanel({
         <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_120px]">
           <div className="grid gap-2">
             <Label>Host</Label>
-            <Input
-              value={form.host}
-              disabled={!canWrite}
-              onChange={(event) => onChange({ ...form, host: event.target.value })}
-              placeholder="192.168.1.1"
-            />
+            <Input value={form.host} disabled={!canWrite} onChange={(event) => onChange({ ...form, host: event.target.value })} placeholder="192.168.1.1" />
           </div>
           <div className="grid gap-2">
             <Label>端口</Label>
-            <Input
-              value={form.port}
-              disabled={!canWrite}
-              onChange={(event) => onChange({ ...form, port: event.target.value })}
-              placeholder="80"
-              inputMode="numeric"
-            />
+            <Input value={form.port} disabled={!canWrite} onChange={(event) => onChange({ ...form, port: event.target.value })} placeholder="80" inputMode="numeric" />
           </div>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="grid gap-2">
             <Label>账号</Label>
-            <Input
-              value={form.username}
-              disabled={!canWrite}
-              onChange={(event) => onChange({ ...form, username: event.target.value })}
-              placeholder="admin"
-            />
+            <Input value={form.username} disabled={!canWrite} onChange={(event) => onChange({ ...form, username: event.target.value })} />
           </div>
           <div className="grid gap-2">
             <Label>密码</Label>
             <Input
+              type="password"
               value={form.password}
               disabled={!canWrite}
               onChange={(event) => onChange({ ...form, password: event.target.value })}
               placeholder={device?.passwordSet ? "已保存，留空保持不变" : "iKuai 登录密码"}
-              type="password"
             />
           </div>
         </div>
-        <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-          <Checkbox
-            checked={form.skipTlsVerify}
-            disabled={!canWrite}
-            onCheckedChange={(value) => onChange({ ...form, skipTlsVerify: value === true })}
-          />
-          skipTlsVerify
+        <label className="flex min-h-10 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
+          <Checkbox checked={form.skipTlsVerify} disabled={!canWrite} onCheckedChange={(value) => onChange({ ...form, skipTlsVerify: value === true })} />
+          跳过 TLS 校验
         </label>
         <div className="grid gap-2 sm:grid-cols-3">
           <div className="grid gap-2">
             <Label>Prometheus scope</Label>
-            <Input
-              value={form.prometheusScope}
-              disabled={!canWrite}
-              onChange={(event) => onChange({ ...form, prometheusScope: event.target.value })}
-              placeholder="network"
-            />
+            <Input value={form.prometheusScope} disabled={!canWrite} onChange={(event) => onChange({ ...form, prometheusScope: event.target.value })} />
           </div>
           <div className="grid gap-2">
             <Label>instance 标签</Label>
-            <Input
-              className="font-mono text-sm"
-              value={form.instanceLabel}
-              disabled={!canWrite}
-              onChange={(event) => onChange({ ...form, instanceLabel: event.target.value })}
-              placeholder="192.168.1.1:9100"
-            />
+            <Input value={form.instanceLabel} disabled={!canWrite} onChange={(event) => onChange({ ...form, instanceLabel: event.target.value })} placeholder="192.168.1.1:9100" />
           </div>
           <div className="grid gap-2">
             <Label>job 标签</Label>
-            <Input
-              value={form.jobLabel}
-              disabled={!canWrite}
-              onChange={(event) => onChange({ ...form, jobLabel: event.target.value })}
-              placeholder="可选"
-            />
+            <Input value={form.jobLabel} disabled={!canWrite} onChange={(event) => onChange({ ...form, jobLabel: event.target.value })} placeholder="可选" />
           </div>
         </div>
         <div className="grid gap-2">
           <Label>备注</Label>
-          <Textarea
-            value={form.notes}
-            disabled={!canWrite}
-            onChange={(event) => onChange({ ...form, notes: event.target.value })}
-            className="min-h-24 resize-none"
-          />
+          <Textarea value={form.notes} disabled={!canWrite} onChange={(event) => onChange({ ...form, notes: event.target.value })} className="min-h-24" />
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button type="button" variant="outline" className="gap-2" disabled={!canWrite || probing} onClick={onProbe}>
@@ -330,140 +278,103 @@ function IkuaiConfigPanel({
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             保存 iKuai 实例
           </Button>
-          {device ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="gap-2 text-red-700"
-              disabled={!canWrite || deleting}
-              onClick={() => onDelete(device.id)}
-            >
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-              删除 iKuai 实例
-            </Button>
-          ) : null}
         </div>
+        {device ? (
+          <Button type="button" variant="outline" className="gap-2 text-red-700" disabled={!canWrite || deleting} onClick={() => onDelete(device.id)}>
+            {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            删除 iKuai 实例
+          </Button>
+        ) : null}
       </form>
     </section>
   );
 }
 
-function MonitoringLabelsPanel({
-  ikuaiDevice,
-  openWrtDevice,
-  onEdit,
-}: {
-  ikuaiDevice?: NetworkDevice;
-  openWrtDevice?: NetworkDevice;
-  onEdit: (section: ConfigSection) => void;
-}) {
+function MonitoringLabelsPanel({ ikuaiDevice, openWrtDevice }: { ikuaiDevice?: NetworkDevice; openWrtDevice?: NetworkDevice }) {
   const rows = [
-    {
-      provider: "iKuai",
-      scope: ikuaiDevice?.prometheusScope || "network",
-      instance: ikuaiDevice?.instanceLabel || "-",
-      job: ikuaiDevice?.jobLabel || "-",
-      updated: updatedLabel(ikuaiDevice),
-      section: "ikuai" as const,
-    },
-    {
-      provider: "OpenWrt",
-      scope: openWrtDevice?.prometheusScope || "network",
-      instance: openWrtDevice?.instanceLabel || "-",
-      job: openWrtDevice?.jobLabel || "-",
-      updated: updatedLabel(openWrtDevice),
-      section: "openwrt" as const,
-    },
+    { label: "iKuai", device: ikuaiDevice, address: ikuaiDevice?.apiUrl || ikuaiDevice?.host || "未接入" },
+    { label: "OpenWrt", device: openWrtDevice, address: openWrtDevice?.host || openWrtDevice?.apiUrl || "未接入" },
   ];
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-slate-950">
-            <Database className="h-5 w-5 text-cyan-700" />
-            监控标签
-          </h2>
-          <p className="mt-1 text-sm leading-6 text-slate-600">资源页不会让你猜 Prometheus 查询条件；这里集中核对来源标签。</p>
-        </div>
-      </div>
-      <div className="mt-5 overflow-auto rounded-lg border border-slate-200">
-        <table className="w-full min-w-[680px] text-sm">
-          <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-600">
-            <tr>
-              <th className="px-3 py-2">来源</th>
-              <th className="px-3 py-2">scope</th>
-              <th className="px-3 py-2">instance</th>
-              <th className="px-3 py-2">job</th>
-              <th className="px-3 py-2">最近更新</th>
-              <th className="px-3 py-2 text-right">操作</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {rows.map((row) => (
-              <tr key={row.provider}>
-                <td className="px-3 py-3 font-medium text-slate-900">{row.provider}</td>
-                <td className="px-3 py-3 font-mono text-xs text-slate-600">{row.scope}</td>
-                <td className="px-3 py-3 font-mono text-xs text-slate-600">{row.instance}</td>
-                <td className="px-3 py-3 font-mono text-xs text-slate-600">{row.job}</td>
-                <td className="px-3 py-3 text-xs text-slate-500">{row.updated}</td>
-                <td className="px-3 py-3 text-right">
-                  <Button type="button" variant="outline" size="sm" onClick={() => onEdit(row.section)}>
-                    编辑
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 className="flex items-center gap-2 text-base font-semibold text-slate-950">
+        <Database className="h-5 w-5 text-cyan-700" />
+        监控标签
+      </h2>
+      <p className="mt-1 text-sm leading-6 text-slate-600">资源页会按这些标签查询 Prometheus；这里只做接入信息核对。</p>
+      <div className="mt-4 grid gap-3">
+        {rows.map((row) => (
+          <div key={row.label} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-950">{row.label}</p>
+                <p className="mt-1 truncate text-xs text-slate-500">{row.address}</p>
+              </div>
+              <Badge variant="outline" className={row.device ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "bg-white text-slate-600"}>
+                {row.device ? "已接入" : "未接入"}
+              </Badge>
+            </div>
+            <div className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-3">
+              <span>scope：{row.device?.prometheusScope || "network"}</span>
+              <span>instance：{row.device?.instanceLabel || "-"}</span>
+              <span>job：{row.device?.jobLabel || "-"}</span>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
 }
 
-const NetworkConfigPage: React.FC = () => {
-  const qc = useQueryClient();
-  const { status } = useAuth();
-  const canWrite = status?.role === "admin" || status?.permissions?.network === "rw";
+export default function NetworkConfigPage() {
+  const queryClient = useQueryClient();
+  const { query: devicesQ, ikuaiDevice, openWrtDevice, canWrite } = useNetworkDevices();
+  const [activeSectionTouched, setActiveSectionTouched] = useState(false);
   const [activeSection, setActiveSection] = useState<ConfigSection>("ikuai");
   const [ikuaiForm, setIkuaiForm] = useState<IkuaiForm>(() => defaultIkuaiForm());
-
-  const devicesQ = useQuery({
-    queryKey: ["network-devices"],
-    queryFn: ({ signal }) => apiGetJson<{ devices: NetworkDevice[] }>("/api/network/devices", { signal }),
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  const devices = useMemo(() => devicesQ.data?.devices ?? [], [devicesQ.data?.devices]);
-  const ikuaiDevice = useMemo(() => singleNetworkDeviceByKind(devices, "ikuai"), [devices]);
-  const openWrtDevice = useMemo(() => singleNetworkDeviceByKind(devices, "openwrt"), [devices]);
 
   useEffect(() => {
     setIkuaiForm(defaultIkuaiForm(ikuaiDevice));
   }, [ikuaiDevice]);
 
-  const invalidateDevices = () => qc.invalidateQueries({ queryKey: ["network-devices"] });
+  useEffect(() => {
+    if (activeSectionTouched) return;
+    if (!ikuaiDevice && openWrtDevice) {
+      setActiveSection("openwrt");
+    } else if (ikuaiDevice) {
+      setActiveSection("ikuai");
+    }
+  }, [activeSectionTouched, ikuaiDevice, openWrtDevice]);
+
+  const handleSectionChange = (section: ConfigSection) => {
+    setActiveSectionTouched(true);
+    setActiveSection(section);
+  };
+
+  const refreshDevices = () => {
+    void queryClient.invalidateQueries({ queryKey: ["network-devices"] });
+  };
 
   const saveIkuai = useMutation({
     mutationFn: () =>
       apiPostJson<{ device: NetworkDevice }>("/api/network/devices", {
         kind: "ikuai",
-        name: ikuaiForm.name.trim() || "主路由 iKuai",
-        apiUrl: ikuaiForm.apiUrl.trim(),
-        host: ikuaiForm.host.trim(),
-        port: Number(ikuaiForm.port) || 0,
         authType: "http-web",
-        username: ikuaiForm.username.trim(),
-        password: ikuaiForm.password.trim(),
+        name: ikuaiForm.name,
+        apiUrl: ikuaiForm.apiUrl,
+        host: ikuaiForm.host,
+        port: Number(ikuaiForm.port) || undefined,
+        username: ikuaiForm.username,
+        password: ikuaiForm.password,
         skipTlsVerify: ikuaiForm.skipTlsVerify,
-        prometheusScope: ikuaiForm.prometheusScope.trim() || "network",
-        instanceLabel: ikuaiForm.instanceLabel.trim(),
-        jobLabel: ikuaiForm.jobLabel.trim(),
-        notes: ikuaiForm.notes.trim(),
+        prometheusScope: ikuaiForm.prometheusScope || "network",
+        instanceLabel: ikuaiForm.instanceLabel,
+        jobLabel: ikuaiForm.jobLabel,
+        notes: ikuaiForm.notes,
       }),
     onSuccess: () => {
-      toast.success("iKuai 实例已保存");
-      void invalidateDevices();
+      toast.success("iKuai 接入信息已保存");
+      refreshDevices();
     },
     onError: (error) => toast.error(String(error)),
   });
@@ -472,14 +383,16 @@ const NetworkConfigPage: React.FC = () => {
     mutationFn: () =>
       apiPostJson(IKUAI_PROBE_ENDPOINT, {
         kind: "ikuai",
-        name: ikuaiForm.name.trim() || "主路由 iKuai",
-        apiUrl: ikuaiForm.apiUrl.trim(),
-        host: ikuaiForm.host.trim(),
-        port: Number(ikuaiForm.port) || 0,
         authType: "http-web",
-        username: ikuaiForm.username.trim(),
-        password: ikuaiForm.password.trim(),
+        apiUrl: ikuaiForm.apiUrl,
+        host: ikuaiForm.host,
+        port: Number(ikuaiForm.port) || undefined,
+        username: ikuaiForm.username,
+        password: ikuaiForm.password,
         skipTlsVerify: ikuaiForm.skipTlsVerify,
+        prometheusScope: ikuaiForm.prometheusScope || "network",
+        instanceLabel: ikuaiForm.instanceLabel,
+        jobLabel: ikuaiForm.jobLabel,
       }),
     onSuccess: () => toast.success("iKuai 探测完成"),
     onError: (error) => toast.error(String(error)),
@@ -488,14 +401,14 @@ const NetworkConfigPage: React.FC = () => {
   const saveOpenWrt = useMutation({
     mutationFn: (body: OpenWrtTargetForm) => apiPostJson("/api/network/devices", { kind: "openwrt", ...body }),
     onSuccess: () => {
-      toast.success("OpenWrt 实例已保存");
-      void invalidateDevices();
+      toast.success("OpenWrt 接入信息已保存");
+      refreshDevices();
     },
     onError: (error) => toast.error(String(error)),
   });
 
   const probeOpenWrt = useMutation({
-    mutationFn: (body: OpenWrtTargetForm) => apiPostJson(OPENWRT_PROBE_ENDPOINT, body),
+    mutationFn: (body: OpenWrtTargetForm) => apiPostJson(OPENWRT_PROBE_ENDPOINT, { kind: "openwrt", ...body }),
     onSuccess: () => toast.success("OpenWrt 探测完成"),
     onError: (error) => toast.error(String(error)),
   });
@@ -504,55 +417,51 @@ const NetworkConfigPage: React.FC = () => {
     mutationFn: (id: string) => apiDelete(`/api/network/devices/${encodeURIComponent(id)}`),
     onSuccess: () => {
       toast.success("网络实例已删除");
-      void invalidateDevices();
+      refreshDevices();
     },
     onError: (error) => toast.error(String(error)),
   });
 
-  const runOpenWrtAction = useMutation({
-    mutationFn: ({ action, confirm }: { action: string; confirm?: boolean }) =>
-      apiPostJson(`/api/network/devices/${encodeURIComponent(openWrtDevice?.id ?? "")}/openwrt/actions`, {
-        action,
-        confirm,
-      }),
-    onSuccess: () => toast.success("OpenWrt 操作已提交"),
-    onError: (error) => toast.error(String(error)),
-  });
+  const headerStatus = useMemo(() => {
+    const count = Number(Boolean(ikuaiDevice)) + Number(Boolean(openWrtDevice));
+    return `${count}/2`;
+  }, [ikuaiDevice, openWrtDevice]);
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,92rem)] space-y-6 pb-10">
+    <div className="mx-auto w-full max-w-[min(100%,92rem)] min-w-0 space-y-5 pb-10">
       <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">Network Config</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">Network Access</p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-950">
               <Settings className="h-6 w-6 text-cyan-700" />
-              网络配置
+              网络接入设置
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              数据源、凭据和监控标签统一在这里维护。资源页面只负责查看和排障，不再把配置表单铺在主视图里。
+              本页只维护平台接入信息：管理地址、凭据和监控标签。路由器配置请从资源页进入，避免接入和日常运维混在一起。
             </p>
           </div>
-          <Badge variant="outline" className="w-fit text-slate-600">
-            {canWrite ? "可编辑" : "只读"}
+          <Badge variant="outline" className="w-fit bg-white text-slate-700">
+            接入信息 {headerStatus}
           </Badge>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
-        <ProviderSummary label="iKuai 数据源" kind="ikuai" device={ikuaiDevice} />
-        <ProviderSummary label="OpenWrt 接入" kind="openwrt" device={openWrtDevice} />
+      <section className="grid gap-3 md:grid-cols-2">
+        <ProviderSummary kind="ikuai" label="iKuai 数据源" device={ikuaiDevice} />
+        <ProviderSummary kind="openwrt" label="OpenWrt 接入" device={openWrtDevice} />
       </section>
 
-      <section className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <SectionNav active={activeSection} onActiveChange={setActiveSection} />
-        <div className="min-w-0 space-y-5">
-          {devicesQ.isLoading ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
-              <Loader2 className="mx-auto mb-3 h-5 w-5 animate-spin" />
-              正在读取网络配置...
-            </div>
-          ) : activeSection === "ikuai" ? (
+      {!canWrite ? (
+        <section className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+          当前账号只读，可以查看接入信息，不能保存、探测或删除。
+        </section>
+      ) : null}
+
+      <section className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] items-start">
+        <SectionNav active={activeSection} onActiveChange={handleSectionChange} />
+        <div className="min-w-0 overflow-hidden space-y-5">
+          {activeSection === "ikuai" ? (
             <IkuaiConfigPanel
               device={ikuaiDevice}
               form={ikuaiForm}
@@ -566,51 +475,24 @@ const NetworkConfigPage: React.FC = () => {
               onDelete={(id) => deleteDevice.mutate(id)}
             />
           ) : activeSection === "openwrt" ? (
-            <>
-              <OpenWrtInstancePanel
-                device={openWrtDevice}
-                activeId={openWrtDevice?.id ?? ""}
-                canWrite={canWrite}
-                loading={devicesQ.isFetching}
-                probeEndpoint={OPENWRT_PROBE_ENDPOINT}
-                creating={saveOpenWrt.isPending}
-                probing={probeOpenWrt.isPending}
-                deletingId={deleteDevice.variables}
-                onCreate={(body) => saveOpenWrt.mutate(body)}
-                onProbe={(body) => probeOpenWrt.mutate(body)}
-                onDelete={(id) => deleteDevice.mutate(id)}
-              />
-              <OpenWrtActionPanel
-                target={openWrtDevice}
-                canWrite={canWrite}
-                running={runOpenWrtAction.isPending}
-                onAction={(action, confirm) => runOpenWrtAction.mutate({ action, confirm })}
-              />
-            </>
-          ) : (
-            <MonitoringLabelsPanel
-              ikuaiDevice={ikuaiDevice}
-              openWrtDevice={openWrtDevice}
-              onEdit={setActiveSection}
+            <OpenWrtInstancePanel
+              device={openWrtDevice}
+              activeId={openWrtDevice?.id || ""}
+              canWrite={canWrite}
+              loading={devicesQ.isLoading}
+              probeEndpoint={OPENWRT_PROBE_ENDPOINT}
+              creating={saveOpenWrt.isPending}
+              probing={probeOpenWrt.isPending}
+              deletingId={deleteDevice.isPending ? String(deleteDevice.variables || "") : undefined}
+              onCreate={(body) => saveOpenWrt.mutate(body)}
+              onProbe={(body) => probeOpenWrt.mutate(body)}
+              onDelete={(id) => deleteDevice.mutate(id)}
             />
+          ) : (
+            <MonitoringLabelsPanel ikuaiDevice={ikuaiDevice} openWrtDevice={openWrtDevice} />
           )}
-          {!canWrite ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-              当前账号为只读权限，可以查看配置状态，但不能保存、探测、删除或执行 OpenWrt 操作。
-            </div>
-          ) : null}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-600 shadow-sm">
-            <div className="flex items-start gap-2">
-              <Activity className="mt-0.5 h-4 w-4 shrink-0 text-cyan-700" />
-              <p>
-                配置保存后资源页会复用现有 API 重新汇总数据。Prometheus 查询仍按单实例语义执行，未配置的来源只显示接入状态和去配置入口。
-              </p>
-            </div>
-          </div>
         </div>
       </section>
     </div>
   );
-};
-
-export default NetworkConfigPage;
+}

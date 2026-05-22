@@ -1142,7 +1142,7 @@ const Sidebar: React.FC = () => {
                 size={20}
                 className={iconTint(networkConnectionsActive, "slate")}
               />
-              <span>连接</span>
+              <span>防火墙</span>
             </Link>
             <Link
               to="/cluster/network/monitoring"
@@ -1162,7 +1162,7 @@ const Sidebar: React.FC = () => {
                 size={20}
                 className={iconTint(networkConfigActive, "slate")}
               />
-              <span>配置</span>
+              <span>接入设置</span>
             </Link>
           </>
         ) : showBaotaNav && isBaota ? (

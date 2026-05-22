@@ -18,7 +18,7 @@ export default function OpenWrtActionPanel({ target, canWrite, running, onAction
   const rebootConfirmed = confirmName.trim() === (target?.name ?? "").trim();
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <section className="rounded-lg min-w-0 overflow-hidden border border-slate-200 bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center gap-2">
         <Activity className="h-4 w-4 text-cyan-700" />
         <h2 className="text-sm font-semibold text-slate-950">OpenWrt 操作</h2>

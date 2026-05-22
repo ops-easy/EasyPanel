@@ -9,9 +9,9 @@ const links = [
   { to: "/cluster/network/interfaces", label: "接口", icon: Cable },
   { to: "/cluster/network/clients", label: "终端", icon: Users },
   { to: "/cluster/network/wireless", label: "无线", icon: Wifi },
-  { to: "/cluster/network/connections", label: "连接", icon: Activity },
+  { to: "/cluster/network/connections", label: "防火墙", icon: Activity },
   { to: "/cluster/network/monitoring", label: "监控", icon: Gauge },
-  { to: "/cluster/network/config", label: "配置", icon: Settings },
+  { to: "/cluster/network/config", label: "接入设置", icon: Settings },
 ] as const;
 
 const legacyActiveMap: Record<string, string> = {

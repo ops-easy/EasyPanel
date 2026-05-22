@@ -82,8 +82,8 @@ const resourceCards = [
   },
   {
     key: "connections",
-    label: "连接",
-    desc: "查看连接跟踪、规则摘要和 iKuai 终端连接数，面向日常故障定位。",
+    label: "防火墙",
+    desc: "查看 OpenWrt 防火墙区域、端口转发、NAT 和连接跟踪，iKuai 显示终端连接数。",
     to: "/cluster/network/connections",
     icon: Activity,
     tint: "border-amber-200 bg-amber-50 text-amber-900",
@@ -225,29 +225,37 @@ const NetworkDashboard: React.FC = () => {
               网络资源中心
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              日常入口按资源对象组织：设备、接口、终端、无线、连接和监控统一检索；iKuai 与 OpenWrt 只作为数据来源筛选，配置集中放在配置页。
+              日常入口按资源对象组织：设备、接口、终端、无线、防火墙和监控统一检索；iKuai 与 OpenWrt 只作为数据来源筛选，接入信息集中放在接入设置页。
             </p>
           </div>
           <Button asChild className="w-fit gap-2 bg-cyan-700 hover:bg-cyan-800">
             <Link to={providerConfigured ? "/cluster/network/devices" : "/cluster/network/config"}>
-              {providerConfigured ? "查看设备" : "打开配置"}
+              {providerConfigured ? "查看设备" : "打开接入设置"}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-2">
-        {devicesQ.isLoading ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-5 text-sm text-slate-500 shadow-sm">
-            正在读取网络接入源...
-          </div>
-        ) : (
-          <>
-            <ProviderAccessBadge kind="ikuai" device={ikuaiDevice} />
-            <ProviderAccessBadge kind="openwrt" device={openWrtDevice} />
-          </>
-        )}
+      <section className="grid gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-slate-950">接入源健康</h2>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/cluster/network/config">接入设置</Link>
+          </Button>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {devicesQ.isLoading ? (
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-5 text-sm text-slate-500 shadow-sm">
+              正在读取网络接入源...
+            </div>
+          ) : (
+            <>
+              <ProviderAccessBadge kind="ikuai" device={ikuaiDevice} />
+              <ProviderAccessBadge kind="openwrt" device={openWrtDevice} />
+            </>
+          )}
+        </div>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -256,27 +264,38 @@ const NetworkDashboard: React.FC = () => {
         <NetworkMetricCard
           label="最近更新"
           value={latestUpdate ? formatDateTime(latestUpdate) : "尚未保存"}
-          hint="配置记录"
+          hint="接入记录"
           tone="slate"
         />
-        <NetworkMetricCard label="配置入口" value={providerConfigured ? "已就绪" : "待接入"} hint="统一配置页" tone="amber" />
+        <NetworkMetricCard label="接入入口" value={providerConfigured ? "已就绪" : "待接入"} hint="统一接入设置" tone="amber" />
       </section>
 
       {providerConfigured ? (
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {resourceCards.map((card) => (
-            <NetworkResourceCard key={card.key} {...card} count={cardCounts[card.key]} />
-          ))}
+        <section className="grid gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-slate-950">资源入口</h2>
+            <Button asChild variant="outline" size="sm" className="gap-2">
+              <Link to="/cluster/network/devices">
+                路由器配置
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {resourceCards.map((card) => (
+              <NetworkResourceCard key={card.key} {...card} count={cardCounts[card.key]} />
+            ))}
+          </div>
         </section>
       ) : (
         <section className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
           <Settings className="mx-auto h-8 w-8 text-slate-400" />
           <p className="mt-3 text-sm font-medium text-slate-900">先接入 iKuai 或 OpenWrt</p>
           <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            未配置来源时首页只展示接入状态。保存数据源后，接口、终端、无线、连接和监控页面会自动成为日常工作入口。
+            未配置来源时首页只展示接入状态。保存数据源后，接口、终端、无线、防火墙和监控页面会自动成为日常工作入口。
           </p>
           <Button asChild className="mt-4 bg-cyan-700 hover:bg-cyan-800">
-            <Link to="/cluster/network/config">去配置</Link>
+            <Link to="/cluster/network/config">去接入设置</Link>
           </Button>
         </section>
       )}

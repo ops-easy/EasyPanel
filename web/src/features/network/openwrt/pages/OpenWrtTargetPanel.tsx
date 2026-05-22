@@ -86,19 +86,21 @@ export default function OpenWrtInstancePanel({
   }, [device]);
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <section className="rounded-lg min-w-0 overflow-hidden border border-slate-200 bg-white p-4 shadow-sm">
       <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2">
+        <div className="flex min-w-0 items-start gap-2">
           <Plug className="mt-0.5 h-4 w-4 text-cyan-700" />
-          <div>
+          <div className="min-w-0">
             <h2 className="text-sm font-semibold text-slate-950">OpenWrt 当前实例</h2>
-            <p className="mt-1 font-mono text-xs text-slate-500">{device?.host || device?.apiUrl || "配置 SSH 管理地址"}</p>
+            <p className="mt-1 truncate font-mono text-xs text-slate-500" title={device?.host || device?.apiUrl || ""}>
+              {device?.host || device?.apiUrl || "配置 SSH 管理地址"}
+            </p>
           </div>
         </div>
         <Badge variant={device ? "default" : "outline"}>{device ? "已配置" : "未配置"}</Badge>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid min-w-0 gap-3">
         <div className="grid gap-2">
           <Label>显示名称</Label>
           <Input value={form.name} disabled={!canWrite || loading} onChange={(e) => set("name", e.target.value)} />
@@ -107,7 +109,7 @@ export default function OpenWrtInstancePanel({
           <Label>API 地址</Label>
           <Input value={form.apiUrl} disabled={!canWrite || loading} placeholder="https://router.lan" onChange={(e) => set("apiUrl", e.target.value)} />
         </div>
-        <div className="grid grid-cols-[1fr_88px] gap-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-2">
           <div className="grid gap-2">
             <Label>SSH Host</Label>
             <Input value={form.host} disabled={!canWrite || loading} placeholder="192.168.1.1" onChange={(e) => set("host", e.target.value)} />
@@ -117,7 +119,7 @@ export default function OpenWrtInstancePanel({
             <Input value={String(form.port)} disabled={!canWrite || loading} onChange={(e) => set("port", Number(e.target.value) || 22)} />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
           <div className="grid gap-2">
             <Label>账号</Label>
             <Input value={form.username} disabled={!canWrite || loading} onChange={(e) => set("username", e.target.value)} />
@@ -131,7 +133,7 @@ export default function OpenWrtInstancePanel({
           <Label>私钥</Label>
           <Textarea value={form.privateKey} disabled={!canWrite || loading} rows={3} onChange={(e) => set("privateKey", e.target.value)} />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
           <div className="grid gap-2">
             <Label>Prometheus scope</Label>
             <Input value={form.prometheusScope} disabled={!canWrite || loading} onChange={(e) => set("prometheusScope", e.target.value)} />
@@ -145,7 +147,7 @@ export default function OpenWrtInstancePanel({
           <Label>备注</Label>
           <Input value={form.notes} disabled={!canWrite || loading} onChange={(e) => set("notes", e.target.value)} />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
           <Button type="button" variant="outline" disabled={!canWrite || probing} onClick={() => onProbe(form)} title={probeEndpoint}>
             {probing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plug className="mr-2 h-4 w-4" />}
             探测
