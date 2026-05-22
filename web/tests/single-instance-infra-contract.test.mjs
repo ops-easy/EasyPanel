@@ -19,24 +19,28 @@ test("PVE 前端只展示一个有效目标", () => {
 test("OpenWrt 前端只展示一个有效实例", () => {
   const workspace = read("../src/features/network/openwrt/pages/OpenWrtWorkspace.tsx");
   const dashboard = read("../src/features/network/pages/NetworkDashboard.tsx");
+  const config = read("../src/features/network/pages/NetworkConfigPage.tsx");
 
   assert.match(workspace, /singleNetworkDeviceByKind/);
   assert.match(workspace, /OpenWrtInstancePanel/);
   assert.doesNotMatch(workspace, /openWrtDevices\.map/);
   assert.doesNotMatch(workspace, /onActiveChange=\{setActiveId\}/);
-  assert.match(dashboard, /OpenWrtInstanceCard/);
+  assert.match(config, /OpenWrtInstancePanel/);
+  assert.match(dashboard, /ProviderAccessBadge/);
 });
 
 test("iKuai 前端使用保存的单实例", () => {
   const gate = read("../src/features/network/ikuai/pages/IkuaiConfigurationGate.tsx");
   const router = read("../src/features/vcenter/pages/VCenterIkuaiRouterPage.tsx");
   const dashboard = read("../src/features/network/pages/NetworkDashboard.tsx");
+  const config = read("../src/features/network/pages/NetworkConfigPage.tsx");
 
   assert.match(gate, /singleNetworkDeviceByKind/);
   assert.match(gate, /upsertIkuaiDevice/);
   assert.match(router, /savedIkuaiDevice/);
   assert.match(router, /instanceLabel/);
-  assert.match(dashboard, /IkuaiInstanceCard/);
+  assert.match(config, /IkuaiConfigPanel/);
+  assert.match(dashboard, /ProviderAccessBadge/);
   assert.doesNotMatch(gate, /ikuaiDevices\.length > 0/);
 });
 

@@ -21,8 +21,9 @@ type openWrtActionRequest struct {
 }
 
 type openWrtConfigChange struct {
-	Section string `json:"section"`
-	Value   string `json:"value"`
+	Operation string `json:"operation"`
+	Section   string `json:"section"`
+	Value     string `json:"value"`
 }
 
 type openWrtConfigRequest struct {
@@ -73,12 +74,23 @@ func buildOpenWrtConfigCommands(req openWrtConfigRequest) (openWrtCommandPreview
 	pkgs := map[string]bool{}
 	for _, ch := range req.Changes {
 		key := strings.TrimSpace(ch.Section)
-		if key == "" || !openWrtUCIKeyRe.MatchString(key) || strings.Count(key, ".") < 2 {
+		minDots := 2
+		if strings.EqualFold(strings.TrimSpace(ch.Operation), "delete") || strings.EqualFold(strings.TrimSpace(ch.Operation), "remove") {
+			minDots = 1
+		}
+		if key == "" || !openWrtUCIKeyRe.MatchString(key) || strings.Count(key, ".") < minDots {
 			return openWrtCommandPreview{}, fmt.Errorf("无效 UCI 配置项: %s", key)
 		}
 		pkg := strings.SplitN(key, ".", 2)[0]
 		pkgs[pkg] = true
-		commands = append(commands, "uci set "+key+"="+shellQuote(ch.Value))
+		switch strings.ToLower(strings.TrimSpace(ch.Operation)) {
+		case "", "set", "update":
+			commands = append(commands, "uci set "+key+"="+shellQuote(ch.Value))
+		case "delete", "remove":
+			commands = append(commands, "uci delete "+key)
+		default:
+			return openWrtCommandPreview{}, fmt.Errorf("unsupported UCI operation %s", ch.Operation)
+		}
 	}
 	pkgNames := make([]string, 0, len(pkgs))
 	for pkg := range pkgs {

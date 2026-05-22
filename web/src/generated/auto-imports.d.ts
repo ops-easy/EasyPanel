@@ -199,6 +199,7 @@ declare global {
   const UserRound: typeof import('lucide-react').UserRound
   const Users: typeof import('lucide-react').Users
   const View: typeof import('lucide-react').View
+  const Wand2: typeof import('lucide-react').Wand2
   const Webhook: typeof import('lucide-react').Webhook
   const Wifi: typeof import('lucide-react').Wifi
   const WifiOff: typeof import('lucide-react').WifiOff

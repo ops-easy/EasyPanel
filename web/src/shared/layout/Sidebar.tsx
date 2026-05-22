@@ -30,9 +30,12 @@ import {
   ShieldCheck,
   Hexagon,
   SquareTerminal,
-  Router,
   Network,
   ClipboardList,
+  Cable,
+  Users,
+  Wifi,
+  Gauge,
 } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
 import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
@@ -677,12 +680,39 @@ const Sidebar: React.FC = () => {
     location.pathname.startsWith("/cluster/compute/tools") ||
     location.pathname.startsWith("/cluster/vcenter/tools");
   const computeBastionActive = location.pathname.startsWith("/cluster/bastion");
-  const networkIkuaiActive =
+  const networkDashboardActive =
+    location.pathname === "/cluster/network" ||
+    location.pathname === "/cluster/network/" ||
+    location.pathname === "/cluster/network/dashboard";
+  const networkDevicesActive =
+    location.pathname === "/cluster/network/devices" ||
     location.pathname === "/cluster/network/ikuai" ||
-    location.pathname.startsWith("/cluster/network/ikuai/");
-  const networkOpenWrtActive =
+    location.pathname === "/cluster/network/ikuai/dashboard" ||
     location.pathname === "/cluster/network/openwrt" ||
-    location.pathname.startsWith("/cluster/network/openwrt/");
+    location.pathname === "/cluster/network/openwrt/dashboard" ||
+    location.pathname === "/cluster/network/ikuai/apps";
+  const networkInterfacesActive =
+    location.pathname === "/cluster/network/interfaces" ||
+    location.pathname === "/cluster/network/ikuai/interfaces" ||
+    location.pathname === "/cluster/network/openwrt/interfaces";
+  const networkClientsActive =
+    location.pathname === "/cluster/network/clients" ||
+    location.pathname === "/cluster/network/ikuai/clients" ||
+    location.pathname === "/cluster/network/ikuai/vm-mapping" ||
+    location.pathname === "/cluster/network/openwrt/clients";
+  const networkWirelessActive =
+    location.pathname === "/cluster/network/wireless" ||
+    location.pathname === "/cluster/network/openwrt/wireless";
+  const networkConnectionsActive =
+    location.pathname === "/cluster/network/connections" ||
+    location.pathname === "/cluster/network/openwrt/connections";
+  const networkMonitoringActive =
+    location.pathname === "/cluster/network/monitoring" ||
+    location.pathname === "/cluster/network/ikuai/exporter" ||
+    location.pathname === "/cluster/network/openwrt/exporter";
+  const networkConfigActive =
+    location.pathname === "/cluster/network/config" ||
+    location.pathname.startsWith("/cluster/network/config/");
 
   const brandLabel = isDocs
     ? "文档仓库"
@@ -1051,28 +1081,88 @@ const Sidebar: React.FC = () => {
           <>
             <div className="px-4 pb-1 pt-3">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                网络设备
+                网络资源
               </p>
             </div>
             <Link
-              to="/cluster/network/ikuai/dashboard"
-              className={navLinkTint(networkIkuaiActive, "slate")}
+              to="/cluster/network/dashboard"
+              className={navLinkTint(networkDashboardActive, "slate")}
             >
-              <Router
+              <LayoutDashboard
                 size={20}
-                className={iconTint(networkIkuaiActive, "slate")}
+                className={iconTint(networkDashboardActive, "slate")}
               />
-              <span>iKuai</span>
+              <span>总览</span>
             </Link>
             <Link
-              to="/cluster/network/openwrt/dashboard"
-              className={navLinkTint(networkOpenWrtActive, "slate")}
+              to="/cluster/network/devices"
+              className={navLinkTint(networkDevicesActive, "slate")}
             >
               <Network
                 size={20}
-                className={iconTint(networkOpenWrtActive, "slate")}
+                className={iconTint(networkDevicesActive, "slate")}
               />
-              <NavItemText label="OpenWrt" hint={openWrtEntryHint} />
+              <NavItemText label="设备" hint={openWrtEntryHint} />
+            </Link>
+            <Link
+              to="/cluster/network/interfaces"
+              className={navLinkTint(networkInterfacesActive, "slate")}
+            >
+              <Cable
+                size={20}
+                className={iconTint(networkInterfacesActive, "slate")}
+              />
+              <span>接口</span>
+            </Link>
+            <Link
+              to="/cluster/network/clients"
+              className={navLinkTint(networkClientsActive, "slate")}
+            >
+              <Users
+                size={20}
+                className={iconTint(networkClientsActive, "slate")}
+              />
+              <span>终端</span>
+            </Link>
+            <Link
+              to="/cluster/network/wireless"
+              className={navLinkTint(networkWirelessActive, "slate")}
+            >
+              <Wifi
+                size={20}
+                className={iconTint(networkWirelessActive, "slate")}
+              />
+              <span>无线</span>
+            </Link>
+            <Link
+              to="/cluster/network/connections"
+              className={navLinkTint(networkConnectionsActive, "slate")}
+            >
+              <NodeActivityIcon
+                size={20}
+                className={iconTint(networkConnectionsActive, "slate")}
+              />
+              <span>连接</span>
+            </Link>
+            <Link
+              to="/cluster/network/monitoring"
+              className={navLinkTint(networkMonitoringActive, "slate")}
+            >
+              <Gauge
+                size={20}
+                className={iconTint(networkMonitoringActive, "slate")}
+              />
+              <span>监控</span>
+            </Link>
+            <Link
+              to="/cluster/network/config"
+              className={navLinkTint(networkConfigActive, "slate")}
+            >
+              <Settings
+                size={20}
+                className={iconTint(networkConfigActive, "slate")}
+              />
+              <span>配置</span>
             </Link>
           </>
         ) : showBaotaNav && isBaota ? (

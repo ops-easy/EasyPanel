@@ -31,6 +31,7 @@ func RegisterRoutes(api *gin.RouterGroup, app *appctx.ServerApp) {
 	g.GET("/devices/:id/exporter-status", func(c *gin.Context) { handleOpenWrtExporterStatus(c, app) })
 
 	g.POST("/devices/openwrt/probe", func(c *gin.Context) { handleOpenWrtProbe(c, app) })
+	g.POST("/devices/ikuai/probe", func(c *gin.Context) { handleIkuaiProbe(c, app) })
 	g.GET("/devices/:id/openwrt/overview", func(c *gin.Context) { handleOpenWrtOverview(c, app) })
 	g.GET("/devices/:id/openwrt/interfaces", func(c *gin.Context) { handleOpenWrtInterfaces(c, app) })
 	g.GET("/devices/:id/openwrt/clients", func(c *gin.Context) { handleOpenWrtClients(c, app) })
@@ -39,6 +40,10 @@ func RegisterRoutes(api *gin.RouterGroup, app *appctx.ServerApp) {
 	g.POST("/devices/:id/openwrt/actions", func(c *gin.Context) { handleOpenWrtAction(c, app) })
 	g.POST("/devices/:id/openwrt/config/dry-run", func(c *gin.Context) { handleOpenWrtConfigDryRun(c, app) })
 	g.POST("/devices/:id/openwrt/config/apply", func(c *gin.Context) { handleOpenWrtConfigApply(c, app) })
+	g.GET("/devices/:id/:provider/config/:domain", func(c *gin.Context) { handleProviderConfigSnapshot(c, app) })
+	g.POST("/devices/:id/:provider/config/:domain/dry-run", func(c *gin.Context) { handleProviderConfigDryRun(c, app) })
+	g.POST("/devices/:id/:provider/config/:domain/apply", func(c *gin.Context) { handleProviderConfigApply(c, app) })
+	g.POST("/devices/:id/:provider/actions", func(c *gin.Context) { handleProviderAction(c, app) })
 
 	g.GET("/ikuai-client-stream", func(c *gin.Context) { handleNetworkIkuaiClientStream(c, app) })
 	g.GET("/vm-mapping", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"mappings": []gin.H{}, "source": "not-configured"}) })

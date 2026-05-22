@@ -548,7 +548,7 @@ const HomeHub: React.FC = () => {
         {/* 网络设备 */}
         {showNetwork && (
           <Link
-            to={openWrtNeedsSetup ? "/cluster/network/openwrt/dashboard" : "/cluster/network/dashboard"}
+            to={openWrtNeedsSetup ? "/cluster/network/config" : "/cluster/network/dashboard"}
             className={cn(hubCardClass, "hover:border-cyan-200")}
           >
             <div className="flex items-center justify-between">

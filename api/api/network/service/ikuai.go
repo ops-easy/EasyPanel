@@ -114,6 +114,7 @@ func handleNetworkIkuaiClientStream(c *gin.Context, app *ServerApp) {
 			"ratesByIp":            gin.H{},
 			"devices":              []gin.H{},
 			"note":                 "未配置 Prometheus（network/vcenter/default scope 均为空）",
+			"checkedAt":            NowShanghaiRFC3339(),
 		})
 		return
 	}
@@ -193,6 +194,7 @@ func handleNetworkIkuaiClientStream(c *gin.Context, app *ServerApp) {
 		"exporterKind":         map[bool]string{true: "modern", false: "legacy"}[useModern],
 		"note":                 "来自 Prometheus：优先匹配 Go 版 ikuai_exporter，未命中时回退 Python 版 ikuai_client_*。",
 		"queriesUsed":          gin.H{"downloadByIp": qDl, "uploadByIp": qUl, "topology": qDet},
+		"checkedAt":            NowShanghaiRFC3339(),
 	})
 }
 

@@ -26,6 +26,7 @@ const kvKeyNetworkDevices = "kubebt_network_devices_v1"
 const (
 	networkDeviceKindIkuai       = "ikuai"
 	networkDeviceKindOpenWrt     = "openwrt"
+	ikuaiAuthTypeHTTPWeb         = "http-web"
 	openWrtAuthTypeSSHPassword   = "ssh-password"
 	openWrtAuthTypeSSHPrivateKey = "ssh-key"
 )
@@ -154,19 +155,64 @@ func normalizeNetworkDeviceFromBody(body networkDeviceBody, cur *networkmodel.De
 			return out, err
 		}
 	} else {
-		out.APIURL = ""
-		out.Host = ""
-		out.Port = 0
-		out.AuthType = ""
-		out.Username = ""
-		out.PasswordEnc = ""
+		if err := normalizeIkuaiDeviceFields(&out, body, cur, key); err != nil {
+			return out, err
+		}
 		out.PrivateKeyEnc = ""
-		out.SkipTLSVerify = false
 	}
 	out.Password = ""
 	out.PrivateKey = ""
 	out.UpdatedAt = now
 	return out, nil
+}
+
+func normalizeIkuaiDeviceFields(out *networkmodel.Device, body networkDeviceBody, cur *networkmodel.Device, key []byte) error {
+	if out.APIURL == "" && cur != nil {
+		out.APIURL = strings.TrimSpace(cur.APIURL)
+	}
+	if out.Host == "" && cur != nil {
+		out.Host = strings.TrimSpace(cur.Host)
+	}
+	if out.Host == "" && out.APIURL != "" {
+		if u, err := url.Parse(out.APIURL); err == nil {
+			out.Host = u.Hostname()
+			if out.Port == 0 {
+				switch u.Scheme {
+				case "https":
+					out.Port = 443
+				case "http":
+					out.Port = 80
+				}
+			}
+		}
+	}
+	if out.Port == 0 && cur != nil && cur.Port > 0 {
+		out.Port = cur.Port
+	}
+	if out.Username == "" && cur != nil {
+		out.Username = strings.TrimSpace(cur.Username)
+	}
+	if out.AuthType == "" {
+		out.AuthType = ikuaiAuthTypeHTTPWeb
+	}
+	if !strings.EqualFold(strings.TrimSpace(out.AuthType), ikuaiAuthTypeHTTPWeb) {
+		return errors.New("iKuai authType must be http-web")
+	}
+	out.AuthType = ikuaiAuthTypeHTTPWeb
+	if cur != nil {
+		out.PasswordEnc = cur.PasswordEnc
+	}
+	if strings.TrimSpace(body.Password) != "" && body.Password != "***" {
+		if len(key) == 0 {
+			return errors.New("iKuai credential encryption key is unavailable")
+		}
+		enc, err := sharedcrypto.EncryptSecret(key, body.Password)
+		if err != nil {
+			return err
+		}
+		out.PasswordEnc = enc
+	}
+	return nil
 }
 
 func normalizeOpenWrtDeviceFields(out *networkmodel.Device, body networkDeviceBody, cur *networkmodel.Device, key []byte) error {
@@ -261,6 +307,15 @@ func normalizeNetworkDeviceInput(body networkmodel.Device) networkmodel.Device {
 		if auth, err := normalizeOpenWrtAuthType(out.AuthType); err == nil {
 			out.AuthType = auth
 		}
+	} else if out.Kind == networkDeviceKindIkuai {
+		if out.Host == "" && out.APIURL != "" {
+			if u, err := url.Parse(out.APIURL); err == nil {
+				out.Host = u.Hostname()
+			}
+		}
+		if out.AuthType == "" {
+			out.AuthType = ikuaiAuthTypeHTTPWeb
+		}
 	}
 	return out
 }
@@ -350,7 +405,7 @@ func upsertNetworkDeviceByKind(list []networkmodel.Device, next networkmodel.Dev
 }
 
 func decryptNetworkDeviceSecrets(app *ServerApp, dev networkmodel.Device) (networkmodel.Device, error) {
-	if dev.Kind != networkDeviceKindOpenWrt {
+	if strings.TrimSpace(dev.PasswordEnc) == "" && strings.TrimSpace(dev.PrivateKeyEnc) == "" {
 		return dev, nil
 	}
 	key, err := networkEncryptionKey(app)
@@ -396,7 +451,7 @@ func handleNetworkDeviceCreate(c *gin.Context, app *ServerApp) {
 		return
 	}
 	var key []byte
-	if strings.EqualFold(strings.TrimSpace(body.Kind), networkDeviceKindOpenWrt) {
+	if strings.EqualFold(strings.TrimSpace(body.Kind), networkDeviceKindOpenWrt) || strings.EqualFold(strings.TrimSpace(body.Kind), networkDeviceKindIkuai) {
 		var err error
 		key, err = networkEncryptionKey(app)
 		if err != nil {
@@ -442,7 +497,7 @@ func handleNetworkDeviceUpdate(c *gin.Context, app *ServerApp) {
 		return
 	}
 	var key []byte
-	if strings.EqualFold(strings.TrimSpace(body.Kind), networkDeviceKindOpenWrt) || cur.Kind == networkDeviceKindOpenWrt {
+	if strings.EqualFold(strings.TrimSpace(body.Kind), networkDeviceKindOpenWrt) || strings.EqualFold(strings.TrimSpace(body.Kind), networkDeviceKindIkuai) || cur.Kind == networkDeviceKindOpenWrt || cur.Kind == networkDeviceKindIkuai {
 		key, err = networkEncryptionKey(app)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

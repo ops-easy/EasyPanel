@@ -4,17 +4,8 @@ import { RouteSuspense } from "@/app/route-fallback";
 
 const NetworkLayout = lazy(() => import("@/features/network/layout/NetworkLayout"));
 const NetworkDashboard = lazy(() => import("@/features/network/pages/NetworkDashboard"));
-const IkuaiConfigurationGate = lazy(() => import("@/features/network/ikuai/pages/IkuaiConfigurationGate"));
-const IkuaiDashboard = lazy(() => import("@/features/network/ikuai/pages/IkuaiDashboard"));
-const IkuaiClients = lazy(() => import("@/features/network/ikuai/pages/IkuaiClients"));
-const IkuaiInterfaces = lazy(() => import("@/features/network/ikuai/pages/IkuaiInterfaces"));
-const IkuaiVmMapping = lazy(() => import("@/features/network/ikuai/pages/IkuaiVmMapping"));
-const OpenWrtDashboard = lazy(() => import("@/features/network/openwrt/pages/OpenWrtDashboard"));
-const OpenWrtClients = lazy(() => import("@/features/network/openwrt/pages/OpenWrtClients"));
-const OpenWrtInterfaces = lazy(() => import("@/features/network/openwrt/pages/OpenWrtInterfaces"));
-const OpenWrtConnections = lazy(() => import("@/features/network/openwrt/pages/OpenWrtConnections"));
-const OpenWrtWireless = lazy(() => import("@/features/network/openwrt/pages/OpenWrtWireless"));
-const OpenWrtExporter = lazy(() => import("@/features/network/openwrt/pages/OpenWrtExporter"));
+const NetworkResourcePage = lazy(() => import("@/features/network/pages/NetworkResourcePage"));
+const NetworkConfigPage = lazy(() => import("@/features/network/pages/NetworkConfigPage"));
 
 export function networkRoutes(): ReactNode {
   return (
@@ -36,118 +27,77 @@ export function networkRoutes(): ReactNode {
         }
       />
       <Route
-        path="ikuai"
-        element={<Navigate to="/cluster/network/ikuai/dashboard" replace />}
-      />
-      <Route
-        path="ikuai/dashboard"
+        path="devices"
         element={
           <RouteSuspense>
-            <IkuaiConfigurationGate>
-              <IkuaiDashboard />
-            </IkuaiConfigurationGate>
+            <NetworkResourcePage view="devices" />
           </RouteSuspense>
         }
       />
       <Route
-        path="ikuai/interfaces"
+        path="interfaces"
         element={
           <RouteSuspense>
-            <IkuaiConfigurationGate>
-              <IkuaiInterfaces />
-            </IkuaiConfigurationGate>
+            <NetworkResourcePage view="interfaces" />
           </RouteSuspense>
         }
       />
       <Route
-        path="ikuai/clients"
+        path="clients"
         element={
           <RouteSuspense>
-            <IkuaiConfigurationGate>
-              <IkuaiClients />
-            </IkuaiConfigurationGate>
+            <NetworkResourcePage view="clients" />
           </RouteSuspense>
         }
       />
       <Route
-        path="ikuai/apps"
+        path="wireless"
         element={
           <RouteSuspense>
-            <IkuaiConfigurationGate>
-              <IkuaiDashboard />
-            </IkuaiConfigurationGate>
+            <NetworkResourcePage view="wireless" />
           </RouteSuspense>
         }
       />
       <Route
-        path="ikuai/vm-mapping"
+        path="connections"
         element={
           <RouteSuspense>
-            <IkuaiConfigurationGate>
-              <IkuaiVmMapping />
-            </IkuaiConfigurationGate>
+            <NetworkResourcePage view="connections" />
           </RouteSuspense>
         }
       />
       <Route
-        path="ikuai/exporter"
+        path="monitoring"
         element={
           <RouteSuspense>
-            <IkuaiConfigurationGate>
-              <IkuaiDashboard />
-            </IkuaiConfigurationGate>
-          </RouteSuspense>
-        }
-      />
-      <Route path="openwrt" element={<Navigate to="/cluster/network/openwrt/dashboard" replace />} />
-      <Route
-        path="openwrt/dashboard"
-        element={
-          <RouteSuspense>
-            <OpenWrtDashboard />
+            <NetworkResourcePage view="monitoring" />
           </RouteSuspense>
         }
       />
       <Route
-        path="openwrt/interfaces"
+        path="config"
         element={
           <RouteSuspense>
-            <OpenWrtInterfaces />
+            <NetworkConfigPage />
           </RouteSuspense>
         }
       />
-      <Route
-        path="openwrt/clients"
-        element={
-          <RouteSuspense>
-            <OpenWrtClients />
-          </RouteSuspense>
-        }
-      />
-      <Route
-        path="openwrt/connections"
-        element={
-          <RouteSuspense>
-            <OpenWrtConnections />
-          </RouteSuspense>
-        }
-      />
-      <Route
-        path="openwrt/wireless"
-        element={
-          <RouteSuspense>
-            <OpenWrtWireless />
-          </RouteSuspense>
-        }
-      />
-      <Route
-        path="openwrt/exporter"
-        element={
-          <RouteSuspense>
-            <OpenWrtExporter />
-          </RouteSuspense>
-        }
-      />
+
+      <Route path="ikuai" element={<Navigate to="/cluster/network/devices?provider=ikuai" replace />} />
+      <Route path="ikuai/dashboard" element={<Navigate to="/cluster/network/devices?provider=ikuai" replace />} />
+      <Route path="ikuai/interfaces" element={<Navigate to="/cluster/network/interfaces?provider=ikuai" replace />} />
+      <Route path="ikuai/clients" element={<Navigate to="/cluster/network/clients?provider=ikuai" replace />} />
+      <Route path="ikuai/apps" element={<Navigate to="/cluster/network/devices?provider=ikuai" replace />} />
+      <Route path="ikuai/vm-mapping" element={<Navigate to="/cluster/network/clients?provider=ikuai" replace />} />
+      <Route path="ikuai/exporter" element={<Navigate to="/cluster/network/monitoring?provider=ikuai" replace />} />
+
+      <Route path="openwrt" element={<Navigate to="/cluster/network/devices?provider=openwrt" replace />} />
+      <Route path="openwrt/dashboard" element={<Navigate to="/cluster/network/devices?provider=openwrt" replace />} />
+      <Route path="openwrt/interfaces" element={<Navigate to="/cluster/network/interfaces?provider=openwrt" replace />} />
+      <Route path="openwrt/clients" element={<Navigate to="/cluster/network/clients?provider=openwrt" replace />} />
+      <Route path="openwrt/connections" element={<Navigate to="/cluster/network/connections?provider=openwrt" replace />} />
+      <Route path="openwrt/wireless" element={<Navigate to="/cluster/network/wireless?provider=openwrt" replace />} />
+      <Route path="openwrt/exporter" element={<Navigate to="/cluster/network/monitoring?provider=openwrt" replace />} />
     </Route>
   );
 }

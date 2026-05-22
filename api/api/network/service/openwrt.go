@@ -246,6 +246,7 @@ func handleOpenWrtExporterStatusForDevice(c *gin.Context, app *ServerApp, dev ne
 			"missingHints":         OpenWrtMetricFamilies{}.MissingHints(),
 			"device":               networkDeviceListItem(dev),
 			"source":               "prometheus",
+			"checkedAt":            NowShanghaiRFC3339(),
 		})
 		return
 	}
@@ -272,6 +273,7 @@ func handleOpenWrtExporterStatusForDevice(c *gin.Context, app *ServerApp, dev ne
 		"metricNames":          names,
 		"device":               networkDeviceListItem(dev),
 		"source":               "prometheus",
+		"checkedAt":            NowShanghaiRFC3339(),
 	})
 }
 

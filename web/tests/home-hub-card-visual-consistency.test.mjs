@@ -35,6 +35,6 @@ test("unconfigured PVE and OpenWrt cards link directly to their setup pages", ()
   assert.match(source, /配置 PVE 目标/);
 
   assert.match(source, /const openWrtNeedsSetup = !networkDevicesQ\.isLoading && nOpenWrtDevices === 0;/);
-  assert.match(source, /to=\{openWrtNeedsSetup \? "\/cluster\/network\/openwrt\/dashboard" : "\/cluster\/network\/dashboard"\}/);
+  assert.match(source, /to=\{openWrtNeedsSetup \? "\/cluster\/network\/config" : "\/cluster\/network\/dashboard"\}/);
   assert.match(source, /配置 OpenWrt/);
 });
