@@ -12,8 +12,42 @@ const sidebarSource = read("../src/shared/layout/Sidebar.tsx");
 
 test("cluster settings page uses Chinese for visible page labels", () => {
   assert.match(clusterSettingsSource, />集群设置</);
+  for (const label of ["总览", "集群连接", "入口控制器", "监控", "日志", "镜像仓库", "高级"]) {
+    assert.match(clusterSettingsSource, new RegExp(`label: "${label}"`));
+  }
   assert.doesNotMatch(clusterSettingsSource, /Cluster settings/);
   assert.doesNotMatch(clusterSettingsSource, /SettingsPrometheusSection locale="en"/);
+});
+
+test("cluster settings page is organized as deep-linkable task tabs", () => {
+  for (const tab of ["overview", "connection", "ingress", "monitoring", "logs", "harbor", "advanced"]) {
+    assert.match(clusterSettingsSource, new RegExp(`value: "${tab}"`));
+    assert.match(clusterSettingsSource, new RegExp(`TabsContent value="${tab}"`));
+  }
+
+  assert.match(clusterSettingsSource, /useSearchParams/);
+  assert.match(clusterSettingsSource, /setSearchParams\(\{ tab: next \}/);
+  assert.match(clusterSettingsSource, /<Tabs value=\{activeTab\} onValueChange=\{onTabChange\}/);
+  assert.match(clusterSettingsSource, /<SettingsStatusStrip/);
+});
+
+test("cluster settings status strip reads existing config and addon status APIs", () => {
+  assert.match(clusterSettingsSource, /APP_CONFIG_QUERY_KEY/);
+  assert.match(clusterSettingsSource, /"k8s-addons-status"/);
+  assert.match(clusterSettingsSource, /apiGetJson<AddonsStatusResponse>\("\/api\/k8s\/addons\/status"/);
+  assert.match(clusterSettingsSource, /StatusTile/);
+  assert.match(clusterSettingsSource, /K8s 连接/);
+  assert.match(clusterSettingsSource, /Prometheus 栈/);
+  assert.match(clusterSettingsSource, /VMLog/);
+});
+
+test("k8s runtime settings can render focused task panels", () => {
+  assert.match(runtimeSettingsSource, /export type SettingsRuntimeK8sFocus = "all" \| "connection" \| "ingress" \| "harbor" \| "menu"/);
+  assert.match(runtimeSettingsSource, /k8sFocus\?: SettingsRuntimeK8sFocus/);
+  assert.match(runtimeSettingsSource, /showK8sConnection/);
+  assert.match(runtimeSettingsSource, /showK8sIngress/);
+  assert.match(runtimeSettingsSource, /showK8sHarbor/);
+  assert.match(runtimeSettingsSource, /showK8sMenu/);
 });
 
 test("k8s runtime settings uses Chinese labels while keeping field names as hints", () => {

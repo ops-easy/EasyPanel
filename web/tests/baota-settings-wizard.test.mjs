@@ -52,5 +52,7 @@ test("ingress-nginx 参数仍在集群设置语境中维护", () => {
     assert.match(runtimeSource, new RegExp(field));
   }
 
-  assert.match(clusterSettingsSource, /宝塔设置页只维护宝塔接入与同步策略/);
+  assert.match(clusterSettingsSource, /value: "ingress"/);
+  assert.match(clusterSettingsSource, /label: "入口控制器"/);
+  assert.match(clusterSettingsSource, /<SettingsRuntimeSection variant="k8s" k8sFocus="ingress" \/>/);
 });

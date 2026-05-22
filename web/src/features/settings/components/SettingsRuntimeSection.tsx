@@ -46,10 +46,12 @@ import BaotaSettingsWizard from "@/features/baota/components/BaotaSettingsWizard
 
 export type SettingsRuntimeVariant = "full" | "k8s" | "virtualMachine" | "account" | "baota";
 export type SettingsRuntimeFocus = "all" | "vcenter" | "monitoring" | "idrac" | "vmlog";
+export type SettingsRuntimeK8sFocus = "all" | "connection" | "ingress" | "harbor" | "menu";
 
 type SettingsRuntimeSectionProps = {
   variant?: SettingsRuntimeVariant;
   focus?: SettingsRuntimeFocus;
+  k8sFocus?: SettingsRuntimeK8sFocus;
 };
 
 type RuntimeIdracTargetForm = {
@@ -186,6 +188,7 @@ function moveK8sSidebarMenuItem(items: K8sSidebarMenuItem[], index: number, delt
 const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
   variant = "full",
   focus = "all",
+  k8sFocus = "all",
 }) => {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
@@ -338,6 +341,11 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
   const v = variant;
   const showAccountFull = v === "full";
   const showK8s = v === "full" || v === "k8s";
+  const k8sPanelFocus: SettingsRuntimeK8sFocus = v === "k8s" ? k8sFocus : "all";
+  const showK8sConnection = showK8s && (k8sPanelFocus === "all" || k8sPanelFocus === "connection");
+  const showK8sIngress = showK8s && (k8sPanelFocus === "all" || k8sPanelFocus === "ingress");
+  const showK8sHarbor = showK8s && (k8sPanelFocus === "all" || k8sPanelFocus === "harbor");
+  const showK8sMenu = showK8s && v === "k8s" && (k8sPanelFocus === "all" || k8sPanelFocus === "menu");
   const showVirtualMachine = v === "full" || v === "virtualMachine";
   const vmFocus: SettingsRuntimeFocus = v === "virtualMachine" ? focus : "all";
   const showVcenterSettings = showVirtualMachine && (vmFocus === "all" || vmFocus === "vcenter");
@@ -347,6 +355,20 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
   const k8sMode = (form.k8s as { mode?: string } | undefined)?.mode ?? "none";
   const k8sKube = (form.k8s as { kubeconfigYaml?: string } | undefined)?.kubeconfigYaml ?? "";
   const defaultSaveLabel = v === "k8s" ? "保存" : "保存运行时配置";
+  const k8sRuntimeTitle: Record<SettingsRuntimeK8sFocus, string> = {
+    all: "集群连接",
+    connection: "集群连接",
+    ingress: "入口控制器参数",
+    harbor: "Harbor 镜像仓库",
+    menu: "Kubernetes 菜单",
+  };
+  const k8sRuntimeDescription: Record<SettingsRuntimeK8sFocus, string> = {
+    all: "使用集群内凭据或粘贴 kubeconfig，保存后生效。",
+    connection: "使用集群内凭据、进程环境或粘贴 kubeconfig，保存后生效。",
+    ingress: "维护 ingress-nginx hostNetwork 端口、固定节点与清单下载策略；安装动作在左侧卡片执行。",
+    harbor: "维护 Harbor API 根地址、Robot 凭据与索引缓存配置，保存后 Harbor 工作区会重新读取。",
+    menu: "维护 Kubernetes 工作区左侧菜单的显示名称、顺序与隐藏状态。",
+  };
   const virtualMachineTitle: Record<SettingsRuntimeFocus, string> = {
     all: "配置",
     vcenter: "vCenter 连接",
@@ -393,14 +415,14 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-base font-bold text-gray-900">
-            {v === "k8s" && "集群连接"}
+            {v === "k8s" && k8sRuntimeTitle[k8sPanelFocus]}
             {v === "virtualMachine" && virtualMachineTitle[vmFocus]}
             {v === "full" && "运行时配置（MySQL 动态配置）"}
           </h2>
           <p className="mt-1 text-xs text-gray-500">
             {v === "full" &&
               "在此补充 K8s、虚拟机等；MySQL 连接来自静态 config.yaml 或环境变量，页面不写入这部分。Redis 仅需 IP、端口、密码；密钥类留空表示不修改原值。宝塔与 Ingress 请在「宝塔」工作区 → 宝塔设置中配置。"}
-            {v === "k8s" && "使用集群内凭据或粘贴 kubeconfig，保存后生效。"}
+            {v === "k8s" && k8sRuntimeDescription[k8sPanelFocus]}
             {v === "virtualMachine" && virtualMachineDescription[vmFocus]}
           </p>
         </div>
@@ -681,6 +703,8 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
           )}
           {showK8s && (
           <>
+          {showK8sConnection && (
+          <>
           <div className="space-y-2">
             <Label>{v === "k8s" ? "Cluster mode" : "K8s 模式"}</Label>
             <Select
@@ -725,7 +749,9 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
               />
             </div>
           )}
-          {showK8s && v === "k8s" && (
+          </>
+          )}
+          {showK8sMenu && (
             <div className="space-y-4 rounded-lg border border-sky-100 bg-sky-50/50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -757,7 +783,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
               </div>
             </div>
           )}
-          {showK8s && v === "k8s" && (
+          {showK8sMenu && (
             <Dialog open={menuDialogOpen} onOpenChange={setMenuDialogOpen}>
               <DialogContent className="max-w-3xl">
                 <DialogHeader>
@@ -846,7 +872,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
               </DialogContent>
             </Dialog>
           )}
-          {(v === "full" || v === "k8s") && (
+          {showK8sIngress && (
             <div className="space-y-3 rounded-lg border border-sky-100 bg-sky-50/50 p-4">
               <CollapsibleManual
                 storageKey="settings.runtime.full-ingress-hostnetwork-hint"
@@ -973,7 +999,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
               />
             </div>
           )}
-          {showK8s && (
+          {showK8sHarbor && (
             <div className="space-y-3 border-t border-gray-100 pt-6">
               <p className="text-sm font-semibold text-gray-900">Harbor 镜像仓库</p>
               <p className="text-xs text-gray-500">
@@ -1030,6 +1056,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
               <HarborRedisIndexSettingsPanel />
             </div>
           )}
+          {showK8sHarbor && (
           <div className="space-y-2 border-t border-gray-100 pt-6">
             <p className="text-sm font-semibold text-gray-900">应用中心 Redis 镜像</p>
             <p className="text-xs text-gray-500">
@@ -1037,6 +1064,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
               <code className="rounded bg-gray-100 px-0.5 font-mono text-[11px]">REDIS_IMAGE_REGISTRY</code> 等仍可作兼容兜底，不再在运行时表单中编辑。
             </p>
           </div>
+          )}
           </>
           )}
           {showVirtualMachine && (

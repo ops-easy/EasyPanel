@@ -104,6 +104,7 @@ declare global {
   const Key: typeof import('lucide-react').Key
   const KeyRound: typeof import('lucide-react').KeyRound
   const Layers: typeof import('lucide-react').Layers
+  const Layers3: typeof import('lucide-react').Layers3
   const Layout: typeof import('lucide-react').Layout
   const LayoutDashboard: typeof import('lucide-react').LayoutDashboard
   const LayoutGrid: typeof import('lucide-react').LayoutGrid
@@ -114,6 +115,7 @@ declare global {
   const LinkIcon: typeof import('lucide-react').LinkIcon
   const List: typeof import('lucide-react').List
   const ListOrdered: typeof import('lucide-react').ListOrdered
+  const ListTree: typeof import('lucide-react').ListTree
   const Loader2: typeof import('lucide-react').Loader2
   const Loader2Icon: typeof import('lucide-react').Loader2Icon
   const LockKeyhole: typeof import('lucide-react').LockKeyhole
@@ -126,6 +128,7 @@ declare global {
   const Minimize2: typeof import('lucide-react').Minimize2
   const MinusIcon: typeof import('lucide-react').MinusIcon
   const Monitor: typeof import('lucide-react').Monitor
+  const MonitorCog: typeof import('lucide-react').MonitorCog
   const MoreHorizontal: typeof import('lucide-react').MoreHorizontal
   const MoreHorizontalIcon: typeof import('lucide-react').MoreHorizontalIcon
   const MoreVertical: typeof import('lucide-react').MoreVertical
@@ -133,6 +136,7 @@ declare global {
   const Network: typeof import('lucide-react').Network
   const OctagonXIcon: typeof import('lucide-react').OctagonXIcon
   const Package: typeof import('lucide-react').Package
+  const PackageCheck: typeof import('lucide-react').PackageCheck
   const PanelLeftIcon: typeof import('lucide-react').PanelLeftIcon
   const PanelsTopLeft: typeof import('lucide-react').PanelsTopLeft
   const Paperclip: typeof import('lucide-react').Paperclip
