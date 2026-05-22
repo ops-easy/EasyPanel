@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, BookOpen, ExternalLink, FileText, Loader2 } from "lucide-react";
 import { OpenClawChatMarkdown } from "@/features/app-center/openclaw/components/OpenClawChatMarkdown";
 import { ApiHttpError, apiGetJson } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { Button } from "@/shared/ui/button";
 import {
   Sheet,
@@ -36,14 +37,19 @@ type GuideResolveResponse = {
   };
 };
 
+type UserGuideSheetProps = {
+  tone?: "light" | "dark";
+};
+
 function guideErrorMessage(error: unknown): string {
   if (error instanceof ApiHttpError) return error.serverMessage || "当前页面暂无指南";
   if (error instanceof Error) return error.message;
   return "当前页面暂无指南";
 }
 
-export default function UserGuideSheet() {
+export default function UserGuideSheet({ tone = "light" }: UserGuideSheetProps) {
   const location = useLocation();
+  const isDark = tone === "dark";
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -80,11 +86,14 @@ export default function UserGuideSheet() {
       variant="secondary"
       size="icon"
       onClick={() => setOpen(true)}
-      className="pointer-events-auto fixed bottom-5 right-5 z-[60] h-12 w-12 rounded-full border border-slate-200/90 bg-white shadow-lg ring-1 ring-black/5 hover:bg-slate-50 md:bottom-6 md:right-6"
+      className={cn(
+        "pointer-events-auto fixed bottom-5 right-5 z-[60] h-12 w-12 rounded-full border shadow-lg ring-1 md:bottom-6 md:right-6",
+        isDark ? "border-slate-800 bg-slate-900 text-slate-100 ring-white/10 hover:bg-slate-800" : "border-slate-200/90 bg-white ring-black/5 hover:bg-slate-50"
+      )}
       aria-label="打开使用文档"
       title="使用文档"
     >
-      <BookOpen className="h-5 w-5 text-slate-700" />
+      <BookOpen className={cn("h-5 w-5", isDark ? "text-slate-200" : "text-slate-700")} />
     </Button>
   );
 

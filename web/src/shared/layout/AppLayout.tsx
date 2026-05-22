@@ -17,35 +17,49 @@ const AppLayout: React.FC = () => {
   if (isMobile) return <AppLayoutMobile />;
 
   const isDocsShell = pathname === "/docs" || pathname.startsWith("/docs/");
+  const isBastionShell = pathname === "/cluster/bastion" || pathname === "/cluster/bastion/";
   const isDocsEditorViewport =
     pathname === "/docs" ||
     pathname.startsWith("/docs/doc/") ||
     pathname === "/docs/guides" ||
     pathname.startsWith("/docs/guides/doc/");
   const isBastionFullBleed =
-    pathname === "/cluster/bastion" ||
-    pathname.startsWith("/cluster/bastion/") ||
-    pathname === "/cluster/vcenter/bastion" ||
-    pathname.startsWith("/cluster/vcenter/bastion/");
+    pathname === "/cluster/bastion/session" ||
+    pathname.startsWith("/cluster/bastion/session/") ||
+    pathname.startsWith("/cluster/bastion/console/");
   const isPodTerminalShell = /\/cluster\/ns\/[^/]+\/pods\/[^/]+\/terminal\/?$/.test(pathname);
   const hideAppChrome = isPodTerminalShell || isBastionFullBleed;
+  const appChromeDark = isBastionShell && !hideAppChrome;
 
   return (
     <div
       data-cmp="AppLayout"
-      className="flex h-screen min-h-0 w-full min-w-0 flex-col overflow-hidden bg-[#F1F5F9] font-sans"
+      className={cn(
+        "flex h-screen min-h-0 w-full min-w-0 flex-col overflow-hidden font-sans",
+        appChromeDark ? "bg-[#0c0f14]" : "bg-[#F1F5F9]"
+      )}
     >
-      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-white shadow-custom">
-        {!isDocsShell && !hideAppChrome ? <Sidebar /> : null}
+      <div
+        className={cn(
+          "flex min-h-0 min-w-0 flex-1 overflow-hidden",
+          appChromeDark ? "bg-[#0c0f14] shadow-none" : "bg-white shadow-custom"
+        )}
+      >
+        {!(isDocsShell || isBastionShell) && !hideAppChrome ? <Sidebar /> : null}
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
-          {!hideAppChrome ? <Header /> : null}
+        <div
+          className={cn(
+            "flex min-h-0 min-w-0 flex-1 flex-col",
+            appChromeDark ? "bg-[#0c0f14]" : "bg-white"
+          )}
+        >
+          {!hideAppChrome ? <Header tone={appChromeDark ? "dark" : "light"} /> : null}
           {!hideAppChrome ? <PlatformVersionBanner /> : null}
           {!hideAppChrome ? <RedisStatusBanner /> : null}
           <main
             className={cn(
-              "flex min-h-0 flex-1 flex-col overflow-hidden bg-white",
-              (isPodTerminalShell || isBastionFullBleed) && "bg-[#0c0f14]"
+              "flex min-h-0 flex-1 flex-col overflow-hidden",
+              appChromeDark || isPodTerminalShell || isBastionFullBleed ? "bg-[#0c0f14]" : "bg-white"
             )}
           >
             <div
@@ -55,7 +69,7 @@ const AppLayout: React.FC = () => {
                   ? "min-h-0 overflow-hidden p-0"
                   : isDocsEditorViewport
                     ? "min-h-0 overflow-hidden p-0"
-                    : isDocsShell
+                    : isDocsShell || isBastionShell
                       ? "overflow-y-auto p-0"
                       : "overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-6 lg:px-8 lg:py-8"
               )}
@@ -67,7 +81,7 @@ const AppLayout: React.FC = () => {
                     ? "flex h-full min-h-0 max-w-none flex-col overflow-hidden"
                     : isDocsEditorViewport
                       ? "flex h-full min-h-0 max-w-none flex-col overflow-hidden"
-                      : isDocsShell
+                      : isDocsShell || isBastionShell
                         ? "max-w-none"
                         : "max-w-[min(100%,1920px)]"
                 )}
@@ -79,7 +93,7 @@ const AppLayout: React.FC = () => {
         </div>
       </div>
       <React.Suspense fallback={null}>
-        <UserGuideSheet />
+        <UserGuideSheet tone={appChromeDark ? "dark" : "light"} />
       </React.Suspense>
     </div>
   );

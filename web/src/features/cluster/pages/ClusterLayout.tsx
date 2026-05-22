@@ -16,7 +16,10 @@ const ClusterLayout: React.FC = () => {
   /** 网络设备：iKuai / OpenWrt 聚合工作区，不应被 K8s 向导拦截 */
   const isNetworkSection = pathname.startsWith("/cluster/network");
   /** 堡垒机：独立工作区，不依赖 vCenter 向导横幅 */
-  const isBastionSection = pathname.startsWith("/cluster/bastion");
+  const isBastionWorkspace =
+    pathname === "/cluster/bastion" ||
+    pathname.startsWith("/cluster/bastion/");
+  const isBastionSection = isBastionWorkspace;
   /** AI 巡检 / 监控 / 告警：独立子路由 */
   const isAiInspectSection = pathname.startsWith("/cluster/ai-inspect");
   /** Harbor 仓库：仅需运行时 Harbor 凭据，不要求 K8s 已连通 */
@@ -26,10 +29,9 @@ const ClusterLayout: React.FC = () => {
   /** 旧 vCenter 路径：只负责重定向到统一的「虚拟化与主机」工作区 */
   const isLegacyVCenterSection = pathname.startsWith("/cluster/vcenter");
   const isBastionShell =
-    pathname === "/cluster/bastion" ||
-    pathname.startsWith("/cluster/bastion/") ||
-    pathname === "/cluster/vcenter/bastion" ||
-    pathname.startsWith("/cluster/vcenter/bastion/");
+    pathname === "/cluster/bastion/session" ||
+    pathname.startsWith("/cluster/bastion/session/") ||
+    pathname.startsWith("/cluster/bastion/console/");
   /** 子页自带标题（如 Cluster Settings / 虚拟化配置）时不再重复「Kubernetes 集群」横幅 */
   const hideClusterIntro =
     pathname === "/cluster/pod-restart-reports" ||
@@ -84,7 +86,7 @@ const ClusterLayout: React.FC = () => {
     <div
       className={cn(
         "mx-auto w-full max-w-[min(100%,1600px)] px-1 pb-12 sm:px-0",
-        isBastionShell && "h-full min-h-0 max-w-none px-0 pb-0"
+        isBastionWorkspace && "h-full min-h-0 max-w-none px-0 pb-0"
       )}
     >
       {!hideClusterIntro && (

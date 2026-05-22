@@ -181,12 +181,11 @@ function MobileHeader() {
 const AppLayoutMobile: React.FC = () => {
   const { pathname } = useLocation();
 
-  // Full-bleed pages: bastion console, pod terminal — no chrome
+  // Full-bleed pages: bastion terminal/console, pod terminal — no chrome
   const isBastionFullBleed =
-    pathname === "/cluster/bastion" ||
-    pathname.startsWith("/cluster/bastion/") ||
-    pathname === "/cluster/vcenter/bastion" ||
-    pathname.startsWith("/cluster/vcenter/bastion/");
+    pathname === "/cluster/bastion/session" ||
+    pathname.startsWith("/cluster/bastion/session/") ||
+    pathname.startsWith("/cluster/bastion/console/");
 
   const isPodTerminalShell =
     /\/cluster\/ns\/[^/]+\/pods\/[^/]+\/terminal\/?$/.test(pathname);

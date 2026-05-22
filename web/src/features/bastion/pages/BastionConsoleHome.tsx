@@ -91,8 +91,8 @@ const BastionConsoleHome: React.FC = () => {
   const nHosts = hostsQ.data?.hosts?.length ?? 0;
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-auto px-4 py-8 sm:px-8">
-      <div className="mx-auto w-full max-w-4xl space-y-8">
+    <div className="flex h-full min-h-0 flex-col overflow-auto bg-[#0c0f14] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[min(100%,92rem)] space-y-8">
         <div className="space-y-2 text-center sm:text-left">
           <h1 className="text-xl font-semibold tracking-tight text-slate-100">堡垒机控制台</h1>
           <p className="text-sm text-slate-400">

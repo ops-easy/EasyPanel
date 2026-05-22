@@ -34,10 +34,15 @@ import { workspaceMenuVisible } from "@/lib/platform-permissions";
 
 const HeaderNotificationsSheet = React.lazy(() => import("@/shared/layout/HeaderNotificationsSheet"));
 
-const Header: React.FC = () => {
+type HeaderProps = {
+  tone?: "light" | "dark";
+};
+
+const Header: React.FC<HeaderProps> = ({ tone = "light" }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { status, logout } = useAuth();
+  const isDark = tone === "dark";
   const workspace = workspaceFromPathname(location.pathname);
   const isHub = workspace === "hub";
   const isK8s = workspace === "kubernetes";
@@ -76,25 +81,44 @@ const Header: React.FC = () => {
   const userAvatarUrl = (status?.avatarUrl ?? "").trim();
 
   const showBackHub = location.pathname !== "/" && location.pathname !== "";
+  const dropdownContentClass = cn(
+    "min-w-[228px]",
+    isDark && "border-slate-800 bg-[#111820] text-slate-100 shadow-2xl shadow-black/30"
+  );
+  const accountDropdownContentClass = cn(
+    "min-w-[200px]",
+    isDark && "border-slate-800 bg-[#111820] text-slate-100 shadow-2xl shadow-black/30"
+  );
+  const dropdownItemClass = cn("cursor-pointer gap-2 py-2.5", isDark && "focus:bg-slate-800 focus:text-slate-50");
+  const accountDropdownItemClass = cn("cursor-pointer gap-2", isDark && "focus:bg-slate-800 focus:text-slate-50");
+  const menuHintClass = isDark ? "text-slate-400" : "text-muted-foreground";
 
   return (
     <header
       data-cmp="Header"
-      className="sticky top-0 z-50 flex h-20 w-full min-w-0 flex-shrink-0 items-center gap-3 border-b border-[#E2E8F0] bg-white px-4 sm:px-8"
+      className={cn(
+        "sticky top-0 z-50 flex h-20 w-full min-w-0 flex-shrink-0 items-center gap-3 border-b px-4 sm:px-8",
+        isDark ? "border-slate-800 bg-[#0c0f14] text-slate-100" : "border-[#E2E8F0] bg-white"
+      )}
     >
       {showBackHub && (
         <Link
           to="/"
-          className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50/90 px-2.5 text-sm font-medium text-slate-800 outline-none transition-colors hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-500/30 sm:px-3"
+          className={cn(
+            "flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-2.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 sm:px-3",
+            isDark
+              ? "border-slate-800 bg-slate-900/70 text-slate-100 hover:bg-slate-800 focus-visible:ring-emerald-500/30"
+              : "border-slate-200 bg-slate-50/90 text-slate-800 hover:bg-slate-100 focus-visible:ring-blue-500/30"
+          )}
           title="返回工作台首页"
         >
-          <LayoutDashboard size={18} className="shrink-0 text-slate-600" aria-hidden />
+          <LayoutDashboard size={18} className={cn("shrink-0", isDark ? "text-slate-300" : "text-slate-600")} aria-hidden />
           <span className="hidden sm:inline">工作台</span>
         </Link>
       )}
 
       {(cfg?.platformLogoUrl || cfg?.platformDisplayName) && (
-        <div className="flex min-w-0 shrink items-center gap-2 border-l border-slate-200 pl-3 sm:pl-4">
+        <div className={cn("flex min-w-0 shrink items-center gap-2 border-l pl-3 sm:pl-4", isDark ? "border-slate-800" : "border-slate-200")}>
           {cfg?.platformLogoUrl && (
             <img
               src={cfg.platformLogoUrl}
@@ -105,7 +129,8 @@ const Header: React.FC = () => {
           {cfg?.platformDisplayName && (
             <span
               className={cn(
-                "platform-display-name-breathe hidden max-w-[min(200px,28vw)] truncate text-sm font-semibold text-slate-800 sm:inline"
+                "platform-display-name-breathe hidden max-w-[min(200px,28vw)] truncate text-sm font-semibold sm:inline",
+                isDark ? "text-slate-100" : "text-slate-800"
               )}
             >
               {cfg.platformDisplayName}
@@ -114,7 +139,7 @@ const Header: React.FC = () => {
         </div>
       )}
 
-      <GlobalSearchBar />
+      <GlobalSearchBar tone={tone} />
 
       <div className="ml-auto flex min-w-0 shrink-0 items-center space-x-2 sm:space-x-3">
         <DropdownMenu>
@@ -123,8 +148,10 @@ const Header: React.FC = () => {
               type="button"
               className={cn(
                 "flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-medium outline-none transition-colors",
-                "border-slate-200 bg-slate-50/90 text-slate-800 hover:bg-slate-100",
-                "focus-visible:ring-2 focus-visible:ring-blue-500/30"
+                isDark
+                  ? "border-slate-800 bg-slate-900/70 text-slate-100 hover:bg-slate-800"
+                  : "border-slate-200 bg-slate-50/90 text-slate-800 hover:bg-slate-100",
+                isDark ? "focus-visible:ring-2 focus-visible:ring-emerald-500/30" : "focus-visible:ring-2 focus-visible:ring-blue-500/30"
               )}
               aria-label="切换工作区：Kubernetes、虚拟化与主机、网络设备、宝塔、应用中心、堡垒机、AI 巡检、文档仓库"
             >
@@ -189,13 +216,13 @@ const Header: React.FC = () => {
                               ? "AI 巡检"
                               : "应用中心"}
               </span>
-              <ChevronDown size={16} className="text-slate-500" aria-hidden />
+              <ChevronDown size={16} className={isDark ? "text-slate-400" : "text-slate-500"} aria-hidden />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[228px]">
+          <DropdownMenuContent align="end" className={dropdownContentClass}>
             {headerShowK8s ? (
             <DropdownMenuItem
-              className="cursor-pointer gap-2 py-2.5"
+              className={dropdownItemClass}
               onSelect={() => navigate("/cluster")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
@@ -203,13 +230,13 @@ const Header: React.FC = () => {
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="font-medium">Kubernetes</span>
-                <span className="text-xs text-muted-foreground">集群资源</span>
+                <span className={cn("text-xs", menuHintClass)}>集群资源</span>
               </div>
             </DropdownMenuItem>
             ) : null}
             {headerShowCompute ? (
             <DropdownMenuItem
-              className="cursor-pointer gap-2 py-2.5"
+              className={dropdownItemClass}
               onSelect={() => navigate("/cluster/compute/dashboard")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600">
@@ -217,13 +244,13 @@ const Header: React.FC = () => {
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="font-medium">虚拟化与主机</span>
-                <span className="text-xs text-muted-foreground">vCenter · PVE · 云主机</span>
+                <span className={cn("text-xs", menuHintClass)}>vCenter · PVE · 云主机</span>
               </div>
             </DropdownMenuItem>
             ) : null}
             {headerShowNetwork ? (
             <DropdownMenuItem
-              className="cursor-pointer gap-2 py-2.5"
+              className={dropdownItemClass}
               onSelect={() => navigate("/cluster/network/dashboard")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-600">
@@ -231,13 +258,13 @@ const Header: React.FC = () => {
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="font-medium">网络设备</span>
-                <span className="text-xs text-muted-foreground">iKuai · OpenWrt</span>
+                <span className={cn("text-xs", menuHintClass)}>iKuai · OpenWrt</span>
               </div>
             </DropdownMenuItem>
             ) : null}
             {headerShowBaota ? (
             <DropdownMenuItem
-              className="cursor-pointer gap-2 py-2.5"
+              className={dropdownItemClass}
               onSelect={() => navigate("/cluster/baota")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-600">
@@ -245,13 +272,13 @@ const Header: React.FC = () => {
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="font-medium">宝塔</span>
-                <span className="text-xs text-muted-foreground">Ingress 同步与面板</span>
+                <span className={cn("text-xs", menuHintClass)}>Ingress 同步与面板</span>
               </div>
             </DropdownMenuItem>
             ) : null}
             {headerShowApp ? (
             <DropdownMenuItem
-              className="cursor-pointer gap-2 py-2.5"
+              className={dropdownItemClass}
               onSelect={() => navigate("/cluster/apps/dashboard")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600">
@@ -259,13 +286,13 @@ const Header: React.FC = () => {
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="font-medium">应用中心</span>
-                <span className="text-xs text-muted-foreground">Redis · Kafka · OpenSearch · DNS</span>
+                <span className={cn("text-xs", menuHintClass)}>Redis · Kafka · OpenSearch · DNS</span>
               </div>
             </DropdownMenuItem>
             ) : null}
             {headerShowBastion ? (
             <DropdownMenuItem
-              className="cursor-pointer gap-2 py-2.5"
+              className={dropdownItemClass}
               onSelect={() => navigate("/cluster/bastion")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-600 to-emerald-800">
@@ -273,13 +300,13 @@ const Header: React.FC = () => {
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="font-medium">堡垒机</span>
-                <span className="truncate text-xs text-muted-foreground">SSH / RDP / Redis CLI</span>
+                <span className={cn("truncate text-xs", menuHintClass)}>SSH / RDP / Redis CLI</span>
               </div>
             </DropdownMenuItem>
             ) : null}
             {headerShowAiInspect ? (
             <DropdownMenuItem
-              className="cursor-pointer gap-2 py-2.5"
+              className={dropdownItemClass}
               onSelect={() => navigate("/cluster/ai-inspect/dashboard")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-600 to-teal-700">
@@ -287,13 +314,13 @@ const Header: React.FC = () => {
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="font-medium">AI 巡检</span>
-                <span className="text-xs text-muted-foreground">监控中心 · 告警 · OpenClaw</span>
+                <span className={cn("text-xs", menuHintClass)}>监控中心 · 告警 · OpenClaw</span>
               </div>
             </DropdownMenuItem>
             ) : null}
             {headerShowDocs ? (
             <DropdownMenuItem
-              className="cursor-pointer gap-2 py-2.5"
+              className={dropdownItemClass}
               onSelect={() => navigate("/docs")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-zinc-700 to-violet-800">
@@ -301,7 +328,7 @@ const Header: React.FC = () => {
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="font-medium">文档仓库</span>
-                <span className="text-xs text-muted-foreground">Markdown 笔记 · 版本 · 媒体</span>
+                <span className={cn("text-xs", menuHintClass)}>Markdown 笔记 · 版本 · 媒体</span>
               </div>
             </DropdownMenuItem>
             ) : null}
@@ -312,15 +339,25 @@ const Header: React.FC = () => {
           <HeaderNotificationsSheet />
         </React.Suspense>
 
-        <div className="h-8 w-px bg-gray-200" />
+        <div className={cn("h-8 w-px", isDark ? "bg-slate-800" : "bg-gray-200")} />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex items-center space-x-3 rounded-xl px-2 py-1.5 outline-none transition-colors hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-blue-500/30"
+              className={cn(
+                "flex items-center space-x-3 rounded-xl px-2 py-1.5 outline-none transition-colors focus-visible:ring-2",
+                isDark ? "hover:bg-slate-900 focus-visible:ring-emerald-500/30" : "hover:bg-gray-50 focus-visible:ring-blue-500/30"
+              )}
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-blue-200 bg-gradient-to-tr from-blue-100 to-indigo-100 text-blue-600">
+              <div
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-gradient-to-tr",
+                  isDark
+                    ? "border-emerald-900/70 from-slate-900 to-emerald-950 text-emerald-300"
+                    : "border-blue-200 from-blue-100 to-indigo-100 text-blue-600"
+                )}
+              >
                 {userAvatarUrl ? (
                   <img src={userAvatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
@@ -328,26 +365,26 @@ const Header: React.FC = () => {
                 )}
               </div>
               <div className="hidden text-left sm:flex sm:flex-col">
-                <span className="leading-none text-sm font-semibold text-gray-900">
+                <span className={cn("leading-none text-sm font-semibold", isDark ? "text-slate-100" : "text-gray-900")}>
                   {displayName}
                 </span>
-                <span className="mt-0.5 text-xs text-gray-500">
+                <span className={cn("mt-0.5 text-xs", isDark ? "text-slate-400" : "text-gray-500")}>
                   {status?.authRequired ? "已登录" : "控制台"}
                 </span>
               </div>
-              <ChevronDown size={16} className="text-gray-400" />
+              <ChevronDown size={16} className={isDark ? "text-slate-500" : "text-gray-400"} />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[200px]">
+          <DropdownMenuContent align="end" className={accountDropdownContentClass}>
             <DropdownMenuItem
-              className="cursor-pointer gap-2"
+              className={accountDropdownItemClass}
               onSelect={() => navigate("/account/personal")}
             >
               <User size={16} />
               个人中心
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="cursor-pointer gap-2"
+              className={accountDropdownItemClass}
               onSelect={() => navigate("/account/settings")}
             >
               <Settings size={16} />
@@ -355,7 +392,7 @@ const Header: React.FC = () => {
             </DropdownMenuItem>
             {showPlatformUsers && (
               <DropdownMenuItem
-                className="cursor-pointer gap-2"
+                className={accountDropdownItemClass}
                 onSelect={() => navigate("/account/users")}
               >
                 <Users size={16} />
