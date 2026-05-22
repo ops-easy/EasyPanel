@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	pvemodel "kube-bt-sync/api/pve/model"
 	core "kube-bt-sync/common/core"
 	transportauthz "kube-bt-sync/common/transport/authz"
 
@@ -121,6 +122,29 @@ func TestPVEFullTakeoverPaths(t *testing.T) {
 	}
 	if snapshots != "/nodes/pve-a/qemu/103/snapshot" {
 		t.Fatalf("snapshots path=%q", snapshots)
+	}
+}
+
+func TestPVETargetCreateReplacesExistingSingleton(t *testing.T) {
+	list := []pvemodel.Target{
+		{ID: "pve-new", Name: "PVE New", BaseURL: "https://pve-new.example.com:8006"},
+		{ID: "pve-old", Name: "PVE Old", BaseURL: "https://pve-old.example.com:8006"},
+	}
+
+	collapsed := collapsePVETargetsToSingleton(list)
+
+	if len(collapsed) != 1 {
+		t.Fatalf("expected one effective PVE target, got %d", len(collapsed))
+	}
+	if collapsed[0].ID != "pve-new" {
+		t.Fatalf("expected first target to win, got %q", collapsed[0].ID)
+	}
+}
+
+func TestPVESingleTargetReturnsEmptyForUnconfigured(t *testing.T) {
+	target, ok := singlePVETargetFromList([]pvemodel.Target{})
+	if ok {
+		t.Fatalf("expected no singleton PVE target, got %#v", target)
 	}
 }
 

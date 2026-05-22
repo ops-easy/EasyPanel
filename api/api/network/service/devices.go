@@ -314,6 +314,41 @@ func findNetworkDevice(list []networkmodel.Device, id string) (*networkmodel.Dev
 	return nil, -1
 }
 
+func singleNetworkDeviceByKind(list []networkmodel.Device, kind string) (networkmodel.Device, bool) {
+	kind, err := normalizeNetworkDeviceKind(kind)
+	if err != nil {
+		return networkmodel.Device{}, false
+	}
+	for _, dev := range list {
+		if dev.Kind == kind && strings.TrimSpace(dev.ID) != "" {
+			return dev, true
+		}
+	}
+	return networkmodel.Device{}, false
+}
+
+func collapseNetworkDevicesToSingletons(list []networkmodel.Device) []networkmodel.Device {
+	out := make([]networkmodel.Device, 0, 2)
+	if dev, ok := singleNetworkDeviceByKind(list, networkDeviceKindIkuai); ok {
+		out = append(out, dev)
+	}
+	if dev, ok := singleNetworkDeviceByKind(list, networkDeviceKindOpenWrt); ok {
+		out = append(out, dev)
+	}
+	return out
+}
+
+func upsertNetworkDeviceByKind(list []networkmodel.Device, next networkmodel.Device) []networkmodel.Device {
+	collapsed := collapseNetworkDevicesToSingletons(list)
+	out := []networkmodel.Device{next}
+	for _, dev := range collapsed {
+		if dev.Kind != next.Kind {
+			out = append(out, dev)
+		}
+	}
+	return collapseNetworkDevicesToSingletons(out)
+}
+
 func decryptNetworkDeviceSecrets(app *ServerApp, dev networkmodel.Device) (networkmodel.Device, error) {
 	if dev.Kind != networkDeviceKindOpenWrt {
 		return dev, nil
@@ -343,8 +378,9 @@ func handleNetworkDevicesList(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}
-	out := make([]networkmodel.DeviceListItem, 0, len(list))
-	for _, x := range list {
+	effective := collapseNetworkDevicesToSingletons(list)
+	out := make([]networkmodel.DeviceListItem, 0, len(effective))
+	for _, x := range effective {
 		out = append(out, networkDeviceListItem(x))
 	}
 	c.JSON(http.StatusOK, gin.H{"devices": out})
@@ -378,7 +414,7 @@ func handleNetworkDeviceCreate(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}
-	list = append([]networkmodel.Device{dev}, list...)
+	list = upsertNetworkDeviceByKind(list, dev)
 	if err := saveNetworkDevices(app.PlatformKV(), list); err != nil {
 		result.Error500(c, err.Error())
 		return
@@ -419,6 +455,7 @@ func handleNetworkDeviceUpdate(c *gin.Context, app *ServerApp) {
 		return
 	}
 	list[idx] = dev
+	list = collapseNetworkDevicesToSingletons(list)
 	if err := saveNetworkDevices(app.PlatformKV(), list); err != nil {
 		result.Error500(c, err.Error())
 		return

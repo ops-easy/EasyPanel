@@ -102,6 +102,23 @@ func findPVETarget(list []pvemodel.Target, id string) (*pvemodel.Target, int) {
 	return nil, -1
 }
 
+func singlePVETargetFromList(list []pvemodel.Target) (pvemodel.Target, bool) {
+	collapsed := collapsePVETargetsToSingleton(list)
+	if len(collapsed) == 0 {
+		return pvemodel.Target{}, false
+	}
+	return collapsed[0], true
+}
+
+func collapsePVETargetsToSingleton(list []pvemodel.Target) []pvemodel.Target {
+	for _, target := range list {
+		if strings.TrimSpace(target.ID) != "" {
+			return []pvemodel.Target{target}
+		}
+	}
+	return []pvemodel.Target{}
+}
+
 func decryptPVETargetSecret(app *ServerApp, target pvemodel.Target) (string, error) {
 	key, err := pveEncryptionKey(app)
 	if err != nil {
@@ -129,8 +146,9 @@ func handlePVETargetsList(c *gin.Context, app *ServerApp) {
 		return
 	}
 	key, _ := pveEncryptionKey(app)
-	out := make([]pvemodel.TargetListItem, 0, len(list))
-	for _, x := range list {
+	effective := collapsePVETargetsToSingleton(list)
+	out := make([]pvemodel.TargetListItem, 0, len(effective))
+	for _, x := range effective {
 		out = append(out, pveTargetListItem(x, key))
 	}
 	c.JSON(http.StatusOK, gin.H{"targets": out})
@@ -160,7 +178,7 @@ func handlePVETargetCreate(c *gin.Context, app *ServerApp) {
 		result.Error500(c, err.Error())
 		return
 	}
-	list = append([]pvemodel.Target{target}, list...)
+	list = []pvemodel.Target{target}
 	if err := savePVETargets(app.PlatformKV(), list); err != nil {
 		result.Error500(c, err.Error())
 		return
@@ -182,7 +200,7 @@ func handlePVETargetUpdate(c *gin.Context, app *ServerApp) {
 		result.Error500(c, err.Error())
 		return
 	}
-	cur, idx := findPVETarget(list, c.Param("id"))
+	cur, _ := findPVETarget(list, c.Param("id"))
 	if cur == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "PVE 目标不存在"})
 		return
@@ -197,7 +215,7 @@ func handlePVETargetUpdate(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	list[idx] = target
+	list = []pvemodel.Target{target}
 	if err := savePVETargets(app.PlatformKV(), list); err != nil {
 		result.Error500(c, err.Error())
 		return

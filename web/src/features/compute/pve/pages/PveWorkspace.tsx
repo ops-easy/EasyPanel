@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, ChevronUp, Cpu, Database, HardDrive, Loader2, PlugZap, Plus, Power, RefreshCw, Server, ShieldCheck, Trash2 } from "lucide-react";
@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import ComputeSetupPanel from "@/features/compute/components/ComputeSetupPanel";
+import InfraMetricTile from "@/shared/ui/InfraMetricTile";
+import { singlePveTarget } from "./pveSingleton";
 
 export type PveView = "dashboard" | "targets" | "nodes" | "guests" | "storage" | "tasks";
 
@@ -65,8 +67,8 @@ const pageMeta: Record<PveView, { title: string; desc: string; icon: typeof Serv
     icon: HardDrive,
   },
   targets: {
-    title: "PVE 目标",
-    desc: "维护 Proxmox VE 账号密码、Prometheus job 与 TLS 选项，并支持连通性探测。",
+    title: "PVE 配置",
+    desc: "维护 Proxmox VE 账号密码、Prometheus job 与 TLS 选项。",
     icon: PlugZap,
   },
   nodes: {
@@ -177,16 +179,6 @@ function EmptyCell({ colSpan, label }: { colSpan: number; label: string }) {
   );
 }
 
-function MetricCard({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950">{value}</p>
-      {hint ? <p className="mt-1 truncate text-xs text-slate-500">{hint}</p> : null}
-    </div>
-  );
-}
-
 function PveStats({
   nodes,
   guests,
@@ -202,10 +194,10 @@ function PveStats({
 }) {
   return (
     <section className="grid gap-3 sm:grid-cols-3 xl:grid-cols-4">
-      <MetricCard label="节点" value={loading ? "..." : nodes.length} />
-      <MetricCard label="虚拟机 / CT" value={loading ? "..." : guests.length} />
-      <MetricCard label="存储条目" value={loading ? "..." : storage.length} />
-      {tasks ? <MetricCard label="最近任务" value={tasks.length} /> : null}
+      <InfraMetricTile label="节点" value={loading ? "..." : nodes.length} />
+      <InfraMetricTile label="虚拟机 / CT" value={loading ? "..." : guests.length} />
+      <InfraMetricTile label="存储条目" value={loading ? "..." : storage.length} />
+      {tasks ? <InfraMetricTile label="最近任务" value={tasks.length} /> : null}
     </section>
   );
 }
@@ -216,7 +208,6 @@ function PveWorkspace({ view }: { view: PveView }) {
   const canWrite = status?.role === "admin" || status?.permissions?.compute === "rw" || status?.permissions?.vcenter === "rw";
   const meta = pageMeta[view];
   const Icon = meta.icon;
-  const [activeId, setActiveId] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [form, setForm] = useState({
     name: "PVE",
@@ -236,15 +227,8 @@ function PveWorkspace({ view }: { view: PveView }) {
   const pveTargets = useMemo(() => targetsQ.data?.targets ?? [], [targetsQ.data?.targets]);
   const pveTargetsInitialLoading = targetsQ.isLoading && !targetsQ.data;
   const pveNeedsSetup = !pveTargetsInitialLoading && pveTargets.length === 0;
-
-  useEffect(() => {
-    if (!activeId && pveTargets.length > 0) setActiveId(pveTargets[0].id);
-  }, [activeId, pveTargets]);
-
-  const active = useMemo(
-    () => pveTargets.find((x) => x.id === activeId),
-    [activeId, pveTargets]
-  );
+  const active = useMemo(() => singlePveTarget(pveTargets), [pveTargets]);
+  const activeId = active?.id ?? "";
 
   const summaryQ = useQuery({
     queryKey: ["pve-summary", activeId],
@@ -291,9 +275,8 @@ function PveWorkspace({ view }: { view: PveView }) {
 
   const createMut = useMutation({
     mutationFn: () => apiPostJson<{ target: PVETarget }>("/api/pve/targets", form),
-    onSuccess: (res) => {
+    onSuccess: () => {
       toast.success("PVE 目标已保存");
-      setActiveId(res.target.id);
       setShowCreateForm(false);
       setForm((f) => ({ ...f, password: "" }));
       void qc.invalidateQueries({ queryKey: ["pve-targets"] });
@@ -305,7 +288,6 @@ function PveWorkspace({ view }: { view: PveView }) {
     mutationFn: (id: string) => apiDelete(`/api/pve/targets/${encodeURIComponent(id)}`),
     onSuccess: () => {
       toast.success("PVE 目标已删除");
-      setActiveId("");
       void qc.invalidateQueries({ queryKey: ["pve-targets"] });
     },
     onError: (e) => toast.error(String(e)),
@@ -346,6 +328,15 @@ function PveWorkspace({ view }: { view: PveView }) {
     storageQ.isFetching ||
     tasksQ.isFetching;
 
+  const renderPveTargetForm = () => (
+    <TargetForm form={form} setForm={setForm} canWrite={canWrite} pending={createMut.isPending} onSubmit={() => createMut.mutate()} />
+  );
+  const pveTargetForm = showCreateForm ? (
+    renderPveTargetForm()
+  ) : pveNeedsSetup ? (
+    renderPveTargetForm()
+  ) : null;
+
   return (
     <div className="mx-auto w-full max-w-[min(100%,92rem)] space-y-5">
       <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
@@ -368,23 +359,19 @@ function PveWorkspace({ view }: { view: PveView }) {
       {pveTargetsInitialLoading ? (
         <PveTargetsLoadingPanel />
       ) : (
-        <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
+        <div className="grid gap-5 xl:grid-cols-[320px_1fr]">
           <aside className="space-y-4">
-            <TargetList
-              targets={pveTargets}
-              activeId={activeId}
-              loading={targetsQ.isLoading}
-              onSelect={setActiveId}
+            <PveInstancePanel
+              target={active}
               canWrite={canWrite}
-              createOpen={showCreateForm}
-              onToggleCreate={() => setShowCreateForm((v) => !v)}
+              configOpen={showCreateForm || pveNeedsSetup}
+              onToggleConfig={() => setShowCreateForm((v) => !v)}
+              probePending={probeMut.isPending}
+              deletePending={deleteMut.isPending}
+              onProbe={(id) => probeMut.mutate(id)}
+              onDelete={(id) => deleteMut.mutate(id)}
             />
-            {showCreateForm ? (
-              <TargetForm form={form} setForm={setForm} canWrite={canWrite} pending={createMut.isPending} onSubmit={() => createMut.mutate()} />
-            ) : null}
-            {!showCreateForm && pveNeedsSetup ? (
-              <PveSetupPanel form={form} setForm={setForm} canWrite={canWrite} pending={createMut.isPending} onSubmit={() => createMut.mutate()} />
-            ) : null}
+            {pveTargetForm}
           </aside>
 
           <main className="space-y-4">
@@ -395,30 +382,11 @@ function PveWorkspace({ view }: { view: PveView }) {
               tasks={view === "tasks" ? tasks : undefined}
               loading={summaryQ.isLoading}
             />
-            <CurrentTargetCard
-              active={active}
-              canWrite={canWrite}
-              probePending={probeMut.isPending}
-              deletePending={deleteMut.isPending}
-              onProbe={(id) => probeMut.mutate(id)}
-              onDelete={(id) => deleteMut.mutate(id)}
-            />
-
             {view === "dashboard" ? (
               <PveDashboardPanel nodes={summaryNodes} guests={summaryGuests} storage={summaryStorage} loading={summaryQ.isLoading} />
             ) : null}
             {view === "targets" ? (
-              <PveTargetsPanel
-                targets={pveTargets}
-                loading={targetsQ.isLoading}
-                canWrite={canWrite}
-                activeId={activeId}
-                onSelect={setActiveId}
-                onProbe={(id) => probeMut.mutate(id)}
-                onDelete={(id) => deleteMut.mutate(id)}
-                probePending={probeMut.isPending}
-                deletePending={deleteMut.isPending}
-              />
+              <PveConfigurationPanel target={active} loading={targetsQ.isLoading} />
             ) : null}
             {view === "nodes" ? <PveNodesPanel rows={nodes} loading={nodesQ.isLoading} activeId={activeId} /> : null}
             {view === "guests" ? (
@@ -531,7 +499,7 @@ function TargetForm({
   );
 }
 
-function TargetList({
+function PveLegacyTargetList({
   targets,
   activeId,
   loading,
@@ -586,18 +554,22 @@ function TargetList({
   );
 }
 
-function CurrentTargetCard({
-  active,
+function PveInstancePanel({
+  target,
   canWrite,
+  configOpen,
   probePending,
   deletePending,
+  onToggleConfig,
   onProbe,
   onDelete,
 }: {
-  active?: PVETarget;
+  target?: PVETarget;
   canWrite: boolean;
+  configOpen: boolean;
   probePending: boolean;
   deletePending: boolean;
+  onToggleConfig: () => void;
   onProbe: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
@@ -605,21 +577,28 @@ function CurrentTargetCard({
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-slate-950">当前目标</h2>
-          <p className="mt-1 font-mono text-xs text-slate-500">{active ? `${active.name} · ${active.baseUrl}` : "请选择或新增 PVE 目标"}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-600">PVE Instance</p>
+          <h2 className="mt-1 text-sm font-semibold text-slate-950">{target?.name || "未配置 PVE"}</h2>
+          <p className="mt-1 font-mono text-xs text-slate-500">{target?.baseUrl || "配置 Proxmox VE API 地址"}</p>
         </div>
-        {active ? (
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onProbe(active.id)} disabled={!canWrite || probePending}>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={onToggleConfig} disabled={!canWrite}>
+            <PlugZap className="h-4 w-4" />
+            {configOpen ? "收起配置" : target ? "更新 PVE" : "配置 PVE"}
+          </Button>
+        {target ? (
+          <>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onProbe(target.id)} disabled={!canWrite || probePending}>
               <ShieldCheck className="h-4 w-4" />
               探测
             </Button>
-            <Button variant="outline" size="sm" className="gap-1.5 text-red-700" onClick={() => onDelete(active.id)} disabled={!canWrite || deletePending}>
+            <Button variant="outline" size="sm" className="gap-1.5 text-red-700" onClick={() => onDelete(target.id)} disabled={!canWrite || deletePending}>
               <Trash2 className="h-4 w-4" />
               删除
             </Button>
-          </div>
+          </>
         ) : null}
+        </div>
       </div>
     </section>
   );
@@ -695,6 +674,46 @@ function PveDashboardPanel({ nodes, guests, storage, loading }: { nodes: PveReco
           </Table>
         </div>
       </div>
+    </section>
+  );
+}
+
+function PveConfigurationPanel({ target, loading }: { target?: PVETarget; loading: boolean }) {
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <h2 className="mb-3 text-sm font-semibold text-slate-950">PVE 配置</h2>
+      {loading ? (
+        <p className="py-8 text-center text-sm text-slate-500">加载中...</p>
+      ) : target ? (
+        <div className="overflow-auto rounded-lg border border-slate-100">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>字段</TableHead>
+                <TableHead>值</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[
+                ["名称", target.name],
+                ["API 地址", target.baseUrl],
+                ["账号", target.username || target.tokenId || "-"],
+                ["Prometheus job", target.prometheusJob || "-"],
+                ["更新时间", fmtUpdatedAt(target.updatedAt)],
+              ].map(([label, value]) => (
+                <TableRow key={label}>
+                  <TableCell className="w-44 text-slate-500">{label}</TableCell>
+                  <TableCell className="break-all font-mono text-xs">{value}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-slate-200 px-4 py-10 text-center text-sm text-slate-500">
+          还没有配置 PVE，请在左侧保存唯一的 PVE 实例。
+        </div>
+      )}
     </section>
   );
 }

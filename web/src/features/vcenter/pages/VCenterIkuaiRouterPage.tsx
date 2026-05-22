@@ -41,6 +41,11 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { useAppConfig } from "@/hooks/use-app-config";
+import { apiGetJson } from "@/lib/api";
+import {
+  singleNetworkDeviceByKind,
+  type SingletonNetworkDevice,
+} from "@/features/network/components/networkDeviceSingleton";
 import {
   matrixToChartRowsByLabel,
   promInstantVector,
@@ -153,6 +158,18 @@ const VCenterIkuaiRouterPage: React.FC = () => {
     cfgQ.data?.prometheusVcenterConfigured === true ||
     cfgQ.data?.prometheusConfigured === true;
 
+  const networkDevicesQ = useQuery({
+    queryKey: ["network-devices"],
+    queryFn: ({ signal }) =>
+      apiGetJson<{ devices: SingletonNetworkDevice[] }>("/api/network/devices", { signal }),
+    staleTime: 60_000,
+  });
+
+  const savedIkuaiDevice = useMemo(
+    () => singleNetworkDeviceByKind(networkDevicesQ.data?.devices ?? [], "ikuai"),
+    [networkDevicesQ.data?.devices]
+  );
+
   const instancesQ = useQuery({
     queryKey: ["ikuai-prom-instances"],
     queryFn: async ({ signal }) => {
@@ -185,11 +202,16 @@ const VCenterIkuaiRouterPage: React.FC = () => {
   const exporterKind = instancesQ.data?.kind ?? "modern";
 
   useEffect(() => {
+    if (instance) return;
+    if (savedIkuaiDevice?.instanceLabel) {
+      setInstance(savedIkuaiDevice.instanceLabel);
+      return;
+    }
     const lst = instancesQ.data?.list ?? [];
-    if (!instance && lst.length > 0) {
+    if (lst.length > 0) {
       setInstance(lst[0].instance);
     }
-  }, [instance, instancesQ.data]);
+  }, [instance, instancesQ.data, savedIkuaiDevice?.instanceLabel]);
 
   const il = instLabels(instance);
   const windowSec = range === "1h" ? 3600 : range === "6h" ? 6 * 3600 : 24 * 3600;
@@ -728,6 +750,17 @@ const VCenterIkuaiRouterPage: React.FC = () => {
       </div>
 
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="min-w-[220px] flex-1 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            已保存的 iKuai 实例
+          </p>
+          <p className="mt-1 truncate text-sm font-semibold text-slate-900">
+            {savedIkuaiDevice?.name ?? "未配置"}
+          </p>
+          <p className="mt-0.5 truncate font-mono text-[11px] text-slate-500">
+            {savedIkuaiDevice?.instanceLabel || "未绑定 instanceLabel"}
+          </p>
+        </div>
         <div className="space-y-1">
           <Label className="text-xs">采集目标（instance）</Label>
           <Select

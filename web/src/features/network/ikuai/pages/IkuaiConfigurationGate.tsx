@@ -8,6 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import NetworkDeviceSetupPanel from "@/features/network/components/NetworkDeviceSetupPanel";
+import { singleNetworkDeviceByKind } from "@/features/network/components/networkDeviceSingleton";
 
 type NetworkDevice = {
   id: string;
@@ -39,12 +40,15 @@ export default function IkuaiConfigurationGate({ children }: { children: ReactNo
     queryFn: ({ signal }) => apiGetJson<{ devices: NetworkDevice[] }>("/api/network/devices", { signal }),
   });
 
-  const ikuaiDevices = (devicesQ.data?.devices ?? []).filter((x) => x.kind === "ikuai");
+  const savedIkuaiDevice = singleNetworkDeviceByKind(
+    (devicesQ.data?.devices ?? []).filter((device) => device.kind === "ikuai"),
+    "ikuai"
+  );
 
-  const createMut = useMutation({
+  const upsertIkuaiDevice = useMutation({
     mutationFn: () => apiPostJson<{ device: NetworkDevice }>("/api/network/devices", form),
     onSuccess: () => {
-      toast.success("iKuai 设备已保存");
+      toast.success("iKuai 实例已保存");
       setForm(defaultForm);
       void qc.invalidateQueries({ queryKey: ["network-devices"] });
     },
@@ -74,14 +78,14 @@ export default function IkuaiConfigurationGate({ children }: { children: ReactNo
     );
   }
 
-  if (ikuaiDevices.length > 0) return <>{children}</>;
+  if (savedIkuaiDevice) return <>{children}</>;
 
   return (
     <NetworkDeviceSetupPanel
       kind="ikuai"
       mode="missing-device"
-      title="请先登记 iKuai 设备"
-      description="iKuai 页面需要先登记 Prometheus scope、instance 或 job 标签。保存后，监控页会继续检查 ikuai_* 或 ikuai_client_* 指标。"
+      title="请先配置 iKuai 实例"
+      description="iKuai 页面需要先保存 Prometheus scope、instance 或 job 标签。保存后，监控页会继续检查 ikuai_* 或 ikuai_client_* 指标。"
       secondaryLabel="返回网络总览"
       secondaryTo="/cluster/network/dashboard"
     >
@@ -115,9 +119,9 @@ export default function IkuaiConfigurationGate({ children }: { children: ReactNo
           <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
         </div>
       </div>
-      <Button className="mt-4 gap-2" disabled={!canWrite || createMut.isPending} onClick={() => createMut.mutate()}>
-        {createMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-        保存 iKuai 设备
+      <Button className="mt-4 gap-2" disabled={!canWrite || upsertIkuaiDevice.isPending} onClick={() => upsertIkuaiDevice.mutate()}>
+        {upsertIkuaiDevice.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+        保存 iKuai 实例
       </Button>
     </NetworkDeviceSetupPanel>
   );

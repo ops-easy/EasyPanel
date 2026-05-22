@@ -79,6 +79,47 @@ func TestRequireNetworkAdminRejectsCustomNetworkRO(t *testing.T) {
 	}
 }
 
+func TestNetworkDevicesCollapseOnePerKind(t *testing.T) {
+	list := []networkmodel.Device{
+		{ID: "ikuai-new", Kind: "ikuai", Name: "iKuai New", PrometheusScope: "network"},
+		{ID: "ikuai-old", Kind: "ikuai", Name: "iKuai Old", PrometheusScope: "network"},
+		{ID: "openwrt-new", Kind: "openwrt", Name: "OpenWrt New", Host: "192.168.1.2", Port: 22, Username: "root", PrometheusScope: "network"},
+		{ID: "openwrt-old", Kind: "openwrt", Name: "OpenWrt Old", Host: "192.168.1.3", Port: 22, Username: "root", PrometheusScope: "network"},
+	}
+
+	collapsed := collapseNetworkDevicesToSingletons(list)
+
+	if len(collapsed) != 2 {
+		t.Fatalf("expected one iKuai and one OpenWrt, got %d", len(collapsed))
+	}
+	if collapsed[0].ID != "ikuai-new" {
+		t.Fatalf("expected first iKuai to win, got %q", collapsed[0].ID)
+	}
+	if collapsed[1].ID != "openwrt-new" {
+		t.Fatalf("expected first OpenWrt to win, got %q", collapsed[1].ID)
+	}
+}
+
+func TestUpsertNetworkDeviceByKindReplacesSameKindAndPreservesOtherKind(t *testing.T) {
+	cur := []networkmodel.Device{
+		{ID: "ikuai-old", Kind: "ikuai", Name: "iKuai Old", PrometheusScope: "network"},
+		{ID: "openwrt-old", Kind: "openwrt", Name: "OpenWrt Old", Host: "192.168.1.3", Port: 22, Username: "root", PrometheusScope: "network"},
+	}
+	next := networkmodel.Device{ID: "ikuai-new", Kind: "ikuai", Name: "iKuai New", PrometheusScope: "network"}
+
+	out := upsertNetworkDeviceByKind(cur, next)
+
+	if len(out) != 2 {
+		t.Fatalf("expected two devices after upsert, got %d", len(out))
+	}
+	if out[0].ID != "ikuai-new" {
+		t.Fatalf("expected iKuai replacement at front, got %q", out[0].ID)
+	}
+	if out[1].ID != "openwrt-old" {
+		t.Fatalf("expected OpenWrt to be preserved, got %q", out[1].ID)
+	}
+}
+
 func TestOpenWrtFamilyProbeHints(t *testing.T) {
 	families := openWrtMetricFamiliesFromNames([]string{
 		"node_load1",

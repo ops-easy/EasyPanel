@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Cable, Gauge, Loader2, Network, RadioTower, RefreshCw, Shield, Users, Wifi } from "lucide-react";
 import { toast } from "sonner";
@@ -8,8 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import NetworkDeviceSetupPanel from "@/features/network/components/NetworkDeviceSetupPanel";
+import { singleNetworkDeviceByKind, deviceQueryHint } from "@/features/network/components/networkDeviceSingleton";
 import OpenWrtActionPanel from "./OpenWrtActionPanel";
-import OpenWrtTargetPanel, { type OpenWrtTargetForm } from "./OpenWrtTargetPanel";
+import OpenWrtInstancePanel, { type OpenWrtTargetForm } from "./OpenWrtTargetPanel";
 
 export type OpenWrtView = "dashboard" | "interfaces" | "clients" | "connections" | "wireless" | "exporter";
 
@@ -170,7 +171,6 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
   const canWrite = status?.role === "admin" || status?.permissions?.network === "rw";
   const meta = pageMeta[view];
   const Icon = meta.icon;
-  const [activeId, setActiveId] = useState("");
 
   const devicesQ = useQuery({
     queryKey: ["network-devices"],
@@ -180,13 +180,8 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
   const openWrtDevices = useMemo(() => (devicesQ.data?.devices ?? []).filter((x) => x.kind === "openwrt"), [devicesQ.data]);
   const openWrtTargetsInitialLoading = devicesQ.isLoading && !devicesQ.data;
   const openWrtNeedsSetup = !openWrtTargetsInitialLoading && openWrtDevices.length === 0;
-
-  useEffect(() => {
-    if (activeId && openWrtDevices.some((x) => x.id === activeId)) return;
-    setActiveId(openWrtDevices[0]?.id ?? "");
-  }, [activeId, openWrtDevices]);
-
-  const active = openWrtDevices.find((x) => x.id === activeId);
+  const active = useMemo(() => singleNetworkDeviceByKind(openWrtDevices, "openwrt"), [openWrtDevices]);
+  const activeId = active?.id ?? "";
 
   const createTarget = useMutation({
     mutationFn: (body: OpenWrtTargetForm) => apiPostJson("/api/network/devices", { kind: "openwrt", ...body }),
@@ -296,8 +291,8 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
         <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
           <div className="space-y-5">
             {openWrtNeedsSetup ? <OpenWrtSetupPanel /> : null}
-            <OpenWrtTargetPanel
-              devices={openWrtDevices}
+            <OpenWrtInstancePanel
+              device={active}
               activeId={activeId}
               canWrite={canWrite}
               loading={devicesQ.isLoading}
@@ -305,7 +300,6 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
               creating={createTarget.isPending}
               probing={probeTarget.isPending}
               deletingId={deleteTarget.variables}
-              onActiveChange={setActiveId}
               onCreate={(body) => createTarget.mutate(body)}
               onProbe={(body) => probeTarget.mutate(body)}
               onDelete={(id) => deleteTarget.mutate(id)}
@@ -326,7 +320,7 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
                 <Metric label="当前目标" value={active?.name || "未选择"} hint={active?.host || active?.apiUrl || "-"} />
                 <Metric label="受管目标" value={openWrtDevices.length} hint="OpenWrt" />
                 <Metric label="SSH 凭据" value={active?.passwordSet || active?.privateKeySet ? "已保存" : "未保存"} hint={active?.username || "root"} />
-                <Metric label="监控指标族" value={`${readyFamilies}/5`} hint="Prometheus 增强" />
+                <Metric label="监控指标族" value={`${readyFamilies}/5`} hint={deviceQueryHint(active)} />
               </div>
             </section>
 
