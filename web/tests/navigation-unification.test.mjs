@@ -61,10 +61,39 @@ test("sidebar and mobile active states do not highlight parent dashboards togeth
 });
 
 test("compute sidebar follows the same coarse order as compute top navigation", () => {
+  const computeResourceLinks = computeSubNavSource.slice(
+    computeSubNavSource.indexOf("const resourceLinks"),
+    computeSubNavSource.indexOf("const utilityLinks")
+  );
+  const computeUtilityLinks = computeSubNavSource.slice(
+    computeSubNavSource.indexOf("const utilityLinks"),
+    computeSubNavSource.indexOf("function activeFor")
+  );
   const computeSidebar = sidebarSource.slice(
     sidebarSource.indexOf("showComputeNav && isCompute"),
     sidebarSource.indexOf("showNetworkNav && isNetwork")
   );
+  assertInOrder(
+    computeResourceLinks,
+    [
+      'to: "/cluster/compute/guests"',
+      'to: "/cluster/compute/hosts"',
+      'to: "/cluster/compute/storage"',
+      'to: "/cluster/compute/activity"',
+    ],
+    "compute top resource navigation"
+  );
+  assertInOrder(
+    computeUtilityLinks,
+    [
+      'to: "/cluster/compute/cloud"',
+      'to: "/cluster/compute/bastion"',
+      'to: "/cluster/compute/tools/ip-scan"',
+      'to: "/cluster/compute/config"',
+    ],
+    "compute top utility navigation"
+  );
+  assert.match(computeSubNavSource, /if \(providerConfigured\) base\.push\(\.\.\.resourceLinks\);[\s\S]*base\.push\(\.\.\.utilityLinks\);/);
   assertInOrder(
     computeSidebar,
     [
@@ -73,13 +102,15 @@ test("compute sidebar follows the same coarse order as compute top navigation", 
       'to="/cluster/compute/hosts"',
       'to="/cluster/compute/storage"',
       'to="/cluster/compute/activity"',
-      'to="/cluster/compute/config"',
       'to="/cluster/compute/cloud"',
       'to="/cluster/bastion"',
       'to="/cluster/compute/tools/ip-scan"',
+      'to="/cluster/compute/config"',
     ],
     "compute sidebar"
   );
+  assert.match(computeSidebar, /<span>IP 扫描<\/span>/);
+  assert.doesNotMatch(computeSidebar, /<span>内网工具箱<\/span>/);
 });
 
 test("header workspace switcher opens bastion module home before terminal sessions", () => {

@@ -61,15 +61,15 @@ const resourceLinks: ComputeNavLink[] = [
 ];
 
 const utilityLinks: ComputeNavLink[] = [
+  { to: "/cluster/compute/cloud", label: "公有云", icon: Cloud },
+  { to: "/cluster/compute/bastion", label: "堡垒机", icon: Shield, aliases: ["/cluster/bastion"] },
+  { to: "/cluster/compute/tools/ip-scan", label: "IP 扫描", icon: ScanSearch },
   {
     to: "/cluster/compute/config",
     label: "配置",
     icon: Settings,
     aliases: ["/cluster/compute/config", "/cluster/compute/pve/targets"],
   },
-  { to: "/cluster/compute/cloud", label: "公有云", icon: Cloud },
-  { to: "/cluster/compute/bastion", label: "堡垒机", icon: Shield, aliases: ["/cluster/bastion"] },
-  { to: "/cluster/compute/tools/ip-scan", label: "IP 扫描", icon: ScanSearch },
 ];
 
 function activeFor(pathname: string, link: ComputeNavLink): boolean {

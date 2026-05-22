@@ -1000,16 +1000,6 @@ const Sidebar: React.FC = () => {
                 尚未接入 vCenter 或 PVE，资源入口将在配置完成后显示。
               </div>
             )}
-            <Link
-              to="/cluster/compute/config"
-              className={navLinkTint(computeConfigActive, "violet")}
-            >
-              <Settings
-                size={20}
-                className={iconTint(computeConfigActive, "violet")}
-              />
-              <span>配置</span>
-            </Link>
             {showVcCloud ? (
               <Link
                 to="/cluster/compute/cloud"
@@ -1043,9 +1033,19 @@ const Sidebar: React.FC = () => {
                   size={20}
                   className={iconTint(computeToolboxActive, "violet")}
                 />
-                <span>内网工具箱</span>
+                <span>IP 扫描</span>
               </Link>
             ) : null}
+            <Link
+              to="/cluster/compute/config"
+              className={navLinkTint(computeConfigActive, "violet")}
+            >
+              <Settings
+                size={20}
+                className={iconTint(computeConfigActive, "violet")}
+              />
+              <span>配置</span>
+            </Link>
           </>
         ) : showNetworkNav && isNetwork ? (
           <>
