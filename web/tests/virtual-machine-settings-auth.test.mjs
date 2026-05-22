@@ -58,3 +58,27 @@ test("PVE target form uses username and password instead of token fields", () =>
   assert.doesNotMatch(pveTargetFormSource, /<Label>Token ID<\/Label>/);
   assert.doesNotMatch(pveTargetFormSource, /<Label>Token Secret<\/Label>/);
 });
+
+test("vCenter focused config uses a designed connection panel", () => {
+  const runtimeSettingsSource = read("../src/features/settings/components/SettingsRuntimeSection.tsx");
+
+  assert.match(runtimeSettingsSource, /连接身份/);
+  assert.match(runtimeSettingsSource, /运行策略/);
+  assert.match(runtimeSettingsSource, /访问地址/);
+  assert.match(runtimeSettingsSource, /vcenterInsecure/);
+  assert.match(runtimeSettingsSource, /vcenter-config-summary/);
+  assert.doesNotMatch(runtimeSettingsSource, /<Label>vcenterUrl<\/Label>/);
+});
+
+test("PVE target settings uses summary-first layout instead of an empty table", () => {
+  const pvePanelSource = read("../src/features/compute/pve/components/PveTargetSettingsPanel.tsx");
+  const pveTargetFormSource = read("../src/features/compute/pve/components/PveTargetForm.tsx");
+
+  assert.match(pvePanelSource, /当前接入目标/);
+  assert.match(pvePanelSource, /TargetSummaryItem/);
+  assert.match(pvePanelSource, /target-summary-grid/);
+  assert.match(pveTargetFormSource, /lg:grid-cols-12/);
+  assert.match(pveTargetFormSource, /连接参数/);
+  assert.doesNotMatch(pvePanelSource, /TableHeader/);
+  assert.doesNotMatch(pvePanelSource, /还没有 PVE 目标/);
+});

@@ -1,12 +1,21 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, PlugZap, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  CalendarClock,
+  Link2,
+  Loader2,
+  LockKeyhole,
+  PlugZap,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/auth-context";
 import { apiDelete, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import PveTargetForm, {
   defaultPveTargetForm,
   pveTargetFormFromTarget,
@@ -21,6 +30,31 @@ function fmtUpdatedAt(v: unknown): string {
   if (Number.isNaN(d.getTime())) return s;
   return d.toLocaleString("zh-CN", { hour12: false });
 }
+
+function pveCredentialStatus(target?: PVETarget): string {
+  if (!target) return "未配置";
+  if (target.passwordSet) return target.passwordPreview || "密码已保存";
+  if (target.tokenSecretSet) return target.tokenSecretPreview || "Token 已保存";
+  return "未保存";
+}
+
+type TargetSummaryItemProps = {
+  label: string;
+  value: React.ReactNode;
+  hint?: React.ReactNode;
+  icon: typeof PlugZap;
+};
+
+const TargetSummaryItem: React.FC<TargetSummaryItemProps> = ({ label, value, hint, icon: Icon }) => (
+  <div className="min-w-0 rounded-lg border border-slate-200 bg-white p-3">
+    <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-500">
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </div>
+    <div className="truncate text-sm font-semibold text-slate-950">{value}</div>
+    {hint ? <div className="mt-1 truncate text-[11px] text-slate-500">{hint}</div> : null}
+  </div>
+);
 
 const PveTargetSettingsPanel: React.FC = () => {
   const qc = useQueryClient();
@@ -74,6 +108,8 @@ const PveTargetSettingsPanel: React.FC = () => {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const targetStatus = active ? "已接入" : targetsQ.isLoading ? "读取中" : "未配置";
+
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 bg-slate-50/70 px-6 py-5">
@@ -88,13 +124,30 @@ const PveTargetSettingsPanel: React.FC = () => {
               维护唯一 Proxmox VE API 目标。基础资源、虚拟机 / CT、电源任务仍走 PVE API；GPU 与主机 exporter 时序在下方监控数据源中配置。
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={active ? "secondary" : "outline"}>{targetStatus}</Badge>
             <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => void targetsQ.refetch()} disabled={targetsQ.isFetching}>
               {targetsQ.isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               刷新
             </Button>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-5 p-6">
+        <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-950">当前接入目标</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                {targetsQ.isLoading
+                  ? "正在读取 PVE 目标..."
+                  : active
+                    ? "已保存唯一 PVE 目标，可在这里更新凭据或探测连通性。"
+                    : "尚未配置 PVE API 目标，下方填写后即可纳管节点、虚拟机和存储。"}
+              </p>
+            </div>
             {active ? (
-              <>
+              <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => probeMut.mutate(active.id)} disabled={!canWrite || probeMut.isPending}>
                   <ShieldCheck className="h-4 w-4" />
                   探测
@@ -103,75 +156,46 @@ const PveTargetSettingsPanel: React.FC = () => {
                   <Trash2 className="h-4 w-4" />
                   删除
                 </Button>
-              </>
+              </div>
             ) : null}
           </div>
+          <div className="target-summary-grid mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <TargetSummaryItem
+              icon={PlugZap}
+              label="目标名称"
+              value={active?.name || "待接入"}
+              hint={active ? "Proxmox VE" : "填写下方连接参数"}
+            />
+            <TargetSummaryItem
+              icon={Link2}
+              label="API 地址"
+              value={active?.baseUrl || "未填写"}
+              hint={active?.prometheusJob ? `监控 job：${active.prometheusJob}` : "https://host:8006"}
+            />
+            <TargetSummaryItem
+              icon={UserRound}
+              label="账号"
+              value={active?.username || active?.tokenId || "未填写"}
+              hint={<Badge className="w-fit" variant={active?.passwordSet || active?.tokenSecretSet ? "secondary" : "outline"}>{pveCredentialStatus(active)}</Badge>}
+            />
+            <TargetSummaryItem
+              icon={active?.skipTls === false ? LockKeyhole : CalendarClock}
+              label={active?.skipTls === false ? "TLS 校验" : "更新时间"}
+              value={active?.skipTls === false ? "严格校验" : fmtUpdatedAt(active?.updatedAt)}
+              hint={active?.skipTls === false ? fmtUpdatedAt(active?.updatedAt) : "跳过自签证书校验"}
+            />
+          </div>
         </div>
-      </div>
-      <div className="grid gap-5 p-6 xl:grid-cols-[320px_1fr]">
         <PveTargetForm
           form={form}
           setForm={setForm}
           canWrite={canWrite}
           pending={saveMut.isPending}
           onSubmit={() => saveMut.mutate()}
-          title={active ? "更新 PVE 目标" : "新增 PVE 目标"}
+          title="连接参数"
           submitLabel={active ? "保存 PVE 目标" : "保存目标"}
           embedded
         />
-        <div className="min-w-0 space-y-3">
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-            <p className="text-sm font-semibold text-slate-950">当前目标</p>
-            <p className="mt-1 text-xs text-slate-500">
-              {targetsQ.isLoading ? "正在读取 PVE 目标..." : active ? "已保存唯一 PVE 目标，可在这里更新凭据或探测连通性。" : "尚未配置 PVE 目标。"}
-            </p>
-          </div>
-          <div className="overflow-auto rounded-xl border border-slate-200">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>名称</TableHead>
-                  <TableHead>API 地址</TableHead>
-                  <TableHead>账号</TableHead>
-                  <TableHead>Prometheus job</TableHead>
-                  <TableHead>更新时间</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {targetsQ.isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-8 text-center text-sm text-slate-500">
-                      加载中...
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-                {!targetsQ.isLoading && !active ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-8 text-center text-sm text-slate-500">
-                      还没有 PVE 目标
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-                {active ? (
-                  <TableRow>
-                    <TableCell className="font-medium text-slate-950">{active.name}</TableCell>
-                    <TableCell className="min-w-64 break-all font-mono text-xs">{active.baseUrl}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      <div className="flex flex-col gap-1">
-                        <span>{active.username || active.tokenId || "-"}</span>
-                        <Badge className="w-fit" variant={active.passwordSet || active.tokenSecretSet ? "secondary" : "outline"}>
-                          {active.passwordSet ? active.passwordPreview || "密码已保存" : active.tokenSecretSet ? active.tokenSecretPreview || "Token 已保存" : "未保存"}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{active.prometheusJob || "-"}</TableCell>
-                    <TableCell className="font-mono text-xs">{fmtUpdatedAt(active.updatedAt)}</TableCell>
-                  </TableRow>
-                ) : null}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
       </div>
     </section>
   );

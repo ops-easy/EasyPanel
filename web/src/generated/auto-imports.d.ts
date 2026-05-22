@@ -31,6 +31,7 @@ declare global {
   const Brain: typeof import('lucide-react').Brain
   const Cable: typeof import('lucide-react').Cable
   const Calendar: typeof import('lucide-react').Calendar
+  const CalendarClock: typeof import('lucide-react').CalendarClock
   const Check: typeof import('lucide-react').Check
   const CheckCircle: typeof import('lucide-react').CheckCircle
   const CheckCircle2: typeof import('lucide-react').CheckCircle2
@@ -115,6 +116,7 @@ declare global {
   const ListOrdered: typeof import('lucide-react').ListOrdered
   const Loader2: typeof import('lucide-react').Loader2
   const Loader2Icon: typeof import('lucide-react').Loader2Icon
+  const LockKeyhole: typeof import('lucide-react').LockKeyhole
   const LogIn: typeof import('lucide-react').LogIn
   const LogOut: typeof import('lucide-react').LogOut
   const Logs: typeof import('lucide-react').Logs

@@ -1,5 +1,5 @@
 import type React from "react";
-import { Loader2, PlugZap } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -73,39 +73,44 @@ const PveTargetForm: React.FC<PveTargetFormProps> = ({
   pending,
   onSubmit,
   embedded = false,
-  title = "新增 PVE 目标",
-  submitLabel = "保存目标",
+  title = "连接参数",
+  submitLabel = "保存 PVE 目标",
 }) => {
   return (
-    <section className={embedded ? "rounded-lg border border-amber-100 bg-amber-50/40 p-4" : "rounded-xl border border-slate-200 bg-white p-4 shadow-sm"}>
-      <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
-      <div className="mt-4 space-y-3">
-        <div className="space-y-1.5">
+    <section className={embedded ? "rounded-xl border border-slate-200 bg-slate-50/60 p-4" : "rounded-xl border border-slate-200 bg-white p-4 shadow-sm"}>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
+          <p className="mt-1 text-xs text-slate-500">更新 Proxmox VE API 地址、账号凭据与监控 job。</p>
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 lg:grid-cols-12">
+        <div className="space-y-1.5 lg:col-span-2">
           <Label>显示名称</Label>
           <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 lg:col-span-4">
           <Label>API 地址</Label>
           <Input className="font-mono text-sm" placeholder="https://pve.example.com:8006" value={form.baseUrl} onChange={(e) => setForm({ ...form, baseUrl: e.target.value })} />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 lg:col-span-2">
           <Label>用户名</Label>
           <Input className="font-mono text-sm" placeholder="root" autoComplete="username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 lg:col-span-2">
           <Label>密码</Label>
           <Input type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 lg:col-span-2">
           <Label>Prometheus job（可选）</Label>
           <Input value={form.prometheusJob} onChange={(e) => setForm({ ...form, prometheusJob: e.target.value })} />
         </div>
-        <label className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm">
+        <label className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm lg:col-span-9">
           <span className="text-slate-700">跳过 TLS 校验</span>
           <Switch checked={form.skipTls} onCheckedChange={(v) => setForm({ ...form, skipTls: v })} />
         </label>
-        <Button className="w-full gap-2 bg-amber-600 hover:bg-amber-700" disabled={!canWrite || pending} onClick={onSubmit}>
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlugZap className="h-4 w-4" />}
+        <Button className="h-10 w-full gap-2 lg:col-span-3" disabled={!canWrite || pending} onClick={onSubmit}>
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {submitLabel}
         </Button>
       </div>
