@@ -608,7 +608,6 @@ const Login: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [usernameUnlocked, setUsernameUnlocked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [errHint, setErrHint] = useState<string | null>(null);
@@ -937,7 +936,7 @@ const Login: React.FC = () => {
 
               {showPassword && loginStep === "password" && (
                 <form onSubmit={onSubmitPassword} className="flex flex-col gap-6" autoComplete="off">
-                  <div className="sr-only" aria-hidden>
+                  <div className="hidden" aria-hidden>
                     <input type="text" tabIndex={-1} autoComplete="off" />
                     <input type="password" tabIndex={-1} autoComplete="off" />
                   </div>
@@ -952,11 +951,9 @@ const Login: React.FC = () => {
                       autoCorrect="off"
                       autoCapitalize="off"
                       spellCheck={false}
-                      readOnly={!usernameUnlocked}
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       onFocus={() => {
-                        setUsernameUnlocked(true);
                         setFocusedField("username");
                       }}
                       onBlur={() => setFocusedField(null)}
