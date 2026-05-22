@@ -46,6 +46,7 @@ func RegisterRoutes(api *gin.RouterGroup, app *appctx.ServerApp) {
 	g.POST("/targets/:id/guests/:vmid/disks/resize", func(c *gin.Context) { handlePVEGuestDiskResize(c, app) })
 	g.GET("/targets/:id/guests/:vmid/snapshots", func(c *gin.Context) { handlePVEGuestSnapshots(c, app) })
 	g.POST("/targets/:id/guests/:vmid/snapshots", func(c *gin.Context) { handlePVEGuestSnapshotCreate(c, app) })
+	g.POST("/targets/:id/guests/:vmid/snapshots/:snapname/rollback", func(c *gin.Context) { handlePVEGuestSnapshotRollback(c, app) })
 	g.DELETE("/targets/:id/guests/:vmid/snapshots/:snapname", func(c *gin.Context) { handlePVEGuestSnapshotDelete(c, app) })
 	g.POST("/targets/:id/guests/:vmid/console/ticket", func(c *gin.Context) { handlePVEGuestConsoleTicket(c, app) })
 	g.GET("/targets/:id/guests/:vmid/console/ws", func(c *gin.Context) { handlePVEGuestConsoleWebSocket(c, app) })

@@ -331,10 +331,10 @@ const VCenterGpuDashboard: React.FC = () => {
             Prometheus 中抓取 GPU Exporter（推荐 nvidia-dcgm-exporter）。
           </p>
           <Link
-            to="/cluster/compute/vcenter/settings"
+            to="/cluster/compute/config"
             className="mt-2 inline-block text-sm font-semibold text-amber-950 underline underline-offset-2"
           >
-            虚拟化监控设置
+            配置
           </Link>
         </div>
       </div>
@@ -405,8 +405,8 @@ const VCenterGpuDashboard: React.FC = () => {
         <Link to="/cluster/compute/dashboard" className="text-xs font-medium text-violet-700 hover:underline">
           返回算力总览
         </Link>
-        <Link to="/cluster/compute/vcenter/settings" className="text-xs font-medium text-slate-600 hover:underline">
-          数据源设置
+        <Link to="/cluster/compute/config" className="text-xs font-medium text-slate-600 hover:underline">
+          配置
         </Link>
       </div>
 
@@ -417,7 +417,7 @@ const VCenterGpuDashboard: React.FC = () => {
         </div>
       ) : activeScopes.length === 0 ? (
         <div className="rounded-2xl border border-amber-200/80 bg-amber-50/50 px-5 py-4 text-sm text-amber-950">
-          当前选择的数据源未配置。请选择“全部可用”，或在虚拟化监控设置中填写对应的 Prometheus 地址。
+          当前选择的数据源未配置。请选择“全部可用”，或在配置中填写对应的 Prometheus 地址。
         </div>
       ) : family === "none" ? (
         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-5 py-4 text-sm text-slate-800">

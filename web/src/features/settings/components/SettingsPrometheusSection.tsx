@@ -258,14 +258,14 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
               <code className="text-[11px]">PROMETHEUS_URL_K8S</code> / fallback{" "}
               <code className="text-[11px]">PROMETHEUS_URL</code>. Optional VictoriaMetrics:{" "}
               <code className="text-[11px]">vmSelectUrlK8s</code> or <code className="text-[11px]">VM_SELECT_URL_K8S</code>{" "}
-              (takes precedence). vCenter / cloud: vCenter settings.
+              (takes precedence). vCenter / cloud: virtual machine settings.
             </>
           ) : (
             <>
               Prometheus 对应 <code className="text-[11px]">prometheusUrlK8s</code> 或{" "}
               <code className="text-[11px]">PROMETHEUS_URL_K8S</code>，未填时兜底 <code className="text-[11px]">prometheusUrl</code>。
               可选 VM：<code className="text-[11px]">vmSelectUrlK8s</code> / <code className="text-[11px]">VM_SELECT_URL_K8S</code>（优先）。
-              vCenter / 公有云见「vCenter 设置」。
+              vCenter / 公有云见「配置」。
             </>
           )}
         </p>

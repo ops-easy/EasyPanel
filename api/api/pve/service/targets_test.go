@@ -123,6 +123,14 @@ func TestPVEFullTakeoverPaths(t *testing.T) {
 	if snapshots != "/nodes/pve-a/qemu/103/snapshot" {
 		t.Fatalf("snapshots path=%q", snapshots)
 	}
+
+	rollback, err := pveGuestSnapshotRollbackPath("pve-a", "vm", "103", "before-upgrade")
+	if err != nil {
+		t.Fatalf("rollback path: %v", err)
+	}
+	if rollback != "/nodes/pve-a/qemu/103/snapshot/before-upgrade/rollback" {
+		t.Fatalf("rollback path=%q", rollback)
+	}
 }
 
 func TestPVETargetCreateReplacesExistingSingleton(t *testing.T) {

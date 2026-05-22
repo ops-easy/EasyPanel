@@ -246,13 +246,13 @@ const BastionConsoleHome: React.FC = () => {
                 </span>
               </div>
               <p className="mt-3 flex-1 text-xs leading-relaxed text-slate-400">
-                vCenter VM 全局 SSH：在 vCenter 设置中维护默认凭据，适用于未单独保存凭据的 vCenter 虚拟机。
+                vCenter VM 全局 SSH：在配置中维护默认凭据，适用于未单独保存凭据的 vCenter 虚拟机。
               </p>
               <Link
-                to="/cluster/compute/vcenter/settings"
+                to="/cluster/compute/config"
                 className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-sky-300 hover:text-sky-200"
               >
-                打开 vCenter 设置 <ArrowRight className="h-3.5 w-3.5" />
+                打开配置 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
 

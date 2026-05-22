@@ -15,7 +15,8 @@ test("bastion home explains ssh settings per target type instead of implying vCe
   assert.match(homeSource, /云主机：在云主机详情中维护 SSH/);
   assert.match(homeSource, /Redis CLI：使用实例连接信息，不走 SSH 凭据/);
   assert.match(homeSource, /配置入口与凭据归属/);
-  assert.match(homeSource, /打开 vCenter 设置/);
+  assert.match(homeSource, /打开配置/);
+  assert.match(homeSource, /to="\/cluster\/compute\/config"/);
   assert.match(homeSource, /去选择 PVE 目标/);
   assert.match(homeSource, /打开策略与额外主机/);
   assert.match(homeSource, /打开云主机/);
@@ -27,6 +28,6 @@ test("bastion home explains ssh settings per target type instead of implying vCe
 test("bastion session header reflects all supported target families", () => {
   assert.doesNotMatch(sessionSource, /vCenter 路 JumpServer RDP 路 SSH/);
   assert.match(sessionSource, /vCenter · PVE · 额外主机 · 云主机 · Redis CLI/);
-  assert.match(sessionSource, /title="vCenter VM 全局 SSH 设置"/);
+  assert.match(sessionSource, /title="虚拟机全局 SSH 设置"/);
   assert.match(sessionSource, />全局 SSH</);
 });

@@ -6,14 +6,13 @@ import ViewerRedirect from "@/app/guards/ViewerRedirect";
 const ToolNetworkIpScan = lazy(() => import("@/features/cluster/pages/ToolNetworkIpScan"));
 const ComputeLayout = lazy(() => import("@/features/compute/layout/ComputeLayout"));
 const ComputeDashboard = lazy(() => import("@/features/compute/pages/ComputeDashboard"));
+const ComputeResourcePage = lazy(() => import("@/features/compute/pages/ComputeResourcePage"));
+const VirtualMachineSettings = lazy(() => import("@/features/compute/pages/VirtualMachineSettings"));
 const CloudHosts = lazy(() => import("@/features/vcenter/pages/CloudHosts"));
 const CloudHostSshPage = lazy(() => import("@/features/vcenter/pages/CloudHostSshPage"));
 const VCenterGpuDashboard = lazy(() => import("@/features/vcenter/pages/VCenterGpuDashboard"));
 const VCenterHostDetail = lazy(() => import("@/features/vcenter/pages/VCenterHostDetail"));
-const VCenterHosts = lazy(() => import("@/features/vcenter/pages/VCenterHosts"));
-const VCenterHubDashboard = lazy(() => import("@/features/vcenter/pages/VCenterHubDashboard"));
-const VCenterList = lazy(() => import("@/features/vcenter/pages/VCenterList"));
-const VCenterSettings = lazy(() => import("@/features/vcenter/pages/VCenterSettings"));
+const VCenterVMDetail = lazy(() => import("@/features/vcenter/pages/VCenterVMDetail"));
 const VCenterConnectionGate = lazy(() =>
   import("@/features/vcenter/pages/VCenterConfigGuards").then((m) => ({
     default: m.VCenterConnectionGate,
@@ -24,15 +23,16 @@ const VCenterPrometheusGate = lazy(() =>
     default: m.VCenterPrometheusGate,
   }))
 );
-const PveDashboard = lazy(() => import("@/features/compute/pve/pages/PveDashboard"));
-const PveTargets = lazy(() => import("@/features/compute/pve/pages/PveTargets"));
-const PveGuests = lazy(() => import("@/features/compute/pve/pages/PveGuests"));
 const PveGuestDetail = lazy(() => import("@/features/compute/pve/pages/PveGuestDetail"));
-const PveNodes = lazy(() => import("@/features/compute/pve/pages/PveNodes"));
 const PveNodeDetail = lazy(() => import("@/features/compute/pve/pages/PveNodeDetail"));
-const PveStorage = lazy(() => import("@/features/compute/pve/pages/PveStorage"));
-const PveTasks = lazy(() => import("@/features/compute/pve/pages/PveTasks"));
-const VCenterVMDetail = lazy(() => import("@/features/vcenter/pages/VCenterVMDetail"));
+
+function resourcePage(view: "guests" | "hosts" | "storage" | "activity") {
+  return (
+    <RouteSuspense>
+      <ComputeResourcePage view={view} />
+    </RouteSuspense>
+  );
+}
 
 export function computeRoutes(): ReactNode {
   return (
@@ -53,27 +53,22 @@ export function computeRoutes(): ReactNode {
           </RouteSuspense>
         }
       />
-      <Route path="vcenter" element={<Navigate to="/cluster/compute/vcenter/vms" replace />} />
+      <Route path="guests" element={resourcePage("guests")} />
+      <Route path="hosts" element={resourcePage("hosts")} />
+      <Route path="storage" element={resourcePage("storage")} />
+      <Route path="activity" element={resourcePage("activity")} />
       <Route
-        path="vcenter/dashboard"
+        path="config"
         element={
           <RouteSuspense>
-            <VCenterConnectionGate embedded>
-              <VCenterHubDashboard />
-            </VCenterConnectionGate>
+            <VirtualMachineSettings />
           </RouteSuspense>
         }
       />
-      <Route
-        path="vcenter/vms"
-        element={
-          <RouteSuspense>
-            <VCenterConnectionGate>
-              <VCenterList />
-            </VCenterConnectionGate>
-          </RouteSuspense>
-        }
-      />
+      <Route path="vm-settings" element={<Navigate to="/cluster/compute/config" replace />} />
+
+      <Route path="vcenter" element={<Navigate to="/cluster/compute/guests" replace />} />
+      <Route path="vcenter/dashboard" element={<Navigate to="/cluster/compute/dashboard" replace />} />
       <Route
         path="vcenter/vms/:moref"
         element={
@@ -84,6 +79,7 @@ export function computeRoutes(): ReactNode {
           </RouteSuspense>
         }
       />
+      <Route path="vcenter/vms" element={<Navigate to="/cluster/compute/guests" replace />} />
       <Route
         path="vcenter/hosts/:moref"
         element={
@@ -94,16 +90,7 @@ export function computeRoutes(): ReactNode {
           </RouteSuspense>
         }
       />
-      <Route
-        path="vcenter/hosts"
-        element={
-          <RouteSuspense>
-            <VCenterConnectionGate>
-              <VCenterHosts />
-            </VCenterConnectionGate>
-          </RouteSuspense>
-        }
-      />
+      <Route path="vcenter/hosts" element={<Navigate to="/cluster/compute/hosts" replace />} />
       <Route
         path="vcenter/gpu"
         element={
@@ -114,15 +101,32 @@ export function computeRoutes(): ReactNode {
           </RouteSuspense>
         }
       />
-      <Route path="vcenter/prometheus" element={<Navigate to="/cluster/compute/vcenter/dashboard" replace />} />
+      <Route path="vcenter/prometheus" element={<Navigate to="/cluster/compute/dashboard" replace />} />
+
+      <Route path="pve" element={<Navigate to="/cluster/compute/guests" replace />} />
+      <Route path="pve/dashboard" element={<Navigate to="/cluster/compute/dashboard" replace />} />
+      <Route path="pve/targets" element={<Navigate to="/cluster/compute/config" replace />} />
       <Route
-        path="vcenter/settings"
+        path="pve/nodes/:targetId/:node"
         element={
           <RouteSuspense>
-            <VCenterSettings />
+            <PveNodeDetail />
           </RouteSuspense>
         }
       />
+      <Route path="pve/nodes" element={<Navigate to="/cluster/compute/hosts" replace />} />
+      <Route
+        path="pve/guests/:targetId/:node/:guestType/:vmid"
+        element={
+          <RouteSuspense>
+            <PveGuestDetail />
+          </RouteSuspense>
+        }
+      />
+      <Route path="pve/guests" element={<Navigate to="/cluster/compute/guests" replace />} />
+      <Route path="pve/storage" element={<Navigate to="/cluster/compute/storage" replace />} />
+      <Route path="pve/tasks" element={<Navigate to="/cluster/compute/activity" replace />} />
+
       <Route
         path="cloud/:hostId/ssh"
         element={
@@ -152,71 +156,6 @@ export function computeRoutes(): ReactNode {
               <ToolNetworkIpScan />
             </RouteSuspense>
           </ViewerRedirect>
-        }
-      />
-      <Route path="pve" element={<Navigate to="/cluster/compute/pve/dashboard" replace />} />
-      <Route
-        path="pve/dashboard"
-        element={
-          <RouteSuspense>
-            <PveDashboard />
-          </RouteSuspense>
-        }
-      />
-      <Route
-        path="pve/targets"
-        element={
-          <RouteSuspense>
-            <PveTargets />
-          </RouteSuspense>
-        }
-      />
-      <Route
-        path="pve/nodes"
-        element={
-          <RouteSuspense>
-            <PveNodes />
-          </RouteSuspense>
-        }
-      />
-      <Route
-        path="pve/nodes/:targetId/:node"
-        element={
-          <RouteSuspense>
-            <PveNodeDetail />
-          </RouteSuspense>
-        }
-      />
-      <Route
-        path="pve/guests"
-        element={
-          <RouteSuspense>
-            <PveGuests />
-          </RouteSuspense>
-        }
-      />
-      <Route
-        path="pve/guests/:targetId/:node/:guestType/:vmid"
-        element={
-          <RouteSuspense>
-            <PveGuestDetail />
-          </RouteSuspense>
-        }
-      />
-      <Route
-        path="pve/storage"
-        element={
-          <RouteSuspense>
-            <PveStorage />
-          </RouteSuspense>
-        }
-      />
-      <Route
-        path="pve/tasks"
-        element={
-          <RouteSuspense>
-            <PveTasks />
-          </RouteSuspense>
         }
       />
     </Route>

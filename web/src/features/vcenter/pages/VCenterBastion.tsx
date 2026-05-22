@@ -728,7 +728,7 @@ const VCenterBastion: React.FC = () => {
             className="h-8 px-2 text-[10px] text-[#8c8c8c] hover:bg-[#1f1f1f] hover:text-[#69c0ff]"
             asChild
           >
-            <Link to="/cluster/compute/vcenter/settings" title="vCenter VM 全局 SSH 设置">全局 SSH</Link>
+            <Link to="/cluster/compute/config" title="虚拟机全局 SSH 设置">全局 SSH</Link>
           </Button>
           {selectedVm ? (
             <Button

@@ -68,11 +68,12 @@ test("compute sidebar follows the same coarse order as compute top navigation", 
   assertInOrder(
     computeSidebar,
     [
-      'to="/cluster/compute/vcenter/dashboard"',
-      'to="/cluster/compute/vcenter/vms"',
-      'to="/cluster/compute/vcenter/hosts"',
-      'to="/cluster/compute/vcenter/gpu"',
-      'to="/cluster/compute/pve/dashboard"',
+      'to="/cluster/compute/dashboard"',
+      'to="/cluster/compute/guests"',
+      'to="/cluster/compute/hosts"',
+      'to="/cluster/compute/storage"',
+      'to="/cluster/compute/activity"',
+      'to="/cluster/compute/config"',
       'to="/cluster/compute/cloud"',
       'to="/cluster/bastion"',
       'to="/cluster/compute/tools/ip-scan"',
@@ -125,9 +126,9 @@ test("IP scan has a compute-owned route and legacy routes redirect to it", () =>
 });
 
 test("legacy vCenter routes redirect before falling through to VM details", () => {
-  assert.match(vcenterRoutesSource, /path="vcenter\/prometheus"[\s\S]*to="\/cluster\/compute\/vcenter\/dashboard"/);
+  assert.match(vcenterRoutesSource, /path="vcenter\/prometheus"[\s\S]*to="\/cluster\/compute\/dashboard"/);
   assert.match(vcenterRoutesSource, /path="vcenter\/router"[\s\S]*to="\/cluster\/network\/ikuai\/dashboard"/);
-  assert.match(vcenterRoutesSource, /path="vcenter"[\s\S]*to="\/cluster\/compute\/vcenter\/vms"/);
+  assert.match(vcenterRoutesSource, /path="vcenter"[\s\S]*to="\/cluster\/compute\/guests"/);
   assert.match(vcenterRoutesSource, /path="vcenter\/:moref"[\s\S]*<LegacyVcenterVmRedirect \/>/);
   assert.ok(
     vcenterRoutesSource.indexOf('path="vcenter/prometheus"') <
@@ -174,8 +175,8 @@ test("main shell surfaces PVE and OpenWrt setup status before drilling in", () =
   assert.match(homeHubSource, /\/api\/pve\/targets/);
   assert.match(homeHubSource, /\/api\/network\/devices/);
 
-  assert.match(computeDashboardSource, /\/api\/pve\/targets/);
-  assert.match(computeDashboardSource, /配置 PVE 目标|PVE 未配置/);
+  assert.match(computeDashboardSource, /\/api\/compute\/providers/);
+  assert.match(computeDashboardSource, /打开配置|先接入 vCenter 或 PVE/);
 
   assert.match(networkDashboardSource, /\/api\/network\/devices/);
   assert.match(networkDashboardSource, /配置 OpenWrt|OpenWrt 未配置/);
@@ -217,18 +218,18 @@ test("user-facing navigation keeps vCenter features under compute", () => {
     /isDocs \|\| isCompute \|\| isNetwork \|\| isAppcenter \? "概览"/
   );
   assert.match(computeSubNavSource, /to:\s*"\/cluster\/compute\/dashboard"[\s\S]*label:\s*"总览"/);
-  assert.match(sidebarSource, /to="\/cluster\/compute\/vcenter\/dashboard"[\s\S]*<span>vCenter<\/span>/);
-  assert.doesNotMatch(sidebarSource, />vCenter 总览</);
+  assert.match(sidebarSource, /to="\/cluster\/compute\/dashboard"[\s\S]*<span>总览<\/span>/);
+  assert.doesNotMatch(sidebarSource, /to="\/cluster\/compute\/vcenter\/dashboard"[\s\S]*<span>vCenter<\/span>/);
   assert.doesNotMatch(computeDashboardSource, /兼容策略|\/cluster\/vcenter|旧路径会自动跳转/);
 
   assert.match(
     computeSubNavSource,
-    /to:\s*"\/cluster\/compute\/vcenter\/settings"[\s\S]*label:\s*"vCenter 设置"/
+    /to:\s*"\/cluster\/compute\/config"[\s\S]*label:\s*"配置"/
   );
-  assert.match(
-    computeSubNavSource,
-    /to:\s*"\/cluster\/compute\/pve\/targets"[\s\S]*label:\s*"PVE 目标"/
-  );
+  assert.doesNotMatch(computeSubNavSource, /\/cluster\/compute\/vcenter\/settings/);
+  assert.doesNotMatch(computeSubNavSource, /vCenter 设置/);
+  assert.doesNotMatch(computeSubNavSource, /label:\s*"PVE 目标"/);
+  assert.doesNotMatch(computeSubNavSource, /label:\s*"PVE 总览"/);
   assert.doesNotMatch(sidebarSource, /to="\/cluster\/compute\/vcenter\/settings"/);
   assert.doesNotMatch(sidebarSource, />vCenter 设置</);
 });

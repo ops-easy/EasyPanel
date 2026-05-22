@@ -507,7 +507,7 @@ const HomeHub: React.FC = () => {
         {/* 虚拟化与主机 */}
         {showVc && (
           <Link
-            to={pveNeedsSetup ? "/cluster/compute/pve/targets" : "/cluster/compute/dashboard"}
+            to={pveNeedsSetup ? "/cluster/compute/config" : "/cluster/compute/dashboard"}
             className={cn(hubCardClass, "hover:border-violet-200")}
           >
             <div className="flex items-center justify-between">

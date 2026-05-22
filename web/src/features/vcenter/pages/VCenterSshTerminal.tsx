@@ -68,8 +68,8 @@ const VCenterSshTerminal: React.FC<VCenterSshTerminalProps> = ({
   fontFamilyOverride,
   onBridgeStatus,
   visible,
-  sshSettingsPath = "/cluster/compute/vcenter/settings",
-  sshSettingsLabel = "vCenter 设置",
+  sshSettingsPath = "/cluster/compute/config",
+  sshSettingsLabel = "配置",
   targetIpSourceLabel = "vCenter Guest 信息",
   targetIpMissingHint = "（请确保已安装 Tools 并拿到 IP）",
 }) => {

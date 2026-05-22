@@ -18,7 +18,8 @@ const ClusterK8sSettings: React.FC = () => {
           <strong className="font-medium text-gray-700">ingress-nginx（hostNetwork）</strong>：下方卡片会<strong className="text-gray-800">自动检测</strong>
           是否已安装；<strong className="font-medium text-gray-800">管理员</strong>可一键安装并在节点上监听 HTTP/HTTPS 端口（默认{" "}
           <strong className="font-medium">80</strong> / <strong className="font-medium">443</strong>）。国内拉取 GitHub 建议选「优先 ghproxy」或内网清单
-          URL。端口可在本页运行时配置保存 <code className="text-xs">ingressNginxHostHttpPort</code> / <code className="text-xs">ingressNginxHostHttpsPort</code>；宝塔 <code className="text-xs">defaultPort</code> 与 HTTP 端口对齐。
+          URL。端口可在本页运行时配置保存 <code className="text-xs">ingressNginxHostHttpPort</code> / <code className="text-xs">ingressNginxHostHttpsPort</code>；
+          宝塔设置页只维护宝塔接入与同步策略，<code className="text-xs">defaultPort</code> 与 HTTP 端口对齐即可。
         </p>
         <p className="mt-2 text-sm text-gray-500">
           <strong className="font-medium text-gray-700">kube-prometheus-stack</strong>：推荐优先使用独立卡片<strong className="text-gray-800">一键安装</strong>

@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	sharedaudit "kube-bt-sync/common/audit"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -46,6 +48,14 @@ func pveGuestSnapshotPath(node, guestType, vmid, snapname string) (string, error
 		return "", err
 	}
 	return base + "/" + url.PathEscape(snapname), nil
+}
+
+func pveGuestSnapshotRollbackPath(node, guestType, vmid, snapname string) (string, error) {
+	base, err := pveGuestSnapshotPath(node, guestType, vmid, snapname)
+	if err != nil {
+		return "", err
+	}
+	return base + "/rollback", nil
 }
 
 func pveGuestConsolePaths(node, guestType, vmid string) (string, string, error) {
@@ -283,5 +293,33 @@ func handlePVEGuestSnapshotDelete(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
+	c.JSON(http.StatusOK, gin.H{"task": json.RawMessage(data)})
+}
+
+func handlePVEGuestSnapshotRollback(c *gin.Context, app *ServerApp) {
+	if !requirePVEAdmin(c) {
+		return
+	}
+	client, _, ok := pveClientForRequest(c, app)
+	if !ok {
+		return
+	}
+	node, guestType, vmid := pveGuestRequestScope(c)
+	snapname := strings.TrimSpace(c.Param("snapname"))
+	path, err := pveGuestSnapshotRollbackPath(node, guestType, vmid, snapname)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	form := url.Values{}
+	if start := strings.TrimSpace(c.Query("start")); start != "" {
+		form.Set("start", start)
+	}
+	data, err := client.Do(c.Request.Context(), http.MethodPost, path, nil, form)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+	sharedaudit.SetDetail(c, fmt.Sprintf("PVE Guest %s/%s/%s 回滚快照 %s", node, guestType, vmid, snapname))
 	c.JSON(http.StatusOK, gin.H{"task": json.RawMessage(data)})
 }

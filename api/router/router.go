@@ -5,6 +5,7 @@ import (
 	"kube-bt-sync/common/httpserver"
 	"kube-bt-sync/router/appcenter"
 	"kube-bt-sync/router/baota"
+	"kube-bt-sync/router/compute"
 	"kube-bt-sync/router/dns"
 	"kube-bt-sync/router/docs"
 	"kube-bt-sync/router/harbor"
@@ -30,6 +31,7 @@ func RegisterRoutes(r *gin.Engine, app *appctx.ServerApp) {
 	harbor.RegisterRoutes(api, app)
 	baota.RegisterRoutes(api, app)
 	docs.RegisterRoutes(r, api, app)
+	compute.RegisterRoutes(api, app)
 	vcenter.RegisterRoutes(api, app)
 	pve.RegisterRoutes(api, app)
 	network.RegisterRoutes(api, app)

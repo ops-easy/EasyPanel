@@ -35,11 +35,8 @@ test("vCenter 业务路由统一经过连接或监控 gate", () => {
   assert.match(routes, /VCenterPrometheusGate/);
 
   for (const page of [
-    "VCenterHubDashboard",
-    "VCenterList",
     "VCenterVMDetail",
     "VCenterHostDetail",
-    "VCenterHosts",
   ]) {
     assert.match(
       routes,
@@ -60,6 +57,8 @@ test("GPU 监控支持 PVE 与 vCenter 数据源聚合", () => {
 
   assert.doesNotMatch(guards, /请先配置 vCenter 监控数据源/);
   assert.match(guards, /虚拟化监控数据源/);
+  assert.match(guards, /打开配置/);
+  assert.match(guards, /\/cluster\/compute\/config/);
   assert.match(guards, /PVE/);
   assert.match(helpers, /promQueryRangeGpuScopes/);
   assert.match(helpers, /ConcreteGpuPrometheusScope/);

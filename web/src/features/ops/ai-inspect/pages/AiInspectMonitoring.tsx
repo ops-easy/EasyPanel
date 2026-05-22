@@ -217,7 +217,7 @@ export default function AiInspectMonitoring() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900">监控中心</h1>
         <p className="mt-1 text-sm text-slate-600">
-          使用已在<strong>集群设置</strong>与<strong>vCenter 设置</strong>中配置的 Prometheus / VictoriaMetrics（vmselect）数据源，通过{" "}
+          使用已在<strong>集群设置</strong>与<strong>配置</strong>中配置的 Prometheus / VictoriaMetrics（vmselect）数据源，通过{" "}
           <code className="rounded bg-slate-100 px-1">query_range</code> 直接绘图；内置常用 PromQL 分类展示，也可添加自定义图。不再依赖 Grafana
           看板同步。
         </p>
@@ -276,7 +276,7 @@ export default function AiInspectMonitoring() {
             </span>
           ) : (
             <span className={vcOk ? " text-emerald-700" : " text-amber-800"}>
-              {vcOk ? " vCenter 已配置" : " vCenter 未配置（请到 vCenter 设置填写 prometheusUrlVcenter）"}
+              {vcOk ? " vCenter 已配置" : " vCenter 未配置（请到配置填写 prometheusUrlVcenter）"}
             </span>
           )}
         </p>

@@ -38,13 +38,12 @@ function LegacyCloudHostSshRedirect() {
 export function vcenterRoutes(): ReactNode {
   return (
     <>
-      <Route path="vcenter/dashboard" element={<Navigate to="/cluster/compute/vcenter/dashboard" replace />} />
+      <Route path="vcenter/dashboard" element={<Navigate to="/cluster/compute/dashboard" replace />} />
       <Route path="vcenter/gpu" element={<Navigate to="/cluster/compute/vcenter/gpu" replace />} />
       <Route path="vcenter/hosts/:moref" element={<LegacyVcenterHostRedirect />} />
-      <Route path="vcenter/hosts" element={<Navigate to="/cluster/compute/vcenter/hosts" replace />} />
+      <Route path="vcenter/hosts" element={<Navigate to="/cluster/compute/hosts" replace />} />
       <Route path="vcenter/cloud/:hostId/ssh" element={<LegacyCloudHostSshRedirect />} />
       <Route path="vcenter/cloud" element={<Navigate to="/cluster/compute/cloud" replace />} />
-      <Route path="vcenter/settings" element={<Navigate to="/cluster/compute/vcenter/settings" replace />} />
       <Route path="vcenter/bastion/*" element={<LegacyVcenterBastionRedirect />} />
       <Route
         path="bastion"
@@ -90,9 +89,9 @@ export function vcenterRoutes(): ReactNode {
         />
       </Route>
       <Route path="vcenter/tools/ip-scan" element={<Navigate to="/cluster/compute/tools/ip-scan" replace />} />
-      <Route path="vcenter/prometheus" element={<Navigate to="/cluster/compute/vcenter/dashboard" replace />} />
+      <Route path="vcenter/prometheus" element={<Navigate to="/cluster/compute/dashboard" replace />} />
       <Route path="vcenter/router" element={<Navigate to="/cluster/network/ikuai/dashboard" replace />} />
-      <Route path="vcenter" element={<Navigate to="/cluster/compute/vcenter/vms" replace />} />
+      <Route path="vcenter" element={<Navigate to="/cluster/compute/guests" replace />} />
       <Route path="vcenter/:moref" element={<LegacyVcenterVmRedirect />} />
     </>
   );

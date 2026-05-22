@@ -35,7 +35,7 @@ const scanEntries = [
 const requiredPhrases = new Map([
   [
     "src/features/compute/pages/ComputeDashboard.tsx",
-    ["虚拟化与主机", "vCenter、PVE、公有云与堡垒机", "进入 PVE"],
+    ["虚拟主机资源中心", "虚拟机、宿主机、存储和任务活动", "打开配置"],
   ],
   [
     "src/features/network/pages/NetworkDashboard.tsx",
@@ -51,7 +51,7 @@ const requiredPhrases = new Map([
   ],
   [
     "src/features/compute/layout/ComputeSubNav.tsx",
-    ["总览", "vCenter / 虚拟机", "云主机", "堡垒机", "IP 扫描"],
+    ["总览", "虚拟机 / CT", "宿主机 / 节点", "存储", "配置"],
   ],
   [
     "src/features/network/layout/NetworkSubNav.tsx",
@@ -59,7 +59,7 @@ const requiredPhrases = new Map([
   ],
   [
     "src/shared/layout/Sidebar.tsx",
-    ["虚拟化与主机", "网络设备", "虚拟机", "宿主机", "内网工具箱"],
+    ["虚拟化与主机", "网络设备", "虚拟机 / CT", "宿主机 / 节点", "任务活动"],
   ],
 ]);
 

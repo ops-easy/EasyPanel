@@ -79,10 +79,10 @@ const VCenterHubDashboard: React.FC = () => {
               {vcErr instanceof Error ? vcErr.message : "加载失败"} — 请检查 vCenter 凭据与网络。
             </p>
             <Link
-              to="/cluster/compute/vcenter/settings"
+              to="/cluster/compute/config"
               className="mt-2 inline-block text-xs font-semibold underline"
             >
-              vCenter 设置
+              配置
             </Link>
           </div>
         </div>
@@ -207,11 +207,11 @@ const VCenterHubDashboard: React.FC = () => {
           </Link>
         )}
         <Link
-          to="/cluster/compute/vcenter/settings"
+          to="/cluster/compute/config"
           className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
         >
           <Settings size={18} />
-          vCenter 设置
+          配置
         </Link>
       </div>
     </div>

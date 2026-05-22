@@ -144,10 +144,10 @@ const VCenterPrometheusPanel: React.FC = () => {
           等指标。
         </p>
         <Link
-          to="/cluster/compute/vcenter/settings"
+          to="/cluster/compute/config"
           className="mt-2 inline-block text-sm font-semibold text-amber-950 underline underline-offset-2"
         >
-          vCenter 设置 / 监控
+          配置
         </Link>
       </div>
     );
@@ -187,7 +187,7 @@ const VCenterPrometheusPanel: React.FC = () => {
             )}
             刷新
           </Button>
-          <Link to="/cluster/compute/vcenter/settings" className="text-xs font-medium text-violet-700 hover:underline">
+          <Link to="/cluster/compute/config" className="text-xs font-medium text-violet-700 hover:underline">
             数据源
           </Link>
         </div>
@@ -202,7 +202,7 @@ const VCenterPrometheusPanel: React.FC = () => {
       {metricsQ.isError && (
         <p className="text-sm text-red-600">
           {(metricsQ.error as Error).message}
-          <Link to="/cluster/compute/vcenter/settings" className="ml-2 text-violet-700 underline">
+          <Link to="/cluster/compute/config" className="ml-2 text-violet-700 underline">
             检查配置
           </Link>
         </p>

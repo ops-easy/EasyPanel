@@ -31,7 +31,7 @@ test("workbench module cards can grow instead of clipping dense summaries", () =
 
 test("unconfigured PVE and OpenWrt cards link directly to their setup pages", () => {
   assert.match(source, /const pveNeedsSetup = !pveTargetsQ\.isLoading && nPveTargets === 0;/);
-  assert.match(source, /to=\{pveNeedsSetup \? "\/cluster\/compute\/pve\/targets" : "\/cluster\/compute\/dashboard"\}/);
+  assert.match(source, /to=\{pveNeedsSetup \? "\/cluster\/compute\/config" : "\/cluster\/compute\/dashboard"\}/);
   assert.match(source, /配置 PVE 目标/);
 
   assert.match(source, /const openWrtNeedsSetup = !networkDevicesQ\.isLoading && nOpenWrtDevices === 0;/);

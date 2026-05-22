@@ -1,4 +1,4 @@
-/** 监控中心内置图：直连 Prometheus / vmselect（与集群设置、vCenter 设置中的数据源一致），不经 Grafana。 */
+/** 监控中心内置图：直连 Prometheus / vmselect（与集群设置、配置中的数据源一致），不经 Grafana。 */
 
 export type MonitoringDataScope = "k8s" | "vcenter";
 export type PanelDisplayMode = "single" | "matrix";

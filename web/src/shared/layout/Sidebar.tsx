@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -9,7 +9,6 @@ import {
   Activity as NodeActivityIcon,
   Globe,
   Monitor,
-  Cpu,
   Cloud,
   AppWindow,
   Sparkles,
@@ -34,7 +33,6 @@ import {
   Router,
   Network,
   ClipboardList,
-  Gauge,
 } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
 import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
@@ -373,7 +371,6 @@ function isVcenterVmNavActive(pathname: string): boolean {
   if (
     pathname === "/cluster/vcenter/hosts" ||
     pathname.startsWith("/cluster/vcenter/hosts/") ||
-    pathname === "/cluster/vcenter/settings" ||
     pathname === "/cluster/vcenter/cloud" ||
     pathname.startsWith("/cluster/vcenter/cloud/") ||
     pathname.startsWith("/cluster/vcenter/tools")
@@ -633,30 +630,52 @@ const Sidebar: React.FC = () => {
   const docsGuidesActive =
     location.pathname === "/docs/guides" || location.pathname.startsWith("/docs/guides/");
 
-  const computeVcenterDashboardActive =
+  const computeProviderConfigured = Boolean(vcLive || pveTargetCount > 0);
+  const computeDashboardActive =
+    location.pathname === "/cluster/compute" ||
+    location.pathname === "/cluster/compute/" ||
+    location.pathname === "/cluster/compute/dashboard" ||
     location.pathname === "/cluster/compute/vcenter/dashboard" ||
+    location.pathname === "/cluster/compute/pve/dashboard" ||
     location.pathname === "/cluster/vcenter/dashboard";
-  const computeVcenterVmActive =
+  const computeGuestsActive =
+    location.pathname === "/cluster/compute/guests" ||
+    location.pathname.startsWith("/cluster/compute/guests/") ||
     location.pathname === "/cluster/compute/vcenter/vms" ||
     location.pathname.startsWith("/cluster/compute/vcenter/vms/") ||
+    location.pathname === "/cluster/compute/pve/guests" ||
+    location.pathname.startsWith("/cluster/compute/pve/guests/") ||
     location.pathname === "/cluster/vcenter" ||
     isVcenterVmNavActive(location.pathname);
-  const computeVcenterGpuActive =
-    location.pathname === "/cluster/compute/vcenter/gpu" ||
-    location.pathname === "/cluster/vcenter/gpu";
+  const computeHostsActive =
+    location.pathname === "/cluster/compute/hosts" ||
+    location.pathname.startsWith("/cluster/compute/hosts/") ||
+    location.pathname === "/cluster/compute/vcenter/hosts" ||
+    location.pathname.startsWith("/cluster/compute/vcenter/hosts/") ||
+    location.pathname === "/cluster/compute/pve/nodes" ||
+    location.pathname.startsWith("/cluster/compute/pve/nodes/") ||
+    location.pathname === "/cluster/vcenter/hosts" ||
+    location.pathname.startsWith("/cluster/vcenter/hosts/");
+  const computeStorageActive =
+    location.pathname === "/cluster/compute/storage" ||
+    location.pathname.startsWith("/cluster/compute/storage/") ||
+    location.pathname === "/cluster/compute/pve/storage";
+  const computeActivityActive =
+    location.pathname === "/cluster/compute/activity" ||
+    location.pathname.startsWith("/cluster/compute/activity/") ||
+    location.pathname === "/cluster/compute/pve/tasks";
+  const computeConfigActive =
+    location.pathname === "/cluster/compute/config" ||
+    location.pathname.startsWith("/cluster/compute/config/") ||
+    location.pathname === "/cluster/compute/config" ||
+    location.pathname === "/cluster/compute/pve/targets";
   const computeCloudActive =
     location.pathname === "/cluster/compute/cloud" ||
     location.pathname.startsWith("/cluster/compute/cloud/") ||
     isCloudHostsNavActive(location.pathname);
-  const computeHostActive =
-    location.pathname === "/cluster/compute/vcenter/hosts" ||
-    location.pathname.startsWith("/cluster/compute/vcenter/hosts/") ||
-    location.pathname === "/cluster/vcenter/hosts" ||
-    location.pathname.startsWith("/cluster/vcenter/hosts/");
   const computeToolboxActive =
     location.pathname.startsWith("/cluster/compute/tools") ||
     location.pathname.startsWith("/cluster/vcenter/tools");
-  const computePveActive = location.pathname.startsWith("/cluster/compute/pve");
   const computeBastionActive = location.pathname.startsWith("/cluster/bastion");
   const networkIkuaiActive =
     location.pathname === "/cluster/network/ikuai" ||
@@ -924,54 +943,72 @@ const Sidebar: React.FC = () => {
               </p>
             </div>
             <Link
-              to="/cluster/compute/vcenter/dashboard"
-              className={navLinkTint(computeVcenterDashboardActive, "violet")}
+              to="/cluster/compute/dashboard"
+              className={navLinkTint(computeDashboardActive, "violet")}
             >
               <Monitor
                 size={20}
-                className={iconTint(computeVcenterDashboardActive, "violet")}
+                className={iconTint(computeDashboardActive, "violet")}
               />
-              <span>vCenter</span>
+              <span>总览</span>
             </Link>
+            {computeProviderConfigured ? (
+              <>
+                <Link
+                  to="/cluster/compute/guests"
+                  className={navLinkTint(computeGuestsActive, "violet")}
+                >
+                  <Monitor
+                    size={20}
+                    className={iconTint(computeGuestsActive, "violet")}
+                  />
+                  <span>虚拟机 / CT</span>
+                </Link>
+                <Link
+                  to="/cluster/compute/hosts"
+                  className={navLinkTint(computeHostsActive, "violet")}
+                >
+                  <Server
+                    size={20}
+                    className={iconTint(computeHostsActive, "violet")}
+                  />
+                  <span>宿主机 / 节点</span>
+                </Link>
+                <Link
+                  to="/cluster/compute/storage"
+                  className={navLinkTint(computeStorageActive, "violet")}
+                >
+                  <Database
+                    size={20}
+                    className={iconTint(computeStorageActive, "violet")}
+                  />
+                  <span>存储</span>
+                </Link>
+                <Link
+                  to="/cluster/compute/activity"
+                  className={navLinkTint(computeActivityActive, "violet")}
+                >
+                  <NodeActivityIcon
+                    size={20}
+                    className={iconTint(computeActivityActive, "violet")}
+                  />
+                  <span>任务活动</span>
+                </Link>
+              </>
+            ) : (
+              <div className="mx-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-500">
+                尚未接入 vCenter 或 PVE，资源入口将在配置完成后显示。
+              </div>
+            )}
             <Link
-              to="/cluster/compute/vcenter/vms"
-              className={navLinkTint(computeVcenterVmActive, "violet")}
+              to="/cluster/compute/config"
+              className={navLinkTint(computeConfigActive, "violet")}
             >
-              <Monitor
+              <Settings
                 size={20}
-                className={iconTint(computeVcenterVmActive, "violet")}
+                className={iconTint(computeConfigActive, "violet")}
               />
-              <span>虚拟机</span>
-            </Link>
-            <Link
-              to="/cluster/compute/vcenter/hosts"
-              className={navLinkTint(computeHostActive, "violet")}
-            >
-              <Cpu
-                size={20}
-                className={iconTint(computeHostActive, "violet")}
-              />
-              <span>宿主机</span>
-            </Link>
-            <Link
-              to="/cluster/compute/vcenter/gpu"
-              className={navLinkTint(computeVcenterGpuActive, "violet")}
-            >
-              <Gauge
-                size={20}
-                className={iconTint(computeVcenterGpuActive, "violet")}
-              />
-              <span>GPU 监控</span>
-            </Link>
-            <Link
-              to="/cluster/compute/pve/dashboard"
-              className={navLinkTint(computePveActive, "violet")}
-            >
-              <Server
-                size={20}
-                className={iconTint(computePveActive, "violet")}
-              />
-              <NavItemText label="PVE" hint={pveEntryHint} />
+              <span>配置</span>
             </Link>
             {showVcCloud ? (
               <Link

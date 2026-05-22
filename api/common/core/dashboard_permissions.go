@@ -275,6 +275,9 @@ func apiModulePrefix(path string) string {
 	if strings.HasPrefix(path, "/api/cloud-hosts") {
 		return "compute"
 	}
+	if strings.HasPrefix(path, "/api/compute/") {
+		return "compute"
+	}
 	if strings.HasPrefix(path, "/api/toolbox/") {
 		return "compute"
 	}

@@ -268,10 +268,10 @@ const VCenterEsxiPrometheusDashboard: React.FC = () => {
           prometheusUrl），以便展示与 Grafana 一致的 ESXi / 虚拟机指标。
         </p>
         <Link
-          to="/cluster/compute/vcenter/settings"
+          to="/cluster/compute/config"
           className="mt-2 inline-block text-sm font-semibold text-amber-950 underline underline-offset-2"
         >
-          vCenter 设置 / 监控
+          配置
         </Link>
       </div>
     );
@@ -344,7 +344,7 @@ const VCenterEsxiPrometheusDashboard: React.FC = () => {
           刷新
         </Button>
         <Link
-          to="/cluster/compute/vcenter/settings"
+          to="/cluster/compute/config"
           className="text-xs font-medium text-violet-700 hover:underline"
         >
           数据源

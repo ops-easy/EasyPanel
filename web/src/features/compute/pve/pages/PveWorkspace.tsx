@@ -5,44 +5,19 @@ import { Activity, ChevronUp, Cpu, Database, HardDrive, Loader2, PlugZap, Plus, 
 import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
-import { Switch } from "@/shared/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import ComputeSetupPanel from "@/features/compute/components/ComputeSetupPanel";
 import InfraMetricTile from "@/shared/ui/InfraMetricTile";
+import PveTargetForm, {
+  defaultPveTargetForm,
+  type PVETarget,
+  type PveTargetFormState,
+} from "@/features/compute/pve/components/PveTargetForm";
 import { singlePveTarget } from "./pveSingleton";
 
 export type PveView = "dashboard" | "targets" | "nodes" | "guests" | "storage" | "tasks";
-
-type PVETarget = {
-  id: string;
-  name: string;
-  baseUrl: string;
-  authMethod?: string;
-  username?: string;
-  realm?: string;
-  passwordSet?: boolean;
-  passwordPreview?: string;
-  tokenId?: string;
-  tokenSecretSet?: boolean;
-  tokenSecretPreview?: string;
-  skipTls?: boolean;
-  prometheusJob?: string;
-  updatedAt?: string;
-};
-
-type PveTargetFormState = {
-  name: string;
-  baseUrl: string;
-  authMethod: "password";
-  username: string;
-  password: string;
-  prometheusJob: string;
-  skipTls: boolean;
-};
 
 type PVEGuest = {
   id?: string;
@@ -209,15 +184,7 @@ function PveWorkspace({ view }: { view: PveView }) {
   const meta = pageMeta[view];
   const Icon = meta.icon;
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [form, setForm] = useState({
-    name: "PVE",
-    baseUrl: "",
-    authMethod: "password" as const,
-    username: "root",
-    password: "",
-    prometheusJob: "",
-    skipTls: true,
-  });
+  const [form, setForm] = useState<PveTargetFormState>(() => ({ ...defaultPveTargetForm }));
 
   const targetsQ = useQuery({
     queryKey: ["pve-targets"],
@@ -329,7 +296,7 @@ function PveWorkspace({ view }: { view: PveView }) {
     tasksQ.isFetching;
 
   const renderPveTargetForm = () => (
-    <TargetForm form={form} setForm={setForm} canWrite={canWrite} pending={createMut.isPending} onSubmit={() => createMut.mutate()} />
+    <PveTargetForm form={form} setForm={setForm} canWrite={canWrite} pending={createMut.isPending} onSubmit={() => createMut.mutate()} />
   );
   const pveTargetForm = showCreateForm ? (
     renderPveTargetForm()
@@ -437,65 +404,13 @@ function PveSetupPanel({
   onSubmit: () => void;
 }) {
   return (
-    <TargetForm
+    <PveTargetForm
       form={form}
       setForm={setForm}
       canWrite={canWrite}
       pending={pending}
       onSubmit={onSubmit}
     />
-  );
-}
-
-function TargetForm({
-  form,
-  setForm,
-  canWrite,
-  pending,
-  onSubmit,
-  embedded = false,
-}: {
-  form: PveTargetFormState;
-  setForm: React.Dispatch<React.SetStateAction<PveTargetFormState>>;
-  canWrite: boolean;
-  pending: boolean;
-  onSubmit: () => void;
-  embedded?: boolean;
-}) {
-  return (
-    <section className={embedded ? "rounded-lg border border-amber-100 bg-amber-50/40 p-4" : "rounded-xl border border-slate-200 bg-white p-4 shadow-sm"}>
-      <h2 className="text-sm font-semibold text-slate-950">新增 PVE 目标</h2>
-      <div className="mt-4 space-y-3">
-        <div className="space-y-1.5">
-          <Label>显示名称</Label>
-          <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>API 地址</Label>
-          <Input className="font-mono text-sm" placeholder="https://pve.example.com:8006" value={form.baseUrl} onChange={(e) => setForm({ ...form, baseUrl: e.target.value })} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>用户名</Label>
-          <Input className="font-mono text-sm" placeholder="root" autoComplete="username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>密码</Label>
-          <Input type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Prometheus job（可选）</Label>
-          <Input value={form.prometheusJob} onChange={(e) => setForm({ ...form, prometheusJob: e.target.value })} />
-        </div>
-        <label className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm">
-          <span className="text-slate-700">跳过 TLS 校验</span>
-          <Switch checked={form.skipTls} onCheckedChange={(v) => setForm({ ...form, skipTls: v })} />
-        </label>
-        <Button className="w-full gap-2 bg-amber-600 hover:bg-amber-700" disabled={!canWrite || pending} onClick={onSubmit}>
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlugZap className="h-4 w-4" />}
-          保存目标
-        </Button>
-      </div>
-    </section>
   );
 }
 

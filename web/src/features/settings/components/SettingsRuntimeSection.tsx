@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { APP_CONFIG_QUERY_KEY } from "@/hooks/use-app-config";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Loader2, Plus, RotateCcw, Save, SlidersHorizontal, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, RotateCcw, Save, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -28,8 +28,9 @@ import { CollapsibleManual } from "@/shared/ui/CollapsibleManual";
 import AccountPlatformSettingsBody from "@/features/account/components/AccountPlatformSettingsBody";
 import OidcAuthentikHelp from "@/features/account/components/OidcAuthentikHelp";
 import HarborRedisIndexSettingsPanel from "@/features/harbor/components/HarborRedisIndexSettingsPanel";
+import BaotaSettingsWizard from "@/features/baota/components/BaotaSettingsWizard";
 
-export type SettingsRuntimeVariant = "full" | "k8s" | "vcenter" | "account" | "baota";
+export type SettingsRuntimeVariant = "full" | "k8s" | "virtualMachine" | "account" | "baota";
 
 type SettingsRuntimeSectionProps = {
   variant?: SettingsRuntimeVariant;
@@ -190,9 +191,10 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
   const v = variant;
   const showAccountFull = v === "full";
   const showK8s = v === "full" || v === "k8s";
-  const showVCenter = v === "full" || v === "vcenter";
+  const showVirtualMachine = v === "full" || v === "virtualMachine";
   const k8sMode = (form.k8s as { mode?: string } | undefined)?.mode ?? "none";
   const k8sKube = (form.k8s as { kubeconfigYaml?: string } | undefined)?.kubeconfigYaml ?? "";
+  const defaultSaveLabel = v === "k8s" ? "保存" : "保存运行时配置";
 
   if (v === "account") {
     return (
@@ -208,461 +210,15 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
   }
 
   if (v === "baota") {
-    const btTargets: Record<string, unknown>[] = Array.isArray(form.baotaTargets)
-      ? ([...form.baotaTargets] as Record<string, unknown>[])
-      : [];
-    const setBtTargets = (next: Record<string, unknown>[]) => {
-      setField("baotaTargets", next.length ? next : undefined);
-    };
     return (
-      <div className="space-y-6">
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-5">
-            <h2 className="text-base font-bold text-gray-900">宝塔与 Ingress</h2>
-            <p className="mt-1 text-xs text-gray-500">
-              平台对外地址、同步开关、面板 API、DDNS 与同步间隔等；保存后写入 MySQL 动态配置并热重载。MySQL 静态连接、Redis 与控制台登录请在「账户与平台」中查看或配置。
-            </p>
-          </div>
-          <div className="space-y-6 p-6 text-sm">
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
-              宝塔配置统一在本页维护。系统默认带有占位面板地址
-              <code className="mx-1 rounded bg-white px-1 font-mono text-[11px]">http://127.0.0.1:8888</code>
-              ，但只有保存宝塔面板地址与 API Key，或在多实例列表中保存至少一个完整实例后，宝塔才算已接入。
-            </div>
-            <div className="space-y-2">
-              <Label>platformPublicUrl</Label>
-              <Input
-                value={String(form.platformPublicUrl ?? "")}
-                onChange={(e) => setField("platformPublicUrl", e.target.value)}
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
-              <span className="text-gray-700">Ingress ↔ 宝塔同步</span>
-              <Switch
-                checked={Boolean(form.ingressBaotaSyncEnabled)}
-                onCheckedChange={(x) => setField("ingressBaotaSyncEnabled", x)}
-              />
-            </div>
-            <div className="space-y-3 rounded-lg border border-sky-100 bg-sky-50/50 p-4">
-              <CollapsibleManual
-                storageKey="settings.runtime.ingress-hostnetwork-hint"
-                title="集群扩展（ingress-nginx hostNetwork）"
-                variant="skyInline"
-              >
-                <p className="text-[11px] leading-relaxed text-gray-600">
-                  供「集群设置」一键安装：控制器使用 hostNetwork，在节点上监听下方 HTTP/HTTPS（默认 80/443）；Prometheus metrics
-                  沿用官方清单默认 10254（ingress-nginx v1.10 不支持{" "}
-                  <code className="rounded bg-white px-0.5">--metrics-port</code>）。宝塔 <code className="rounded bg-white px-0.5">ddnsHost</code>{" "}
-                  填节点 IP，<code className="rounded bg-white px-0.5">defaultPort</code> 与 HTTP 端口一致。
-                </p>
-              </CollapsibleManual>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">ingressNginxHostHttpPort（1–65535，0 表示默认 80）</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={65535}
-                    placeholder="80"
-                    value={
-                      form.ingressNginxHostHttpPort != null && Number(form.ingressNginxHostHttpPort) > 0
-                        ? String(form.ingressNginxHostHttpPort)
-                        : ""
-                    }
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "") {
-                        setField("ingressNginxHostHttpPort", 0);
-                        return;
-                      }
-                      const n = Number(v);
-                      if (!Number.isFinite(n)) return;
-                      setField("ingressNginxHostHttpPort", Math.floor(n));
-                    }}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">ingressNginxHostHttpsPort（1–65535，0 表示默认 443）</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={65535}
-                    placeholder="443"
-                    value={
-                      form.ingressNginxHostHttpsPort != null && Number(form.ingressNginxHostHttpsPort) > 0
-                        ? String(form.ingressNginxHostHttpsPort)
-                        : ""
-                    }
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "") {
-                        setField("ingressNginxHostHttpsPort", 0);
-                        return;
-                      }
-                      const n = Number(v);
-                      if (!Number.isFinite(n)) return;
-                      setField("ingressNginxHostHttpsPort", Math.floor(n));
-                    }}
-                  />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-xs">ingressNginxControllerNodeName（可选，kubectl get nodes 的 NAME；安装 ingress 时默认固定到该节点）</Label>
-                  <Input
-                    className="font-mono text-xs"
-                    placeholder="例如 k8s-master-01"
-                    value={String(form.ingressNginxControllerNodeName ?? "")}
-                    onChange={(e) => setField("ingressNginxControllerNodeName", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-xs">ingressNginxManifestUrl（可选，空则用内置 bare metal 链接）</Label>
-                  <Input
-                    className="font-mono text-xs"
-                    value={String(form.ingressNginxManifestUrl ?? "")}
-                    onChange={(e) => setField("ingressNginxManifestUrl", e.target.value)}
-                    placeholder="https://raw.githubusercontent.com/…/deploy.yaml"
-                  />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-xs">k8sAddonsManifestMirror（国内建议「优先 ghproxy」）</Label>
-                  <Select
-                    value={String(form.k8sAddonsManifestMirror ?? "").trim() || "auto"}
-                    onValueChange={(v) => setField("k8sAddonsManifestMirror", v)}
-                  >
-                    <SelectTrigger className="font-mono text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="auto">自动（直连失败再走 ghproxy）</SelectItem>
-                      <SelectItem value="ghproxy_preferred">国内推荐（优先 ghproxy）</SelectItem>
-                      <SelectItem value="direct">仅直连 GitHub</SelectItem>
-                      <SelectItem value="ghproxy_only">仅经 ghproxy</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-3 rounded-lg border border-amber-100 bg-amber-50/50 p-4">
-              <p className="text-sm font-semibold text-amber-950">多宝塔实例（企业版 / 多节点）</p>
-              <p className="text-[11px] leading-relaxed text-gray-600">
-                非空时以本列表为准；Ingress 可加注解 <code className="rounded bg-white px-0.5 font-mono text-[10px]">kube-bt-sync.io/baota-target</code> 或{" "}
-                <code className="rounded bg-white px-0.5 font-mono text-[10px]">i4t.com/baota-target</code> 指定实例 id。未注解则同步到「默认」实例。留空本列表则只用下方{" "}
-                <span className="font-mono">baotaUrl</span> / <span className="font-mono">baotaApiKey</span>。
-              </p>
-              {btTargets.map((row, idx) => (
-                <div
-                  key={idx}
-                  className="grid gap-3 rounded-lg border border-amber-200/80 bg-white p-3 sm:grid-cols-2 lg:grid-cols-3"
-                >
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">id（小写、数字、连字符）</Label>
-                    <Input
-                      className="font-mono text-xs"
-                      value={String(row.id ?? "")}
-                      onChange={(e) => {
-                        const next = [...btTargets];
-                        next[idx] = { ...next[idx], id: e.target.value };
-                        setBtTargets(next);
-                      }}
-                      placeholder="如 hk-edge"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">显示名称</Label>
-                    <Input
-                      value={String(row.name ?? "")}
-                      onChange={(e) => {
-                        const next = [...btTargets];
-                        next[idx] = { ...next[idx], name: e.target.value };
-                        setBtTargets(next);
-                      }}
-                      placeholder="如 香港边缘"
-                    />
-                  </div>
-                  <div className="flex items-end gap-2 lg:col-span-1">
-                    <label className="flex cursor-pointer items-center gap-2 text-xs text-gray-700">
-                      <input
-                        type="radio"
-                        name="baota-default-instance"
-                        checked={Boolean(row.default)}
-                        onChange={() => {
-                          const next = btTargets.map((x, i) => ({ ...x, default: i === idx }));
-                          setBtTargets(next);
-                        }}
-                        className="h-3.5 w-3.5"
-                      />
-                      默认实例
-                    </label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="ml-auto text-red-600"
-                      onClick={() => {
-                        const next = btTargets.filter((_, i) => i !== idx);
-                        setBtTargets(next);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs">url（面板根地址）</Label>
-                    <Input
-                      className="font-mono text-xs"
-                      value={String(row.url ?? "")}
-                      onChange={(e) => {
-                        const next = [...btTargets];
-                        next[idx] = { ...next[idx], url: e.target.value };
-                        setBtTargets(next);
-                      }}
-                      placeholder="https://bt.example.com:8888"
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs">apiKey（留空或 *** 保留已保存）</Label>
-                    <Input
-                      type="password"
-                      autoComplete="off"
-                      spellCheck={false}
-                      className="font-mono text-xs"
-                      value={String(row.apiKey ?? "")}
-                      onChange={(e) => {
-                        const next = [...btTargets];
-                        next[idx] = { ...next[idx], apiKey: e.target.value };
-                        setBtTargets(next);
-                      }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between rounded border border-gray-100 px-2 py-2 sm:col-span-2 lg:col-span-3">
-                    <span className="text-xs text-gray-700">跳过 TLS 校验（仅该实例）</span>
-                    <Switch
-                      checked={Boolean(row.skipTlsVerify)}
-                      onCheckedChange={(x) => {
-                        const next = [...btTargets];
-                        next[idx] = { ...next[idx], skipTlsVerify: x };
-                        setBtTargets(next);
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1"
-                onClick={() => {
-                  setBtTargets([
-                    ...btTargets,
-                    {
-                      id: "",
-                      name: "",
-                      url: "",
-                      apiKey: "",
-                      skipTlsVerify: false,
-                      default: btTargets.length === 0,
-                    },
-                  ]);
-                }}
-              >
-                <Plus className="h-4 w-4" />
-                添加实例
-              </Button>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2 sm:col-span-2">
-                <Label>宝塔面板地址 baotaUrl（未使用上方多实例列表时必填）</Label>
-                <Input
-                  value={String(form.baotaUrl ?? "")}
-                  onChange={(e) => setField("baotaUrl", e.target.value)}
-                  placeholder="例如 http://127.0.0.1:8888 或 https://bt.example.com"
-                />
-                <p className="text-[11px] leading-relaxed text-gray-500">
-                  默认地址只是占位值；如果未保存 API Key，页面会继续显示“宝塔未配置”。
-                </p>
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>宝塔 API Key baotaApiKey（留空保留已保存密钥）</Label>
-                <Input
-                  type="password"
-                  autoComplete="off"
-                  spellCheck={false}
-                  value={String(form.baotaApiKey ?? "")}
-                  onChange={(e) => setField("baotaApiKey", e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2 sm:col-span-2">
-                <Label>ddnsHost</Label>
-                <Input
-                  value={String(form.ddnsHost ?? "")}
-                  onChange={(e) => setField("ddnsHost", e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>defaultPort（Ingress 默认端口）</Label>
-                <Input
-                  value={String(form.defaultPort ?? "")}
-                  onChange={(e) => setField("defaultPort", e.target.value)}
-                  placeholder="如 443"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>syncIntervalSec</Label>
-                <Input
-                  type="number"
-                  min={5}
-                  value={Number(form.syncIntervalSec ?? 30)}
-                  onChange={(e) => setField("syncIntervalSec", Number(e.target.value))}
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2 sm:col-span-2">
-                <Label>baotaUpstreamHost（宝塔回源域名 / IP，可选）</Label>
-                <Input
-                  value={String(form.baotaUpstreamHost ?? "")}
-                  onChange={(e) => setField("baotaUpstreamHost", e.target.value)}
-                  placeholder="留空则回退到 ddnsHost"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>baotaUpstreamScheme（宝塔回源协议）</Label>
-                <Select
-                  value={String(form.baotaUpstreamScheme ?? "").trim() === "https" ? "https" : "http"}
-                  onValueChange={(v) => setField("baotaUpstreamScheme", v === "https" ? "https" : "http")}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="http">HTTP</SelectItem>
-                    <SelectItem value="https">HTTPS</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>baotaUpstreamPort（宝塔回源端口，可选）</Label>
-                <Input
-                  value={String(form.baotaUpstreamPort ?? "")}
-                  onChange={(e) => setField("baotaUpstreamPort", e.target.value)}
-                  placeholder="留空则按协议走默认端口，如 443"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>baotaSslCertName（宝塔证书夹名称，可选）</Label>
-              <Input
-                value={String(form.baotaSslCertName ?? "")}
-                onChange={(e) => setField("baotaSslCertName", e.target.value)}
-                placeholder="未填时可回退到平台已保存 PEM/KEY 或这里配置的证书名"
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>baotaSslPemContent（PEM 内容，可选）</Label>
-                <YamlEditor
-                  value={String(form.baotaSslPemContent ?? "")}
-                  onChange={(value) => setField("baotaSslPemContent", value)}
-                  height="180px"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>baotaSslKeyContent（KEY 内容，可选）</Label>
-                <YamlEditor
-                  value={String(form.baotaSslKeyContent ?? "")}
-                  onChange={(value) => setField("baotaSslKeyContent", value)}
-                  height="180px"
-                />
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 rounded-lg border border-gray-100 px-3 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-gray-700">已保存平台证书内容</span>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${form.hasBaotaSSLMaterial ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
-                  {form.hasBaotaSSLMaterial ? "已保存" : "未保存"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-gray-700">clearBaotaSslMaterial</span>
-                <Switch
-                  checked={Boolean(form.clearBaotaSslMaterial)}
-                  onCheckedChange={(x) => setField("clearBaotaSslMaterial", x)}
-                />
-              </div>
-            </div>
-            <p className="text-xs leading-6 text-gray-500">
-              证书来源优先级：平台已保存 PEM/KEY &gt; Ingress 证书名 &gt; 这里配置的证书名。PEM/KEY 仅作为写入字段，保存后不会再次通过接口回显，也不会写入 Ingress 注解。
-            </p>
-            <div className="flex flex-col gap-3 rounded-lg border border-gray-100 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-              <span className="text-gray-700">baotaSkipTlsVerify</span>
-              <Switch
-                checked={Boolean(form.baotaSkipTlsVerify)}
-                onCheckedChange={(x) => setField("baotaSkipTlsVerify", x)}
-              />
-            </div>
-            <div className="flex flex-col gap-3 rounded-lg border border-gray-100 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-              <span className="text-gray-700">baotaDisableHttpKeepalive</span>
-              <Switch
-                checked={Boolean(form.baotaDisableHttpKeepalive)}
-                onCheckedChange={(x) => setField("baotaDisableHttpKeepalive", x)}
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>baotaHttpTimeoutSec</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={Number(form.baotaHttpTimeoutSec ?? 45)}
-                  onChange={(e) => setField("baotaHttpTimeoutSec", Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>baotaTcpProbeTimeoutSec</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={Number(form.baotaTcpProbeTimeoutSec ?? 5)}
-                  onChange={(e) => setField("baotaTcpProbeTimeoutSec", Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>baotaCheckMinIntervalSec</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={Number(form.baotaCheckMinIntervalSec ?? 90)}
-                  onChange={(e) => setField("baotaCheckMinIntervalSec", Number(e.target.value))}
-                />
-              </div>
-            </div>
-            {err && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-800">{err}</div>
-            )}
-            {ok && (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800">
-                {ok}
-              </div>
-            )}
-            <Button type="button" onClick={() => void onSave()} disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  保存中…
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  保存
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <BaotaSettingsWizard
+        form={form}
+        setField={setField}
+        err={err}
+        ok={ok}
+        saving={saving}
+        onSave={onSave}
+      />
     );
   }
 
@@ -672,14 +228,14 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
         <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-base font-bold text-gray-900">
             {v === "k8s" && "集群连接"}
-            {v === "vcenter" && "vCenter"}
+            {v === "virtualMachine" && "配置"}
             {v === "full" && "运行时配置（MySQL 动态配置）"}
           </h2>
           <p className="mt-1 text-xs text-gray-500">
             {v === "full" &&
-              "在此补充 K8s、vCenter 等；MySQL 连接来自静态 config.yaml 或环境变量，页面不写入这部分。Redis 仅需 IP、端口、密码；密钥类留空表示不修改原值。宝塔与 Ingress 请在「宝塔」工作区 → 宝塔设置中配置。"}
+              "在此补充 K8s、虚拟机等；MySQL 连接来自静态 config.yaml 或环境变量，页面不写入这部分。Redis 仅需 IP、端口、密码；密钥类留空表示不修改原值。宝塔与 Ingress 请在「宝塔」工作区 → 宝塔设置中配置。"}
             {v === "k8s" && "使用集群内凭据或粘贴 kubeconfig，保存后生效。"}
-            {v === "vcenter" && "vCenter 与虚拟机 SSH 默认；保存后热重载。"}
+            {v === "virtualMachine" && "集中维护 vCenter 连接、虚拟机 SSH 默认、监控数据源、VMLog 与带外能力；保存后热重载。"}
           </p>
         </div>
         <div className="p-6 space-y-6 text-sm">
@@ -1317,9 +873,13 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
           </div>
           </>
           )}
-          {showVCenter && (
+          {showVirtualMachine && (
           <>
           <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1 sm:col-span-2">
+              <p className="text-sm font-semibold text-gray-900">vCenter 连接</p>
+              <p className="text-xs text-gray-500">用于 vCenter 虚拟机、宿主机、控制台与详情页。</p>
+            </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>vcenterUrl</Label>
               <Input
@@ -1551,7 +1111,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                {v === "k8s" ? "保存" : "保存运行时配置"}
+                {v === "virtualMachine" ? "保存配置" : defaultSaveLabel}
               </>
             )}
           </Button>

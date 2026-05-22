@@ -6,6 +6,7 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 const computeSubNav = read("../src/features/compute/layout/ComputeSubNav.tsx");
 const networkSubNav = read("../src/features/network/layout/NetworkSubNav.tsx");
+const computeRoutes = read("../src/app/routes/compute-routes.tsx");
 const networkRoutes = read("../src/app/routes/network-routes.tsx");
 
 const pvePageNames = [
@@ -49,7 +50,16 @@ test("OpenWrt 子路由页面不再互相 re-export 仪表盘占位页", () => {
   }
 });
 
-test("PVE 与 OpenWrt 子导航覆盖所有新子页面", () => {
+test("Compute 子导航改为资源对象入口，PVE 旧子路由保留重定向", () => {
+  for (const path of [
+    "/cluster/compute/guests",
+    "/cluster/compute/hosts",
+    "/cluster/compute/storage",
+    "/cluster/compute/activity",
+    "/cluster/compute/config",
+  ]) {
+    assert.match(computeSubNav, new RegExp(`to:\\s*["']${path}`));
+  }
   for (const path of [
     "/cluster/compute/pve/dashboard",
     "/cluster/compute/pve/targets",
@@ -58,8 +68,11 @@ test("PVE 与 OpenWrt 子导航覆盖所有新子页面", () => {
     "/cluster/compute/pve/storage",
     "/cluster/compute/pve/tasks",
   ]) {
-    assert.match(computeSubNav, new RegExp(`to:\\s*["']${path}`));
+    assert.doesNotMatch(computeSubNav, new RegExp(`to:\\s*["']${path}`));
   }
+  assert.match(computeRoutes, /path="pve\/dashboard"[\s\S]*to="\/cluster\/compute\/dashboard"/);
+  assert.match(computeRoutes, /path="pve\/targets"[\s\S]*to="\/cluster\/compute\/config"/);
+  assert.match(computeRoutes, /path="pve\/guests"[\s\S]*to="\/cluster\/compute\/guests"/);
 
   for (const path of [
     "/cluster/network/openwrt/dashboard",

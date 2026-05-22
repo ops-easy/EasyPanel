@@ -1017,7 +1017,12 @@ func registerVCenterRoutes(api *gin.RouterGroup, app *ServerApp) {
 	api.GET("/vcenter/tasks/:taskId", func(c *gin.Context) { handleVCenterTaskStatus(c, app.VCenter()) })
 	api.PUT("/vcenter/vms/:moref/hardware", func(c *gin.Context) { handleVCenterVMHardware(c, app) })
 	api.POST("/vcenter/vms/:moref/disk/expand", func(c *gin.Context) { handleVCenterVMDiskExpand(c, app) })
+	api.GET("/vcenter/vms/:moref/snapshots", func(c *gin.Context) { handleVCenterVMSnapshots(c, app) })
+	api.POST("/vcenter/vms/:moref/snapshots", func(c *gin.Context) { handleVCenterVMSnapshotCreate(c, app) })
+	api.POST("/vcenter/vms/:moref/snapshots/:name/revert", func(c *gin.Context) { handleVCenterVMSnapshotRevert(c, app) })
+	api.DELETE("/vcenter/vms/:moref/snapshots/:name", func(c *gin.Context) { handleVCenterVMSnapshotDelete(c, app) })
 	api.GET("/vcenter/vms/:moref", func(c *gin.Context) { handleVCenterVMDetail(c, app) })
+	api.GET("/vcenter/datastores", func(c *gin.Context) { handleVCenterDatastores(c, app) })
 	api.GET("/vcenter/events", func(c *gin.Context) { handleGetVCenterVMEvents(c, app) })
 }
 
