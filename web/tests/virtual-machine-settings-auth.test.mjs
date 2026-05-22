@@ -25,11 +25,14 @@ test("配置是算力侧一等路由，不再保留旧 vCenter 设置入口", ()
 test("配置集中呈现 vCenter、PVE、监控、SSH 与 VMLog 配置", () => {
   const settingsSource = read("../src/features/compute/pages/VirtualMachineSettings.tsx");
 
-  assert.match(settingsSource, /TabsTrigger value="access"/);
-  assert.match(settingsSource, /TabsTrigger value="monitoring"/);
-  assert.match(settingsSource, /TabsTrigger value="remote"/);
-  assert.match(settingsSource, /TabsTrigger value="security"/);
-  assert.match(settingsSource, /TabsTrigger value="runtime"/);
+  assert.doesNotMatch(settingsSource, /TabsTrigger/);
+  assert.match(settingsSource, /type SettingsConfigSection = "vcenter" \| "pve" \| "monitoring" \| "remote" \| "vmlog"/);
+  assert.match(settingsSource, /activeSection === card\.section/);
+  assert.match(settingsSource, /<PveTargetSettingsPanel \/>/);
+  assert.match(settingsSource, /focus="vcenter"/);
+  assert.match(settingsSource, /focus="monitoring"/);
+  assert.match(settingsSource, /focus="remote"/);
+  assert.match(settingsSource, /focus="vmlog"/);
   assert.match(settingsSource, /vCenter 连接/);
   assert.match(settingsSource, /PVE 接入/);
   assert.match(settingsSource, /监控数据源/);

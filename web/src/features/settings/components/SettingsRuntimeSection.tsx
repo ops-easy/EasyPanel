@@ -31,9 +31,11 @@ import HarborRedisIndexSettingsPanel from "@/features/harbor/components/HarborRe
 import BaotaSettingsWizard from "@/features/baota/components/BaotaSettingsWizard";
 
 export type SettingsRuntimeVariant = "full" | "k8s" | "virtualMachine" | "account" | "baota";
+export type SettingsRuntimeFocus = "all" | "vcenter" | "monitoring" | "remote" | "vmlog";
 
 type SettingsRuntimeSectionProps = {
   variant?: SettingsRuntimeVariant;
+  focus?: SettingsRuntimeFocus;
 };
 
 const DEFAULT_K8S_SIDEBAR_MENU: K8sSidebarMenuItem[] = [
@@ -79,6 +81,7 @@ function moveK8sSidebarMenuItem(items: K8sSidebarMenuItem[], index: number, delt
 
 const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
   variant = "full",
+  focus = "all",
 }) => {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
@@ -192,9 +195,28 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
   const showAccountFull = v === "full";
   const showK8s = v === "full" || v === "k8s";
   const showVirtualMachine = v === "full" || v === "virtualMachine";
+  const vmFocus: SettingsRuntimeFocus = v === "virtualMachine" ? focus : "all";
+  const showVcenterSettings = showVirtualMachine && (vmFocus === "all" || vmFocus === "vcenter");
+  const showMonitoringSettings = showVirtualMachine && (vmFocus === "all" || vmFocus === "monitoring");
+  const showRemoteSettings = showVirtualMachine && (vmFocus === "all" || vmFocus === "remote");
+  const showVmLogSettings = showVirtualMachine && (vmFocus === "all" || vmFocus === "vmlog");
   const k8sMode = (form.k8s as { mode?: string } | undefined)?.mode ?? "none";
   const k8sKube = (form.k8s as { kubeconfigYaml?: string } | undefined)?.kubeconfigYaml ?? "";
   const defaultSaveLabel = v === "k8s" ? "保存" : "保存运行时配置";
+  const virtualMachineTitle: Record<SettingsRuntimeFocus, string> = {
+    all: "配置",
+    vcenter: "vCenter 连接",
+    monitoring: "监控数据源",
+    remote: "远程访问",
+    vmlog: "VMLog",
+  };
+  const virtualMachineDescription: Record<SettingsRuntimeFocus, string> = {
+    all: "集中维护 vCenter 连接、虚拟机 SSH 默认、监控数据源、VMLog 与带外能力；保存后热重载。",
+    vcenter: "维护 vSphere API 入口、账号、密码与虚拟机列表缓存时间；保存后资源中心会重新读取连接状态。",
+    monitoring: "维护 vCenter、PVE、公有云与 GPU 监控的 Prometheus 或 VictoriaMetrics vmselect 地址。",
+    remote: "维护控制台代理主机、虚拟机 SSH/SFTP 默认凭据与宿主机带外 iDRAC 参数。",
+    vmlog: "维护 VictoriaLogs 查询地址、日志保留期与虚拟机 Vector 采集器下载源。",
+  };
 
   if (v === "account") {
     return (
@@ -228,14 +250,14 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
         <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-base font-bold text-gray-900">
             {v === "k8s" && "集群连接"}
-            {v === "virtualMachine" && "配置"}
+            {v === "virtualMachine" && virtualMachineTitle[vmFocus]}
             {v === "full" && "运行时配置（MySQL 动态配置）"}
           </h2>
           <p className="mt-1 text-xs text-gray-500">
             {v === "full" &&
               "在此补充 K8s、虚拟机等；MySQL 连接来自静态 config.yaml 或环境变量，页面不写入这部分。Redis 仅需 IP、端口、密码；密钥类留空表示不修改原值。宝塔与 Ingress 请在「宝塔」工作区 → 宝塔设置中配置。"}
             {v === "k8s" && "使用集群内凭据或粘贴 kubeconfig，保存后生效。"}
-            {v === "virtualMachine" && "集中维护 vCenter 连接、虚拟机 SSH 默认、监控数据源、VMLog 与带外能力；保存后热重载。"}
+            {v === "virtualMachine" && virtualMachineDescription[vmFocus]}
           </p>
         </div>
         <div className="p-6 space-y-6 text-sm">
@@ -875,6 +897,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
           )}
           {showVirtualMachine && (
           <>
+          {showVcenterSettings && (
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1 sm:col-span-2">
               <p className="text-sm font-semibold text-gray-900">vCenter 连接</p>
@@ -885,6 +908,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
               <Input
                 value={String(form.vcenterUrl ?? "")}
                 onChange={(e) => setField("vcenterUrl", e.target.value)}
+                placeholder="https://vcenter.example.com/sdk"
               />
             </div>
             <div className="space-y-2">
@@ -908,24 +932,22 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
               <Label>vcenterCacheTtlSec</Label>
               <Input
                 type="number"
+                min={10}
                 value={Number(form.vcenterCacheTtlSec ?? 120)}
                 onChange={(e) => setField("vcenterCacheTtlSec", Number(e.target.value))}
               />
             </div>
           </div>
+          )}
 
-          <div className="space-y-3 border-t border-gray-100 pt-6">
-            <p className="text-sm font-semibold text-gray-900">Prometheus（虚拟化 GPU / vCenter / PVE / 公有云）</p>
+          {showMonitoringSettings && (
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-gray-900">Prometheus / VictoriaMetrics</p>
             <p className="text-xs text-gray-500">
               <code className="rounded bg-gray-100 px-1 text-[11px]">prometheusUrlVcenter</code>{" "}
-              用于 vCenter 侧监控（Telegraf <code className="rounded bg-gray-100 px-1">vmware_vcenter</code> 等指标）；{" "}
-              <code className="rounded bg-gray-100 px-1 text-[11px]">prometheusUrlPve</code>{" "}
-              用于 Proxmox VE / PVE 侧 GPU、主机 exporter 指标；{" "}
-              <code className="rounded bg-gray-100 px-1 text-[11px]">prometheusUrlCloud</code>{" "}
-              专用于公有云主机列表，留空则继承 vCenter 数据源；各项未填时使用运行时{" "}
-              <code className="rounded bg-gray-100 px-1 text-[11px]">prometheusUrl</code>。与 K8s 侧相同，若使用{" "}
-              <strong className="text-gray-800">VictoriaMetrics</strong>，请填 <strong className="text-gray-800">vmselect</strong>{" "}
-              的 HTTP 根地址（同样提供 <code className="rounded bg-gray-100 px-1">/api/v1/query</code>），无需单独开关。
+              用于 vCenter 侧监控；<code className="rounded bg-gray-100 px-1 text-[11px]">prometheusUrlPve</code>{" "}
+              用于 PVE / GPU / 主机 exporter；<code className="rounded bg-gray-100 px-1 text-[11px]">prometheusUrlCloud</code>{" "}
+              用于公有云。若使用 VictoriaMetrics，请填写对应 vmselect 根地址。
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
@@ -938,16 +960,16 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>prometheusUrlPve（可选，PVE GPU / 主机 exporter）</Label>
+                <Label>prometheusUrlPve（PVE GPU / 主机 exporter）</Label>
                 <Input
                   className="font-mono text-xs"
                   value={String(form.prometheusUrlPve ?? "")}
                   onChange={(e) => setField("prometheusUrlPve", e.target.value)}
-                  placeholder="留空则使用兜底 prometheusUrl；可与 vCenter 填同一个 Prometheus"
+                  placeholder="留空则使用兜底 prometheusUrl"
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>prometheusUrlCloud（可选，公有云；留空继承上一项）</Label>
+                <Label>prometheusUrlCloud（公有云，可选）</Label>
                 <Input
                   className="font-mono text-xs"
                   value={String(form.prometheusUrlCloud ?? "")}
@@ -956,7 +978,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>vmSelectUrlVcenter（可选 vmselect；填写则优先于 prometheusUrlVcenter）</Label>
+                <Label>vmSelectUrlVcenter（可选）</Label>
                 <Input
                   className="font-mono text-xs"
                   value={String(form.vmSelectUrlVcenter ?? "")}
@@ -965,7 +987,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>vmSelectUrlPve（可选 vmselect；填写则优先于 prometheusUrlPve）</Label>
+                <Label>vmSelectUrlPve（可选）</Label>
                 <Input
                   className="font-mono text-xs"
                   value={String(form.vmSelectUrlPve ?? "")}
@@ -974,7 +996,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>vmSelectUrlCloud（可选；填写则优先于 prometheusUrlCloud 及继承链）</Label>
+                <Label>vmSelectUrlCloud（可选）</Label>
                 <Input
                   className="font-mono text-xs"
                   value={String(form.vmSelectUrlCloud ?? "")}
@@ -984,16 +1006,29 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
               </div>
             </div>
           </div>
+          )}
 
+          {showRemoteSettings && (
+          <>
           <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4 space-y-3">
             <div>
-              <p className="text-sm font-semibold text-gray-900">虚拟机 SSH 终端（全局默认）</p>
+              <p className="text-sm font-semibold text-gray-900">控制台与 SSH / SFTP</p>
               <p className="mt-1 text-[11px] leading-relaxed text-gray-600">
-                填写连接虚拟机的用户名与密码即可；端口固定为 22，凭据仅保存在服务端。若需私钥、其它端口或按虚拟机单独存凭据，请使用环境变量{" "}
-                <code className="rounded bg-white px-1 text-[10px]">VCENTER_VM_SSH_*</code> 等配置。
+                控制台代理使用 vCenter 地址推导；如浏览器访问域名与服务端访问地址不同，可单独指定{" "}
+                <code className="rounded bg-white px-1 text-[10px]">vcenterConsoleHost</code>。SSH 与 SFTP 复用同一组虚拟机默认凭据。
               </p>
             </div>
-            <div className="grid max-w-md gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label>vcenterConsoleHost（可选）</Label>
+                <Input
+                  className="font-mono text-xs"
+                  value={String(form.vcenterConsoleHost ?? "")}
+                  onChange={(e) => setField("vcenterConsoleHost", e.target.value)}
+                  placeholder="留空则从 vcenterUrl 推导"
+                  autoComplete="off"
+                />
+              </div>
               <div className="space-y-2">
                 <Label>SSH 用户名</Label>
                 <Input
@@ -1004,6 +1039,16 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                 />
               </div>
               <div className="space-y-2">
+                <Label>SSH 端口</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={65535}
+                  value={Number(form.vcenterVmSshPort ?? 22)}
+                  onChange={(e) => setField("vcenterVmSshPort", Number(e.target.value))}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
                 <Label>SSH 密码（留空或 *** 表示不修改已保存的密码）</Label>
                 <Input
                   type="password"
@@ -1013,31 +1058,33 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                   spellCheck={false}
                 />
               </div>
-            </div>
-          </div>
-
-          <div id="runtime-vmlog-vector-download" className="rounded-lg border border-slate-200 bg-slate-50/60 p-4 space-y-3 scroll-mt-24">
-            <div>
-              <p className="text-sm font-semibold text-gray-900">VMLog 采集器下载源</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-gray-600">
-                可选：为「日志采集」Vector 助手配置下载<strong>目录</strong>基址（无尾斜杠）。保存后脚本会请求{" "}
-                <code className="rounded bg-white px-1">基址/vector-版本-架构.tar.gz</code>；若粘贴完整{" "}
-                <code className="rounded bg-white px-1">vector-*.tar.gz</code> URL，平台会自动截取目录。若留空，则走内置镜像线与 GitHub。
-              </p>
-            </div>
-            <div className="max-w-2xl space-y-2">
-              <Label>vmLogVectorDownloadBaseUrl（可选）</Label>
-              <Input
-                className="font-mono text-xs"
-                value={String(form.vmLogVectorDownloadBaseUrl ?? "")}
-                onChange={(e) => setField("vmLogVectorDownloadBaseUrl", e.target.value)}
-                placeholder="如 http://10.0.0.8:8081/vector"
-              />
-              <p className="text-[11px] text-gray-500">
-                缓存目录中的文件名请保持官方格式，例如{" "}
-                <code className="rounded bg-white px-1">vector-0.36.1-x86_64-unknown-linux-gnu.tar.gz</code> 与{" "}
-                <code className="rounded bg-white px-1">vector-0.36.1-aarch64-unknown-linux-gnu.tar.gz</code>。
-              </p>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>vcenterVmSshPrivateKeyPath（可选）</Label>
+                <Input
+                  className="font-mono text-xs"
+                  value={String(form.vcenterVmSshPrivateKeyPath ?? "")}
+                  onChange={(e) => setField("vcenterVmSshPrivateKeyPath", e.target.value)}
+                  placeholder="如 /data/keys/vcenter-vm.pem"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>vcenterVmSshKeyPassphrase（留空保留）</Label>
+                <Input
+                  type="password"
+                  value={String(form.vcenterVmSshKeyPassphrase ?? "")}
+                  onChange={(e) => setField("vcenterVmSshKeyPassphrase", e.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-white px-3 py-2 sm:col-span-2">
+                <span className="text-sm text-gray-700">跳过 SSH HostKey 校验（临时接管时使用）</span>
+                <Switch
+                  checked={Boolean(form.vcenterVmSshInsecureHostKey)}
+                  onCheckedChange={(v) => setField("vcenterVmSshInsecureHostKey", v)}
+                />
+              </div>
             </div>
           </div>
 
@@ -1045,7 +1092,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
             <div>
               <p className="text-sm font-semibold text-gray-900">宿主机 iDRAC（带外 / Redfish）</p>
               <p className="mt-1 text-[11px] leading-relaxed text-gray-600">
-                单台 iDRAC：填写带外 IP、用户名与密码即可（自动使用 HTTPS）。保存前会请求 Redfish 校验账号，仅校验通过才写入配置。本服务需能访问该带外网段。宿主机可视化监控已改为 Prometheus（vmware_vcenter）；此处凭据仍可用于带外校验与后续能力扩展。
+                单台 iDRAC：填写带外 IP、用户名与密码即可（自动使用 HTTPS）。保存前会请求 Redfish 校验账号，仅校验通过才写入配置。
               </p>
             </div>
             <div className="grid max-w-md gap-3">
@@ -1078,7 +1125,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                   spellCheck={false}
                 />
               </div>
-              <div className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
+              <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-white px-3 py-2">
                 <span className="text-sm text-gray-700">跳过 TLS 证书校验（自签证书请开启）</span>
                 <Switch
                   checked={form.idracInsecure !== false}
@@ -1090,6 +1137,53 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
               </p>
             </div>
           </div>
+          </>
+          )}
+
+          {showVmLogSettings && (
+          <div id="runtime-vmlog-vector-download" className="rounded-lg border border-slate-200 bg-slate-50/60 p-4 space-y-3 scroll-mt-24">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">VMLog 与 VictoriaLogs</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-gray-600">
+                VictoriaLogs 根地址用于 VMLog 查询与诊断；Vector 下载源用于给虚拟机安装日志采集器。若下载源留空，则走内置镜像线与 GitHub。
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label>victoriaLogsUrl</Label>
+                <Input
+                  className="font-mono text-xs"
+                  value={String(form.victoriaLogsUrl ?? "")}
+                  onChange={(e) => setField("victoriaLogsUrl", e.target.value)}
+                  placeholder="如 http://victoria-logs.example.com:9428"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>victoriaLogsRetentionDays</Label>
+                <Input
+                  type="number"
+                  min={7}
+                  max={730}
+                  value={Number(form.victoriaLogsRetentionDays ?? 180)}
+                  onChange={(e) => setField("victoriaLogsRetentionDays", Number(e.target.value))}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>vmLogVectorDownloadBaseUrl（可选）</Label>
+                <Input
+                  className="font-mono text-xs"
+                  value={String(form.vmLogVectorDownloadBaseUrl ?? "")}
+                  onChange={(e) => setField("vmLogVectorDownloadBaseUrl", e.target.value)}
+                  placeholder="如 http://10.0.0.8:8081/vector"
+                />
+                <p className="text-[11px] text-gray-500">
+                  缓存目录中的文件名请保持官方格式，例如{" "}
+                  <code className="rounded bg-white px-1">vector-0.36.1-x86_64-unknown-linux-gnu.tar.gz</code>。
+                </p>
+              </div>
+            </div>
+          </div>
+          )}
           </>
           )}
 

@@ -8,6 +8,7 @@ const routes = read("../src/app/routes/compute-routes.tsx");
 const subnav = read("../src/features/compute/layout/ComputeSubNav.tsx");
 const sidebar = read("../src/shared/layout/Sidebar.tsx");
 const settings = read("../src/features/compute/pages/VirtualMachineSettings.tsx");
+const runtimeSettings = read("../src/features/settings/components/SettingsRuntimeSection.tsx");
 
 test("compute workspace exposes resource-first routes", () => {
   for (const path of [
@@ -62,15 +63,37 @@ test("sidebar mirrors the resource-first compute navigation", () => {
   assert.doesNotMatch(computeSidebar, /to="\/cluster\/compute\/vcenter\/dashboard"/);
 });
 
-test("compute config page groups access and runtime settings into tabs", () => {
-  for (const value of ["access", "monitoring", "remote", "security", "runtime"]) {
-    assert.match(settings, new RegExp(`TabsTrigger value="${value}"`));
-  }
+test("compute config page uses cards as the only inner navigation", () => {
+  assert.doesNotMatch(settings, /TabsTrigger/);
+  assert.doesNotMatch(settings, /TabsList/);
+  assert.doesNotMatch(settings, /TabsContent/);
+  assert.match(settings, /type SettingsConfigSection = "vcenter" \| "pve" \| "monitoring" \| "remote" \| "vmlog"/);
   assert.match(settings, /type="button"/);
-  assert.match(settings, /onClick=\{\(\) => onSelect\(tab\)\}/);
-  assert.match(settings, /value=\{activeTab\}/);
-  assert.match(settings, /onValueChange=\{\(value\) => setActiveTab\(value as SettingsTab\)\}/);
-  assert.match(settings, /接入源/);
+  assert.match(settings, /onClick=\{\(\) => onSelect\(section\)\}/);
+  assert.match(settings, /activeSection === card\.section/);
+  assert.match(settings, /renderActivePanel/);
+  assert.match(settings, /<PveTargetSettingsPanel \/>/);
+  assert.match(settings, /<SettingsRuntimeSection variant="virtualMachine" focus="vcenter" \/>/);
+  assert.match(settings, /<SettingsRuntimeSection variant="virtualMachine" focus="monitoring" \/>/);
+  assert.match(settings, /<SettingsRuntimeSection variant="virtualMachine" focus="remote" \/>/);
+  assert.match(settings, /<SettingsRuntimeSection variant="virtualMachine" focus="vmlog" \/>/);
+});
+
+test("virtual machine runtime settings can render focused real config panels", () => {
+  assert.match(runtimeSettings, /export type SettingsRuntimeFocus = "all" \| "vcenter" \| "monitoring" \| "remote" \| "vmlog"/);
+  assert.match(runtimeSettings, /focus\?: SettingsRuntimeFocus/);
+  for (const marker of [
+    "showVcenterSettings",
+    "showMonitoringSettings",
+    "showRemoteSettings",
+    "showVmLogSettings",
+  ]) {
+    assert.match(runtimeSettings, new RegExp(marker));
+  }
+  assert.match(runtimeSettings, /showVcenterSettings = showVirtualMachine && \(vmFocus === "all" \|\| vmFocus === "vcenter"\)/);
+  assert.match(runtimeSettings, /showMonitoringSettings = showVirtualMachine && \(vmFocus === "all" \|\| vmFocus === "monitoring"\)/);
+  assert.match(runtimeSettings, /vcenterConsoleHost/);
+  assert.match(runtimeSettings, /victoriaLogsUrl/);
+  assert.match(runtimeSettings, /victoriaLogsRetentionDays/);
   assert.match(settings, /远程访问/);
-  assert.match(settings, /安全与审计/);
 });

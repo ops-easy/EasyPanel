@@ -1,13 +1,12 @@
 import React from "react";
-import { Cloud, Gauge, KeyRound, Monitor, PlugZap, ServerCog, ShieldCheck, SlidersHorizontal, SquareTerminal } from "lucide-react";
+import { Cloud, Gauge, Monitor, PlugZap, ServerCog, SquareTerminal } from "lucide-react";
 import { useAppConfig } from "@/hooks/use-app-config";
 import PveTargetSettingsPanel from "@/features/compute/pve/components/PveTargetSettingsPanel";
 import SettingsRuntimeSection from "@/features/settings/components/SettingsRuntimeSection";
 import { Badge } from "@/shared/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { cn } from "@/lib/utils";
 
-type SettingsTab = "access" | "monitoring" | "remote" | "security" | "runtime";
+type SettingsConfigSection = "vcenter" | "pve" | "monitoring" | "remote" | "vmlog";
 
 type SettingsSummaryCard = {
   title: string;
@@ -15,7 +14,7 @@ type SettingsSummaryCard = {
   status: string;
   tone: "violet" | "amber" | "sky" | "emerald" | "slate";
   icon: typeof Monitor;
-  tab: SettingsTab;
+  section: SettingsConfigSection;
   actionLabel: string;
 };
 
@@ -33,19 +32,19 @@ function StatusCard({
   status,
   tone,
   icon: Icon,
-  tab,
+  section,
   actionLabel,
   active,
   onSelect,
-}: SettingsSummaryCard & { active: boolean; onSelect: (tab: SettingsTab) => void }) {
+}: SettingsSummaryCard & { active: boolean; onSelect: (section: SettingsConfigSection) => void }) {
   return (
     <button
       type="button"
-      onClick={() => onSelect(tab)}
+      onClick={() => onSelect(section)}
       aria-pressed={active}
       className={cn(
-        "group rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
-        active ? "border-violet-200 ring-1 ring-violet-100" : ""
+        "group rounded-xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+        active ? "border-violet-300 ring-1 ring-violet-100" : "border-slate-200"
       )}
     >
       <div className={`flex h-9 w-9 items-center justify-center rounded-lg border ${toneClass[tone]}`}>
@@ -65,30 +64,8 @@ function StatusCard({
   );
 }
 
-function CompactPanel({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: typeof Monitor;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
-          <Icon className="h-4 w-4" />
-        </div>
-        <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
-      </div>
-      <div className="mt-4 text-sm leading-6 text-slate-600">{children}</div>
-    </section>
-  );
-}
-
 const VirtualMachineSettings: React.FC = () => {
-  const [activeTab, setActiveTab] = React.useState<SettingsTab>("access");
+  const [activeSection, setActiveSection] = React.useState<SettingsConfigSection>("pve");
   const cfgQ = useAppConfig();
   const cfg = cfgQ.data;
   const promOk =
@@ -104,7 +81,7 @@ const VirtualMachineSettings: React.FC = () => {
       status: cfg?.vcenterConfigured ? "已配置" : "未配置",
       tone: "violet",
       icon: ServerCog,
-      tab: "runtime",
+      section: "vcenter",
       actionLabel: "编辑 vCenter 参数",
     },
     {
@@ -113,7 +90,7 @@ const VirtualMachineSettings: React.FC = () => {
       status: "本页维护",
       tone: "amber",
       icon: PlugZap,
-      tab: "access",
+      section: "pve",
       actionLabel: "维护 PVE 目标",
     },
     {
@@ -122,8 +99,8 @@ const VirtualMachineSettings: React.FC = () => {
       status: promOk ? "已配置" : "未配置",
       tone: "sky",
       icon: Gauge,
-      tab: "monitoring",
-      actionLabel: "查看监控配置",
+      section: "monitoring",
+      actionLabel: "编辑监控配置",
     },
     {
       title: "远程访问",
@@ -131,8 +108,8 @@ const VirtualMachineSettings: React.FC = () => {
       status: cfg?.vcenterVmSshGlobalConfigured ? "已配置" : "按需填写",
       tone: "emerald",
       icon: SquareTerminal,
-      tab: "remote",
-      actionLabel: "查看远程访问",
+      section: "remote",
+      actionLabel: "编辑远程访问",
     },
     {
       title: "VMLog",
@@ -140,10 +117,26 @@ const VirtualMachineSettings: React.FC = () => {
       status: cfg?.victoriaLogsConfigured ? "已配置" : "可选",
       tone: "slate",
       icon: Cloud,
-      tab: "runtime",
+      section: "vmlog",
       actionLabel: "编辑 VMLog 参数",
     },
   ];
+
+  const renderActivePanel = () => {
+    switch (activeSection) {
+      case "vcenter":
+        return <SettingsRuntimeSection variant="virtualMachine" focus="vcenter" />;
+      case "monitoring":
+        return <SettingsRuntimeSection variant="virtualMachine" focus="monitoring" />;
+      case "remote":
+        return <SettingsRuntimeSection variant="virtualMachine" focus="remote" />;
+      case "vmlog":
+        return <SettingsRuntimeSection variant="virtualMachine" focus="vmlog" />;
+      case "pve":
+      default:
+        return <PveTargetSettingsPanel />;
+    }
+  };
 
   return (
     <div className="mx-auto w-full space-y-6 pb-12">
@@ -153,7 +146,7 @@ const VirtualMachineSettings: React.FC = () => {
             <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">Compute Config</p>
             <h1 className="mt-1 text-2xl font-bold text-gray-900">配置</h1>
             <p className="mt-2 max-w-4xl text-sm leading-6 text-gray-500">
-              这里是 vCenter、PVE、监控、远程访问和运行参数的统一入口。日常资源入口只展示已接入来源，未接入来源留在接入源里维护。
+              这里是 vCenter、PVE、监控、远程访问和 VMLog 的统一入口。点上方卡片，下面直接维护对应配置。
             </p>
           </div>
           <Badge variant={cfgQ.isLoading ? "outline" : "secondary"}>
@@ -162,55 +155,18 @@ const VirtualMachineSettings: React.FC = () => {
         </div>
       </section>
 
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as SettingsTab)} className="gap-4">
-        <TabsList className="h-auto w-full flex-wrap justify-start rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-          <TabsTrigger value="access">接入源</TabsTrigger>
-          <TabsTrigger value="monitoring">监控</TabsTrigger>
-          <TabsTrigger value="remote">远程访问</TabsTrigger>
-          <TabsTrigger value="security">安全与审计</TabsTrigger>
-          <TabsTrigger value="runtime">运行参数</TabsTrigger>
-        </TabsList>
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        {cards.map((card) => (
+          <StatusCard
+            key={card.section}
+            {...card}
+            active={activeSection === card.section}
+            onSelect={setActiveSection}
+          />
+        ))}
+      </section>
 
-        <TabsContent value="access" className="space-y-5">
-          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            {cards.map((card) => (
-              <StatusCard key={card.title} {...card} active={activeTab === card.tab} onSelect={setActiveTab} />
-            ))}
-          </section>
-          <PveTargetSettingsPanel />
-        </TabsContent>
-
-        <TabsContent value="monitoring" className="space-y-4">
-          <CompactPanel icon={Gauge} title="监控数据源">
-            <p>
-              vCenter、PVE、公有云和 GPU 监控的数据源仍由运行参数统一保存。资源中心只消费这些配置，不在日常导航里拆出单独的 provider 页面。
-            </p>
-          </CompactPanel>
-        </TabsContent>
-
-        <TabsContent value="remote" className="space-y-4">
-          <CompactPanel icon={KeyRound} title="远程访问">
-            <p>
-              控制台、SSH、SFTP 和堡垒机会继续复用现有能力。vCenter VM 的全局 SSH 默认凭据、控制台资源地址和 VMLog 链路在运行参数里维护。
-            </p>
-          </CompactPanel>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-4">
-          <CompactPanel icon={ShieldCheck} title="安全与审计">
-            <p>
-              变更操作只允许 admin 或 compute=rw，PVE 和 vCenter 的电源、硬件、快照等动作会继续进入平台审计，便于回溯接管操作。
-            </p>
-          </CompactPanel>
-        </TabsContent>
-
-        <TabsContent value="runtime" className="space-y-4">
-          <CompactPanel icon={SlidersHorizontal} title="运行参数">
-            <p>保存后写入 MySQL 动态配置并热重载，适合维护 vCenter、监控、控制台、VMLog、SSH 和带外管理参数。</p>
-          </CompactPanel>
-          <SettingsRuntimeSection variant="virtualMachine" />
-        </TabsContent>
-      </Tabs>
+      {renderActivePanel()}
     </div>
   );
 };
