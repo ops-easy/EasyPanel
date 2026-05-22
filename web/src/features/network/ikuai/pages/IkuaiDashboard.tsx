@@ -1,3 +1,5 @@
-import VCenterIkuaiRouterPage from "@/features/vcenter/pages/VCenterIkuaiRouterPage";
+import IkuaiWorkspace from "./IkuaiWorkspace";
 
-export default VCenterIkuaiRouterPage;
+export default function IkuaiDashboard() {
+  return <IkuaiWorkspace view="dashboard" />;
+}

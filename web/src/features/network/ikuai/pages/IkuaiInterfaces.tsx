@@ -1,3 +1,5 @@
-import IkuaiDashboard from "./IkuaiDashboard";
+import IkuaiWorkspace from "./IkuaiWorkspace";
 
-export default IkuaiDashboard;
+export default function IkuaiInterfaces() {
+  return <IkuaiWorkspace view="interfaces" />;
+}
