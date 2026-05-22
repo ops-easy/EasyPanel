@@ -66,6 +66,10 @@ test("compute config page groups access and runtime settings into tabs", () => {
   for (const value of ["access", "monitoring", "remote", "security", "runtime"]) {
     assert.match(settings, new RegExp(`TabsTrigger value="${value}"`));
   }
+  assert.match(settings, /type="button"/);
+  assert.match(settings, /onClick=\{\(\) => onSelect\(tab\)\}/);
+  assert.match(settings, /value=\{activeTab\}/);
+  assert.match(settings, /onValueChange=\{\(value\) => setActiveTab\(value as SettingsTab\)\}/);
   assert.match(settings, /接入源/);
   assert.match(settings, /远程访问/);
   assert.match(settings, /安全与审计/);

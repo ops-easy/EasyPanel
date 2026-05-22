@@ -5,6 +5,9 @@ import PveTargetSettingsPanel from "@/features/compute/pve/components/PveTargetS
 import SettingsRuntimeSection from "@/features/settings/components/SettingsRuntimeSection";
 import { Badge } from "@/shared/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { cn } from "@/lib/utils";
+
+type SettingsTab = "access" | "monitoring" | "remote" | "security" | "runtime";
 
 type SettingsSummaryCard = {
   title: string;
@@ -12,6 +15,8 @@ type SettingsSummaryCard = {
   status: string;
   tone: "violet" | "amber" | "sky" | "emerald" | "slate";
   icon: typeof Monitor;
+  tab: SettingsTab;
+  actionLabel: string;
 };
 
 const toneClass: Record<SettingsSummaryCard["tone"], string> = {
@@ -22,9 +27,27 @@ const toneClass: Record<SettingsSummaryCard["tone"], string> = {
   slate: "border-slate-200 bg-slate-50 text-slate-700",
 };
 
-function StatusCard({ title, description, status, tone, icon: Icon }: SettingsSummaryCard) {
+function StatusCard({
+  title,
+  description,
+  status,
+  tone,
+  icon: Icon,
+  tab,
+  actionLabel,
+  active,
+  onSelect,
+}: SettingsSummaryCard & { active: boolean; onSelect: (tab: SettingsTab) => void }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <button
+      type="button"
+      onClick={() => onSelect(tab)}
+      aria-pressed={active}
+      className={cn(
+        "group rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+        active ? "border-violet-200 ring-1 ring-violet-100" : ""
+      )}
+    >
       <div className={`flex h-9 w-9 items-center justify-center rounded-lg border ${toneClass[tone]}`}>
         <Icon className="h-4 w-4" />
       </div>
@@ -35,7 +58,10 @@ function StatusCard({ title, description, status, tone, icon: Icon }: SettingsSu
         </span>
       </div>
       <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>
-    </div>
+      <p className="mt-3 text-[11px] font-medium text-violet-700 opacity-80 transition group-hover:opacity-100">
+        {actionLabel}
+      </p>
+    </button>
   );
 }
 
@@ -62,6 +88,7 @@ function CompactPanel({
 }
 
 const VirtualMachineSettings: React.FC = () => {
+  const [activeTab, setActiveTab] = React.useState<SettingsTab>("access");
   const cfgQ = useAppConfig();
   const cfg = cfgQ.data;
   const promOk =
@@ -77,6 +104,8 @@ const VirtualMachineSettings: React.FC = () => {
       status: cfg?.vcenterConfigured ? "已配置" : "未配置",
       tone: "violet",
       icon: ServerCog,
+      tab: "runtime",
+      actionLabel: "编辑 vCenter 参数",
     },
     {
       title: "PVE 接入",
@@ -84,6 +113,8 @@ const VirtualMachineSettings: React.FC = () => {
       status: "本页维护",
       tone: "amber",
       icon: PlugZap,
+      tab: "access",
+      actionLabel: "维护 PVE 目标",
     },
     {
       title: "监控数据源",
@@ -91,6 +122,8 @@ const VirtualMachineSettings: React.FC = () => {
       status: promOk ? "已配置" : "未配置",
       tone: "sky",
       icon: Gauge,
+      tab: "monitoring",
+      actionLabel: "查看监控配置",
     },
     {
       title: "远程访问",
@@ -98,6 +131,8 @@ const VirtualMachineSettings: React.FC = () => {
       status: cfg?.vcenterVmSshGlobalConfigured ? "已配置" : "按需填写",
       tone: "emerald",
       icon: SquareTerminal,
+      tab: "remote",
+      actionLabel: "查看远程访问",
     },
     {
       title: "VMLog",
@@ -105,6 +140,8 @@ const VirtualMachineSettings: React.FC = () => {
       status: cfg?.victoriaLogsConfigured ? "已配置" : "可选",
       tone: "slate",
       icon: Cloud,
+      tab: "runtime",
+      actionLabel: "编辑 VMLog 参数",
     },
   ];
 
@@ -125,7 +162,7 @@ const VirtualMachineSettings: React.FC = () => {
         </div>
       </section>
 
-      <Tabs defaultValue="access" className="gap-4">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as SettingsTab)} className="gap-4">
         <TabsList className="h-auto w-full flex-wrap justify-start rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
           <TabsTrigger value="access">接入源</TabsTrigger>
           <TabsTrigger value="monitoring">监控</TabsTrigger>
@@ -137,7 +174,7 @@ const VirtualMachineSettings: React.FC = () => {
         <TabsContent value="access" className="space-y-5">
           <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {cards.map((card) => (
-              <StatusCard key={card.title} {...card} />
+              <StatusCard key={card.title} {...card} active={activeTab === card.tab} onSelect={setActiveTab} />
             ))}
           </section>
           <PveTargetSettingsPanel />
