@@ -444,9 +444,9 @@ func inspectCollectK8sSection(ctx context.Context, app *ServerApp, cfg Config, a
 		}
 	}
 
-	if ai.InspectPrometheus {
+	if ai.InspectPrometheusK8s {
 		b.WriteString("\n### 资源使用率（Prometheus）\n\n")
-		for _, sc := range []string{"k8s", "vcenter"} {
+		for _, sc := range []string{"k8s"} {
 			u := GetPrometheusURLForScope(cfg, sc)
 			if u == "" {
 				b.WriteString(fmt.Sprintf("- **%s**：未配置数据源\n", sc))
@@ -659,7 +659,14 @@ func inspectCollectVCenterSection(ctx context.Context, app *ServerApp, ai OpsAII
 
 func inspectCollectPrometheusSection(ctx context.Context, app *ServerApp, cfg Config, ai OpsAIInspectConfig) InspectionSection {
 	sec := InspectionSection{ID: "prometheus", Title: "Prometheus 数据源"}
-	if !ai.InspectPrometheusK8s && !ai.InspectPrometheusVCenter {
+	scopeRows := inspectPrometheusScopeRows(ai)
+	enabled := make([]inspectPrometheusScopeRow, 0, len(scopeRows))
+	for _, sc := range scopeRows {
+		if sc.Enabled {
+			enabled = append(enabled, sc)
+		}
+	}
+	if len(enabled) == 0 {
 		sec.Status = "skip"
 		sec.Markdown = "未勾选 Prometheus 巡检。"
 		return sec
@@ -668,33 +675,26 @@ func inspectCollectPrometheusSection(ctx context.Context, app *ServerApp, cfg Co
 	b.WriteString("### 数据源可达性与基础探测\n\n")
 	type row struct {
 		scope string
+		label string
 		ok    bool
 		msg   string
 	}
-	rows := make([]row, 0, 2)
-	if ai.InspectPrometheusK8s {
-		if _, hint := PrometheusPromQLInstantProbe(cfg, "k8s", "1"); hint != "" {
-			rows = append(rows, row{scope: "k8s", ok: false, msg: hint})
+	rows := make([]row, 0, len(enabled))
+	for _, sc := range enabled {
+		if _, hint := PrometheusPromQLInstantProbe(cfg, sc.Scope, "1"); hint != "" {
+			rows = append(rows, row{scope: sc.Scope, label: sc.Label, ok: false, msg: hint})
 			sec.Status = "warn"
-		} else {
-			rows = append(rows, row{scope: "k8s", ok: true, msg: "即时查询可用"})
+			continue
 		}
+		rows = append(rows, row{scope: sc.Scope, label: sc.Label, ok: true, msg: "即时查询可用"})
 	}
-	if ai.InspectPrometheusVCenter {
-		if _, hint := PrometheusPromQLInstantProbe(cfg, "vcenter", "1"); hint != "" {
-			rows = append(rows, row{scope: "vcenter", ok: false, msg: hint})
-			sec.Status = "warn"
-		} else {
-			rows = append(rows, row{scope: "vcenter", ok: true, msg: "即时查询可用"})
-		}
-	}
-	b.WriteString("| 作用域 | 状态 | 说明 |\n| --- | --- | --- |\n")
+	b.WriteString("| 作用域 | 平台 | 状态 | 说明 |\n| --- | --- | --- | --- |\n")
 	for _, r := range rows {
 		st := "正常"
 		if !r.ok {
 			st = "警告"
 		}
-		b.WriteString(fmt.Sprintf("| %s | %s | %s |\n", r.scope, st, inspectMdEscape(r.msg)))
+		b.WriteString(fmt.Sprintf("| %s | %s | %s | %s |\n", r.scope, inspectMdEscape(r.label), st, inspectMdEscape(r.msg)))
 	}
 	sec.Markdown = b.String()
 	if sec.Status == "" {

@@ -101,6 +101,10 @@ type AIProviderGet = {
     inspectPrometheus?: boolean;
     inspectPrometheusK8s: boolean;
     inspectPrometheusVcenter: boolean;
+    inspectPve: boolean;
+    inspectPrometheusPve: boolean;
+    inspectNetwork: boolean;
+    inspectPrometheusNetwork: boolean;
     inspectVmLog: boolean;
     inspectRedis: boolean;
     inspectSSH: boolean;
@@ -257,6 +261,10 @@ const AiInspectHome: React.FC = () => {
         inspectVCenterEvents: q.data.ai.inspectVCenterEvents ?? false,
         inspectPrometheusK8s: q.data.ai.inspectPrometheusK8s ?? q.data.ai.inspectPrometheus ?? false,
         inspectPrometheusVcenter: q.data.ai.inspectPrometheusVcenter ?? q.data.ai.inspectPrometheus ?? false,
+        inspectPve: q.data.ai.inspectPve ?? false,
+        inspectPrometheusPve: q.data.ai.inspectPrometheusPve ?? q.data.ai.inspectPrometheus ?? false,
+        inspectNetwork: q.data.ai.inspectNetwork ?? false,
+        inspectPrometheusNetwork: q.data.ai.inspectPrometheusNetwork ?? q.data.ai.inspectPrometheus ?? false,
         inspectVmLog: q.data.ai.inspectVmLog ?? false,
       },
     });
@@ -365,6 +373,64 @@ const AiInspectHome: React.FC = () => {
   const endpointProvider = draft.endpoint.provider || "custom";
   const endpointSource = endpointProvider === "custom" ? "custom" : draft.endpoint.source === "appCenter" ? "appCenter" : "custom";
   const endpointProviderName = aiProviderDisplayName(endpointProvider);
+  const inspectChecklist = [
+    {
+      enabled: draft.ai.inspectK8s,
+      text: "Kubernetes：资源概览、近期事件、异常 Pod 日志摘录、问题类型/严重级别/建议处理",
+    },
+    {
+      enabled: draft.ai.inspectVCenter,
+      text: "vCenter：虚拟机清单与资源使用率摘要",
+    },
+    {
+      enabled: draft.ai.inspectVCenterEvents,
+      text: "vCenter VM 事件与宿主机告警：过去 24h 的 VM 电源/配置变更事件 + 宿主机原生告警",
+    },
+    {
+      enabled: draft.ai.inspectPve,
+      text: "PVE / Proxmox VE：目标配置、节点、虚拟机/容器、存储与近期任务",
+    },
+    {
+      enabled: draft.ai.inspectNetwork,
+      text: "网络设备（OpenWrt / iKuai）：设备清单、类型统计、OpenWrt exporter 与 iKuai 流量指标检查",
+    },
+    {
+      enabled: draft.ai.inspectPrometheusK8s,
+      text: "Prometheus（Kubernetes 数据源）：k8s scope 即时查询与基础可用性巡检",
+    },
+    {
+      enabled: draft.ai.inspectPrometheusVcenter,
+      text: "Prometheus（vCenter 数据源）：vcenter scope 即时查询与基础可用性巡检",
+    },
+    {
+      enabled: draft.ai.inspectPrometheusPve,
+      text: "Prometheus（PVE 数据源）：pve scope 即时查询与基础可用性巡检",
+    },
+    {
+      enabled: draft.ai.inspectPrometheusNetwork,
+      text: "Prometheus（网络设备数据源）：network scope、OpenWrt/iKuai 指标族与流量指标巡检",
+    },
+    {
+      enabled: draft.ai.inspectVmLog,
+      text: "VictoriaLogs / VM 日志：查询可达性、近 24 小时日志量、最近日志样本、已开启采集目标概览",
+    },
+    {
+      enabled: draft.ai.inspectRedis,
+      text: "应用中心 Redis：实例登记表与基础可用性检查",
+    },
+    {
+      enabled: draft.ai.inspectCloudVm,
+      text: "云主机：云主机实例表与登记数量检查",
+    },
+    {
+      enabled: draft.ai.inspectSSH,
+      text: "SSH 凭据存储：后端存储初始化状态检查",
+    },
+    {
+      enabled: draft.endpoint.enabled,
+      text: "AI Provider：已启用 role 的模型端点状态、探针与报告摘要调用",
+    },
+  ].filter((item) => item.enabled);
 
   return (
     <div className="space-y-8">
@@ -1061,6 +1127,10 @@ const AiInspectHome: React.FC = () => {
               ["inspectVCenterEvents", "vCenter VM 事件与宿主机告警"],
               ["inspectPrometheusK8s", "Prometheus（Kubernetes 数据源）"],
               ["inspectPrometheusVcenter", "Prometheus（vCenter 数据源）"],
+              ["inspectPve", "PVE / Proxmox VE"],
+              ["inspectPrometheusPve", "Prometheus（PVE 数据源）"],
+              ["inspectNetwork", "网络设备（OpenWrt / iKuai）"],
+              ["inspectPrometheusNetwork", "Prometheus（网络设备数据源）"],
               ["inspectVmLog", "VictoriaLogs / VM 日志"],
               ["inspectRedis", "应用中心 Redis 实例表"],
               ["inspectSSH", "SSH 凭据存储"],
@@ -1088,12 +1158,11 @@ const AiInspectHome: React.FC = () => {
         <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50/80 px-4 py-3 text-sm text-slate-700">
           <p className="font-medium text-slate-900">本次巡检列表</p>
           <ul className="mt-2 list-inside list-disc space-y-1 text-[13px] leading-relaxed">
-            <li>Kubernetes：资源概览、近期事件、异常 Pod 日志摘录、问题类型/严重级别/建议处理</li>
-            <li>vCenter：虚拟机清单与资源使用率摘要</li>
-            <li>vCenter VM 事件与宿主机告警：过去 24h 的 VM 电源/配置变更事件 + 宿主机原生告警（黄色/红色）</li>
-            <li>Prometheus（Kubernetes / vCenter）：分别做探活与基础可用性巡检</li>
-            <li>VictoriaLogs / VM 日志：查询可达性、近 24 小时日志量、最近日志样本、已开启采集目标概览</li>
-            <li>应用中心 Redis、云主机、SSH 凭据存储、AI Provider 网关探针</li>
+            {inspectChecklist.length > 0 ? (
+              inspectChecklist.map((item) => <li key={item.text}>{item.text}</li>)
+            ) : (
+              <li>当前未选择巡检范围；保存后可按需开启 Kubernetes、vCenter、PVE、OpenWrt/iKuai、Prometheus、VictoriaLogs 等模块。</li>
+            )}
           </ul>
         </div>
         <div className="mt-6 flex flex-wrap items-end gap-4">

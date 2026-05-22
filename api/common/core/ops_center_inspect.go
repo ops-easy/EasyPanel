@@ -228,6 +228,31 @@ func RunPlatformInspection(app *ServerApp, cfg Config, bundle OpsAIProviderBundl
 		}
 	}
 
+	if ai.InspectPVE {
+		if app == nil || app.PlatformKV() == nil {
+			add("PVE / Proxmox VE", "warn", "Platform KV 不可用")
+		} else if targets, err := pveTargetsForCompute(app); err != nil {
+			add("PVE / Proxmox VE", "warn", err.Error())
+		} else if len(targets) == 0 {
+			add("PVE / Proxmox VE", "warn", "未配置 PVE 目标")
+		} else {
+			add("PVE / Proxmox VE", "ok", fmt.Sprintf("已配置 %d 个目标", len(targets)))
+		}
+	}
+
+	if ai.InspectNetwork {
+		if app == nil || app.PlatformKV() == nil {
+			add("网络设备（OpenWrt / iKuai）", "warn", "Platform KV 不可用")
+		} else if devices, err := loadInspectNetworkDevices(app.PlatformKV()); err != nil {
+			add("网络设备（OpenWrt / iKuai）", "warn", err.Error())
+		} else if len(devices) == 0 {
+			add("网络设备（OpenWrt / iKuai）", "warn", "未登记 OpenWrt / iKuai 设备")
+		} else {
+			counts := inspectNetworkKindCounts(devices)
+			add("网络设备（OpenWrt / iKuai）", "ok", fmt.Sprintf("OpenWrt %d / iKuai %d / 合计 %d", counts["openwrt"], counts["ikuai"], len(devices)))
+		}
+	}
+
 	if ai.InspectPrometheusK8s {
 		_, hint := PrometheusPromQLInstantProbe(cfg, "k8s", "1")
 		if hint != "" {
@@ -243,6 +268,24 @@ func RunPlatformInspection(app *ServerApp, cfg Config, bundle OpsAIProviderBundl
 			add("Prometheus(vcenter)", "warn", hint)
 		} else {
 			add("Prometheus(vcenter)", "ok", "即时查询可用")
+		}
+	}
+
+	if ai.InspectPrometheusPVE {
+		_, hint := PrometheusPromQLInstantProbe(cfg, "pve", "1")
+		if hint != "" {
+			add("Prometheus(pve)", "warn", hint)
+		} else {
+			add("Prometheus(pve)", "ok", "即时查询可用")
+		}
+	}
+
+	if ai.InspectPrometheusNetwork {
+		_, hint := PrometheusPromQLInstantProbe(cfg, "network", "1")
+		if hint != "" {
+			add("Prometheus(network)", "warn", hint)
+		} else {
+			add("Prometheus(network)", "ok", "即时查询可用")
 		}
 	}
 
@@ -317,7 +360,11 @@ func RunPlatformInspection(app *ServerApp, cfg Config, bundle OpsAIProviderBundl
 	sections = append(sections, inspectCollectVCenterSection(colCtx, app, ai))
 	reportProgress(50, "vCenter 事件与告警", "采集 vCenter VM 事件与宿主机告警")
 	sections = append(sections, inspectCollectVCenterEventsSection(colCtx, app, ai))
-	reportProgress(55, "Prometheus", "采集 Prometheus 巡检数据")
+	reportProgress(54, "PVE", "采集 PVE / Proxmox VE 巡检数据")
+	sections = append(sections, inspectCollectPVESection(colCtx, app, cfg, ai))
+	reportProgress(58, "网络设备", "采集 OpenWrt / iKuai 网络设备巡检数据")
+	sections = append(sections, inspectCollectNetworkSection(colCtx, app, cfg, ai))
+	reportProgress(62, "Prometheus", "采集 Prometheus 巡检数据")
 	sections = append(sections, inspectCollectPrometheusSection(colCtx, app, cfg, ai))
 	reportProgress(65, "日志巡检", "采集 VictoriaLogs / VM 日志巡检数据")
 	sections = append(sections, inspectCollectVMLogSection(colCtx, app, cfg, ai))
@@ -332,12 +379,17 @@ func RunPlatformInspection(app *ServerApp, cfg Config, bundle OpsAIProviderBundl
 	reportProgress(88, "SSH", "采集 SSH 凭据存储状态")
 	sections = append(sections, inspectCollectSSHSection(app, ai))
 
-	reportProgress(92, "模型探针", "执行大模型连通性探针")
 	probeBundle := bundle
-	if b2, err := opsAIProviderBundleForLLMRole(app, cfg, bundle, OpsAIProviderRoleInspectProbe); err == nil {
-		probeBundle = b2
+	var llmProbe *InspectionLLMProbe
+	if aiProviderEnabledForRole(bundle, OpsAIProviderRoleInspectProbe) {
+		reportProgress(92, "模型探针", "执行大模型连通性探针")
+		if b2, err := opsAIProviderBundleForLLMRole(app, cfg, bundle, OpsAIProviderRoleInspectProbe); err == nil {
+			probeBundle = b2
+		}
+		llmProbe = opsProbeAIProviderLLM(app, cfg, probeBundle)
+	} else {
+		reportProgress(92, "模型探针", "inspect_probe 未启用，跳过大模型连通性探针")
 	}
-	llmProbe := opsProbeAIProviderLLM(app, cfg, probeBundle)
 
 	summary := fmt.Sprintf("巡检完成：正常 %d，警告 %d，异常 %d · 分项报告 %d 段", okN, warnN, failN, len(sections))
 	if llmProbe != nil {

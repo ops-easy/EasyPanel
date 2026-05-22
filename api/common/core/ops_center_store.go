@@ -59,6 +59,10 @@ type OpsAIInspectConfig struct {
 	InspectPrometheus        bool            `json:"inspectPrometheus,omitempty"` // 兼容旧配置：读到后会同步到 k8s / vcenter 两项
 	InspectPrometheusK8s     bool            `json:"inspectPrometheusK8s"`
 	InspectPrometheusVCenter bool            `json:"inspectPrometheusVcenter"`
+	InspectPVE               bool            `json:"inspectPve"`
+	InspectPrometheusPVE     bool            `json:"inspectPrometheusPve"`
+	InspectNetwork           bool            `json:"inspectNetwork"`
+	InspectPrometheusNetwork bool            `json:"inspectPrometheusNetwork"`
 	InspectVMLog             bool            `json:"inspectVmLog"`
 	InspectRedis             bool            `json:"inspectRedis"`
 	InspectSSH               bool            `json:"inspectSSH"`
@@ -70,9 +74,15 @@ func normalizeOpsAIInspectConfig(ai *OpsAIInspectConfig) {
 	if ai == nil {
 		return
 	}
-	if ai.InspectPrometheus && !ai.InspectPrometheusK8s && !ai.InspectPrometheusVCenter {
+	if ai.InspectPrometheus &&
+		!ai.InspectPrometheusK8s &&
+		!ai.InspectPrometheusVCenter &&
+		!ai.InspectPrometheusPVE &&
+		!ai.InspectPrometheusNetwork {
 		ai.InspectPrometheusK8s = true
 		ai.InspectPrometheusVCenter = true
+		ai.InspectPrometheusPVE = true
+		ai.InspectPrometheusNetwork = true
 	}
 }
 

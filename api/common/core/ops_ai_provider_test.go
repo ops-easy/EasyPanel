@@ -76,6 +76,47 @@ func TestSaveOpsAIProviderBundleWritesNewKVOnly(t *testing.T) {
 	}
 }
 
+func TestNormalizeOpsAIInspectConfigLegacyPrometheusEnablesCurrentScopes(t *testing.T) {
+	ai := OpsAIInspectConfig{InspectPrometheus: true}
+	normalizeOpsAIInspectConfig(&ai)
+
+	if !ai.InspectPrometheusK8s || !ai.InspectPrometheusVCenter || !ai.InspectPrometheusPVE || !ai.InspectPrometheusNetwork {
+		t.Fatalf("legacy inspectPrometheus should enable k8s/vcenter/pve/network scopes, got %#v", ai)
+	}
+}
+
+func TestSaveOpsAIProviderBundleClearsLegacyPrometheusKeepsCurrentScopes(t *testing.T) {
+	kv := newTestPlatformKV()
+	err := saveOpsAIProviderBundle(kv, OpsAIProviderBundle{
+		AI: OpsAIInspectConfig{
+			InspectPrometheus:        true,
+			InspectPrometheusK8s:     true,
+			InspectPrometheusVCenter: true,
+			InspectPVE:               true,
+			InspectPrometheusPVE:     true,
+			InspectNetwork:           true,
+			InspectPrometheusNetwork: true,
+		},
+	})
+	if err != nil {
+		t.Fatalf("saveOpsAIProviderBundle returned error: %v", err)
+	}
+	raw, ok := kv.Get(kvKeyOpsAIProvider)
+	if !ok {
+		t.Fatalf("new AI provider KV key was not written")
+	}
+	var payload OpsAIProviderBundle
+	if err := json.Unmarshal([]byte(raw), &payload); err != nil {
+		t.Fatalf("stored json invalid: %v", err)
+	}
+	if payload.AI.InspectPrometheus {
+		t.Fatalf("legacy inspectPrometheus should be cleared on save")
+	}
+	if !payload.AI.InspectPVE || !payload.AI.InspectPrometheusPVE || !payload.AI.InspectNetwork || !payload.AI.InspectPrometheusNetwork {
+		t.Fatalf("new inspection scopes were not preserved: %#v", payload.AI)
+	}
+}
+
 func TestEffectiveAIProviderForRoleFallsBackToGlobal(t *testing.T) {
 	b := OpsAIProviderBundle{
 		Endpoint: OpsAIProviderEndpoint{

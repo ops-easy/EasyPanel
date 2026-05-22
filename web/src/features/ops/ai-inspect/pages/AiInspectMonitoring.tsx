@@ -211,6 +211,23 @@ export default function AiInspectMonitoring() {
 
   const k8sOk = promStatusQ.data?.scopes?.k8s?.configured === true;
   const vcOk = promStatusQ.data?.scopes?.vcenter?.configured === true;
+  const datasourceOptions: Array<{ value: MonitoringDataScope; label: string; disabled?: boolean }> = [
+    { value: "k8s", label: k8sOk ? "Kubernetes 集群指标源" : "Kubernetes 集群指标源（未配置）" },
+    {
+      value: "vcenter",
+      label: vcOk ? "vCenter / VMware 指标源" : "vCenter / VMware 指标源（未配置）",
+      disabled: promStatusQ.isSuccess && !vcOk,
+    },
+  ];
+
+  React.useEffect(() => {
+    if (!promStatusQ.isSuccess) return;
+    if (pageScope === "vcenter" && !vcOk) {
+      setPageScope("k8s");
+    } else if (pageScope === "k8s" && !k8sOk && vcOk) {
+      setPageScope("vcenter");
+    }
+  }, [k8sOk, pageScope, promStatusQ.isSuccess, vcOk]);
 
   return (
     <div className="space-y-8">
@@ -228,14 +245,27 @@ export default function AiInspectMonitoring() {
           <div className="space-y-2">
             <Label>数据源（scope）</Label>
             <Select value={pageScope} onValueChange={(v) => setPageScope(v as MonitoringDataScope)}>
-              <SelectTrigger className="w-[260px]">
+              <SelectTrigger className="w-[280px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="k8s">Kubernetes Prometheus / VM</SelectItem>
-                <SelectItem value="vcenter">vCenter Prometheus / VM</SelectItem>
+                {datasourceOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            {pageScope === "vcenter" ? (
+              <p className="max-w-[320px] text-xs text-slate-500">
+                vCenter / VMware 指标源是抓取 Telegraf vSphere、vmware_/vsphere_ 等指标后的 Prometheus 或
+                VictoriaMetrics；未配置 prometheusUrlVcenter / vmSelectUrlVcenter 时不会开放选择。
+              </p>
+            ) : (
+              <p className="max-w-[320px] text-xs text-slate-500">
+                Kubernetes 指标源读取 cAdvisor、kube-state-metrics、node-exporter 等集群指标。
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label>分类</Label>

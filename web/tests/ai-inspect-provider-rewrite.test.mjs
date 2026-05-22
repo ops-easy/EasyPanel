@@ -48,6 +48,25 @@ test("VictoriaLogs AI analysis uses provider-neutral routes", () => {
   assert.doesNotMatch(details, /openclaw-analyze/);
 });
 
+test("AI inspect configuration exposes current platform scopes", () => {
+  const home = read("src/features/ops/ai-inspect/pages/AiInspectHome.tsx");
+  for (const token of [
+    "inspectPrometheusK8s",
+    "inspectPrometheusVcenter",
+    "inspectPve",
+    "inspectPrometheusPve",
+    "inspectNetwork",
+    "inspectPrometheusNetwork",
+  ]) {
+    assert.match(home, new RegExp(token), `missing ${token}`);
+  }
+
+  assert.match(home, /PVE \/ Proxmox VE/);
+  assert.match(home, /OpenWrt \/ iKuai/);
+  assert.match(home, /Prometheus（PVE 数据源）/);
+  assert.match(home, /Prometheus（网络设备数据源）/);
+});
+
 test("removed OpenClaw inspect API paths do not remain in runtime source", () => {
   const offenders = [];
   for (const file of walk(join(root, "src"))) {
