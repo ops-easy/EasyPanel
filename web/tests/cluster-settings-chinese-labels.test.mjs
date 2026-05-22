@@ -31,6 +31,12 @@ test("cluster settings page is organized as deep-linkable task tabs", () => {
   assert.match(clusterSettingsSource, /<SettingsStatusStrip/);
 });
 
+test("cluster settings advanced tab does not render the kubernetes menu editor", () => {
+  assert.doesNotMatch(clusterSettingsSource, /k8sFocus="menu"/);
+  assert.doesNotMatch(clusterSettingsSource, /Kubernetes 左侧菜单/);
+  assert.doesNotMatch(clusterSettingsSource, /Kubernetes 菜单/);
+});
+
 test("cluster settings status strip reads existing config and addon status APIs", () => {
   assert.match(clusterSettingsSource, /APP_CONFIG_QUERY_KEY/);
   assert.match(clusterSettingsSource, /"k8s-addons-status"/);

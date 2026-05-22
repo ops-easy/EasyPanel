@@ -252,7 +252,7 @@ const ClusterK8sSettings: React.FC = () => {
                 monitoring: "安装 kube-prometheus-stack，维护 Prometheus / VictoriaMetrics 数据源并执行 PromQL 验证。",
                 logs: "发现或填写 VictoriaLogs 根地址，供 AI 巡检与日志查询使用。",
                 harbor: "维护 Harbor API 根地址、Robot 账号与索引缓存相关设置。",
-                advanced: "管理 Kubernetes 左侧菜单，以及 Dashboard / metrics-server 等低频能力。",
+                advanced: "集中处理 Dashboard / metrics-server 与官方 Web UI 等低频能力。",
               };
 
               return (
@@ -325,9 +325,8 @@ const ClusterK8sSettings: React.FC = () => {
         <TabsContent value="advanced" className="mt-0 space-y-4">
           <SectionIntro
             title="高级"
-            description="低频设置集中在这里：Kubernetes 左侧菜单、Dashboard / metrics-server，以及官方 Web UI 的辅助安装。"
+            description="低频设置集中在这里：Dashboard / metrics-server，以及官方 Web UI 的辅助安装。"
           />
-          <SettingsRuntimeSection variant="k8s" k8sFocus="menu" />
           <ClusterK8sDashboardMonitoringSection />
         </TabsContent>
       </Tabs>
