@@ -1,10 +1,14 @@
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Cloud, Gauge, Monitor, PlugZap, ServerCog, ShieldCheck } from "lucide-react";
 import { useAppConfig } from "@/hooks/use-app-config";
 import PveTargetSettingsPanel from "@/features/compute/pve/components/PveTargetSettingsPanel";
 import SettingsRuntimeSection from "@/features/settings/components/SettingsRuntimeSection";
-import { Badge } from "@/shared/ui/badge";
+import ComputePageHeader from "@/features/compute/components/ComputePageHeader";
+import ComputeStatusBadge from "@/features/compute/components/ComputeStatusBadge";
+import { apiGetJson } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import type { ComputeHealth, ComputeProvider } from "@/features/compute/components/compute-resource-types";
 
 type SettingsConfigSection = "vcenter" | "pve" | "monitoring" | "idrac" | "vmlog";
 
@@ -12,10 +16,16 @@ type SettingsSummaryCard = {
   title: string;
   description: string;
   status: string;
+  health: ComputeHealth;
   tone: "violet" | "amber" | "sky" | "emerald" | "slate";
   icon: typeof Monitor;
   section: SettingsConfigSection;
   actionLabel: string;
+};
+
+type ComputeProvidersResponse = {
+  providers?: ComputeProvider[];
+  warnings?: string[];
 };
 
 const toneClass: Record<SettingsSummaryCard["tone"], string> = {
@@ -30,6 +40,7 @@ function StatusCard({
   title,
   description,
   status,
+  health,
   tone,
   icon: Icon,
   section,
@@ -52,9 +63,7 @@ function StatusCard({
       </div>
       <div className="mt-3 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
-        <span className="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600">
-          {status}
-        </span>
+        <ComputeStatusBadge statusLabel={status} health={health} />
       </div>
       <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>
       <p className="mt-3 text-[11px] font-medium text-violet-700 opacity-80 transition group-hover:opacity-100">
@@ -67,7 +76,24 @@ function StatusCard({
 const VirtualMachineSettings: React.FC = () => {
   const [activeSection, setActiveSection] = React.useState<SettingsConfigSection>("pve");
   const cfgQ = useAppConfig();
+  const providersQ = useQuery({
+    queryKey: ["compute-config-providers"],
+    queryFn: ({ signal }) => apiGetJson<ComputeProvidersResponse>("/api/compute/providers", { signal }),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
   const cfg = cfgQ.data;
+  const providers = providersQ.data?.providers ?? [];
+  const providerStatus = (providerKey: "vcenter" | "pve", fallbackConfigured = false) => {
+    if (providersQ.isLoading) return { label: "读取中", health: "unknown" as ComputeHealth };
+    const provider = providers.find((item) => item.provider === providerKey);
+    const configured = provider?.configured === true || fallbackConfigured;
+    if (!configured) return { label: "未配置", health: "unknown" as ComputeHealth };
+    if (provider?.healthy === false) return { label: "需检查", health: "warning" as ComputeHealth };
+    return { label: "已接入", health: "ok" as ComputeHealth };
+  };
+  const vcenterStatus = providerStatus("vcenter", cfg?.vcenterConfigured === true);
+  const pveStatus = providerStatus("pve");
   const promOk =
     cfg?.prometheusVcenterConfigured === true ||
     cfg?.prometheusPveConfigured === true ||
@@ -78,7 +104,8 @@ const VirtualMachineSettings: React.FC = () => {
     {
       title: "vCenter 连接",
       description: "vSphere API、控制台资源、宿主机和 vCenter 虚拟机列表。",
-      status: cfg?.vcenterConfigured ? "已配置" : "未配置",
+      status: vcenterStatus.label,
+      health: vcenterStatus.health,
       tone: "violet",
       icon: ServerCog,
       section: "vcenter",
@@ -87,7 +114,8 @@ const VirtualMachineSettings: React.FC = () => {
     {
       title: "PVE 接入",
       description: "Proxmox VE API、虚拟机 / CT、节点、存储和基础电源任务。",
-      status: "本页维护",
+      status: pveStatus.label,
+      health: pveStatus.health,
       tone: "amber",
       icon: PlugZap,
       section: "pve",
@@ -97,6 +125,7 @@ const VirtualMachineSettings: React.FC = () => {
       title: "监控数据源",
       description: "vCenter / PVE / 公有云的 Prometheus 或 VictoriaMetrics vmselect。",
       status: promOk ? "已配置" : "未配置",
+      health: promOk ? "ok" : "unknown",
       tone: "sky",
       icon: Gauge,
       section: "monitoring",
@@ -106,6 +135,7 @@ const VirtualMachineSettings: React.FC = () => {
       title: "iDRAC 配置",
       description: "宿主机带外 Redfish 接入，多台 iDRAC 目标统一维护。",
       status: "可选",
+      health: "idle",
       tone: "emerald",
       icon: ShieldCheck,
       section: "idrac",
@@ -115,6 +145,7 @@ const VirtualMachineSettings: React.FC = () => {
       title: "VMLog",
       description: "虚拟机日志采集器下载源与 VictoriaLogs 查询链路。",
       status: cfg?.victoriaLogsConfigured ? "已配置" : "可选",
+      health: cfg?.victoriaLogsConfigured ? "ok" : "idle",
       tone: "slate",
       icon: Cloud,
       section: "vmlog",
@@ -140,20 +171,16 @@ const VirtualMachineSettings: React.FC = () => {
 
   return (
     <div className="mx-auto w-full space-y-6 pb-12">
-      <section className="rounded-xl border border-slate-200 bg-white px-6 py-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">Compute Config</p>
-            <h1 className="mt-1 text-2xl font-bold text-gray-900">配置</h1>
-            <p className="mt-2 max-w-4xl text-sm leading-6 text-gray-500">
-              这里是 vCenter、PVE、监控、iDRAC 和 VMLog 的统一入口。点上方卡片，下面直接维护对应配置。
-            </p>
-          </div>
-          <Badge variant={cfgQ.isLoading ? "outline" : "secondary"}>
-            {cfgQ.isLoading ? "读取配置中" : "统一接管入口"}
-          </Badge>
-        </div>
-      </section>
+      <ComputePageHeader
+        eyebrow="Compute Config"
+        title="配置"
+        description="这里是 vCenter、PVE、监控、iDRAC 和 VMLog 的统一入口。上方接入源状态来自统一资源模型，下面直接维护对应配置。"
+        refreshing={cfgQ.isLoading || providersQ.isFetching}
+        onRefresh={() => {
+          void cfgQ.refetch();
+          void providersQ.refetch();
+        }}
+      />
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         {cards.map((card) => (
