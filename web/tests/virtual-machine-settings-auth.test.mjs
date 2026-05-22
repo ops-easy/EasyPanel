@@ -22,21 +22,21 @@ test("配置是算力侧一等路由，不再保留旧 vCenter 设置入口", ()
   assert.doesNotMatch(routeInventorySource, /"\/cluster\/compute\/vcenter\/settings"/);
 });
 
-test("配置集中呈现 vCenter、PVE、监控、SSH 与 VMLog 配置", () => {
+test("配置集中呈现 vCenter、PVE、监控、iDRAC 与 VMLog 配置", () => {
   const settingsSource = read("../src/features/compute/pages/VirtualMachineSettings.tsx");
 
   assert.doesNotMatch(settingsSource, /TabsTrigger/);
-  assert.match(settingsSource, /type SettingsConfigSection = "vcenter" \| "pve" \| "monitoring" \| "remote" \| "vmlog"/);
+  assert.match(settingsSource, /type SettingsConfigSection = "vcenter" \| "pve" \| "monitoring" \| "idrac" \| "vmlog"/);
   assert.match(settingsSource, /activeSection === card\.section/);
   assert.match(settingsSource, /<PveTargetSettingsPanel \/>/);
   assert.match(settingsSource, /focus="vcenter"/);
   assert.match(settingsSource, /focus="monitoring"/);
-  assert.match(settingsSource, /focus="remote"/);
+  assert.match(settingsSource, /focus="idrac"/);
   assert.match(settingsSource, /focus="vmlog"/);
   assert.match(settingsSource, /vCenter 连接/);
   assert.match(settingsSource, /PVE 接入/);
   assert.match(settingsSource, /监控数据源/);
-  assert.match(settingsSource, /远程访问/);
+  assert.match(settingsSource, /iDRAC 配置/);
   assert.match(settingsSource, /VMLog/);
 });
 

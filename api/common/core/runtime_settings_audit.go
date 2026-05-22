@@ -159,6 +159,9 @@ func runtimeSettingsAuditSummary(cur, next *RuntimeSettings) string {
 	}
 	add("iDRAC 地址", cur.IdracHost, next.IdracHost)
 	add("iDRAC 用户", cur.IdracUser, next.IdracUser)
+	if runtimeIdracTargetsAuditChanged(cur.IdracTargets, next.IdracTargets) {
+		parts = append(parts, "iDRAC 目标列表")
+	}
 	if cur.IdracPassword != next.IdracPassword {
 		parts = append(parts, "iDRAC 密码")
 	}

@@ -111,6 +111,15 @@ export type RuntimeSettingsDTO = Record<string, unknown> & {
     skipTlsVerify?: boolean;
     default?: boolean;
   }>;
+  idracTargets?: Array<{
+    id: string;
+    name?: string;
+    host: string;
+    user: string;
+    password: string;
+    insecure?: boolean;
+    default?: boolean;
+  }>;
 };
 
 

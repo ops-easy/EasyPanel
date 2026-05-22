@@ -707,6 +707,7 @@ func structuredRuntimeFieldMappings() []structuredRuntimeMapping {
 		{key: "idracUser", paths: [][]string{{"idrac", "user"}}},
 		{key: "idracPassword", paths: [][]string{{"idrac", "password"}}},
 		{key: "idracInsecure", paths: [][]string{{"idrac", "insecure"}}},
+		{key: "idracTargets", paths: [][]string{{"idrac", "targets"}}},
 		{key: "k8sSidebarMenu", paths: [][]string{{"k8s", "sidebarMenu"}}},
 		{key: "k8s", paths: [][]string{{"k8s"}}},
 	}
@@ -864,6 +865,7 @@ func RuntimeSettingsFromConfig(cfg Config) *RuntimeSettings {
 		IdracUser:                      cfg.IdracUser,
 		IdracPassword:                  cfg.IdracPassword,
 		IdracInsecure:                  cfg.IdracInsecure,
+		IdracTargets:                   runtimeIdracTargetsFromConfig(cfg.IdracTargets),
 		K8sSidebarMenu:                 RuntimeK8sSidebarMenuEffective(nil),
 	}
 	skipBaotaTLS := cfg.BaotaSkipTLSVerify

@@ -67,7 +67,7 @@ test("compute config page uses cards as the only inner navigation", () => {
   assert.doesNotMatch(settings, /TabsTrigger/);
   assert.doesNotMatch(settings, /TabsList/);
   assert.doesNotMatch(settings, /TabsContent/);
-  assert.match(settings, /type SettingsConfigSection = "vcenter" \| "pve" \| "monitoring" \| "remote" \| "vmlog"/);
+  assert.match(settings, /type SettingsConfigSection = "vcenter" \| "pve" \| "monitoring" \| "idrac" \| "vmlog"/);
   assert.match(settings, /type="button"/);
   assert.match(settings, /onClick=\{\(\) => onSelect\(section\)\}/);
   assert.match(settings, /activeSection === card\.section/);
@@ -75,25 +75,28 @@ test("compute config page uses cards as the only inner navigation", () => {
   assert.match(settings, /<PveTargetSettingsPanel \/>/);
   assert.match(settings, /<SettingsRuntimeSection variant="virtualMachine" focus="vcenter" \/>/);
   assert.match(settings, /<SettingsRuntimeSection variant="virtualMachine" focus="monitoring" \/>/);
-  assert.match(settings, /<SettingsRuntimeSection variant="virtualMachine" focus="remote" \/>/);
+  assert.match(settings, /<SettingsRuntimeSection variant="virtualMachine" focus="idrac" \/>/);
   assert.match(settings, /<SettingsRuntimeSection variant="virtualMachine" focus="vmlog" \/>/);
 });
 
 test("virtual machine runtime settings can render focused real config panels", () => {
-  assert.match(runtimeSettings, /export type SettingsRuntimeFocus = "all" \| "vcenter" \| "monitoring" \| "remote" \| "vmlog"/);
+  assert.match(runtimeSettings, /export type SettingsRuntimeFocus = "all" \| "vcenter" \| "monitoring" \| "idrac" \| "vmlog"/);
   assert.match(runtimeSettings, /focus\?: SettingsRuntimeFocus/);
   for (const marker of [
     "showVcenterSettings",
     "showMonitoringSettings",
-    "showRemoteSettings",
+    "showIdracSettings",
     "showVmLogSettings",
   ]) {
     assert.match(runtimeSettings, new RegExp(marker));
   }
   assert.match(runtimeSettings, /showVcenterSettings = showVirtualMachine && \(vmFocus === "all" \|\| vmFocus === "vcenter"\)/);
   assert.match(runtimeSettings, /showMonitoringSettings = showVirtualMachine && \(vmFocus === "all" \|\| vmFocus === "monitoring"\)/);
-  assert.match(runtimeSettings, /vcenterConsoleHost/);
+  assert.match(runtimeSettings, /idracTargets/);
+  assert.match(runtimeSettings, /addIdracTarget/);
+  assert.doesNotMatch(runtimeSettings, /vcenterVmSshUser/);
+  assert.doesNotMatch(runtimeSettings, /SFTP/);
   assert.match(runtimeSettings, /victoriaLogsUrl/);
   assert.match(runtimeSettings, /victoriaLogsRetentionDays/);
-  assert.match(settings, /远程访问/);
+  assert.match(settings, /iDRAC 配置/);
 });

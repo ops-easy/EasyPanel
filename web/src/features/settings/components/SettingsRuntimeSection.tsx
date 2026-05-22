@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { APP_CONFIG_QUERY_KEY } from "@/hooks/use-app-config";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Loader2, RotateCcw, Save, SlidersHorizontal } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, Loader2, Plus, RotateCcw, Save, SlidersHorizontal, Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -31,12 +31,102 @@ import HarborRedisIndexSettingsPanel from "@/features/harbor/components/HarborRe
 import BaotaSettingsWizard from "@/features/baota/components/BaotaSettingsWizard";
 
 export type SettingsRuntimeVariant = "full" | "k8s" | "virtualMachine" | "account" | "baota";
-export type SettingsRuntimeFocus = "all" | "vcenter" | "monitoring" | "remote" | "vmlog";
+export type SettingsRuntimeFocus = "all" | "vcenter" | "monitoring" | "idrac" | "vmlog";
 
 type SettingsRuntimeSectionProps = {
   variant?: SettingsRuntimeVariant;
   focus?: SettingsRuntimeFocus;
 };
+
+type RuntimeIdracTargetForm = {
+  id: string;
+  name: string;
+  host: string;
+  user: string;
+  password: string;
+  insecure: boolean;
+  default?: boolean;
+};
+
+const emptyIdracTarget = (index: number): RuntimeIdracTargetForm => ({
+  id: `idrac-${index}`,
+  name: "",
+  host: "",
+  user: "root",
+  password: "",
+  insecure: true,
+  default: false,
+});
+
+function normalizeIdracTargetID(raw: string, index: number): string {
+  const id = raw.trim().toLowerCase();
+  if (/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(id)) return id;
+  return `idrac-${index + 1}`;
+}
+
+function normalizeIdracTargetDefaults(rows: RuntimeIdracTargetForm[]): RuntimeIdracTargetForm[] {
+  const normalized = rows.map((row, index) => ({
+    ...row,
+    id: normalizeIdracTargetID(row.id, index),
+    name: row.name.trim(),
+    host: row.host.trim(),
+    user: row.user.trim(),
+    password: row.password,
+    insecure: row.insecure !== false,
+    default: Boolean(row.default),
+  }));
+  if (normalized.length === 0) return normalized;
+  let hasDefault = false;
+  for (const row of normalized) {
+    if (row.default && !hasDefault) {
+      hasDefault = true;
+      continue;
+    }
+    if (row.default && hasDefault) row.default = false;
+  }
+  if (!hasDefault) normalized[0].default = true;
+  return normalized;
+}
+
+function runtimeIdracTargetsFromForm(form: RuntimeSettingsDTO | null): RuntimeIdracTargetForm[] {
+  const rawTargets = Array.isArray(form?.idracTargets) ? form.idracTargets : [];
+  if (rawTargets.length > 0) {
+    return normalizeIdracTargetDefaults(
+      rawTargets.map((row, index) => ({
+        id: String(row.id ?? `idrac-${index + 1}`),
+        name: String(row.name ?? ""),
+        host: String(row.host ?? ""),
+        user: String(row.user ?? ""),
+        password: String(row.password ?? ""),
+        insecure: row.insecure !== false,
+        default: Boolean(row.default),
+      }))
+    );
+  }
+  const legacyHost = String(form?.idracHost ?? "").trim();
+  if (legacyHost) {
+    return [
+      {
+        id: "default",
+        name: "默认 iDRAC",
+        host: legacyHost,
+        user: String(form?.idracUser ?? "").trim(),
+        password: String(form?.idracPassword ?? ""),
+        insecure: form?.idracInsecure !== false,
+        default: true,
+      },
+    ];
+  }
+  return [emptyIdracTarget(1)];
+}
+
+function idracTargetsForPayload(rows: RuntimeIdracTargetForm[]): RuntimeIdracTargetForm[] {
+  return normalizeIdracTargetDefaults(rows).filter((row) => row.host.trim() !== "");
+}
+
+function defaultIdracTarget(rows: RuntimeIdracTargetForm[]): RuntimeIdracTargetForm | undefined {
+  return rows.find((row) => row.default) ?? rows[0];
+}
 
 const DEFAULT_K8S_SIDEBAR_MENU: K8sSidebarMenuItem[] = [
   { key: "pods", label: "Pods", order: 10 },
@@ -113,6 +203,41 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
   };
 
   const k8sSidebarMenu = normalizeK8sSidebarMenu(form?.k8sSidebarMenu);
+  const idracTargets = React.useMemo(() => runtimeIdracTargetsFromForm(form), [form]);
+
+  const setIdracTargets = (targets: RuntimeIdracTargetForm[]) => {
+    setForm((prev) => {
+      if (!prev) return prev;
+      const normalized = normalizeIdracTargetDefaults(targets);
+      const configuredTargets = idracTargetsForPayload(normalized);
+      const picked = defaultIdracTarget(configuredTargets);
+      return {
+        ...prev,
+        idracTargets: normalized,
+        idracHost: picked?.host ?? "",
+        idracUser: picked?.user ?? "",
+        idracPassword: picked?.password ?? "",
+        idracInsecure: picked ? picked.insecure !== false : true,
+      };
+    });
+  };
+
+  const updateIdracTarget = (index: number, patch: Partial<RuntimeIdracTargetForm>) => {
+    setIdracTargets(idracTargets.map((target, i) => (i === index ? { ...target, ...patch } : target)));
+  };
+
+  const addIdracTarget = () => {
+    setIdracTargets([...idracTargets, emptyIdracTarget(idracTargets.length + 1)]);
+  };
+
+  const removeIdracTarget = (index: number) => {
+    const next = idracTargets.filter((_, i) => i !== index);
+    setIdracTargets(next.length > 0 ? next : [emptyIdracTarget(1)]);
+  };
+
+  const markDefaultIdracTarget = (index: number) => {
+    setIdracTargets(idracTargets.map((target, i) => ({ ...target, default: i === index })));
+  };
 
   const updateK8sSidebarMenu = (updater: (items: K8sSidebarMenuItem[]) => K8sSidebarMenuItem[]) => {
     setForm((prev) => {
@@ -150,8 +275,13 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
       if ((payload.baotaSslPemContent === "") !== (payload.baotaSslKeyContent === "")) {
         throw new Error("baotaSslPemContent 与 baotaSslKeyContent 必须同时填写");
       }
-      // idracInsecure 默认 true；undefined 会被 JSON.stringify 省略，后端会当成 false，与开关「!== false」不一致
-      payload.idracInsecure = form.idracInsecure !== false;
+      const normalizedIdracTargets = idracTargetsForPayload(runtimeIdracTargetsFromForm(form));
+      const pickedIdracTarget = defaultIdracTarget(normalizedIdracTargets);
+      payload.idracTargets = normalizedIdracTargets;
+      payload.idracHost = pickedIdracTarget?.host ?? "";
+      payload.idracUser = pickedIdracTarget?.user ?? "";
+      payload.idracPassword = pickedIdracTarget?.password ?? "";
+      payload.idracInsecure = pickedIdracTarget ? pickedIdracTarget.insecure !== false : true;
       await apiPutJson("/api/settings/runtime", payload);
       const msg = "已保存并重载配置";
       setOk(msg);
@@ -198,7 +328,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
   const vmFocus: SettingsRuntimeFocus = v === "virtualMachine" ? focus : "all";
   const showVcenterSettings = showVirtualMachine && (vmFocus === "all" || vmFocus === "vcenter");
   const showMonitoringSettings = showVirtualMachine && (vmFocus === "all" || vmFocus === "monitoring");
-  const showRemoteSettings = showVirtualMachine && (vmFocus === "all" || vmFocus === "remote");
+  const showIdracSettings = showVirtualMachine && (vmFocus === "all" || vmFocus === "idrac");
   const showVmLogSettings = showVirtualMachine && (vmFocus === "all" || vmFocus === "vmlog");
   const k8sMode = (form.k8s as { mode?: string } | undefined)?.mode ?? "none";
   const k8sKube = (form.k8s as { kubeconfigYaml?: string } | undefined)?.kubeconfigYaml ?? "";
@@ -207,14 +337,14 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
     all: "配置",
     vcenter: "vCenter 连接",
     monitoring: "监控数据源",
-    remote: "远程访问",
+    idrac: "iDRAC 配置",
     vmlog: "VMLog",
   };
   const virtualMachineDescription: Record<SettingsRuntimeFocus, string> = {
-    all: "集中维护 vCenter 连接、虚拟机 SSH 默认、监控数据源、VMLog 与带外能力；保存后热重载。",
+    all: "集中维护 vCenter 连接、监控数据源、iDRAC 带外目标与 VMLog；保存后热重载。",
     vcenter: "维护 vSphere API 入口、账号、密码与虚拟机列表缓存时间；保存后资源中心会重新读取连接状态。",
     monitoring: "维护 vCenter、PVE、公有云与 GPU 监控的 Prometheus 或 VictoriaMetrics vmselect 地址。",
-    remote: "维护控制台代理主机、虚拟机 SSH/SFTP 默认凭据与宿主机带外 iDRAC 参数。",
+    idrac: "维护宿主机带外 Redfish 目标；支持多台 iDRAC，并指定一个默认目标兼容旧接口。",
     vmlog: "维护 VictoriaLogs 查询地址、日志保留期与虚拟机 Vector 采集器下载源。",
   };
 
@@ -1008,136 +1138,121 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
           </div>
           )}
 
-          {showRemoteSettings && (
-          <>
-          <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4 space-y-3">
-            <div>
-              <p className="text-sm font-semibold text-gray-900">控制台与 SSH / SFTP</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-gray-600">
-                控制台代理使用 vCenter 地址推导；如浏览器访问域名与服务端访问地址不同，可单独指定{" "}
-                <code className="rounded bg-white px-1 text-[10px]">vcenterConsoleHost</code>。SSH 与 SFTP 复用同一组虚拟机默认凭据。
-              </p>
+          {showIdracSettings && (
+          <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4 space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">iDRAC 目标</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-gray-600">
+                  每行是一台宿主机带外 Redfish 入口。保存前会逐台校验账号；默认目标会同步到旧字段，兼容已有 iDRAC 功能。
+                </p>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={addIdracTarget}>
+                <Plus className="h-4 w-4" />
+                添加目标
+              </Button>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-2 sm:col-span-2">
-                <Label>vcenterConsoleHost（可选）</Label>
-                <Input
-                  className="font-mono text-xs"
-                  value={String(form.vcenterConsoleHost ?? "")}
-                  onChange={(e) => setField("vcenterConsoleHost", e.target.value)}
-                  placeholder="留空则从 vcenterUrl 推导"
-                  autoComplete="off"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>SSH 用户名</Label>
-                <Input
-                  value={String(form.vcenterVmSshUser ?? "")}
-                  onChange={(e) => setField("vcenterVmSshUser", e.target.value)}
-                  placeholder="如 root"
-                  autoComplete="username"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>SSH 端口</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={65535}
-                  value={Number(form.vcenterVmSshPort ?? 22)}
-                  onChange={(e) => setField("vcenterVmSshPort", Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>SSH 密码（留空或 *** 表示不修改已保存的密码）</Label>
-                <Input
-                  type="password"
-                  value={String(form.vcenterVmSshPassword ?? "")}
-                  onChange={(e) => setField("vcenterVmSshPassword", e.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>vcenterVmSshPrivateKeyPath（可选）</Label>
-                <Input
-                  className="font-mono text-xs"
-                  value={String(form.vcenterVmSshPrivateKeyPath ?? "")}
-                  onChange={(e) => setField("vcenterVmSshPrivateKeyPath", e.target.value)}
-                  placeholder="如 /data/keys/vcenter-vm.pem"
-                  autoComplete="off"
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>vcenterVmSshKeyPassphrase（留空保留）</Label>
-                <Input
-                  type="password"
-                  value={String(form.vcenterVmSshKeyPassphrase ?? "")}
-                  onChange={(e) => setField("vcenterVmSshKeyPassphrase", e.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-white px-3 py-2 sm:col-span-2">
-                <span className="text-sm text-gray-700">跳过 SSH HostKey 校验（临时接管时使用）</span>
-                <Switch
-                  checked={Boolean(form.vcenterVmSshInsecureHostKey)}
-                  onCheckedChange={(v) => setField("vcenterVmSshInsecureHostKey", v)}
-                />
-              </div>
+            <div className="space-y-3">
+              {idracTargets.map((target, index) => (
+                <div key={`${target.id}-${index}`} className="rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
+                        #{index + 1}
+                      </span>
+                      {target.default && (
+                        <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
+                          默认
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => markDefaultIdracTarget(index)}
+                        disabled={target.default}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        设为默认
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => removeIdracTarget(index)}
+                        disabled={idracTargets.length === 1}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        删除
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-12">
+                    <div className="space-y-2 lg:col-span-2">
+                      <Label>目标 ID</Label>
+                      <Input
+                        className="font-mono text-xs"
+                        value={target.id}
+                        onChange={(e) => updateIdracTarget(index, { id: e.target.value })}
+                        placeholder="idrac-1"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div className="space-y-2 lg:col-span-3">
+                      <Label>显示名称</Label>
+                      <Input
+                        value={target.name}
+                        onChange={(e) => updateIdracTarget(index, { name: e.target.value })}
+                        placeholder="如 机柜 A / ESXi-01"
+                      />
+                    </div>
+                    <div className="space-y-2 lg:col-span-4">
+                      <Label>iDRAC 地址</Label>
+                      <Input
+                        className="font-mono text-xs"
+                        value={target.host}
+                        onChange={(e) => updateIdracTarget(index, { host: e.target.value })}
+                        placeholder="如 192.168.1.50 或 idrac-01.example.com"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div className="space-y-2 lg:col-span-3">
+                      <Label>用户名</Label>
+                      <Input
+                        value={target.user}
+                        onChange={(e) => updateIdracTarget(index, { user: e.target.value })}
+                        placeholder="如 root"
+                        autoComplete="username"
+                      />
+                    </div>
+                    <div className="space-y-2 lg:col-span-12">
+                      <Label>密码（留空或 *** 表示保留已保存密码）</Label>
+                      <Input
+                        type="password"
+                        value={target.password}
+                        onChange={(e) => updateIdracTarget(index, { password: e.target.value })}
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-slate-50 px-3 py-2 lg:col-span-12">
+                      <span className="text-sm text-gray-700">跳过 TLS 证书校验（自签证书请开启）</span>
+                      <Switch
+                        checked={target.insecure !== false}
+                        onCheckedChange={(v) => updateIdracTarget(index, { insecure: v })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
+            <p className="text-[11px] text-gray-500">
+              清空某行的 iDRAC 地址并保存不会写入该目标；删除最后一行会保留一个空白行，方便下次接入。
+            </p>
           </div>
-
-          <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4 space-y-3">
-            <div>
-              <p className="text-sm font-semibold text-gray-900">宿主机 iDRAC（带外 / Redfish）</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-gray-600">
-                单台 iDRAC：填写带外 IP、用户名与密码即可（自动使用 HTTPS）。保存前会请求 Redfish 校验账号，仅校验通过才写入配置。
-              </p>
-            </div>
-            <div className="grid max-w-md gap-3">
-              <div className="space-y-2">
-                <Label>iDRAC IP 或主机名</Label>
-                <Input
-                  className="font-mono text-xs"
-                  value={String(form.idracHost ?? "")}
-                  onChange={(e) => setField("idracHost", e.target.value)}
-                  placeholder="如 192.168.1.50"
-                  autoComplete="off"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>用户名</Label>
-                <Input
-                  value={String(form.idracUser ?? "")}
-                  onChange={(e) => setField("idracUser", e.target.value)}
-                  placeholder="如 root"
-                  autoComplete="username"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>密码（留空或 *** 表示保留已保存密码）</Label>
-                <Input
-                  type="password"
-                  value={String(form.idracPassword ?? "")}
-                  onChange={(e) => setField("idracPassword", e.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-white px-3 py-2">
-                <span className="text-sm text-gray-700">跳过 TLS 证书校验（自签证书请开启）</span>
-                <Switch
-                  checked={form.idracInsecure !== false}
-                  onCheckedChange={(v) => setField("idracInsecure", v)}
-                />
-              </div>
-              <p className="text-[11px] text-gray-500">
-                清空「IP」并保存可删除 iDRAC 配置。填写 IP 时保存会先做 Redfish 登录检测，密码错误不会保存。
-              </p>
-            </div>
-          </div>
-          </>
           )}
 
           {showVmLogSettings && (

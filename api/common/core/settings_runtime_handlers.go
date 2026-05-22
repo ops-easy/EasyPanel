@@ -43,6 +43,9 @@ func handleGetRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 			out.K8s = &RuntimeK8s{Mode: out.K8s.Mode, KubeconfigYAML: "***"}
 		}
 		out.IdracPassword = maskSecret(out.IdracPassword)
+		for i := range out.IdracTargets {
+			out.IdracTargets[i].Password = maskSecret(out.IdracTargets[i].Password)
+		}
 		out.HarborPassword = maskSecret(out.HarborPassword)
 		hasSSL := hasStoredBaotaSSLMaterial(app)
 		out.HasBaotaSSLMaterial = &hasSSL
@@ -192,6 +195,10 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 		if strings.TrimSpace(body.IdracPassword) == "" || body.IdracPassword == "***" {
 			body.IdracPassword = cur.IdracPassword
 		}
+		if err := mergeAndValidateRuntimeIdracTargetsOnPut(&body, cur); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		if strings.TrimSpace(body.HarborPassword) == "" || body.HarborPassword == "***" {
 			body.HarborPassword = cur.HarborPassword
 		}
@@ -214,27 +221,9 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 			return
 		}
 		restoreMySQLBootstrapRuntime(&body, mysqlBootstrapConfigFrom(app.Cfg()))
-		if strings.TrimSpace(body.IdracHost) == "" {
-			body.IdracUser = ""
-			body.IdracPassword = ""
-		} else {
-			if strings.TrimSpace(body.IdracUser) == "" {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "已填写 iDRAC 地址时，请同时填写用户名"})
-				return
-			}
-			if strings.TrimSpace(body.IdracPassword) == "" {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "已填写 iDRAC 地址时，请填写密码（或保留已保存密码勿清空）"})
-				return
-			}
-			ic, err := IdracHostConfigFromFlat(body.IdracHost, body.IdracUser, body.IdracPassword, body.IdracInsecure)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "iDRAC 地址无效: " + err.Error()})
-				return
-			}
-			if err := VerifyIdracRedfish(ic); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-				return
-			}
+		if err := verifyRuntimeIdracTargetsForSave(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
 		tmp := MergeRuntimeConfig(app.Cfg(), &body, app.DataDir())
 		tmp = PrepareDashboardAuth(tmp)

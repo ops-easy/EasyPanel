@@ -1,12 +1,12 @@
 import React from "react";
-import { Cloud, Gauge, Monitor, PlugZap, ServerCog, SquareTerminal } from "lucide-react";
+import { Cloud, Gauge, Monitor, PlugZap, ServerCog, ShieldCheck } from "lucide-react";
 import { useAppConfig } from "@/hooks/use-app-config";
 import PveTargetSettingsPanel from "@/features/compute/pve/components/PveTargetSettingsPanel";
 import SettingsRuntimeSection from "@/features/settings/components/SettingsRuntimeSection";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/lib/utils";
 
-type SettingsConfigSection = "vcenter" | "pve" | "monitoring" | "remote" | "vmlog";
+type SettingsConfigSection = "vcenter" | "pve" | "monitoring" | "idrac" | "vmlog";
 
 type SettingsSummaryCard = {
   title: string;
@@ -103,13 +103,13 @@ const VirtualMachineSettings: React.FC = () => {
       actionLabel: "编辑监控配置",
     },
     {
-      title: "远程访问",
-      description: "vCenter VM 全局 SSH 凭据、控制台脚本、SFTP 和堡垒机入口。",
-      status: cfg?.vcenterVmSshGlobalConfigured ? "已配置" : "按需填写",
+      title: "iDRAC 配置",
+      description: "宿主机带外 Redfish 接入，多台 iDRAC 目标统一维护。",
+      status: "可选",
       tone: "emerald",
-      icon: SquareTerminal,
-      section: "remote",
-      actionLabel: "编辑远程访问",
+      icon: ShieldCheck,
+      section: "idrac",
+      actionLabel: "维护 iDRAC 目标",
     },
     {
       title: "VMLog",
@@ -128,8 +128,8 @@ const VirtualMachineSettings: React.FC = () => {
         return <SettingsRuntimeSection variant="virtualMachine" focus="vcenter" />;
       case "monitoring":
         return <SettingsRuntimeSection variant="virtualMachine" focus="monitoring" />;
-      case "remote":
-        return <SettingsRuntimeSection variant="virtualMachine" focus="remote" />;
+      case "idrac":
+        return <SettingsRuntimeSection variant="virtualMachine" focus="idrac" />;
       case "vmlog":
         return <SettingsRuntimeSection variant="virtualMachine" focus="vmlog" />;
       case "pve":
@@ -146,7 +146,7 @@ const VirtualMachineSettings: React.FC = () => {
             <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">Compute Config</p>
             <h1 className="mt-1 text-2xl font-bold text-gray-900">配置</h1>
             <p className="mt-2 max-w-4xl text-sm leading-6 text-gray-500">
-              这里是 vCenter、PVE、监控、远程访问和 VMLog 的统一入口。点上方卡片，下面直接维护对应配置。
+              这里是 vCenter、PVE、监控、iDRAC 和 VMLog 的统一入口。点上方卡片，下面直接维护对应配置。
             </p>
           </div>
           <Badge variant={cfgQ.isLoading ? "outline" : "secondary"}>

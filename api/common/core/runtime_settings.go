@@ -180,10 +180,11 @@ type RuntimeSettings struct {
 	// vCenter 虚拟机列表 Redis 缓存 TTL（秒）
 	VCenterCacheTTLSec int `json:"vcenterCacheTtlSec"`
 	// iDRAC 带外（单台 ESXi 场景）：IP 或主机名（自动补 https://），Redfish 账号；自签证书时 idracInsecure=true
-	IdracHost     string `json:"idracHost,omitempty"`
-	IdracUser     string `json:"idracUser,omitempty"`
-	IdracPassword string `json:"idracPassword,omitempty"`
-	IdracInsecure bool   `json:"idracInsecure,omitempty"`
+	IdracHost     string               `json:"idracHost,omitempty"`
+	IdracUser     string               `json:"idracUser,omitempty"`
+	IdracPassword string               `json:"idracPassword,omitempty"`
+	IdracInsecure bool                 `json:"idracInsecure,omitempty"`
+	IdracTargets  []RuntimeIdracTarget `json:"idracTargets,omitempty"`
 	// 控制桌面端 Kubernetes 顶层侧栏菜单：重命名 / 排序 / 隐藏（全局生效）
 	K8sSidebarMenu []RuntimeK8sSidebarMenuItem `json:"k8sSidebarMenu,omitempty"`
 
@@ -594,6 +595,7 @@ func MergeRuntimeConfig(env Config, rs *RuntimeSettings, dataDir string) Config 
 	out.IdracUser = strings.TrimSpace(rs.IdracUser)
 	out.IdracPassword = rs.IdracPassword
 	out.IdracInsecure = rs.IdracInsecure
+	mergeRuntimeIdracTargetsIntoConfig(rs, &out)
 
 	return out
 }

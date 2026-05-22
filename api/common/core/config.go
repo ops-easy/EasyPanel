@@ -76,6 +76,7 @@ type Config struct {
 	IdracUser     string
 	IdracPassword string
 	IdracInsecure bool
+	IdracTargets  []IdracTargetEntry `json:"-"`
 	// vCenter / vSphere（可选）：虚拟机与 WebMKS 控制台
 	VCenterURL      string // 如 https://vcenter.example.com 或 https://vcenter/sdk
 	VCenterUser     string
