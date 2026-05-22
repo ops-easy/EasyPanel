@@ -331,6 +331,7 @@ const HomeHub: React.FC = () => {
   const k8sOk = cfg?.k8sConfigured === true;
   const vcOk = cfg?.vcenterConfigured === true;
   const nPveTargets = pveTargetsQ.data?.targets?.length ?? 0;
+  const pveNeedsSetup = !pveTargetsQ.isLoading && nPveTargets === 0;
   const computeOk = vcOk || nPveTargets > 0;
   const computeLoading = cfgLoading || (!vcOk && pveTargetsQ.isLoading);
   const pveHubStatus = pveTargetsQ.isLoading
@@ -386,6 +387,7 @@ const HomeHub: React.FC = () => {
   const nNetworkDevices = networkDevices.length;
   const nIkuaiDevices = networkDevices.filter((device) => device.kind === "ikuai").length;
   const nOpenWrtDevices = networkDevices.filter((device) => device.kind === "openwrt").length;
+  const openWrtNeedsSetup = !networkDevicesQ.isLoading && nOpenWrtDevices === 0;
   const openWrtHubStatus = networkDevicesQ.isLoading
     ? "…"
     : nOpenWrtDevices > 0
@@ -505,7 +507,7 @@ const HomeHub: React.FC = () => {
         {/* 虚拟化与主机 */}
         {showVc && (
           <Link
-            to="/cluster/compute/dashboard"
+            to={pveNeedsSetup ? "/cluster/compute/pve/targets" : "/cluster/compute/dashboard"}
             className={cn(hubCardClass, "hover:border-violet-200")}
           >
             <div className="flex items-center justify-between">
@@ -538,7 +540,7 @@ const HomeHub: React.FC = () => {
                   : "统一汇总 vCenter、PVE、公有云与堡垒机入口，进入后按平台继续展开操作。"}
             </HubCardHint>
             <span className={cn(hubEntryClass, "text-violet-600")}>
-              进入 <ArrowRight size={13} />
+              {pveNeedsSetup ? "配置 PVE 目标" : "进入"} <ArrowRight size={13} />
             </span>
           </Link>
         )}
@@ -546,7 +548,7 @@ const HomeHub: React.FC = () => {
         {/* 网络设备 */}
         {showNetwork && (
           <Link
-            to="/cluster/network/dashboard"
+            to={openWrtNeedsSetup ? "/cluster/network/openwrt/dashboard" : "/cluster/network/dashboard"}
             className={cn(hubCardClass, "hover:border-cyan-200")}
           >
             <div className="flex items-center justify-between">
@@ -576,7 +578,7 @@ const HomeHub: React.FC = () => {
               {openWrtHubHint || "网络设备按 iKuai 与 OpenWrt 分组展示，进入后可查看接口、客户端与监控数据源。"}
             </HubCardHint>
             <span className={cn(hubEntryClass, "text-cyan-700")}>
-              进入 <ArrowRight size={13} />
+              {openWrtNeedsSetup ? "配置 OpenWrt" : "进入"} <ArrowRight size={13} />
             </span>
           </Link>
         )}

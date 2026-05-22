@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -331,4 +332,58 @@ func TestNetworkPrometheusScopeFallsBackToVCenterThenGlobal(t *testing.T) {
 	if got := GetPrometheusURLForScope(cfg, "network"); got != cfg.PrometheusURL {
 		t.Fatalf("network scope fallback = %q, want global URL", got)
 	}
+}
+
+func TestPVEPrometheusScopeHasDedicatedConfigAndFallback(t *testing.T) {
+	cfg := Config{
+		PrometheusURL:        "https://prom-global.example",
+		PrometheusURLVCenter: "https://prom-vcenter.example",
+	}
+	setStringField(t, &cfg, "PrometheusURLPVE", "https://prom-pve.example")
+
+	if got := GetPrometheusURLForScope(cfg, "pve"); got != "https://prom-pve.example" {
+		t.Fatalf("pve scope = %q, want dedicated PVE URL", got)
+	}
+
+	cfg = Config{
+		PrometheusURL:        "https://prom-global.example",
+		PrometheusURLVCenter: "https://prom-vcenter.example",
+	}
+	setStringField(t, &cfg, "VMSelectURLPVE", "https://vmselect-pve.example")
+	setStringField(t, &cfg, "PrometheusURLPVE", "https://prom-pve.example")
+
+	if got := GetPrometheusURLForScope(cfg, "proxmox"); got != "https://vmselect-pve.example" {
+		t.Fatalf("proxmox scope = %q, want PVE vmselect to take precedence", got)
+	}
+
+	cfg = Config{PrometheusURL: "https://prom-global.example"}
+	if got := GetPrometheusURLForScope(cfg, "pve"); got != cfg.PrometheusURL {
+		t.Fatalf("pve scope fallback = %q, want global URL", got)
+	}
+}
+
+func TestPVEPrometheusRuntimeSettingsFieldsExist(t *testing.T) {
+	cfgType := reflect.TypeOf(Config{})
+	for _, name := range []string{"PrometheusURLPVE", "VMSelectURLPVE"} {
+		if _, ok := cfgType.FieldByName(name); !ok {
+			t.Fatalf("Config missing %s", name)
+		}
+	}
+
+	rsType := reflect.TypeOf(RuntimeSettings{})
+	for _, name := range []string{"PrometheusURLPVE", "VMSelectURLPVE"} {
+		if _, ok := rsType.FieldByName(name); !ok {
+			t.Fatalf("RuntimeSettings missing %s", name)
+		}
+	}
+}
+
+func setStringField(t *testing.T, ptr any, name, value string) {
+	t.Helper()
+	v := reflect.ValueOf(ptr).Elem()
+	f := v.FieldByName(name)
+	if !f.IsValid() {
+		t.Fatalf("%T missing field %s", ptr, name)
+	}
+	f.SetString(value)
 }

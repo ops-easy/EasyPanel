@@ -471,10 +471,13 @@ func buildConfigMapResponse(app *ServerApp, role string, eff *EffectiveDashboard
 		"prometheusUrlK8sHint":        maskPrometheusURL(GetPrometheusURLForScope(cfg, "k8s")),
 		"prometheusVcenterConfigured": GetPrometheusURLForScope(cfg, "vcenter") != "",
 		"prometheusUrlVcenterHint":    maskPrometheusURL(GetPrometheusURLForScope(cfg, "vcenter")),
+		"prometheusPveConfigured":     GetPrometheusURLForScope(cfg, "pve") != "",
+		"prometheusUrlPveHint":        maskPrometheusURL(GetPrometheusURLForScope(cfg, "pve")),
 		"prometheusCloudConfigured":   GetPrometheusURLForScope(cfg, "cloud") != "",
 		"prometheusUrlCloudHint":      maskPrometheusURL(GetPrometheusURLForScope(cfg, "cloud")),
 		"vmSelectUrlK8sHint":          maskPrometheusURL(cfg.VMSelectURLK8s),
 		"vmSelectUrlVcenterHint":      maskPrometheusURL(cfg.VMSelectURLVCenter),
+		"vmSelectUrlPveHint":          maskPrometheusURL(cfg.VMSelectURLPVE),
 		"vmSelectUrlCloudHint":        maskPrometheusURL(cfg.VMSelectURLCloud),
 		"victoriaLogsConfigured":      strings.TrimSpace(cfg.VictoriaLogsURL) != "",
 		"victoriaLogsUrlHint":         maskPrometheusURL(cfg.VictoriaLogsURL),
@@ -605,7 +608,9 @@ func sanitizeConfigMapForViewer(h gin.H) {
 	h["prometheusUrlHint"] = ""
 	h["prometheusUrlK8sHint"] = ""
 	h["prometheusUrlVcenterHint"] = ""
+	h["prometheusUrlPveHint"] = ""
 	h["prometheusUrlCloudHint"] = ""
+	h["vmSelectUrlPveHint"] = ""
 	h["vmSelectUrlK8sHint"] = ""
 	h["vmSelectUrlVcenterHint"] = ""
 	h["vmSelectUrlCloudHint"] = ""

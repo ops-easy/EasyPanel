@@ -45,6 +45,7 @@ export function VCenterPrometheusGate({ children }: { children: ReactNode }) {
   const cfgQ = useAppConfig();
   const promOk =
     cfgQ.data?.prometheusVcenterConfigured === true ||
+    cfgQ.data?.prometheusPveConfigured === true ||
     cfgQ.data?.prometheusConfigured === true;
 
   if (cfgQ.isLoading || !cfgQ.data) return <LoadingConfig />;
@@ -52,13 +53,13 @@ export function VCenterPrometheusGate({ children }: { children: ReactNode }) {
 
   return (
     <ComputeSetupPanel
-      kind="vcenter"
-      title="请先配置 vCenter 监控数据源"
-      description="GPU 与 Prometheus 看板依赖 prometheusUrlVcenter，未单独配置时可使用兜底 prometheusUrl。VM 与宿主机基础列表不受该项影响。"
-      primaryLabel="打开 vCenter 设置"
+      kind="monitoring"
+      title="请先配置虚拟化监控数据源"
+      description="GPU 看板读取 Prometheus 中的 DCGM / nvidia_smi 指标，不依赖单一平台；可分别配置 prometheusUrlVcenter、prometheusUrlPve，也可让二者共用兜底 prometheusUrl。PVE 基础列表与性能页仍走 PVE API/RRD。"
+      primaryLabel="打开虚拟化监控设置"
       primaryTo="/cluster/compute/vcenter/settings"
-      secondaryLabel="返回 vCenter"
-      secondaryTo="/cluster/compute/vcenter/dashboard"
+      secondaryLabel="返回算力总览"
+      secondaryTo="/cluster/compute/dashboard"
       compact
     />
   );
@@ -68,17 +69,18 @@ export function VCenterPrometheusInlineHint() {
   const cfgQ = useAppConfig();
   const promOk =
     cfgQ.data?.prometheusVcenterConfigured === true ||
+    cfgQ.data?.prometheusPveConfigured === true ||
     cfgQ.data?.prometheusConfigured === true;
 
   if (cfgQ.isLoading || !cfgQ.data || promOk) return null;
 
   return (
     <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-950">
-      vCenter 监控数据源未配置。基础资源列表仍可使用；如需 GPU、ESXi Prometheus 或趋势图，请前往{" "}
+      虚拟化监控数据源未配置。vCenter / PVE 基础资源列表仍可使用；如需 GPU、ESXi Prometheus 或趋势图，请前往{" "}
       <Link className="font-semibold underline" to="/cluster/compute/vcenter/settings">
-        vCenter 设置
+        虚拟化监控设置
       </Link>{" "}
-      填写 prometheusUrlVcenter 或兜底 prometheusUrl。
+      填写 prometheusUrlVcenter、prometheusUrlPve 或兜底 prometheusUrl。
     </div>
   );
 }

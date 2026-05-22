@@ -81,6 +81,7 @@ type RuntimeSettings struct {
 	PrometheusURL         string `json:"prometheusUrl"`
 	PrometheusURLK8s      string `json:"prometheusUrlK8s,omitempty"`
 	PrometheusURLVCenter  string `json:"prometheusUrlVcenter,omitempty"`
+	PrometheusURLPVE      string `json:"prometheusUrlPve,omitempty"`
 	PrometheusURLCloud    string `json:"prometheusUrlCloud,omitempty"`
 	PrometheusTimeoutSec  int    `json:"prometheusTimeoutSec"`
 	PrometheusSkipTLS     bool   `json:"prometheusSkipTls"`
@@ -88,6 +89,7 @@ type RuntimeSettings struct {
 	// VictoriaMetrics vmselect 根 URL（可选）；填写后对应 scope 监控查询优先于此地址
 	VMSelectURLK8s     string `json:"vmSelectUrlK8s,omitempty"`
 	VMSelectURLVCenter string `json:"vmSelectUrlVcenter,omitempty"`
+	VMSelectURLPVE     string `json:"vmSelectUrlPve,omitempty"`
 	VMSelectURLCloud   string `json:"vmSelectUrlCloud,omitempty"`
 	// VictoriaLogs 根 URL（LogsQL /select/logsql/query），如 http://victoria-logs.monitoring.svc:9428
 	VictoriaLogsURL string `json:"victoriaLogsUrl,omitempty"`
@@ -395,6 +397,9 @@ func MergeRuntimeConfig(env Config, rs *RuntimeSettings, dataDir string) Config 
 	if strings.TrimSpace(rs.PrometheusURLVCenter) != "" {
 		out.PrometheusURLVCenter = strings.TrimSpace(rs.PrometheusURLVCenter)
 	}
+	if strings.TrimSpace(rs.PrometheusURLPVE) != "" {
+		out.PrometheusURLPVE = strings.TrimSpace(rs.PrometheusURLPVE)
+	}
 	if strings.TrimSpace(rs.PrometheusURLCloud) != "" {
 		out.PrometheusURLCloud = strings.TrimSpace(rs.PrometheusURLCloud)
 	}
@@ -403,6 +408,9 @@ func MergeRuntimeConfig(env Config, rs *RuntimeSettings, dataDir string) Config 
 	}
 	if strings.TrimSpace(rs.VMSelectURLVCenter) != "" {
 		out.VMSelectURLVCenter = strings.TrimSpace(rs.VMSelectURLVCenter)
+	}
+	if strings.TrimSpace(rs.VMSelectURLPVE) != "" {
+		out.VMSelectURLPVE = strings.TrimSpace(rs.VMSelectURLPVE)
 	}
 	if strings.TrimSpace(rs.VMSelectURLCloud) != "" {
 		out.VMSelectURLCloud = strings.TrimSpace(rs.VMSelectURLCloud)

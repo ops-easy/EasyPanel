@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, BookOpen, Loader2 } from "lucide-react";
+import { AlertCircle, BookOpen, ExternalLink, FileText, Loader2 } from "lucide-react";
 import { OpenClawChatMarkdown } from "@/features/app-center/openclaw/components/OpenClawChatMarkdown";
 import { ApiHttpError, apiGetJson } from "@/lib/api";
 import { Button } from "@/shared/ui/button";
@@ -31,6 +31,7 @@ type GuideResolveResponse = {
     title: string;
     bodyMarkdown: string;
     contentKind?: string;
+    previewUrl?: string;
     updatedAt?: string;
   };
 };
@@ -70,6 +71,8 @@ export default function UserGuideSheet() {
   const routeLabel = guide
     ? `${guide.matchType}:${guide.routePattern}`
     : routePath;
+  const guideDocHref = doc ? `/docs/guides/doc/${doc.id}` : "";
+  const previewHref = doc ? doc.previewUrl || `/r/${doc.id}.html` : "";
 
   const fab = (
     <Button
@@ -105,6 +108,50 @@ export default function UserGuideSheet() {
                     ? "当前页面未配置专属指南，显示全局指南。"
                     : `当前页面指南：${routeLabel}`}
               </SheetDescription>
+              {guide || doc ? (
+                <div className="mt-3 flex flex-col gap-3 rounded-md border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-600">
+                  <div className="grid min-w-0 gap-1.5">
+                    {guide ? (
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="shrink-0 font-medium text-slate-500">guideKey</span>
+                        <code className="truncate rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+                          {guide.guideKey}
+                        </code>
+                      </div>
+                    ) : null}
+                    {doc ? (
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="shrink-0 font-medium text-slate-500">文档来源</span>
+                        <span className="truncate text-slate-700">
+                          {doc.title} · #{doc.id}
+                        </span>
+                      </div>
+                    ) : null}
+                    {guide ? (
+                      <div className="truncate text-slate-500">
+                        命中规则：{guide.matchType}:{guide.routePattern}
+                        {guideQ.data?.fallback ? " · 全局兜底" : ""}
+                      </div>
+                    ) : null}
+                  </div>
+                  {doc ? (
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2 text-xs" asChild>
+                        <Link to={guideDocHref} onClick={() => setOpen(false)}>
+                          <FileText className="h-3.5 w-3.5" aria-hidden />
+                          打开文档
+                        </Link>
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2 text-xs" asChild>
+                        <a href={previewHref} target="_blank" rel="noreferrer">
+                          <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                          预览页
+                        </a>
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </SheetHeader>
 

@@ -10,6 +10,12 @@ if (!base) {
 
 const baseUrl = new URL(base.endsWith("/") ? base : `${base}/`);
 const dPath = process.env.SMOKE_D_PATH ?? "/d/";
+const spaSmokeRoutes = [
+  "/docs",
+  "/cluster/compute/pve/dashboard",
+  "/cluster/compute/pve/targets",
+  "/cluster/network/openwrt/dashboard",
+];
 
 function urlFor(pathname) {
   return new URL(pathname.replace(/^\//, ""), baseUrl);
@@ -32,17 +38,28 @@ async function fetchPath(pathname, { allowedStatuses, rejectServerError = true }
   return res;
 }
 
+function assertSpaIndex(pathname, html, entryAsset) {
+  assert.match(html, /<div id="root"><\/div>/, `${pathname} should return SPA index.html`);
+  assert.ok(html.includes(`/assets/${entryAsset}`), `${pathname} should reference entry asset ${entryAsset}`);
+}
+
 const root = await fetchPath("/", { allowedStatuses: [200] });
 const rootHtml = await root.text();
 const entryMatch = rootHtml.match(/(?:src|href)="\/assets\/([^"]+\.js)"/);
 assert.ok(entryMatch, "GET / must reference a JavaScript asset under /assets/");
+const entryAsset = entryMatch[1];
+assertSpaIndex("/", rootHtml, entryAsset);
 
-await fetchPath("/docs", { allowedStatuses: [200] });
+for (const route of spaSmokeRoutes) {
+  const res = await fetchPath(route, { allowedStatuses: [200] });
+  assertSpaIndex(route, await res.text(), entryAsset);
+}
+
 await fetchPath("/api/auth/status", { allowedStatuses: [200, 401, 403] });
-await fetchPath(`/assets/${entryMatch[1]}`, { allowedStatuses: [200] });
+await fetchPath(`/assets/${entryAsset}`, { allowedStatuses: [200] });
 
 if (dPath && dPath.toLowerCase() !== "none") {
   await fetchPath(dPath, { rejectServerError: true });
 }
 
-console.log(`web deploy smoke ok: base=${baseUrl.origin}, entry=${entryMatch[1]}, dPath=${dPath || "skipped"}`);
+console.log(`web deploy smoke ok: base=${baseUrl.origin}, entry=${entryAsset}, spaRoutes=${spaSmokeRoutes.length}, dPath=${dPath || "skipped"}`);

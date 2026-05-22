@@ -53,6 +53,22 @@ test("vCenter 业务路由统一经过连接或监控 gate", () => {
   );
 });
 
+test("GPU 监控支持 PVE 与 vCenter 数据源聚合", () => {
+  const guards = read("../src/features/vcenter/pages/VCenterConfigGuards.tsx");
+  const helpers = read("../src/features/vcenter/pages/vcenterPrometheusHelpers.ts");
+  const gpu = read("../src/features/vcenter/pages/VCenterGpuDashboard.tsx");
+
+  assert.doesNotMatch(guards, /请先配置 vCenter 监控数据源/);
+  assert.match(guards, /虚拟化监控数据源/);
+  assert.match(guards, /PVE/);
+  assert.match(helpers, /promQueryRangeGpuScopes/);
+  assert.match(helpers, /ConcreteGpuPrometheusScope/);
+  assert.match(helpers, /"pve"/);
+  assert.match(helpers, /"all" \| "vcenter" \| "pve"/);
+  assert.match(helpers, /successCount === 0/);
+  assert.match(gpu, /prometheusPveConfigured/);
+});
+
 test("iKuai 子路由统一经过网络设备 gate", () => {
   const routes = read("../src/app/routes/network-routes.tsx");
 

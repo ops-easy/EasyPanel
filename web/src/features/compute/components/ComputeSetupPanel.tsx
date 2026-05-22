@@ -1,9 +1,9 @@
 import React, { type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, PlugZap, ServerCog } from "lucide-react";
+import { ArrowRight, Gauge, PlugZap, ServerCog } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 
-type ComputeSetupKind = "vcenter" | "pve";
+type ComputeSetupKind = "vcenter" | "pve" | "monitoring";
 
 type ComputeSetupPanelProps = {
   kind: ComputeSetupKind;
@@ -20,6 +20,7 @@ type ComputeSetupPanelProps = {
 const tone: Record<ComputeSetupKind, { eyebrow: string; accent: string; icon: typeof ServerCog }> = {
   vcenter: { eyebrow: "vCenter", accent: "text-violet-700", icon: ServerCog },
   pve: { eyebrow: "Proxmox VE", accent: "text-amber-700", icon: PlugZap },
+  monitoring: { eyebrow: "Prometheus", accent: "text-sky-700", icon: Gauge },
 };
 
 const ComputeSetupPanel: React.FC<ComputeSetupPanelProps> = ({

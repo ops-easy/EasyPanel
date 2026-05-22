@@ -22,6 +22,7 @@ var (
 	prometheusURLOverride        string // 全局兜底（兼容旧版「进程内覆盖」）
 	prometheusURLOverrideK8s     string
 	prometheusURLOverrideVCenter string
+	prometheusURLOverridePVE     string
 	prometheusURLOverrideCloud   string
 )
 
@@ -39,7 +40,7 @@ func GetEffectivePrometheusURL(cfg Config) string {
 	return prometheusFallbackGlobalUnlocked(cfg)
 }
 
-// GetPrometheusURLForScope 按数据源解析：k8s / vcenter / cloud；cloud 未配置时继承 vcenter 再兜底全局。
+// GetPrometheusURLForScope 按数据源解析：k8s / vcenter / pve / cloud；cloud 未配置时继承 vcenter 再兜底全局。
 func GetPrometheusURLForScope(cfg Config, scope string) string {
 	prometheusMu.RLock()
 	defer prometheusMu.RUnlock()
@@ -66,6 +67,16 @@ func GetPrometheusURLForScope(cfg Config, scope string) string {
 			return s
 		}
 		if s := strings.TrimSpace(cfg.PrometheusURLVCenter); s != "" {
+			return s
+		}
+	case "pve", "proxmox", "proxmoxve":
+		if s := strings.TrimSpace(prometheusURLOverridePVE); s != "" {
+			return s
+		}
+		if s := strings.TrimSpace(cfg.VMSelectURLPVE); s != "" {
+			return s
+		}
+		if s := strings.TrimSpace(cfg.PrometheusURLPVE); s != "" {
 			return s
 		}
 	case "network", "ikuai", "openwrt":
@@ -118,6 +129,8 @@ func SetPrometheusURLOverrideForScope(scope, u string) {
 		prometheusURLOverrideK8s = u
 	case "vcenter", "vm", "network", "ikuai", "openwrt":
 		prometheusURLOverrideVCenter = u
+	case "pve", "proxmox", "proxmoxve":
+		prometheusURLOverridePVE = u
 	case "cloud", "public":
 		prometheusURLOverrideCloud = u
 	default:
@@ -178,6 +191,8 @@ func PrometheusPromQLInstantProbe(cfg Config, scope, promQL string) (*float64, s
 			return nil, "未配置地址（请填运行时 prometheusUrlK8s 或兜底 prometheusUrl；与平台同集群时可填 http://<svc>.<ns>.svc:9090）"
 		case "vcenter", "vm":
 			return nil, "未配置地址（请填 prometheusUrlVcenter 或兜底 prometheusUrl）"
+		case "pve", "proxmox", "proxmoxve":
+			return nil, "未配置地址（请填 prometheusUrlPve 或兜底 prometheusUrl）"
 		default:
 			return nil, "未配置该数据源的 Prometheus 根地址"
 		}
@@ -386,11 +401,13 @@ func handlePrometheusStatus(c *gin.Context, cfg Config) {
 	ov := prometheusURLOverride
 	ovK := prometheusURLOverrideK8s
 	ovV := prometheusURLOverrideVCenter
+	ovP := prometheusURLOverridePVE
 	ovC := prometheusURLOverrideCloud
 	prometheusMu.RUnlock()
 	u := GetEffectivePrometheusURL(cfg)
 	uk := GetPrometheusURLForScope(cfg, "k8s")
 	uv := GetPrometheusURLForScope(cfg, "vcenter")
+	up := GetPrometheusURLForScope(cfg, "pve")
 	uc := GetPrometheusURLForScope(cfg, "cloud")
 	un := GetPrometheusURLForScope(cfg, "network")
 	c.JSON(http.StatusOK, gin.H{
@@ -409,6 +426,11 @@ func handlePrometheusStatus(c *gin.Context, cfg Config) {
 				"urlHint":        maskPrometheusURL(uv),
 				"sourceOverride": strings.TrimSpace(ovV) != "",
 			},
+			"pve": gin.H{
+				"configured":     up != "",
+				"urlHint":        maskPrometheusURL(up),
+				"sourceOverride": strings.TrimSpace(ovP) != "",
+			},
 			"cloud": gin.H{
 				"configured":     uc != "",
 				"urlHint":        maskPrometheusURL(uc),
@@ -425,7 +447,7 @@ func handlePrometheusStatus(c *gin.Context, cfg Config) {
 
 type prometheusSourceBody struct {
 	BaseURL string `json:"baseUrl"`
-	Scope   string `json:"scope"` // k8s | vcenter | cloud | network | global（默认 global，兼容旧客户端）
+	Scope   string `json:"scope"` // k8s | vcenter | pve | cloud | network | global（默认 global，兼容旧客户端）
 }
 
 func handlePrometheusSource(c *gin.Context, cfg Config) {
@@ -552,7 +574,7 @@ func handlePrometheusQuery(c *gin.Context, app *ServerApp) {
 		return
 	}
 	if GetPrometheusURLForScope(cfg, scope) == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "未配置该数据源的 Prometheus：请在运行时配置 prometheusUrlK8s / prometheusUrlVcenter 或兜底 prometheusUrl，或环境变量 PROMETHEUS_URL_*"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "未配置该数据源的 Prometheus：请在运行时配置 prometheusUrlK8s / prometheusUrlVcenter / prometheusUrlPve 或兜底 prometheusUrl，或环境变量 PROMETHEUS_URL_*"})
 		return
 	}
 	cacheKey := prometheusCacheKeyInstant(scope, q)

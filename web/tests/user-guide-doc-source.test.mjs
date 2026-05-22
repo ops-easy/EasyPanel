@@ -18,11 +18,15 @@ test("floating user guide is loaded from contextual document guide API", () => {
   assert.ok(guideSheetSource.includes("OpenClawChatMarkdown"));
   assert.ok(guideSheetSource.includes("showCloseButton={false}"));
   assert.ok(sheetSource.includes("showCloseButton = true"));
+  assert.ok(guideSheetSource.includes("guide.guideKey"));
+  assert.ok(guideSheetSource.includes("\u6587\u6863\u6765\u6e90"));
+  assert.ok(guideSheetSource.includes("/docs/guides/doc/${doc.id}"));
+  assert.ok(guideSheetSource.includes("doc.previewUrl"));
 
   assert.doesNotMatch(guideSheetSource, /function\s+DocBody/);
   assert.doesNotMatch(guideSheetSource, /function\s+DocToc/);
   assert.doesNotMatch(guideSheetSource, /PlatformArchitectureDiagram/);
-  assert.doesNotMatch(guideSheetSource, /PencilLine|编辑这篇指南|管理页面指南|\/docs\/guides\/doc\/\$\{doc\.id\}/);
+  assert.doesNotMatch(guideSheetSource, /PencilLine/);
 });
 
 test("document center separates regular docs from system page guides", () => {

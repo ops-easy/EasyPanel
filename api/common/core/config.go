@@ -51,10 +51,12 @@ type Config struct {
 	PrometheusURL        string // 兜底：PROMETHEUS_URL / runtime prometheusUrl
 	PrometheusURLK8s     string // Kubernetes 集群监控专用
 	PrometheusURLVCenter string // vCenter 相关监控
+	PrometheusURLPVE     string // Proxmox VE / PVE 相关监控
 	PrometheusURLCloud   string // 公有云主机列表；空则继承 PrometheusURLVCenter 再兜底
 	// VictoriaMetrics vmselect（Prometheus 查询兼容）；按 scope 非空时优先于对应 PrometheusURL*
 	VMSelectURLK8s     string
 	VMSelectURLVCenter string
+	VMSelectURLPVE     string
 	VMSelectURLCloud   string
 	// VictoriaLogs（VMLog）HTTP 根地址，如 http://victoria-logs.monitoring.svc:9428；用于 LogsQL 查询代理
 	VictoriaLogsURL string
@@ -330,9 +332,11 @@ func LoadConfig() Config {
 		PrometheusURL:                     strings.TrimSpace(getEnv("PROMETHEUS_URL", "")),
 		PrometheusURLK8s:                  strings.TrimSpace(getEnv("PROMETHEUS_URL_K8S", "")),
 		PrometheusURLVCenter:              strings.TrimSpace(getEnv("PROMETHEUS_URL_VCENTER", "")),
+		PrometheusURLPVE:                  strings.TrimSpace(getEnv("PROMETHEUS_URL_PVE", "")),
 		PrometheusURLCloud:                strings.TrimSpace(getEnv("PROMETHEUS_URL_CLOUD", "")),
 		VMSelectURLK8s:                    strings.TrimSpace(getEnv("VM_SELECT_URL_K8S", "")),
 		VMSelectURLVCenter:                strings.TrimSpace(getEnv("VM_SELECT_URL_VCENTER", "")),
+		VMSelectURLPVE:                    strings.TrimSpace(getEnv("VM_SELECT_URL_PVE", "")),
 		VMSelectURLCloud:                  strings.TrimSpace(getEnv("VM_SELECT_URL_CLOUD", "")),
 		VictoriaLogsURL:                   strings.TrimSpace(getEnv("VICTORIA_LOGS_URL", "")),
 		GeoLite2CountryMMDB:               strings.TrimSpace(getEnv("KUBEBT_GEOLITE2_COUNTRY_MMDB", "")),

@@ -20,6 +20,14 @@ const helmNginxConfigPath = path.join(
   "templates",
   "frontend-configmap.yaml",
 );
+const spaSmokeRoutes = [
+  "/",
+  "/cluster/apps/dashboard",
+  "/docs/guides/doc/1",
+  "/cluster/compute/pve/dashboard",
+  "/cluster/compute/pve/targets",
+  "/cluster/network/openwrt/dashboard",
+];
 
 function read(file) {
   return readFileSync(file, "utf8");
@@ -89,7 +97,7 @@ assertNginxContract("web/deploy/nginx.conf", read(nginxConfigPath));
 assertNginxContract("Helm frontend ConfigMap", read(helmNginxConfigPath));
 
 await withStaticServer(async (baseUrl) => {
-  for (const route of ["/", "/cluster/apps/dashboard", "/docs/guides/doc/1"]) {
+  for (const route of spaSmokeRoutes) {
     const res = await fetch(`${baseUrl}${route}`);
     assert.equal(res.status, 200, `${route} should return 200`);
     const body = await res.text();
@@ -102,4 +110,4 @@ await withStaticServer(async (baseUrl) => {
   assert.match(jsRes.headers.get("content-type") ?? "", /javascript/);
 });
 
-console.log(`web deploy smoke ok: assets=${assets.length}, spaFallback=3, nginx=/api,/r,/d`);
+console.log(`web deploy smoke ok: assets=${assets.length}, spaFallback=${spaSmokeRoutes.length}, nginx=/api,/r,/d`);

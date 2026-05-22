@@ -28,3 +28,13 @@ test("workbench module cards can grow instead of clipping dense summaries", () =
   assert.doesNotMatch(source, /(?<!min-)h-\[360px\]/, "cards should use a minimum height, not a fixed height");
   assert.doesNotMatch(source, /overflow-hidden/, "cards should not clip longer summaries or entry links");
 });
+
+test("unconfigured PVE and OpenWrt cards link directly to their setup pages", () => {
+  assert.match(source, /const pveNeedsSetup = !pveTargetsQ\.isLoading && nPveTargets === 0;/);
+  assert.match(source, /to=\{pveNeedsSetup \? "\/cluster\/compute\/pve\/targets" : "\/cluster\/compute\/dashboard"\}/);
+  assert.match(source, /配置 PVE 目标/);
+
+  assert.match(source, /const openWrtNeedsSetup = !networkDevicesQ\.isLoading && nOpenWrtDevices === 0;/);
+  assert.match(source, /to=\{openWrtNeedsSetup \? "\/cluster\/network\/openwrt\/dashboard" : "\/cluster\/network\/dashboard"\}/);
+  assert.match(source, /配置 OpenWrt/);
+});

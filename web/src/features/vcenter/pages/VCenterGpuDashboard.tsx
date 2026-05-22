@@ -28,12 +28,15 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { useAppConfig } from "@/hooks/use-app-config";
+import type { AppConfig } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
-  matrixToChartRowsByLabel,
+  type ConcreteGpuPrometheusScope,
+  type GpuPrometheusScope,
+  matrixToChartRowsBySourceLabel,
   promInstantVector,
-  promQueryRangeVcenter,
-  promQueryVcenter,
+  promQueryGpuScopes,
+  promQueryRangeGpuScopes,
 } from "./vcenterPrometheusHelpers";
 
 const chartUtil: ChartConfig = { v: { label: "利用率 %", color: "hsl(221 83% 53%)" } };
@@ -51,9 +54,11 @@ function fmtAxisTime(iso: string): string {
 
 /** 将 DCGM / nvidia_smi 的序列名本地化为「显卡 1」「显卡 2」等 */
 function cnGpuLegend(raw: string): string {
-  if (/^\d+$/.test(raw)) return `显卡 ${parseInt(raw, 10) + 1}`;
-  if (raw.length > 14) return `显卡 ${raw.slice(0, 10)}…`;
-  return `显卡 ${raw}`;
+  const [source, id] = raw.includes(" / ") ? raw.split(" / ", 2) : ["", raw];
+  const prefix = source ? `${source} / ` : "";
+  if (/^\d+$/.test(id)) return `${prefix}显卡 ${parseInt(id, 10) + 1}`;
+  if (id.length > 14) return `${prefix}显卡 ${id.slice(0, 10)}…`;
+  return `${prefix}显卡 ${id}`;
 }
 
 type GpuFamily = "dcgm" | "nvidia_smi" | "none";
@@ -87,13 +92,40 @@ const palette = [
   "hsl(199 72% 46%)",
 ];
 
-/**
- * vCenter 菜单 · GPU 监控：走与 ESXi 看板相同的 `scope=vcenter` Prometheus。
- * 优先 NVIDIA DCGM Exporter（`DCGM_FI_*`）；否则尝试 nvidia_smi_exporter 风格指标。
- */
+function configuredGpuScopes(cfg?: AppConfig): ConcreteGpuPrometheusScope[] {
+  if (!cfg) return [];
+  const scopes: ConcreteGpuPrometheusScope[] = [];
+  if (cfg.prometheusVcenterConfigured === true || cfg.prometheusConfigured === true) scopes.push("vcenter");
+  if (cfg.prometheusPveConfigured === true || cfg.prometheusConfigured === true) scopes.push("pve");
+  return scopes;
+}
+
+function gpuScopeHint(cfg: AppConfig | undefined, scope: ConcreteGpuPrometheusScope): string {
+  if (!cfg) return scope;
+  if (scope === "vcenter") return cfg.prometheusUrlVcenterHint || cfg.prometheusUrlHint || scope;
+  return cfg.prometheusUrlPveHint || cfg.prometheusUrlHint || scope;
+}
+
+function dedupeGpuScopesByDatasource(
+  scopes: ConcreteGpuPrometheusScope[],
+  cfg?: AppConfig
+): ConcreteGpuPrometheusScope[] {
+  const seen = new Set<string>();
+  const out: ConcreteGpuPrometheusScope[] = [];
+  for (const scope of scopes) {
+    const key = gpuScopeHint(cfg, scope);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(scope);
+  }
+  return out;
+}
+
+/** GPU 监控：可查 vCenter、PVE 或聚合数据源中的 DCGM / nvidia_smi 指标。 */
 const VCenterGpuDashboard: React.FC = () => {
   const cfgQ = useAppConfig();
   const [range, setRange] = useState<"1h" | "6h" | "24h">("6h");
+  const [source, setSource] = useState<GpuPrometheusScope>("all");
 
   const windowSec = range === "1h" ? 3600 : range === "6h" ? 6 * 3600 : 24 * 3600;
   const { endSec, startSec, step } = useMemo(() => {
@@ -103,44 +135,52 @@ const VCenterGpuDashboard: React.FC = () => {
     return { endSec: end, startSec: start, step };
   }, [range, windowSec]);
 
+  const availableScopes = useMemo(() => configuredGpuScopes(cfgQ.data), [cfgQ.data]);
+  const activeScopes = useMemo(() => {
+    const scopes = source === "all" ? availableScopes : availableScopes.filter((s) => s === source);
+    return dedupeGpuScopesByDatasource(scopes, cfgQ.data);
+  }, [availableScopes, cfgQ.data, source]);
+  const activeScopeKey = activeScopes.join("|") || "none";
+
   const familyQ = useQuery({
-    queryKey: ["vcenter-gpu-family", startSec, endSec, step],
+    queryKey: ["compute-gpu-family", activeScopeKey, startSec, endSec, step],
     queryFn: async ({ signal }) => {
-      const dcgm = await promQueryRangeVcenter(
+      const dcgm = await promQueryRangeGpuScopes(
+        activeScopes,
         "DCGM_FI_DEV_GPU_UTIL",
         startSec,
         endSec,
         step,
         { signal }
       );
-      const dcgmRows = matrixToChartRowsByLabel(dcgm, "gpu");
+      const dcgmRows = matrixToChartRowsBySourceLabel(dcgm, "gpu");
       if (hasSeriesData(dcgmRows)) return "dcgm" as GpuFamily;
-      const dcgmUuid = matrixToChartRowsByLabel(dcgm, "UUID");
+      const dcgmUuid = matrixToChartRowsBySourceLabel(dcgm, "UUID");
       if (hasSeriesData(dcgmUuid)) return "dcgm" as GpuFamily;
 
-      const smi = await promQueryRangeVcenter(
+      const smi = await promQueryRangeGpuScopes(
+        activeScopes,
         "nvidia_smi_utilization_gpu_ratio",
         startSec,
         endSec,
         step,
         { signal }
       );
-      const smiRows = matrixToChartRowsByLabel(smi, "uuid");
+      const smiRows = matrixToChartRowsBySourceLabel(smi, "uuid");
       if (hasSeriesData(smiRows)) return "nvidia_smi" as GpuFamily;
-      const smiMinor = matrixToChartRowsByLabel(smi, "minor_number");
+      const smiMinor = matrixToChartRowsBySourceLabel(smi, "minor_number");
       if (hasSeriesData(smiMinor)) return "nvidia_smi" as GpuFamily;
 
       return "none" as GpuFamily;
     },
-    enabled:
-      cfgQ.data?.prometheusVcenterConfigured === true || cfgQ.data?.prometheusConfigured === true,
+    enabled: activeScopes.length > 0,
     staleTime: 60_000,
   });
 
   const family = familyQ.data ?? "none";
 
   const utilQ = useQuery({
-    queryKey: ["vcenter-gpu-util", family, startSec, endSec, step],
+    queryKey: ["compute-gpu-util", activeScopeKey, family, startSec, endSec, step],
     queryFn: ({ signal }) => {
       const q =
         family === "dcgm"
@@ -148,13 +188,13 @@ const VCenterGpuDashboard: React.FC = () => {
           : family === "nvidia_smi"
             ? "nvidia_smi_utilization_gpu_ratio * 100"
             : "vector(0)";
-      return promQueryRangeVcenter(q, startSec, endSec, step, { signal });
+      return promQueryRangeGpuScopes(activeScopes, q, startSec, endSec, step, { signal });
     },
-    enabled: family !== "none",
+    enabled: family !== "none" && activeScopes.length > 0,
   });
 
   const tempQ = useQuery({
-    queryKey: ["vcenter-gpu-temp", family, startSec, endSec, step],
+    queryKey: ["compute-gpu-temp", activeScopeKey, family, startSec, endSec, step],
     queryFn: ({ signal }) => {
       const q =
         family === "dcgm"
@@ -162,13 +202,13 @@ const VCenterGpuDashboard: React.FC = () => {
           : family === "nvidia_smi"
             ? "nvidia_smi_temperature_celsius"
             : "vector(0)";
-      return promQueryRangeVcenter(q, startSec, endSec, step, { signal });
+      return promQueryRangeGpuScopes(activeScopes, q, startSec, endSec, step, { signal });
     },
-    enabled: family !== "none",
+    enabled: family !== "none" && activeScopes.length > 0,
   });
 
   const powerQ = useQuery({
-    queryKey: ["vcenter-gpu-power", family, startSec, endSec, step],
+    queryKey: ["compute-gpu-power", activeScopeKey, family, startSec, endSec, step],
     queryFn: ({ signal }) => {
       const q =
         family === "dcgm"
@@ -176,67 +216,67 @@ const VCenterGpuDashboard: React.FC = () => {
           : family === "nvidia_smi"
             ? "nvidia_smi_power_draw_watts"
             : "vector(0)";
-      return promQueryRangeVcenter(q, startSec, endSec, step, { signal });
+      return promQueryRangeGpuScopes(activeScopes, q, startSec, endSec, step, { signal });
     },
-    enabled: family !== "none",
+    enabled: family !== "none" && activeScopes.length > 0,
   });
 
   const vramQ = useQuery({
-    queryKey: ["vcenter-gpu-vram", family, startSec, endSec, step],
+    queryKey: ["compute-gpu-vram", activeScopeKey, family, startSec, endSec, step],
     queryFn: ({ signal }) =>
       family === "dcgm"
-        ? promQueryRangeVcenter("DCGM_FI_DEV_FB_USED", startSec, endSec, step, { signal })
+        ? promQueryRangeGpuScopes(activeScopes, "DCGM_FI_DEV_FB_USED", startSec, endSec, step, { signal })
         : Promise.resolve({ status: "success", data: { result: [] } }),
-    enabled: family === "dcgm",
+    enabled: family === "dcgm" && activeScopes.length > 0,
   });
 
   const utilRows = useMemo(() => {
     if (family === "dcgm") {
-      const byGpu = matrixToChartRowsByLabel(utilQ.data, "gpu");
+      const byGpu = matrixToChartRowsBySourceLabel(utilQ.data, "gpu");
       if (hasSeriesData(byGpu)) return byGpu;
-      return matrixToChartRowsByLabel(utilQ.data, "UUID");
+      return matrixToChartRowsBySourceLabel(utilQ.data, "UUID");
     }
     if (family === "nvidia_smi") {
-      const u = matrixToChartRowsByLabel(utilQ.data, "uuid");
+      const u = matrixToChartRowsBySourceLabel(utilQ.data, "uuid");
       if (hasSeriesData(u)) return u;
-      return matrixToChartRowsByLabel(utilQ.data, "minor_number");
+      return matrixToChartRowsBySourceLabel(utilQ.data, "minor_number");
     }
     return [];
   }, [family, utilQ.data]);
 
   const tempRows = useMemo(() => {
     if (family === "dcgm") {
-      const byGpu = matrixToChartRowsByLabel(tempQ.data, "gpu");
+      const byGpu = matrixToChartRowsBySourceLabel(tempQ.data, "gpu");
       if (hasSeriesData(byGpu)) return byGpu;
-      return matrixToChartRowsByLabel(tempQ.data, "UUID");
+      return matrixToChartRowsBySourceLabel(tempQ.data, "UUID");
     }
     if (family === "nvidia_smi") {
-      const u = matrixToChartRowsByLabel(tempQ.data, "uuid");
+      const u = matrixToChartRowsBySourceLabel(tempQ.data, "uuid");
       if (hasSeriesData(u)) return u;
-      return matrixToChartRowsByLabel(tempQ.data, "minor_number");
+      return matrixToChartRowsBySourceLabel(tempQ.data, "minor_number");
     }
     return [];
   }, [family, tempQ.data]);
 
   const powerRows = useMemo(() => {
     if (family === "dcgm") {
-      const byGpu = matrixToChartRowsByLabel(powerQ.data, "gpu");
+      const byGpu = matrixToChartRowsBySourceLabel(powerQ.data, "gpu");
       if (hasSeriesData(byGpu)) return byGpu;
-      return matrixToChartRowsByLabel(powerQ.data, "UUID");
+      return matrixToChartRowsBySourceLabel(powerQ.data, "UUID");
     }
     if (family === "nvidia_smi") {
-      const u = matrixToChartRowsByLabel(powerQ.data, "uuid");
+      const u = matrixToChartRowsBySourceLabel(powerQ.data, "uuid");
       if (hasSeriesData(u)) return u;
-      return matrixToChartRowsByLabel(powerQ.data, "minor_number");
+      return matrixToChartRowsBySourceLabel(powerQ.data, "minor_number");
     }
     return [];
   }, [family, powerQ.data]);
 
   const vramRows = useMemo(() => {
     if (family !== "dcgm") return [];
-    const byGpu = matrixToChartRowsByLabel(vramQ.data, "gpu");
+    const byGpu = matrixToChartRowsBySourceLabel(vramQ.data, "gpu");
     if (hasSeriesData(byGpu)) return byGpu;
-    return matrixToChartRowsByLabel(vramQ.data, "UUID");
+    return matrixToChartRowsBySourceLabel(vramQ.data, "UUID");
   }, [family, vramQ.data]);
 
   const utilKeys = useMemo(() => seriesKeys(utilRows), [utilRows]);
@@ -245,25 +285,27 @@ const VCenterGpuDashboard: React.FC = () => {
   const vramKeys = useMemo(() => seriesKeys(vramRows), [vramRows]);
 
   const instantQ = useQuery({
-    queryKey: ["vcenter-gpu-instant", family],
+    queryKey: ["compute-gpu-instant", activeScopeKey, family],
     queryFn: async ({ signal }) => {
       if (family === "dcgm") {
-        const data = await promQueryVcenter("DCGM_FI_DEV_GPU_UTIL", { signal });
+        const data = await promQueryGpuScopes(activeScopes, "DCGM_FI_DEV_GPU_UTIL", { signal });
         return promInstantVector(data);
       }
       if (family === "nvidia_smi") {
-        const data = await promQueryVcenter("nvidia_smi_utilization_gpu_ratio * 100", { signal });
+        const data = await promQueryGpuScopes(activeScopes, "nvidia_smi_utilization_gpu_ratio * 100", { signal });
         return promInstantVector(data);
       }
       return [];
     },
-    enabled: family !== "none",
+    enabled: family !== "none" && activeScopes.length > 0,
     refetchInterval: 45_000,
   });
 
   const cfg = cfgQ.data;
   const promOk =
-    cfg?.prometheusVcenterConfigured === true || cfg?.prometheusConfigured === true;
+    cfg?.prometheusVcenterConfigured === true ||
+    cfg?.prometheusPveConfigured === true ||
+    cfg?.prometheusConfigured === true;
 
   if (cfgQ.isLoading || !cfg) {
     return (
@@ -279,19 +321,20 @@ const VCenterGpuDashboard: React.FC = () => {
       <div className="space-y-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">GPU 监控</h1>
-          <p className="mt-1 text-sm text-gray-500">需配置 vCenter 用 Prometheus（与 ESXi 看板相同数据源）。</p>
+          <p className="mt-1 text-sm text-gray-500">需配置虚拟化侧 Prometheus，可覆盖 vCenter、PVE 或二者共用的数据源。</p>
         </div>
         <div className="rounded-2xl border border-amber-200/80 bg-amber-50/50 px-5 py-4 text-sm text-amber-950">
           <p className="font-medium">未配置 Prometheus</p>
           <p className="mt-1 text-xs text-amber-900/90">
-            在运行时配置中填写 <code className="rounded bg-white/70 px-1">prometheusUrlVcenter</code>（或兜底
-            prometheusUrl），并在该 Prometheus 中抓取 GPU Exporter（推荐 nvidia-dcgm-exporter）。
+            在运行时配置中填写 <code className="rounded bg-white/70 px-1">prometheusUrlVcenter</code>、{" "}
+            <code className="rounded bg-white/70 px-1">prometheusUrlPve</code>（或兜底 prometheusUrl），并在对应
+            Prometheus 中抓取 GPU Exporter（推荐 nvidia-dcgm-exporter）。
           </p>
           <Link
             to="/cluster/compute/vcenter/settings"
             className="mt-2 inline-block text-sm font-semibold text-amber-950 underline underline-offset-2"
           >
-            vCenter 设置 / 监控
+            虚拟化监控设置
           </Link>
         </div>
       </div>
@@ -303,14 +346,30 @@ const VCenterGpuDashboard: React.FC = () => {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">GPU 监控</h1>
         <p className="mt-1 max-w-3xl text-sm text-gray-500">
-          展示各张显卡的利用率、温度与功耗时序（中文图例：显卡 1、显卡 2…）。指标来自与「vCenter 巡检」ESXi
-          看板相同的 Prometheus；请在该实例上抓取{" "}
+          展示 vCenter、PVE 或合并数据源中的显卡利用率、温度与功耗时序。指标来自 Prometheus；请在对应实例上抓取{" "}
           <span className="font-mono text-xs">DCGM_FI_*</span>（DCGM）或{" "}
           <span className="font-mono text-xs">nvidia_smi_*</span>（nvidia_smi_exporter）。
         </p>
       </div>
 
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="space-y-1">
+          <Label className="text-xs">数据源</Label>
+          <Select value={source} onValueChange={(v) => setSource(v as GpuPrometheusScope)}>
+            <SelectTrigger className="h-9 w-[150px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部可用</SelectItem>
+              <SelectItem value="vcenter" disabled={!availableScopes.includes("vcenter")}>
+                vCenter
+              </SelectItem>
+              <SelectItem value="pve" disabled={!availableScopes.includes("pve")}>
+                PVE
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="space-y-1">
           <Label className="text-xs">时间范围</Label>
           <Select value={range} onValueChange={(v) => setRange(v as typeof range)}>
@@ -340,8 +399,11 @@ const VCenterGpuDashboard: React.FC = () => {
         >
           刷新
         </Button>
-        <Link to="/cluster/compute/vcenter/dashboard" className="text-xs font-medium text-violet-700 hover:underline">
-          返回 vCenter 巡检
+        <span className="text-xs text-slate-500">
+          当前查询：{activeScopes.length ? activeScopes.map((s) => (s === "pve" ? "PVE" : "vCenter")).join(" + ") : "未配置"}
+        </span>
+        <Link to="/cluster/compute/dashboard" className="text-xs font-medium text-violet-700 hover:underline">
+          返回算力总览
         </Link>
         <Link to="/cluster/compute/vcenter/settings" className="text-xs font-medium text-slate-600 hover:underline">
           数据源设置
@@ -353,6 +415,10 @@ const VCenterGpuDashboard: React.FC = () => {
           <Loader2 className="h-4 w-4 animate-spin" />
           正在探测 GPU 指标…
         </div>
+      ) : activeScopes.length === 0 ? (
+        <div className="rounded-2xl border border-amber-200/80 bg-amber-50/50 px-5 py-4 text-sm text-amber-950">
+          当前选择的数据源未配置。请选择“全部可用”，或在虚拟化监控设置中填写对应的 Prometheus 地址。
+        </div>
       ) : family === "none" ? (
         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-5 py-4 text-sm text-slate-800">
           <p className="font-medium">未检测到 GPU 时序指标</p>
@@ -360,8 +426,9 @@ const VCenterGpuDashboard: React.FC = () => {
             当前 Prometheus 在最近时间窗内没有返回{" "}
             <code className="rounded bg-white px-1 font-mono">DCGM_FI_DEV_GPU_UTIL</code> 或{" "}
             <code className="rounded bg-white px-1 font-mono">nvidia_smi_utilization_gpu_ratio</code>
-            。双卡环境请在 Exporter 中确认两张卡均有样本；抓取目标需与{" "}
-            <code className="rounded bg-white px-1">prometheusUrlVcenter</code> 指向的实例一致。
+            。双卡环境请在 Exporter 中确认两张卡均有样本；PVE 与 vCenter 可分别写入{" "}
+            <code className="rounded bg-white px-1">prometheusUrlPve</code> /{" "}
+            <code className="rounded bg-white px-1">prometheusUrlVcenter</code>，也可以共用兜底 prometheusUrl。
           </p>
         </div>
       ) : (

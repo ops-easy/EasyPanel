@@ -1355,12 +1355,14 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
           </div>
 
           <div className="space-y-3 border-t border-gray-100 pt-6">
-            <p className="text-sm font-semibold text-gray-900">Prometheus（vCenter / 公有云）</p>
+            <p className="text-sm font-semibold text-gray-900">Prometheus（虚拟化 GPU / vCenter / PVE / 公有云）</p>
             <p className="text-xs text-gray-500">
               <code className="rounded bg-gray-100 px-1 text-[11px]">prometheusUrlVcenter</code>{" "}
               用于 vCenter 侧监控（Telegraf <code className="rounded bg-gray-100 px-1">vmware_vcenter</code> 等指标）；{" "}
+              <code className="rounded bg-gray-100 px-1 text-[11px]">prometheusUrlPve</code>{" "}
+              用于 Proxmox VE / PVE 侧 GPU、主机 exporter 指标；{" "}
               <code className="rounded bg-gray-100 px-1 text-[11px]">prometheusUrlCloud</code>{" "}
-              专用于公有云主机列表，留空则继承 vCenter 数据源；均未填时使用运行时{" "}
+              专用于公有云主机列表，留空则继承 vCenter 数据源；各项未填时使用运行时{" "}
               <code className="rounded bg-gray-100 px-1 text-[11px]">prometheusUrl</code>。与 K8s 侧相同，若使用{" "}
               <strong className="text-gray-800">VictoriaMetrics</strong>，请填 <strong className="text-gray-800">vmselect</strong>{" "}
               的 HTTP 根地址（同样提供 <code className="rounded bg-gray-100 px-1">/api/v1/query</code>），无需单独开关。
@@ -1373,6 +1375,15 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                   value={String(form.prometheusUrlVcenter ?? "")}
                   onChange={(e) => setField("prometheusUrlVcenter", e.target.value)}
                   placeholder="https://prometheus.example.com:9090 或 http://vmselect-vc:8481"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>prometheusUrlPve（可选，PVE GPU / 主机 exporter）</Label>
+                <Input
+                  className="font-mono text-xs"
+                  value={String(form.prometheusUrlPve ?? "")}
+                  onChange={(e) => setField("prometheusUrlPve", e.target.value)}
+                  placeholder="留空则使用兜底 prometheusUrl；可与 vCenter 填同一个 Prometheus"
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
@@ -1391,6 +1402,15 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                   value={String(form.vmSelectUrlVcenter ?? "")}
                   onChange={(e) => setField("vmSelectUrlVcenter", e.target.value)}
                   placeholder="http://vmselect-vc.example.com:8481"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>vmSelectUrlPve（可选 vmselect；填写则优先于 prometheusUrlPve）</Label>
+                <Input
+                  className="font-mono text-xs"
+                  value={String(form.vmSelectUrlPve ?? "")}
+                  onChange={(e) => setField("vmSelectUrlPve", e.target.value)}
+                  placeholder="http://vmselect-pve.example.com:8481"
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">

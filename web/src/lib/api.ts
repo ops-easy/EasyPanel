@@ -232,12 +232,16 @@ export type AppConfig = {
   /** vCenter 数据源 */
   prometheusVcenterConfigured?: boolean;
   prometheusUrlVcenterHint?: string;
+  /** Proxmox VE / PVE 数据源 */
+  prometheusPveConfigured?: boolean;
+  prometheusUrlPveHint?: string;
   /** 公有云主机列表（prometheusUrlCloud → 继承 vcenter → 兜底） */
   prometheusCloudConfigured?: boolean;
   prometheusUrlCloudHint?: string;
   /** 可选 vmselect；若填写则对应 scope 优先走 VictoriaMetrics */
   vmSelectUrlK8sHint?: string;
   vmSelectUrlVcenterHint?: string;
+  vmSelectUrlPveHint?: string;
   vmSelectUrlCloudHint?: string;
   /** VictoriaLogs（VMLog）根地址是否已配置（合并 env + 运行时） */
   victoriaLogsConfigured?: boolean;

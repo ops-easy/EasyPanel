@@ -362,6 +362,8 @@ func prometheusScopeForbidden(scope string, eff *EffectiveDashboardPermissions) 
 		return eff.K8s == ModuleAccessNone
 	case "vcenter", "vm":
 		return eff.Compute == ModuleAccessNone
+	case "pve", "proxmox", "proxmoxve":
+		return eff.Compute == ModuleAccessNone
 	case "network", "ikuai", "openwrt":
 		return eff.Network == ModuleAccessNone
 	case "cloud", "public":
