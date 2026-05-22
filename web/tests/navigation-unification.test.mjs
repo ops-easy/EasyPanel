@@ -48,8 +48,9 @@ test("sidebar and mobile active states do not highlight parent dashboards togeth
     sidebarSource,
     /location\.pathname\.startsWith\("\/cluster\/network"\) && !location\.pathname\.startsWith\("\/cluster\/network\/ikuai"\)/
   );
-  assert.match(sidebarSource, /const networkIkuaiActive =/);
-  assert.match(sidebarSource, /const networkOpenWrtActive =/);
+  assert.match(sidebarSource, /const networkDevicesActive =/);
+  assert.match(sidebarSource, /const networkInterfacesActive =/);
+  assert.match(sidebarSource, /const networkConfigActive =/);
 
   assert.doesNotMatch(
     mobileLayoutSource,
@@ -127,7 +128,7 @@ test("IP scan has a compute-owned route and legacy routes redirect to it", () =>
 
 test("legacy vCenter routes redirect before falling through to VM details", () => {
   assert.match(vcenterRoutesSource, /path="vcenter\/prometheus"[\s\S]*to="\/cluster\/compute\/dashboard"/);
-  assert.match(vcenterRoutesSource, /path="vcenter\/router"[\s\S]*to="\/cluster\/network\/ikuai\/dashboard"/);
+  assert.match(vcenterRoutesSource, /path="vcenter\/router"[\s\S]*to="\/cluster\/network\/devices\?provider=ikuai"/);
   assert.match(vcenterRoutesSource, /path="vcenter"[\s\S]*to="\/cluster\/compute\/guests"/);
   assert.match(vcenterRoutesSource, /path="vcenter\/:moref"[\s\S]*<LegacyVcenterVmRedirect \/>/);
   assert.ok(
@@ -179,7 +180,8 @@ test("main shell surfaces PVE and OpenWrt setup status before drilling in", () =
   assert.match(computeDashboardSource, /打开配置|先接入 vCenter 或 PVE/);
 
   assert.match(networkDashboardSource, /\/api\/network\/devices/);
-  assert.match(networkDashboardSource, /配置 OpenWrt|OpenWrt 未配置/);
+  assert.match(networkDashboardSource, /\/cluster\/network\/config/);
+  assert.match(networkDashboardSource, /OpenWrt 接入|未接入/);
 });
 
 test("network workspace does not link internal toolbox back into vCenter", () => {

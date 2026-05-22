@@ -90,7 +90,7 @@ export function vcenterRoutes(): ReactNode {
       </Route>
       <Route path="vcenter/tools/ip-scan" element={<Navigate to="/cluster/compute/tools/ip-scan" replace />} />
       <Route path="vcenter/prometheus" element={<Navigate to="/cluster/compute/dashboard" replace />} />
-      <Route path="vcenter/router" element={<Navigate to="/cluster/network/ikuai/dashboard" replace />} />
+      <Route path="vcenter/router" element={<Navigate to="/cluster/network/devices?provider=ikuai" replace />} />
       <Route path="vcenter" element={<Navigate to="/cluster/compute/guests" replace />} />
       <Route path="vcenter/:moref" element={<LegacyVcenterVmRedirect />} />
     </>

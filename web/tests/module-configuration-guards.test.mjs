@@ -68,20 +68,18 @@ test("GPU 监控支持 PVE 与 vCenter 数据源聚合", () => {
   assert.match(gpu, /prometheusPveConfigured/);
 });
 
-test("iKuai 子路由统一经过网络设备 gate", () => {
+test("iKuai 旧子路由重定向到资源优先网络页", () => {
   const routes = read("../src/app/routes/network-routes.tsx");
 
-  assert.match(routes, /IkuaiConfigurationGate/);
-
-  for (const page of [
-    "IkuaiDashboard",
-    "IkuaiInterfaces",
-    "IkuaiClients",
-    "IkuaiVmMapping",
+  for (const [path, target] of [
+    ["ikuai/dashboard", "/cluster/network/devices?provider=ikuai"],
+    ["ikuai/interfaces", "/cluster/network/interfaces?provider=ikuai"],
+    ["ikuai/clients", "/cluster/network/clients?provider=ikuai"],
+    ["ikuai/vm-mapping", "/cluster/network/clients?provider=ikuai"],
   ]) {
     assert.match(
       routes,
-      new RegExp(`<IkuaiConfigurationGate[\\s\\S]*<${page} \\/>[\\s\\S]*<\\/IkuaiConfigurationGate>`)
+      new RegExp(`path="${path.replace("/", "\\/")}"[\\s\\S]*to="${target.replace(/[?]/g, "\\?")}"`)
     );
   }
 });

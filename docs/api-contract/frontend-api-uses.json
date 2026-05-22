@@ -1,13 +1,13 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "frontend-api-uses",
-  "routeCount": 744,
+  "routeCount": 841,
   "routes": [
     {
       "method": "UNKNOWN",
       "pathPattern": "/api",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 600,
+      "sourceLine": 615,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -215,7 +215,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/instances",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 215,
+      "sourceLine": 228,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -359,7 +359,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/bootstrap",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 74,
+      "sourceLine": 83,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -367,7 +367,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/hermes/bootstrap",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 127,
+      "sourceLine": 141,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -375,7 +375,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 79,
+      "sourceLine": 88,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -390,24 +390,24 @@
     {
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances",
-      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 192,
-      "needsManualReview": false,
-      "kind": "http"
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/app-center/hermes/instances",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 225,
+      "sourceLine": 238,
       "needsManualReview": false,
       "kind": "http"
     },
     {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/hermes/instances",
+      "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
+      "sourceLine": 207,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
       "method": "DELETE",
       "pathPattern": "/api/app-center/hermes/instances/:param",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 163,
+      "sourceLine": 179,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -415,7 +415,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/hermes/instances/:param",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 149,
+      "sourceLine": 153,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -423,7 +423,15 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/:param",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 64,
+      "sourceLine": 79,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances/:param/events",
+      "sourceFile": "web/src/features/app-center/hermes/pages/HermesLogsEventsPanel.tsx",
+      "sourceLine": 20,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -431,7 +439,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/:param/file",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 78,
+      "sourceLine": 92,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -439,7 +447,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/hermes/instances/:param/file",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 182,
+      "sourceLine": 198,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -447,7 +455,15 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/hermes/instances/:param/file",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 125,
+      "sourceLine": 132,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances/:param/logs",
+      "sourceFile": "web/src/features/app-center/hermes/pages/HermesLogsEventsPanel.tsx",
+      "sourceLine": 14,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -455,7 +471,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/:param/migrate-openclaw",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 141,
+      "sourceLine": 147,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -463,15 +479,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/:param/migrate-openclaw-dry-run",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 134,
-      "needsManualReview": true,
-      "kind": "http"
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/app-center/hermes/instances/:param/probe",
-      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 106,
+      "sourceLine": 141,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -479,7 +487,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/:param/restart",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 173,
+      "sourceLine": 189,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -487,7 +495,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/:param/restart",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 116,
+      "sourceLine": 123,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -495,7 +503,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 163,
+      "sourceLine": 179,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -503,7 +511,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 149,
+      "sourceLine": 153,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -511,7 +519,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 64,
+      "sourceLine": 79,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -519,7 +527,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 78,
+      "sourceLine": 92,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -527,7 +535,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 173,
+      "sourceLine": 189,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -535,23 +543,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 106,
-      "needsManualReview": true,
-      "kind": "http"
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
-      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 116,
-      "needsManualReview": true,
-      "kind": "http"
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
-      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 134,
+      "sourceLine": 123,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -564,10 +556,18 @@
       "kind": "http"
     },
     {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
+      "sourceLine": 147,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
       "method": "PUT",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 182,
+      "sourceLine": 198,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -575,7 +575,55 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 125,
+      "sourceLine": 132,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(instance",
+      "sourceFile": "web/src/features/app-center/hermes/pages/HermesProbePanel.tsx",
+      "sourceLine": 32,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(instance",
+      "sourceFile": "web/src/features/app-center/hermes/pages/HermesUpgradeDialog.tsx",
+      "sourceLine": 22,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(instance",
+      "sourceFile": "web/src/features/app-center/hermes/pages/HermesUpgradeDialog.tsx",
+      "sourceLine": 34,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(instance",
+      "sourceFile": "web/src/features/app-center/hermes/pages/HermesExposurePanel.tsx",
+      "sourceLine": 36,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/hermes/pages/HermesLogsEventsPanel.tsx",
+      "sourceLine": 14,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(instanceId",
+      "sourceFile": "web/src/features/app-center/hermes/pages/HermesLogsEventsPanel.tsx",
+      "sourceLine": 20,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -583,7 +631,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/k8s-status",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 84,
+      "sourceLine": 93,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -591,7 +639,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/k8s-status",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 70,
+      "sourceLine": 85,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -599,7 +647,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/k8s-deploy",
       "sourceFile": "web/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 146,
+      "sourceLine": 160,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -639,7 +687,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 209,
+      "sourceLine": 222,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1175,7 +1223,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 174,
+      "sourceLine": 187,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1183,7 +1231,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 220,
+      "sourceLine": 233,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1519,7 +1567,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances/k8s-status",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 198,
+      "sourceLine": 213,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1607,7 +1655,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/opensearch/instances",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 230,
+      "sourceLine": 243,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1751,7 +1799,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 204,
+      "sourceLine": 217,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1911,7 +1959,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/status",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 199,
+      "sourceLine": 212,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2015,7 +2063,7 @@
       "method": "POST",
       "pathPattern": "/api/auth/login",
       "sourceFile": "web/src/pages/Login.tsx",
-      "sourceLine": 535,
+      "sourceLine": 733,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2031,7 +2079,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/auth/login",
       "sourceFile": "web/src/pages/Login.tsx",
-      "sourceLine": 545,
+      "sourceLine": 743,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2039,7 +2087,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/auth/login-challenge",
       "sourceFile": "web/src/pages/Login.tsx",
-      "sourceLine": 45,
+      "sourceLine": 66,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2047,7 +2095,7 @@
       "method": "POST",
       "pathPattern": "/api/auth/login-totp",
       "sourceFile": "web/src/pages/Login.tsx",
-      "sourceLine": 565,
+      "sourceLine": 763,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2071,7 +2119,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/auth/oidc/login",
       "sourceFile": "web/src/pages/Login.tsx",
-      "sourceLine": 488,
+      "sourceLine": 686,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -2161,6 +2209,14 @@
       "sourceFile": "web/src/features/vcenter/pages/VCenterBastionAdmin.tsx",
       "sourceLine": 326,
       "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/bastion/targets/ssh-settings",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterSshTerminal.tsx",
+      "sourceLine": 81,
+      "needsManualReview": true,
       "kind": "http"
     },
     {
@@ -2370,6 +2426,62 @@
       "sourceLine": 124,
       "needsManualReview": false,
       "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/compute/:param",
+      "sourceFile": "web/src/features/compute/pages/ComputeDashboard.tsx",
+      "sourceLine": 86,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/compute/activity",
+      "sourceFile": "web/src/features/compute/pages/ComputeResourcePage.tsx",
+      "sourceLine": 108,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/compute/guests",
+      "sourceFile": "web/src/features/compute/pages/ComputeResourcePage.tsx",
+      "sourceLine": 84,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/compute/hosts",
+      "sourceFile": "web/src/features/compute/pages/ComputeResourcePage.tsx",
+      "sourceLine": 92,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/compute/providers",
+      "sourceFile": "web/src/features/compute/pages/ComputeDashboard.tsx",
+      "sourceLine": 96,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/compute/providers",
+      "sourceFile": "web/src/features/compute/pages/ComputeResourcePage.tsx",
+      "sourceLine": 326,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/compute/storage",
+      "sourceFile": "web/src/features/compute/pages/ComputeResourcePage.tsx",
+      "sourceLine": 100,
+      "needsManualReview": false,
+      "kind": "literal"
     },
     {
       "method": "GET",
@@ -2599,7 +2711,7 @@
       "method": "GET",
       "pathPattern": "/api/dns/domains",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 234,
+      "sourceLine": 247,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2903,7 +3015,7 @@
       "method": "GET",
       "pathPattern": "/api/docs/guides/resolve",
       "sourceFile": "web/src/shared/layout/UserGuideSheet.tsx",
-      "sourceLine": 64,
+      "sourceLine": 62,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -4191,7 +4303,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/summary",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 169,
+      "sourceLine": 182,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4231,7 +4343,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/login/public-status",
       "sourceFile": "web/src/pages/Login.tsx",
-      "sourceLine": 54,
+      "sourceLine": 75,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4279,7 +4391,7 @@
       "method": "GET",
       "pathPattern": "/api/network/devices",
       "sourceFile": "web/src/features/network/ikuai/pages/IkuaiConfigurationGate.tsx",
-      "sourceLine": 39,
+      "sourceLine": 40,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4287,7 +4399,15 @@
       "method": "GET",
       "pathPattern": "/api/network/devices",
       "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
-      "sourceLine": 204,
+      "sourceLine": 201,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigPage.tsx",
+      "sourceLine": 432,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4295,7 +4415,15 @@
       "method": "GET",
       "pathPattern": "/api/network/devices",
       "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
-      "sourceLine": 74,
+      "sourceLine": 180,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/features/vcenter/pages/VCenterIkuaiRouterPage.tsx",
+      "sourceLine": 164,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4303,7 +4431,15 @@
       "method": "GET",
       "pathPattern": "/api/network/devices",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 285,
+      "sourceLine": 298,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/shared/layout/Sidebar.tsx",
+      "sourceLine": 466,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4311,7 +4447,7 @@
       "method": "POST",
       "pathPattern": "/api/network/devices",
       "sourceFile": "web/src/features/network/ikuai/pages/IkuaiConfigurationGate.tsx",
-      "sourceLine": 45,
+      "sourceLine": 49,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4319,39 +4455,87 @@
       "method": "POST",
       "pathPattern": "/api/network/devices",
       "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
-      "sourceLine": 264,
+      "sourceLine": 211,
       "needsManualReview": false,
       "kind": "http"
     },
     {
       "method": "POST",
       "pathPattern": "/api/network/devices",
-      "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
-      "sourceLine": 104,
+      "sourceFile": "web/src/features/network/pages/NetworkConfigPage.tsx",
+      "sourceLine": 449,
       "needsManualReview": false,
       "kind": "http"
     },
     {
+      "method": "POST",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigPage.tsx",
+      "sourceLine": 489,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/features/network/ikuai/pages/IkuaiWorkspace.tsx",
+      "sourceLine": 84,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/network/devices",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 341,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
       "method": "DELETE",
       "pathPattern": "/api/network/devices/:param",
       "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
-      "sourceLine": 275,
+      "sourceLine": 219,
       "needsManualReview": true,
       "kind": "http"
     },
     {
       "method": "DELETE",
       "pathPattern": "/api/network/devices/:param",
-      "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
-      "sourceLine": 115,
+      "sourceFile": "web/src/features/network/pages/NetworkConfigPage.tsx",
+      "sourceLine": 504,
       "needsManualReview": true,
       "kind": "http"
     },
     {
       "method": "GET",
-      "pathPattern": "/api/network/devices/:param/clients",
-      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
-      "sourceLine": 245,
+      "pathPattern": "/api/network/devices/:param/:param/config/:param",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigEditor.tsx",
+      "sourceLine": 229,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/network/devices/:param/:param/config/:param",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigEditor.tsx",
+      "sourceLine": 146,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/:param/:param/config/:param/apply",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigEditor.tsx",
+      "sourceLine": 275,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/:param/:param/config/:param/dry-run",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigEditor.tsx",
+      "sourceLine": 262,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -4359,65 +4543,329 @@
       "method": "GET",
       "pathPattern": "/api/network/devices/:param/exporter-status",
       "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
-      "sourceLine": 224,
+      "sourceLine": 242,
       "needsManualReview": true,
       "kind": "http"
     },
     {
       "method": "GET",
       "pathPattern": "/api/network/devices/:param/exporter-status",
-      "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
-      "sourceLine": 91,
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 818,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/:param/openwrt/actions",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 236,
       "needsManualReview": true,
       "kind": "http"
     },
     {
       "method": "GET",
-      "pathPattern": "/api/network/devices/:param/interfaces",
+      "pathPattern": "/api/network/devices/:param/openwrt/clients",
       "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
-      "sourceLine": 238,
+      "sourceLine": 261,
       "needsManualReview": true,
       "kind": "http"
     },
     {
       "method": "GET",
-      "pathPattern": "/api/network/devices/:param/overview",
-      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
-      "sourceLine": 231,
+      "pathPattern": "/api/network/devices/:param/openwrt/clients",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 839,
       "needsManualReview": true,
       "kind": "http"
     },
     {
       "method": "GET",
-      "pathPattern": "/api/network/devices/:param/overview",
-      "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
-      "sourceLine": 98,
+      "pathPattern": "/api/network/devices/:param/openwrt/firewall",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 273,
       "needsManualReview": true,
       "kind": "http"
     },
     {
       "method": "GET",
-      "pathPattern": "/api/network/devices/:param/traffic",
-      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
-      "sourceLine": 252,
+      "pathPattern": "/api/network/devices/:param/openwrt/firewall",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 853,
       "needsManualReview": true,
       "kind": "http"
     },
     {
-      "method": "DELETE",
-      "pathPattern": "/api/network/devices/${encodeURIComponent(id",
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/openwrt/interfaces",
       "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 255,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/openwrt/interfaces",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 832,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/openwrt/overview",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 249,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/openwrt/overview",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 825,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/openwrt/wireless",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 267,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:param/openwrt/wireless",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 846,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeId",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 242,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeId",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 249,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeId",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 255,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeId",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 261,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeId",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 267,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeId",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 273,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeId",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 236,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeOpenWrtId",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 818,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeOpenWrtId",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 825,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeOpenWrtId",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 832,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeOpenWrtId",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 839,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeOpenWrtId",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 846,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(activeOpenWrtId",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 853,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(deviceId",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigEditor.tsx",
+      "sourceLine": 229,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(deviceId",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigEditor.tsx",
+      "sourceLine": 262,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(deviceId",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigEditor.tsx",
       "sourceLine": 275,
       "needsManualReview": true,
       "kind": "http"
     },
     {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(deviceId",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigEditor.tsx",
+      "sourceLine": 146,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
       "method": "DELETE",
       "pathPattern": "/api/network/devices/${encodeURIComponent(id",
-      "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
-      "sourceLine": 115,
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 219,
       "needsManualReview": true,
       "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigPage.tsx",
+      "sourceLine": 504,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(openWrtDevice",
+      "sourceFile": "web/src/features/network/pages/NetworkDashboard.tsx",
+      "sourceLine": 194,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(openWrtDevice",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigPage.tsx",
+      "sourceLine": 514,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(target",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtConfigDiffDialog.tsx",
+      "sourceLine": 24,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/${encodeURIComponent(target",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtConfigDiffDialog.tsx",
+      "sourceLine": 33,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/network/devices/ikuai/probe",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigPage.tsx",
+      "sourceLine": 25,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/network/devices/openwrt/probe",
+      "sourceFile": "web/src/features/network/openwrt/pages/OpenWrtWorkspace.tsx",
+      "sourceLine": 126,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/network/devices/openwrt/probe",
+      "sourceFile": "web/src/features/network/pages/NetworkConfigPage.tsx",
+      "sourceLine": 24,
+      "needsManualReview": false,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/network/ikuai-client-stream",
+      "sourceFile": "web/src/features/network/ikuai/pages/IkuaiWorkspace.tsx",
+      "sourceLine": 84,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/network/ikuai-client-stream",
+      "sourceFile": "web/src/features/network/pages/NetworkResourcePage.tsx",
+      "sourceLine": 341,
+      "needsManualReview": true,
+      "kind": "literal"
     },
     {
       "method": "GET",
@@ -4431,7 +4879,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 149,
+      "sourceLine": 162,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4439,7 +4887,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 258,
+      "sourceLine": 271,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4447,7 +4895,7 @@
       "method": "PUT",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 252,
+      "sourceLine": 267,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4471,7 +4919,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/alerts",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 253,
+      "sourceLine": 266,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4583,7 +5031,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/reports",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 264,
+      "sourceLine": 277,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4591,7 +5039,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/inspect/run",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 263,
+      "sourceLine": 278,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4599,7 +5047,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/tasks",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 165,
+      "sourceLine": 178,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4607,7 +5055,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/tasks/:param",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 155,
+      "sourceLine": 168,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -4615,7 +5063,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/tasks/${encodeURIComponent(inspectTaskId",
       "sourceFile": "web/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 155,
+      "sourceLine": 168,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -4639,7 +5087,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 270,
+      "sourceLine": 283,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4911,7 +5359,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/query",
       "sourceFile": "web/src/lib/api.ts",
-      "sourceLine": 626,
+      "sourceLine": 630,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4927,7 +5375,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/query_range",
       "sourceFile": "web/src/lib/api.ts",
-      "sourceLine": 639,
+      "sourceLine": 643,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4999,7 +5447,7 @@
       "method": "GET",
       "pathPattern": "/api/prometheus/status",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 277,
+      "sourceLine": 290,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5030,6 +5478,14 @@
     {
       "method": "GET",
       "pathPattern": "/api/pve/targets",
+      "sourceFile": "web/src/features/compute/layout/ComputeSubNav.tsx",
+      "sourceLine": 87,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets",
       "sourceFile": "web/src/features/compute/pages/PVEPage.tsx",
       "sourceLine": 74,
       "needsManualReview": false,
@@ -5038,8 +5494,16 @@
     {
       "method": "GET",
       "pathPattern": "/api/pve/targets",
+      "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
+      "sourceLine": 33,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets",
       "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 224,
+      "sourceLine": 191,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5047,7 +5511,15 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 190,
+      "sourceLine": 203,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets",
+      "sourceFile": "web/src/shared/layout/Sidebar.tsx",
+      "sourceLine": 459,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5062,8 +5534,16 @@
     {
       "method": "POST",
       "pathPattern": "/api/pve/targets",
+      "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
+      "sourceLine": 50,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets",
       "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 283,
+      "sourceLine": 244,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5078,8 +5558,32 @@
     {
       "method": "DELETE",
       "pathPattern": "/api/pve/targets/:param",
+      "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
+      "sourceLine": 61,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/pve/targets/:param",
       "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 294,
+      "sourceLine": 255,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/pve/targets/:param",
+      "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
+      "sourceLine": 48,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:param/guests",
+      "sourceFile": "web/src/features/compute/pve/pages/PveNodeDetail.tsx",
+      "sourceLine": 106,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5087,9 +5591,57 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets/:param/guests",
       "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 255,
+      "sourceLine": 216,
       "needsManualReview": true,
       "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve/targets/:param/guests/:param",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 532,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/pve/targets/:param/guests/:param/config",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 592,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:param/guests/:param/console/ticket",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 387,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve/targets/:param/guests/:param/console/ws",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 400,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:param/guests/:param/disks/resize",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 602,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve/targets/:param/guests/:param/metrics",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 533,
+      "needsManualReview": true,
+      "kind": "literal"
     },
     {
       "method": "POST",
@@ -5102,8 +5654,32 @@
     {
       "method": "POST",
       "pathPattern": "/api/pve/targets/:param/guests/:param/power",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 609,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:param/guests/:param/power",
       "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 311,
+      "sourceLine": 271,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve/targets/:param/guests/:param/snapshots",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 534,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/pve/targets/:param/guests/:param/snapshots/:param",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 623,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5111,9 +5687,25 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets/:param/nodes",
       "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 248,
+      "sourceLine": 209,
       "needsManualReview": true,
       "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve/targets/:param/nodes/:param",
+      "sourceFile": "web/src/features/compute/pve/pages/PveNodeDetail.tsx",
+      "sourceLine": 87,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve/targets/:param/nodes/:param/metrics",
+      "sourceFile": "web/src/features/compute/pve/pages/PveNodeDetail.tsx",
+      "sourceLine": 88,
+      "needsManualReview": true,
+      "kind": "literal"
     },
     {
       "method": "POST",
@@ -5126,8 +5718,24 @@
     {
       "method": "POST",
       "pathPattern": "/api/pve/targets/:param/probe",
+      "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
+      "sourceLine": 72,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:param/probe",
       "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 304,
+      "sourceLine": 264,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:param/storage",
+      "sourceFile": "web/src/features/compute/pve/pages/PveNodeDetail.tsx",
+      "sourceLine": 113,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5135,7 +5743,7 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets/:param/storage",
       "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 262,
+      "sourceLine": 223,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5151,7 +5759,15 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets/:param/summary",
       "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 241,
+      "sourceLine": 202,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:param/tasks",
+      "sourceFile": "web/src/features/compute/pve/pages/PveNodeDetail.tsx",
+      "sourceLine": 120,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5159,7 +5775,23 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets/:param/tasks",
       "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 269,
+      "sourceLine": 230,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:param/tasks/:param/status",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 560,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(active.id",
+      "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
+      "sourceLine": 48,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5175,7 +5807,7 @@
       "method": "POST",
       "pathPattern": "/api/pve/targets/${encodeURIComponent(activeId",
       "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 311,
+      "sourceLine": 271,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5190,8 +5822,16 @@
     {
       "method": "DELETE",
       "pathPattern": "/api/pve/targets/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
+      "sourceLine": 61,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(id",
       "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 294,
+      "sourceLine": 255,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5206,10 +5846,138 @@
     {
       "method": "POST",
       "pathPattern": "/api/pve/targets/${encodeURIComponent(id",
-      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
-      "sourceLine": 304,
+      "sourceFile": "web/src/features/compute/pve/components/PveTargetSettingsPanel.tsx",
+      "sourceLine": 72,
       "needsManualReview": true,
       "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(id",
+      "sourceFile": "web/src/features/compute/pve/pages/PveWorkspace.tsx",
+      "sourceLine": 264,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 623,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 560,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveNodeDetail.tsx",
+      "sourceLine": 106,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveNodeDetail.tsx",
+      "sourceLine": 113,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveNodeDetail.tsx",
+      "sourceLine": 120,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 387,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 602,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 609,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 592,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 400,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 532,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 533,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveGuestDetail.tsx",
+      "sourceLine": 534,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveNodeDetail.tsx",
+      "sourceLine": 87,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/pve/targets/${encodeURIComponent(targetId",
+      "sourceFile": "web/src/features/compute/pve/pages/PveNodeDetail.tsx",
+      "sourceLine": 88,
+      "needsManualReview": true,
+      "kind": "literal"
     },
     {
       "method": "GET",
@@ -5303,7 +6071,7 @@
       "method": "GET",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "web/src/features/settings/components/SettingsRuntimeSection.tsx",
-      "sourceLine": 94,
+      "sourceLine": 98,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5359,7 +6127,7 @@
       "method": "PUT",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "web/src/features/settings/components/SettingsRuntimeSection.tsx",
-      "sourceLine": 151,
+      "sourceLine": 155,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5559,7 +6327,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/bastion/vms",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 243,
+      "sourceLine": 256,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5599,7 +6367,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/hosts",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 183,
+      "sourceLine": 196,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5687,7 +6455,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/vms",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 176,
+      "sourceLine": 189,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5952,6 +6720,14 @@
       "pathPattern": "/r/:param.html",
       "sourceFile": "web/src/md-editor/EditorContainer.tsx",
       "sourceLine": 204,
+      "needsManualReview": true,
+      "kind": "literal"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/r/:param.html",
+      "sourceFile": "web/src/shared/layout/UserGuideSheet.tsx",
+      "sourceLine": 75,
       "needsManualReview": true,
       "kind": "literal"
     }

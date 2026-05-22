@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "backend-routes",
-  "routeCount": 463,
+  "routeCount": 507,
   "routes": [
     {
       "method": "GET",
@@ -199,13 +199,25 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/hermes/instances/:id",
       "sourceFile": "api/api/appcenter/service/hermes_handlers.go",
-      "sourceLine": 30
+      "sourceLine": 35
     },
     {
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/:id",
       "sourceFile": "api/api/appcenter/service/hermes_handlers.go",
       "sourceLine": 23
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances/:id/events",
+      "sourceFile": "api/api/appcenter/service/hermes_handlers.go",
+      "sourceLine": 31
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/hermes/instances/:id/exposure",
+      "sourceFile": "api/api/appcenter/service/hermes_handlers.go",
+      "sourceLine": 32
     },
     {
       "method": "GET",
@@ -220,16 +232,22 @@
       "sourceLine": 25
     },
     {
+      "method": "GET",
+      "pathPattern": "/api/app-center/hermes/instances/:id/logs",
+      "sourceFile": "api/api/appcenter/service/hermes_handlers.go",
+      "sourceLine": 30
+    },
+    {
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/:id/migrate-openclaw",
       "sourceFile": "api/api/appcenter/service/hermes_handlers.go",
-      "sourceLine": 29
+      "sourceLine": 34
     },
     {
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/:id/migrate-openclaw-dry-run",
       "sourceFile": "api/api/appcenter/service/hermes_handlers.go",
-      "sourceLine": 28
+      "sourceLine": 33
     },
     {
       "method": "POST",
@@ -242,6 +260,18 @@
       "pathPattern": "/api/app-center/hermes/instances/:id/restart",
       "sourceFile": "api/api/appcenter/service/hermes_handlers.go",
       "sourceLine": 27
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/:id/rollback",
+      "sourceFile": "api/api/appcenter/service/hermes_handlers.go",
+      "sourceLine": 29
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/hermes/instances/:id/upgrade",
+      "sourceFile": "api/api/appcenter/service/hermes_handlers.go",
+      "sourceLine": 28
     },
     {
       "method": "GET",
@@ -1094,6 +1124,42 @@
       "pathPattern": "/api/cloud-hosts/metrics-snapshot",
       "sourceFile": "api/common/core/cloud_hosts_handlers.go",
       "sourceLine": 554
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/compute/activity",
+      "sourceFile": "api/common/core/compute_handlers.go",
+      "sourceLine": 394
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/compute/guests",
+      "sourceFile": "api/common/core/compute_handlers.go",
+      "sourceLine": 391
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/compute/hosts",
+      "sourceFile": "api/common/core/compute_handlers.go",
+      "sourceLine": 392
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/compute/providers",
+      "sourceFile": "api/common/core/compute_handlers.go",
+      "sourceLine": 389
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/compute/storage",
+      "sourceFile": "api/common/core/compute_handlers.go",
+      "sourceLine": 393
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/compute/summary",
+      "sourceFile": "api/common/core/compute_handlers.go",
+      "sourceLine": 390
     },
     {
       "method": "GET",
@@ -2104,6 +2170,30 @@
       "sourceLine": 24
     },
     {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/:id/:provider/actions",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 46
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:id/:provider/config/:domain",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 43
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/:id/:provider/config/:domain/apply",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 45
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/:id/:provider/config/:domain/dry-run",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 44
+    },
+    {
       "method": "GET",
       "pathPattern": "/api/network/devices/:id/clients",
       "sourceFile": "api/api/network/service/routes.go",
@@ -2120,6 +2210,54 @@
       "pathPattern": "/api/network/devices/:id/interfaces",
       "sourceFile": "api/api/network/service/routes.go",
       "sourceLine": 28
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/:id/openwrt/actions",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 40
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:id/openwrt/clients",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 37
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/:id/openwrt/config/apply",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 42
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/:id/openwrt/config/dry-run",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 41
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:id/openwrt/firewall",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 39
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:id/openwrt/interfaces",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 36
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:id/openwrt/overview",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 35
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/network/devices/:id/openwrt/wireless",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 38
     },
     {
       "method": "GET",
@@ -2140,16 +2278,28 @@
       "sourceLine": 26
     },
     {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/ikuai/probe",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 34
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/network/devices/openwrt/probe",
+      "sourceFile": "api/api/network/service/routes.go",
+      "sourceLine": 33
+    },
+    {
       "method": "GET",
       "pathPattern": "/api/network/ikuai-client-stream",
       "sourceFile": "api/api/network/service/routes.go",
-      "sourceLine": 32
+      "sourceLine": 48
     },
     {
       "method": "GET",
       "pathPattern": "/api/network/vm-mapping",
       "sourceFile": "api/api/network/service/routes.go",
-      "sourceLine": 33
+      "sourceLine": 49
     },
     {
       "method": "GET",
@@ -2383,7 +2533,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/query",
       "sourceFile": "api/common/core/dashboard_permissions_test.go",
-      "sourceLine": 309
+      "sourceLine": 310
     },
     {
       "method": "POST",
@@ -2431,67 +2581,151 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets",
       "sourceFile": "api/api/pve/service/routes.go",
-      "sourceLine": 26
+      "sourceLine": 28
     },
     {
       "method": "POST",
       "pathPattern": "/api/pve/targets",
       "sourceFile": "api/api/pve/service/routes.go",
-      "sourceLine": 27
+      "sourceLine": 29
     },
     {
       "method": "DELETE",
       "pathPattern": "/api/pve/targets/:id",
       "sourceFile": "api/api/pve/service/routes.go",
-      "sourceLine": 29
+      "sourceLine": 31
     },
     {
       "method": "PUT",
       "pathPattern": "/api/pve/targets/:id",
       "sourceFile": "api/api/pve/service/routes.go",
-      "sourceLine": 28
+      "sourceLine": 30
     },
     {
       "method": "GET",
       "pathPattern": "/api/pve/targets/:id/guests",
       "sourceFile": "api/api/pve/service/routes.go",
-      "sourceLine": 33
+      "sourceLine": 37
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 42
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/config",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 44
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/config",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 45
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/console/ticket",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 51
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/console/ws",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 52
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/disks/resize",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 46
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/metrics",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 43
     },
     {
       "method": "POST",
       "pathPattern": "/api/pve/targets/:id/guests/:vmid/power",
       "sourceFile": "api/api/pve/service/routes.go",
-      "sourceLine": 38
+      "sourceLine": 53
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/snapshots",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 47
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/snapshots",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 48
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/snapshots/:snapname",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 50
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/snapshots/:snapname/rollback",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 49
     },
     {
       "method": "GET",
       "pathPattern": "/api/pve/targets/:id/nodes",
       "sourceFile": "api/api/pve/service/routes.go",
-      "sourceLine": 32
+      "sourceLine": 34
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/nodes/:node",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 35
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/nodes/:node/metrics",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 36
     },
     {
       "method": "POST",
       "pathPattern": "/api/pve/targets/:id/probe",
       "sourceFile": "api/api/pve/service/routes.go",
-      "sourceLine": 30
+      "sourceLine": 32
     },
     {
       "method": "GET",
       "pathPattern": "/api/pve/targets/:id/storage",
       "sourceFile": "api/api/pve/service/routes.go",
-      "sourceLine": 39
+      "sourceLine": 54
     },
     {
       "method": "GET",
       "pathPattern": "/api/pve/targets/:id/summary",
       "sourceFile": "api/api/pve/service/routes.go",
-      "sourceLine": 31
+      "sourceLine": 33
     },
     {
       "method": "GET",
       "pathPattern": "/api/pve/targets/:id/tasks",
       "sourceFile": "api/api/pve/service/routes.go",
-      "sourceLine": 44
+      "sourceLine": 59
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/tasks/:upid/status",
+      "sourceFile": "api/api/pve/service/routes.go",
+      "sourceLine": 60
     },
     {
       "method": "GET",
@@ -2603,9 +2837,15 @@
     },
     {
       "method": "GET",
+      "pathPattern": "/api/vcenter/datastores",
+      "sourceFile": "api/common/core/vcenter_handlers.go",
+      "sourceLine": 1025
+    },
+    {
+      "method": "GET",
       "pathPattern": "/api/vcenter/events",
       "sourceFile": "api/common/core/vcenter_handlers.go",
-      "sourceLine": 1021
+      "sourceLine": 1026
     },
     {
       "method": "GET",
@@ -2647,7 +2887,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/vms/:moref",
       "sourceFile": "api/common/core/vcenter_handlers.go",
-      "sourceLine": 1020
+      "sourceLine": 1024
     },
     {
       "method": "GET",
@@ -2708,6 +2948,30 @@
       "pathPattern": "/api/vcenter/vms/:moref/sftp/ws",
       "sourceFile": "api/common/core/vcenter_handlers.go",
       "sourceLine": 1015
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/vcenter/vms/:moref/snapshots",
+      "sourceFile": "api/common/core/vcenter_handlers.go",
+      "sourceLine": 1020
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/vcenter/vms/:moref/snapshots",
+      "sourceFile": "api/common/core/vcenter_handlers.go",
+      "sourceLine": 1021
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/vcenter/vms/:moref/snapshots/:name",
+      "sourceFile": "api/common/core/vcenter_handlers.go",
+      "sourceLine": 1023
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/vcenter/vms/:moref/snapshots/:name/revert",
+      "sourceFile": "api/common/core/vcenter_handlers.go",
+      "sourceLine": 1022
     },
     {
       "method": "DELETE",

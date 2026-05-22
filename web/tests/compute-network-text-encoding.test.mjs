@@ -39,7 +39,7 @@ const requiredPhrases = new Map([
   ],
   [
     "src/features/network/pages/NetworkDashboard.tsx",
-    ["网络设备", "新增网络设备", "OpenWrt 指标族", "iKuai 数据源"],
+    ["网络资源中心", "设备、接口、终端、无线、连接和监控", "打开配置", "iKuai 数据源", "OpenWrt 接入"],
   ],
   [
     "src/features/compute/pages/PVEPage.tsx",
@@ -55,7 +55,7 @@ const requiredPhrases = new Map([
   ],
   [
     "src/features/network/layout/NetworkSubNav.tsx",
-    ["总览", "iKuai 接口", "iKuai 客户端", "连接跟踪", "数据源"],
+    ["总览", "设备", "接口", "终端", "无线", "连接", "监控", "配置"],
   ],
   [
     "src/shared/layout/Sidebar.tsx",

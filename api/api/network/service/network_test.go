@@ -1,8 +1,10 @@
 package service
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	networkmodel "kube-bt-sync/api/network/model"
@@ -176,6 +178,79 @@ func TestOpenWrtDeviceDefaultsRootSSH(t *testing.T) {
 	}
 }
 
+func TestIkuaiDeviceStoresHTTPManagementFieldsEncrypted(t *testing.T) {
+	key := []byte("12345678901234567890123456789012")
+	dev, err := normalizeNetworkDeviceFromBody(networkDeviceBody{
+		Kind:            "ikuai",
+		Name:            "main router",
+		APIURL:          "https://ikuai.lan",
+		Host:            "192.168.1.1",
+		Port:            8443,
+		AuthType:        "http-web",
+		Username:        "admin",
+		Password:        "secret-pass",
+		SkipTLSVerify:   true,
+		PrometheusScope: "network",
+		InstanceLabel:   "192.168.1.1:9100",
+		JobLabel:        "ikuai",
+	}, nil, key)
+	if err != nil {
+		t.Fatalf("normalize iKuai device returned error: %v", err)
+	}
+	if dev.APIURL != "https://ikuai.lan" || dev.Host != "192.168.1.1" || dev.Port != 8443 || dev.AuthType != ikuaiAuthTypeHTTPWeb || dev.Username != "admin" || !dev.SkipTLSVerify {
+		t.Fatalf("iKuai management fields were not preserved: %+v", dev)
+	}
+	if dev.PasswordEnc == "" || strings.Contains(dev.PasswordEnc, "secret-pass") || dev.Password != "" {
+		t.Fatalf("iKuai password should be encrypted and omitted from runtime response: %+v", dev)
+	}
+	item := networkDeviceListItem(dev)
+	if !item.PasswordSet || item.PrivateKeySet {
+		t.Fatalf("unexpected list item secret flags: %+v", item)
+	}
+}
+
+func TestIkuaiLoginPayloadDoesNotExposeRawPassword(t *testing.T) {
+	payload := buildIkuaiLoginPayload("admin", "secret-pass")
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("marshal iKuai login payload: %v", err)
+	}
+	if strings.Contains(string(raw), "secret-pass") {
+		t.Fatalf("login payload must not contain raw password: %s", string(raw))
+	}
+	if payload["username"] != "admin" {
+		t.Fatalf("username=%v, want admin", payload["username"])
+	}
+	if payload["passwd"] == "" && payload["pass"] == "" {
+		t.Fatalf("login payload should include hashed password fields: %#v", payload)
+	}
+}
+
+func TestOpenWrtConfigCommandsSupportDeleteAndCommit(t *testing.T) {
+	preview, err := buildOpenWrtConfigCommands(openWrtConfigRequest{
+		Changes: []openWrtConfigChange{
+			{Operation: "set", Section: "network.lan.ipaddr", Value: "192.168.2.1"},
+			{Operation: "delete", Section: "dhcp.@host[0]"},
+		},
+		Reload: "network",
+	})
+	if err != nil {
+		t.Fatalf("build commands returned error: %v", err)
+	}
+	got := strings.Join(preview.Commands, "\n")
+	for _, want := range []string{
+		"uci set network.lan.ipaddr='192.168.2.1'",
+		"uci delete dhcp.@host[0]",
+		"uci commit dhcp",
+		"uci commit network",
+		"/etc/init.d/network reload",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("preview commands missing %q in:\n%s", want, got)
+		}
+	}
+}
+
 func TestOpenWrtManagementRoutesAreRegistered(t *testing.T) {
 	router := gin.New()
 	api := router.Group("/api")
@@ -194,6 +269,35 @@ func TestOpenWrtManagementRoutesAreRegistered(t *testing.T) {
 		{"POST", "/api/network/devices/:id/openwrt/actions"},
 		{"POST", "/api/network/devices/:id/openwrt/config/dry-run"},
 		{"POST", "/api/network/devices/:id/openwrt/config/apply"},
+	}
+	for _, route := range want {
+		found := false
+		for _, got := range router.Routes() {
+			if got.Method == route.method && got.Path == route.path {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("missing route %s %s", route.method, route.path)
+		}
+	}
+}
+
+func TestNetworkProviderConfigRoutesAreRegistered(t *testing.T) {
+	router := gin.New()
+	api := router.Group("/api")
+	RegisterRoutes(api, nil)
+
+	want := []struct {
+		method string
+		path   string
+	}{
+		{"POST", "/api/network/devices/ikuai/probe"},
+		{"GET", "/api/network/devices/:id/:provider/config/:domain"},
+		{"POST", "/api/network/devices/:id/:provider/config/:domain/dry-run"},
+		{"POST", "/api/network/devices/:id/:provider/config/:domain/apply"},
+		{"POST", "/api/network/devices/:id/:provider/actions"},
 	}
 	for _, route := range want {
 		found := false

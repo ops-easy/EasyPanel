@@ -75,18 +75,31 @@ test("Compute 子导航改为资源对象入口，PVE 旧子路由保留重定�
   assert.match(computeRoutes, /path="pve\/guests"[\s\S]*to="\/cluster\/compute\/guests"/);
 
   for (const path of [
-    "/cluster/network/openwrt/dashboard",
-    "/cluster/network/openwrt/interfaces",
-    "/cluster/network/openwrt/clients",
-    "/cluster/network/openwrt/connections",
-    "/cluster/network/openwrt/wireless",
-    "/cluster/network/openwrt/exporter",
+    "/cluster/network/dashboard",
+    "/cluster/network/devices",
+    "/cluster/network/interfaces",
+    "/cluster/network/clients",
+    "/cluster/network/wireless",
+    "/cluster/network/connections",
+    "/cluster/network/monitoring",
+    "/cluster/network/config",
   ]) {
     assert.match(networkSubNav, new RegExp(`to:\\s*["']${path}`));
   }
 
-  assert.match(networkRoutes, /const OpenWrtExporter = lazy/);
-  assert.match(networkRoutes, /path="openwrt\/exporter"[\s\S]*<OpenWrtExporter \/>/);
+  for (const [legacy, target] of [
+    ["openwrt/dashboard", "/cluster/network/devices?provider=openwrt"],
+    ["openwrt/interfaces", "/cluster/network/interfaces?provider=openwrt"],
+    ["openwrt/clients", "/cluster/network/clients?provider=openwrt"],
+    ["openwrt/connections", "/cluster/network/connections?provider=openwrt"],
+    ["openwrt/wireless", "/cluster/network/wireless?provider=openwrt"],
+    ["openwrt/exporter", "/cluster/network/monitoring?provider=openwrt"],
+  ]) {
+    assert.match(
+      networkRoutes,
+      new RegExp(`path="${legacy.replace("/", "\\/")}"[\\s\\S]*to="${target.replace(/[?]/g, "\\?")}"`)
+    );
+  }
 });
 
 test("PVE 接管能力包含节点和虚拟机详情路由", () => {
