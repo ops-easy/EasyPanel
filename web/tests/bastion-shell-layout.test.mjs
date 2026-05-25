@@ -40,7 +40,10 @@ test("bastion module home keeps the top shell, full-width canvas, and console ho
   assert.match(desktopLayoutSource, /const appChromeDark = isBastionShell && !hideAppChrome;/);
   assert.match(desktopLayoutSource, /pathname === "\/cluster\/bastion"/);
   assert.match(desktopLayoutSource, /pathname === "\/cluster\/bastion\/"/);
-  assert.match(desktopLayoutSource, /!\(isDocsShell \|\| isBastionShell\) && !hideAppChrome \? <Sidebar \/> : null/);
+  assert.match(
+    desktopLayoutSource,
+    /!\(isDocsShell \|\| isBastionShell \|\| isAccountStandaloneShell\) && !hideAppChrome \? <Sidebar \/> : null/
+  );
   assert.match(desktopLayoutSource, /<Header tone=\{appChromeDark \? "dark" : "light"\} \/>/);
   assert.match(desktopLayoutSource, /<FloatingAssistantDock tone=\{appChromeDark \? "dark" : "light"\} \/>/);
   assert.match(desktopLayoutSource, /appChromeDark \? "bg-\[#0c0f14\]" : "bg-\[#F1F5F9\]"/);

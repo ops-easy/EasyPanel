@@ -18,6 +18,7 @@ const AppLayout: React.FC = () => {
 
   const isDocsShell = pathname === "/docs" || pathname.startsWith("/docs/");
   const isBastionShell = pathname === "/cluster/bastion" || pathname === "/cluster/bastion/";
+  const isAccountStandaloneShell = pathname === "/account" || pathname.startsWith("/account/");
   const isDocsEditorViewport =
     pathname === "/docs" ||
     pathname.startsWith("/docs/doc/") ||
@@ -45,7 +46,7 @@ const AppLayout: React.FC = () => {
           appChromeDark ? "bg-[#0c0f14] shadow-none" : "bg-white shadow-custom"
         )}
       >
-        {!(isDocsShell || isBastionShell) && !hideAppChrome ? <Sidebar /> : null}
+        {!(isDocsShell || isBastionShell || isAccountStandaloneShell) && !hideAppChrome ? <Sidebar /> : null}
 
         <div
           className={cn(
