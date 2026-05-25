@@ -1103,7 +1103,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 214,
+      "sourceLine": 247,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1119,7 +1119,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 242,
+      "sourceLine": 301,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1127,7 +1127,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:param",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 257,
+      "sourceLine": 317,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1135,7 +1135,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/backups",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 363,
+      "sourceLine": 425,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1143,7 +1143,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/backups",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 382,
+      "sourceLine": 444,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1151,7 +1151,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:param/backups/:param",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 406,
+      "sourceLine": 468,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1159,7 +1159,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/backups/:param/restore",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 395,
+      "sourceLine": 457,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1167,7 +1167,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/ping",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 268,
+      "sourceLine": 329,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1175,7 +1175,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/processlist",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 354,
+      "sourceLine": 416,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1183,7 +1183,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/query",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 322,
+      "sourceLine": 384,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1191,7 +1191,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/runtime",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 335,
+      "sourceLine": 397,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1199,7 +1199,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/schemas",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 344,
+      "sourceLine": 406,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1207,7 +1207,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/users",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 372,
+      "sourceLine": 434,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1215,7 +1215,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/users",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 417,
+      "sourceLine": 479,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1223,7 +1223,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:param/users/:param",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 446,
+      "sourceLine": 508,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1231,7 +1231,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/mysql/instances/:param/users/:param/password",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 433,
+      "sourceLine": 495,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1239,7 +1239,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:param/users/${encodeURIComponent(u.username",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 446,
+      "sourceLine": 508,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1247,7 +1247,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/mysql/instances/:param/users/${encodeURIComponent(userForm.passwordUser",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 433,
+      "sourceLine": 495,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1255,7 +1255,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/k8s-deploy",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 278,
+      "sourceLine": 339,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1263,7 +1263,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/status",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 208,
+      "sourceLine": 241,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1271,7 +1271,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/templates",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 222,
+      "sourceLine": 255,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1279,7 +1279,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/templates",
       "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 295,
+      "sourceLine": 357,
       "needsManualReview": false,
       "kind": "http"
     },
