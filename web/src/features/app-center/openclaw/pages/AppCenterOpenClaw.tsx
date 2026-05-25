@@ -1316,10 +1316,10 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
       {canWrite && mainTab === "create" ? (
           <TabsContent value="create" className="outline-none">
           <section>
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+            <Card className="border-slate-200">
+              <CardHeader className="pb-2">
                 <CardTitle className="text-base">创建 OpenClaw</CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs leading-relaxed">
                   与容器主机相同的分步流程：资源名称须符合 DNS 标签规则；Secret 中变量名固定为 OPENAI_API_KEY / OPENAI_BASE_URL / GEMINI_API_KEY 等，由下方表单写入值。
                 </CardDescription>
                 <ol className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -1329,7 +1329,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                       className={cn(
                         "flex min-w-0 items-start gap-3 rounded-lg border px-3 py-2.5 text-left",
                         step === s.n
-                          ? "border-violet-400 bg-violet-50/90"
+                          ? "border-indigo-400 bg-indigo-50/90"
                           : step > s.n
                             ? "border-emerald-200/80 bg-emerald-50/50"
                             : "border-slate-200 bg-white"
@@ -1339,7 +1339,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                         className={cn(
                           "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
                           step === s.n
-                            ? "bg-violet-600 text-white"
+                            ? "bg-indigo-600 text-white"
                             : step > s.n
                               ? "bg-emerald-600 text-white"
                               : "bg-slate-200 text-slate-600"
@@ -1355,7 +1355,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                   ))}
                 </ol>
               </CardHeader>
-              <CardContent className="space-y-4 pt-6">
+              <CardContent className="space-y-4">
                 {step === 1 && (
                   <div className="grid gap-4 lg:grid-cols-2">
                     {bootstrapModes.length > 0 ? (
@@ -1867,7 +1867,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                     上一步
                   </Button>
                   {step < 3 ? (
-                    <Button type="button" size="sm" className="gap-1 bg-violet-600 hover:bg-violet-700" onClick={goNext}>
+                    <Button type="button" size="sm" className="gap-1 bg-indigo-600 hover:bg-indigo-700" onClick={goNext}>
                       下一步
                       <ChevronRight className="h-4 w-4" />
                     </Button>
@@ -1887,7 +1887,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                       <Button
                         type="button"
                         size="sm"
-                        className="gap-2 bg-violet-600 hover:bg-violet-700"
+                        className="gap-2 bg-indigo-600 hover:bg-indigo-700"
                         disabled={deployMut.isPending || precheckMut.isPending}
                         onClick={submitDeploy}
                       >

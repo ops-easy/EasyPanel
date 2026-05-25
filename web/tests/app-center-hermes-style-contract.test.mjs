@@ -130,3 +130,20 @@ test("app center modules do not auto-redirect incomplete bootstrap to template c
   assert.doesNotMatch(openClaw, /return <Navigate to=\{OPENCLAW_BOOTSTRAP_PATH\} replace \/>/);
   assert.doesNotMatch(hermes, /return <Navigate to=\{HERMES_BOOTSTRAP_PATH\} replace \/>/);
 });
+
+test("multi-step deploy cards keep the OpenSearch content rhythm", () => {
+  const sources = [
+    read("../src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx"),
+    read("../src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx"),
+  ];
+
+  for (const source of sources) {
+    assert.match(source, /<Card className="border-slate-200">/);
+    assert.match(source, /<CardHeader className="pb-2">/);
+    assert.match(source, /<CardContent className="space-y-4">/);
+    assert.match(source, /bg-indigo-600 hover:bg-indigo-700/);
+    assert.doesNotMatch(source, /border-b border-slate-100 bg-slate-50\/50/);
+    assert.doesNotMatch(source, /justify-between gap-3 border-t border-slate-100/);
+    assert.doesNotMatch(source, /返回实例列表/);
+  }
+});

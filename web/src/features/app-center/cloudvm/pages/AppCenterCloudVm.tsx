@@ -612,10 +612,10 @@ export default function AppCenterCloudVm({ initialTab = "create" }: { initialTab
       {canWrite && mainTab === "create" ? (
           <TabsContent value="create" className="outline-none">
           <section>
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+            <Card className="border-slate-200">
+              <CardHeader className="pb-2">
                 <CardTitle className="text-base">创建容器主机</CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs leading-relaxed">
                   这是在 Kubernetes 中创建可 SSH 登录的容器化工作机；共四步，完成后点击「创建容器主机」。
                 </CardDescription>
                 <ol className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-2 lg:grid-cols-4 lg:items-stretch lg:gap-2">
@@ -625,7 +625,7 @@ export default function AppCenterCloudVm({ initialTab = "create" }: { initialTab
                       className={cn(
                         "box-border w-full min-w-0 rounded-lg border px-2.5 py-2 text-left",
                         step === s.n
-                          ? "border-sky-400 bg-sky-50/90"
+                          ? "border-indigo-400 bg-indigo-50/90"
                           : step > s.n
                             ? "border-emerald-200/80 bg-emerald-50/50"
                             : "border-slate-200 bg-white"
@@ -636,7 +636,7 @@ export default function AppCenterCloudVm({ initialTab = "create" }: { initialTab
                           className={cn(
                             "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold leading-none",
                             step === s.n
-                              ? "bg-sky-600 text-white"
+                              ? "bg-indigo-600 text-white"
                               : step > s.n
                                 ? "bg-emerald-600 text-white"
                                 : "bg-slate-200 text-slate-600"
@@ -653,7 +653,7 @@ export default function AppCenterCloudVm({ initialTab = "create" }: { initialTab
                   ))}
                 </ol>
               </CardHeader>
-              <CardContent className="space-y-4 pt-6">
+              <CardContent className="space-y-4">
                 {step === 1 && (
                   <div className="grid gap-4 lg:grid-cols-3">
                     <div>
@@ -1042,43 +1042,33 @@ export default function AppCenterCloudVm({ initialTab = "create" }: { initialTab
                   </div>
                 )}
 
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-                  <div className="flex flex-wrap gap-2">
-                    {step > 1 ? (
-                      <Button type="button" variant="outline" onClick={goPrev} className="gap-1">
-                        <ChevronLeft className="h-4 w-4" />
-                        上一步
-                      </Button>
-                    ) : (
-                      <Button type="button" variant="ghost" asChild>
-                        <Link to={CLOUD_VM_LIST_PATH} state={{ ...incompleteBootstrapNavState, mainTab: "list" }}>
-                          返回实例列表
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {step < 4 ? (
-                      <Button
-                        type="button"
-                        className="gap-1 bg-sky-600 hover:bg-sky-700"
-                        onClick={goNext}
-                        disabled={step === 1 && !step1Ok}
-                      >
-                        下一步
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button
-                        type="button"
-                        className="gap-1 bg-sky-600 hover:bg-sky-700"
-                        disabled={createMut.isPending || !step1Ok}
-                        onClick={() => createMut.mutate()}
-                      >
-                        {createMut.isPending ? "创建中…" : "创建容器主机"}
-                      </Button>
-                    )}
-                  </div>
+                <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+                  <Button type="button" variant="outline" size="sm" onClick={goPrev} disabled={step <= 1} className="gap-1">
+                    <ChevronLeft className="h-4 w-4" />
+                    上一步
+                  </Button>
+                  {step < 4 ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="gap-1 bg-indigo-600 hover:bg-indigo-700"
+                      onClick={goNext}
+                      disabled={step === 1 && !step1Ok}
+                    >
+                      下一步
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="gap-1 bg-indigo-600 hover:bg-indigo-700"
+                      disabled={createMut.isPending || !step1Ok}
+                      onClick={() => createMut.mutate()}
+                    >
+                      {createMut.isPending ? "创建中…" : "创建容器主机"}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
