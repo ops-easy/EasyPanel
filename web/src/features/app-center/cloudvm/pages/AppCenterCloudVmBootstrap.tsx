@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Save } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
@@ -20,6 +20,7 @@ import { toast } from "sonner";
 const CLOUD_VM_LIST_PATH = "/cluster/apps/cloud-vm";
 const CLOUD_VM_CREATE_PATH = "/cluster/apps/cloud-vm/create";
 const CLOUD_VM_BOOTSTRAP_PATH = "/cluster/apps/cloud-vm/bootstrap";
+const CLOUD_VM_BOOTSTRAP_NAV_STATE = { allowIncompleteBootstrap: true };
 
 /** 与 internal/cloud_vm_software.go 默认一致；Release 标签为 app/v2.6.5 */
 const DEFAULT_HYSTERIA_AMD64_URL =
@@ -125,25 +126,35 @@ export default function AppCenterCloudVmBootstrap() {
   return (
     <div className="mx-auto w-full space-y-6">
       <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">Container Host Bootstrap</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">容器主机镜像与命名空间</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-2 max-w-[860px] text-sm leading-6 text-slate-600">
               导入可拉取的 Ubuntu（或自定义）镜像；保存后前台不再强制进入本页，后续可在后台{" "}
               <code className="rounded bg-slate-100 px-1">platform_kv</code> 调整{" "}
               <code className="rounded bg-slate-100 px-1">appcenter_cloud_vm_bootstrap_v1</code>。
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to={CLOUD_VM_LIST_PATH}>实例列表</Link>
+          <div className="grid grid-cols-3 gap-2 justify-self-start lg:justify-self-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(CLOUD_VM_LIST_PATH, { state: CLOUD_VM_BOOTSTRAP_NAV_STATE })}
+            >
+              实例列表
             </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to={CLOUD_VM_CREATE_PATH}>创建容器主机</Link>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(CLOUD_VM_CREATE_PATH, { state: CLOUD_VM_BOOTSTRAP_NAV_STATE })}
+            >
+              创建容器主机
             </Button>
-            <Button variant="default" size="sm" asChild>
-              <Link to={CLOUD_VM_BOOTSTRAP_PATH}>引导配置</Link>
+            <Button type="button" variant="default" size="sm" onClick={() => navigate(CLOUD_VM_BOOTSTRAP_PATH)}>
+              引导配置
             </Button>
           </div>
         </div>

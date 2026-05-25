@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -48,6 +48,9 @@ const CLOUD_VM_LIST_PATH = "/cluster/apps/cloud-vm";
 const CLOUD_VM_CREATE_PATH = "/cluster/apps/cloud-vm/create";
 const BOOTSTRAP_PATH = "/cluster/apps/cloud-vm/bootstrap";
 type CloudVmPageTab = "list" | "create";
+type CloudVmRouteState = {
+  allowIncompleteBootstrap?: boolean;
+};
 
 const CLOUD_VM_CAPABILITIES = [
   { title: "SSH 工作机", detail: "在 Kubernetes 中创建可 root 登录的容器化工作机，外部通过节点 IP + NodePort 访问。" },
@@ -190,7 +193,10 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
   const canWrite = cloudVmAppCenterCanWrite(status?.role, perm);
   const isAdmin = status?.role === "admin";
   const navigate = useNavigate();
+  const location = useLocation();
   const qc = useQueryClient();
+  const allowIncompleteBootstrap = (location.state as CloudVmRouteState | null)?.allowIncompleteBootstrap === true;
+  const incompleteBootstrapNavState = allowIncompleteBootstrap ? { allowIncompleteBootstrap: true } : undefined;
 
   const [mainTab, setMainTab] = useState<CloudVmPageTab>(initialTab);
   const [step, setStep] = useState(1);
@@ -374,7 +380,7 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
 
   const openCreateTab = () => {
     setStep(1);
-    navigate(CLOUD_VM_CREATE_PATH);
+    navigate(CLOUD_VM_CREATE_PATH, { state: incompleteBootstrapNavState });
   };
 
   if (bootQ.isLoading) {
@@ -386,7 +392,7 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
     );
   }
 
-  if (bootQ.data && !bootQ.data.bootstrapComplete) {
+  if (bootQ.data && !bootQ.data.bootstrapComplete && !allowIncompleteBootstrap) {
     if (isAdmin) {
       return <Navigate to={BOOTSTRAP_PATH} replace />;
     }
@@ -418,11 +424,11 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant={mainTab === "list" ? "default" : "outline"} size="sm" asChild>
-              <Link to={CLOUD_VM_LIST_PATH}>实例列表</Link>
+              <Link to={CLOUD_VM_LIST_PATH} state={incompleteBootstrapNavState}>实例列表</Link>
             </Button>
             {canWrite ? (
               <Button variant={mainTab === "create" ? "default" : "outline"} size="sm" asChild>
-                <Link to={CLOUD_VM_CREATE_PATH}>创建容器主机</Link>
+                <Link to={CLOUD_VM_CREATE_PATH} state={incompleteBootstrapNavState}>创建容器主机</Link>
               </Button>
             ) : null}
             {isAdmin ? (

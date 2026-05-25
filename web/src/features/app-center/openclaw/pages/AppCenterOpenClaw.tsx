@@ -89,6 +89,7 @@ type OpenClawDeployWait = {
 };
 type OpenClawRouteState = {
   deployWait?: OpenClawDeployWait;
+  allowIncompleteBootstrap?: boolean;
 };
 
 const OPENCLAW_CAPABILITIES = [
@@ -358,6 +359,8 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
   const isAdmin = status?.role === "admin";
   const navigate = useNavigate();
   const location = useLocation();
+  const allowIncompleteBootstrap = (location.state as OpenClawRouteState | null)?.allowIncompleteBootstrap === true;
+  const incompleteBootstrapNavState = allowIncompleteBootstrap ? { allowIncompleteBootstrap: true } : undefined;
 
   const bootstrapQ = useQuery({
     queryKey: ["app-openclaw-bootstrap"],
@@ -836,7 +839,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
 
   const openCreateTab = () => {
     setStep(1);
-    navigate(OPENCLAW_CREATE_PATH);
+    navigate(OPENCLAW_CREATE_PATH, { state: incompleteBootstrapNavState });
   };
 
   const submitDeploy = () => {
@@ -913,7 +916,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
       </p>
     );
   }
-  if (bootstrapQ.data && !bootstrapQ.data.bootstrapComplete) {
+  if (bootstrapQ.data && !bootstrapQ.data.bootstrapComplete && !allowIncompleteBootstrap) {
     if (isAdmin) {
       return <Navigate to={OPENCLAW_BOOTSTRAP_PATH} replace />;
     }
@@ -945,11 +948,11 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant={mainTab === "list" ? "default" : "outline"} size="sm" asChild>
-              <Link to={OPENCLAW_LIST_PATH}>实例列表</Link>
+              <Link to={OPENCLAW_LIST_PATH} state={incompleteBootstrapNavState}>实例列表</Link>
             </Button>
             {canWrite ? (
               <Button variant={mainTab === "create" ? "default" : "outline"} size="sm" asChild>
-                <Link to={OPENCLAW_CREATE_PATH}>创建 OpenClaw</Link>
+                <Link to={OPENCLAW_CREATE_PATH} state={incompleteBootstrapNavState}>创建 OpenClaw</Link>
               </Button>
             ) : null}
             {isAdmin ? (
