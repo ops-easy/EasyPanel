@@ -136,11 +136,12 @@ export default function AppCenterCloudVmBootstrap() {
               <code className="rounded bg-slate-100 px-1">appcenter_cloud_vm_bootstrap_v1</code>。
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 justify-self-start lg:justify-self-end">
+          <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end">
             <Button
               type="button"
               variant="outline"
               size="sm"
+              className="w-full sm:w-32"
               onClick={() => navigate(CLOUD_VM_LIST_PATH, { state: CLOUD_VM_BOOTSTRAP_NAV_STATE })}
             >
               实例列表
@@ -149,11 +150,18 @@ export default function AppCenterCloudVmBootstrap() {
               type="button"
               variant="outline"
               size="sm"
+              className="w-full sm:w-32"
               onClick={() => navigate(CLOUD_VM_CREATE_PATH, { state: CLOUD_VM_BOOTSTRAP_NAV_STATE })}
             >
               创建容器主机
             </Button>
-            <Button type="button" variant="default" size="sm" onClick={() => navigate(CLOUD_VM_BOOTSTRAP_PATH)}>
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              className="w-full sm:w-32"
+              onClick={() => navigate(CLOUD_VM_BOOTSTRAP_PATH)}
+            >
               引导配置
             </Button>
           </div>

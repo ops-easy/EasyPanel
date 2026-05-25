@@ -192,11 +192,12 @@ export default function AppCenterOpenClawBootstrap() {
               <code className="rounded bg-slate-100 px-1">appcenter_openclaw_bootstrap_v1</code> 等键。
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 justify-self-start lg:justify-self-end">
+          <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end">
             <Button
               type="button"
               variant="outline"
               size="sm"
+              className="w-full sm:w-32"
               onClick={() => navigate(OPENCLAW_LIST_PATH, { state: OPENCLAW_BOOTSTRAP_NAV_STATE })}
             >
               实例列表
@@ -205,11 +206,18 @@ export default function AppCenterOpenClawBootstrap() {
               type="button"
               variant="outline"
               size="sm"
+              className="w-full sm:w-32"
               onClick={() => navigate(OPENCLAW_CREATE_PATH, { state: OPENCLAW_BOOTSTRAP_NAV_STATE })}
             >
               创建 OpenClaw
             </Button>
-            <Button type="button" variant="default" size="sm" onClick={() => navigate(OPENCLAW_BOOTSTRAP_PATH)}>
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              className="w-full sm:w-32"
+              onClick={() => navigate(OPENCLAW_BOOTSTRAP_PATH)}
+            >
               引导配置
             </Button>
           </div>

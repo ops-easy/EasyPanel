@@ -410,29 +410,29 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
   return (
     <div className="space-y-5">
       <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">Container Host</p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-950">
               <HardDrive className="h-6 w-6 text-sky-600" />
               容器主机
             </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            <p className="mt-2 max-w-[860px] text-sm leading-6 text-slate-600">
               Kubernetes 中的轻量 SSH 工作机入口：支持镜像模板、规格与数据盘、NodePort 登录、初始化脚本、
               环境变量、自定义软件和 Hysteria2 出站代理。仅 <code className="rounded bg-slate-100 px-1">/data</code> 持久化。
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant={mainTab === "list" ? "default" : "outline"} size="sm" asChild>
+          <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end">
+            <Button variant={mainTab === "list" ? "default" : "outline"} size="sm" className="w-full sm:w-32" asChild>
               <Link to={CLOUD_VM_LIST_PATH} state={incompleteBootstrapNavState}>实例列表</Link>
             </Button>
             {canWrite ? (
-              <Button variant={mainTab === "create" ? "default" : "outline"} size="sm" asChild>
+              <Button variant={mainTab === "create" ? "default" : "outline"} size="sm" className="w-full sm:w-32" asChild>
                 <Link to={CLOUD_VM_CREATE_PATH} state={incompleteBootstrapNavState}>创建容器主机</Link>
               </Button>
             ) : null}
             {isAdmin ? (
-              <Button type="button" variant="outline" size="sm" className="gap-1.5" asChild>
+              <Button type="button" variant="outline" size="sm" className="w-full gap-1.5 sm:w-32" asChild>
                 <Link to={BOOTSTRAP_PATH}>
                   <Settings2 className="h-4 w-4" />
                   引导配置
@@ -640,7 +640,7 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
               </CardHeader>
               <CardContent className="space-y-4 pt-6">
                 {step === 1 && (
-                  <div className="grid max-w-xl gap-4">
+                  <div className="grid gap-4 lg:grid-cols-3">
                     <div>
                       <Label>容器主机名称</Label>
                       <Input
@@ -698,7 +698,7 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
                 )}
 
                 {step === 2 && (
-                  <div className="grid max-w-2xl gap-4">
+                  <div className="grid gap-4 lg:grid-cols-2">
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
                         <Label>CPU 申请（request）</Label>
@@ -747,7 +747,7 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
                 )}
 
                 {step === 3 && (
-                  <div className="grid max-w-2xl gap-4">
+                  <div className="grid gap-4 lg:grid-cols-2">
                     <div>
                       <Label>初始化脚本（bash，可选）</Label>
                       <Textarea
@@ -804,15 +804,15 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
                 )}
 
                 {step === 4 && (
-                  <div className="grid max-w-2xl gap-5">
-                    <p className="text-sm text-slate-600">
+                  <div className="grid gap-5 lg:grid-cols-2">
+                    <p className="text-sm text-slate-600 lg:col-span-2">
                       以下为可选自动化安装：会优先切换 Ubuntu 软件源至阿里云镜像；<strong>应用数据</strong>写入{" "}
                       <code className="rounded bg-slate-100 px-1">/data</code>（Docker 数据目录、Nginx 站点根目录、宝塔相关日志与安装脚本等）。命令行工具通过 apt 装在系统路径，不单独放到{" "}
                       <code className="rounded bg-slate-100 px-1">/data</code>。
                     </p>
                     <div>
                       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">软件 / 服务</p>
-                      <div className="grid max-w-xl gap-3">
+                      <div className="grid gap-3">
                         <label
                           className={cn(
                             "flex cursor-pointer gap-3 rounded-xl border p-3.5 shadow-sm transition-all",

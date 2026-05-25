@@ -251,21 +251,27 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
   return (
     <div className="space-y-5">
       <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-fuchsia-600">Hermes Agent</p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-950">
               <Bot className="h-6 w-6 text-fuchsia-600" />
               Hermes 应用
             </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            <p className="mt-2 max-w-[860px] text-sm leading-6 text-slate-600">
               基于 NousResearch/hermes-agent 的 K8s 部署入口：支持 Gateway、Dashboard、Gateway + Dashboard 三种模式，
               PVC 持久化、Secret 注入、访问暴露、运行时探测、升级回滚与日志事件回读。
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end">
             {(["list", "create", "bootstrap"] as const).map((id) => (
-              <Button key={id} variant={tab === id ? "default" : "outline"} size="sm" onClick={() => setTab(id)}>
+              <Button
+                key={id}
+                variant={tab === id ? "default" : "outline"}
+                size="sm"
+                className="w-full sm:w-32"
+                onClick={() => setTab(id)}
+              >
                 {id === "list" ? "实例列表" : id === "create" ? "部署实例" : "引导配置"}
               </Button>
             ))}

@@ -934,29 +934,29 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
   return (
     <div className="space-y-5">
       <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">OpenClaw Gateway</p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-950">
               <Bot className="h-6 w-6 text-violet-600" />
               OpenClaw 网关
             </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            <p className="mt-2 max-w-[860px] text-sm leading-6 text-slate-600">
               K8s 内 OpenClaw 网关部署入口：支持 NodePort、Ingress、模型预设、网关探针、对话侧栏、RBAC
               预设与工具链配置。实例创建后，网关 Token、模型切换和运行时修复集中在详情页管理。
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant={mainTab === "list" ? "default" : "outline"} size="sm" asChild>
+          <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end">
+            <Button variant={mainTab === "list" ? "default" : "outline"} size="sm" className="w-full sm:w-32" asChild>
               <Link to={OPENCLAW_LIST_PATH} state={incompleteBootstrapNavState}>实例列表</Link>
             </Button>
             {canWrite ? (
-              <Button variant={mainTab === "create" ? "default" : "outline"} size="sm" asChild>
+              <Button variant={mainTab === "create" ? "default" : "outline"} size="sm" className="w-full sm:w-32" asChild>
                 <Link to={OPENCLAW_CREATE_PATH} state={incompleteBootstrapNavState}>创建 OpenClaw</Link>
               </Button>
             ) : null}
             {isAdmin ? (
-              <Button type="button" variant="outline" size="sm" className="gap-1.5" asChild>
+              <Button type="button" variant="outline" size="sm" className="w-full gap-1.5 sm:w-32" asChild>
                 <Link to={OPENCLAW_BOOTSTRAP_PATH}>
                   <Settings2 className="h-4 w-4" />
                   引导配置
@@ -1306,12 +1306,12 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                 <CardDescription>
                   与容器主机相同的分步流程：资源名称须符合 DNS 标签规则；Secret 中变量名固定为 OPENAI_API_KEY / OPENAI_BASE_URL / GEMINI_API_KEY 等，由下方表单写入值。
                 </CardDescription>
-                <ol className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:gap-4">
+                <ol className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
                   {STEPS.map((s) => (
                     <li
                       key={s.n}
                       className={cn(
-                        "flex min-w-0 flex-1 items-start gap-3 rounded-lg border px-3 py-2.5 text-left sm:max-w-[220px]",
+                        "flex min-w-0 items-start gap-3 rounded-lg border px-3 py-2.5 text-left",
                         step === s.n
                           ? "border-violet-400 bg-violet-50/90"
                           : step > s.n
@@ -1341,7 +1341,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
               </CardHeader>
               <CardContent className="space-y-4 pt-6">
                 {step === 1 && (
-                  <div className="grid max-w-2xl gap-4">
+                  <div className="grid gap-4 lg:grid-cols-2">
                     {bootstrapModes.length > 0 ? (
                       <div className="space-y-2 rounded-lg border border-violet-200/90 bg-violet-50/50 p-3">
                         <Label>部署模式</Label>
@@ -1415,7 +1415,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 lg:col-span-2">
                       <Label>命名空间</Label>
                       {nsQ.isLoading ? (
                         <p className="text-sm text-slate-500">正在加载集群命名空间…</p>
@@ -1475,7 +1475,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                         <code className="rounded bg-slate-100 px-0.5">kubectl get ns</code> 一致。
                       </p>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:col-span-2">
                       <div className="space-y-2">
                         <Label>Deployment 名称</Label>
                         <Input
@@ -1499,8 +1499,8 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                 )}
 
                 {step === 2 && (
-                  <div className="grid max-w-2xl gap-4">
-                    <div className="space-y-2">
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="space-y-2 lg:col-span-2">
                       <Label>暴露方式</Label>
                       <Select value={exposeMode} onValueChange={(v) => setExposeMode(v as "nodeport" | "ingress")}>
                         <SelectTrigger>
@@ -1564,7 +1564,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                         </div>
                       </>
                     ) : (
-                      <p className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-600">
+                      <p className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-600 lg:col-span-2">
                         将创建 NodePort 类型 Service，<strong>不指定 NodePort 字段</strong>，由 Kubernetes 在 30000–32767
                         内分配。外网访问示例为「节点访问 IP + 分配端口」；列表中展示分配结果。
                       </p>
@@ -1573,8 +1573,8 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                 )}
 
                 {step === 3 && (
-                  <div className="grid max-w-2xl gap-4">
-                    <div className="space-y-2 sm:col-span-2">
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="space-y-2 lg:col-span-2">
                       <Label>大模型预设</Label>
                       <Select
                         value={preset}
@@ -1595,7 +1595,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-3 sm:col-span-2 rounded-lg border border-teal-200/80 bg-teal-50/40 p-3">
+                    <div className="space-y-3 rounded-lg border border-teal-200/80 bg-teal-50/40 p-3 lg:col-span-2">
                       <p className="text-sm font-medium text-slate-900">OpenClaw 工具链（tools.profile）</p>
                       <p className="text-[11px] leading-relaxed text-slate-600">
                         写入首次下发 ConfigMap 中的 <code className="rounded bg-white/70 px-0.5">openclaw.json</code>；与网关镜像能力需匹配。安装后可在<strong>详情 → 管理配置</strong>再次应用并滚动重启。
@@ -1712,7 +1712,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                         <code className="rounded bg-white/80 px-1">https://api.moonshot.cn/v1</code>。
                       </p>
                     ) : null}
-                    <div className="space-y-2 sm:col-span-2">
+                    <div className="space-y-2 lg:col-span-2">
                       <Label>上游模型名（写入登记，请求 OpenAI 兼容接口时的 model）</Label>
                       <Input
                         value={chatModel}
@@ -1729,7 +1729,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                         极简 <code className="rounded bg-slate-100 px-0.5">chat/completions</code> 校验；仅对国内模型预设与 Ollama 强制校验，通过后才会真正创建集群资源。
                       </p>
                     </div>
-                    <div className="space-y-2 sm:col-span-2">
+                    <div className="space-y-2 lg:col-span-2">
                       <Label>
                         OPENAI_API_KEY（写入 Secret）
                         {preset === "ollama"
@@ -1754,7 +1754,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                         placeholder="按厂商要求填写"
                       />
                     </div>
-                    <div className="space-y-2 sm:col-span-2">
+                    <div className="space-y-2 lg:col-span-2">
                       <Label>
                         覆盖 OPENAI_BASE_URL（可选）
                         {preset === "ollama" ? " · Ollama 强烈建议填写集群内 /v1 根地址" : ""}
@@ -1770,7 +1770,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                         }
                       />
                     </div>
-                    <div className="space-y-2 sm:col-span-2">
+                    <div className="space-y-2 lg:col-span-2">
                       <Label>GEMINI_API_KEY（可选）</Label>
                       <Input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} autoComplete="off" />
                     </div>
@@ -1780,17 +1780,17 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                           precheckResult.ok
                             ? "border-emerald-200 bg-emerald-50 text-emerald-900"
                             : "border-red-200 bg-red-50 text-red-900"
-                        }`}
+                        } lg:col-span-2`}
                       >
                         <p className="font-medium">{precheckResult.ok ? "上游预检通过" : "上游预检失败"}</p>
                         <p className="break-words">{precheckResult.message}</p>
                       </div>
                     ) : null}
-                    <div className="space-y-2 sm:col-span-2">
+                    <div className="space-y-2 lg:col-span-2">
                       <Label>列表显示名称（可空，默认 Deployment 名）</Label>
                       <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="前台展示用" />
                     </div>
-                    <div className="space-y-2 sm:col-span-2 rounded-lg border border-fuchsia-200/80 bg-fuchsia-50/40 px-3 py-3">
+                    <div className="space-y-2 rounded-lg border border-fuchsia-200/80 bg-fuchsia-50/40 px-3 py-3 lg:col-span-2">
                       <p className="text-sm font-medium text-slate-800">出站与 HTTP(S) 代理（可选）</p>
                       <p className="text-[11px] leading-relaxed text-slate-600">
                         若容器主机已装 <strong>Hysteria2 客户端</strong>，可在此登记其平台 ID，供「管理配置」中在 Pod 内做{" "}

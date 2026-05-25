@@ -117,3 +117,19 @@ test("OpenClaw and container host page switchers expose list create and bootstra
     }
   }
 });
+
+test("Hermes OpenClaw and container host use the same fixed page switcher sizing", () => {
+  const sources = [
+    "../src/features/app-center/hermes/pages/AppCenterHermes.tsx",
+    "../src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+    "../src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx",
+    "../src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
+    "../src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx",
+  ];
+
+  for (const sourcePath of sources) {
+    const source = read(sourcePath);
+    assert.match(source, /grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end/);
+    assert.match(source, /sm:w-32/);
+  }
+});
