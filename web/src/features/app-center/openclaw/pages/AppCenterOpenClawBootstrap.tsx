@@ -6,6 +6,7 @@ import { useAuth } from "@/auth/auth-context";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -179,50 +180,43 @@ export default function AppCenterOpenClawBootstrap() {
     );
   }
 
+  const onTabChange = (value: string) => {
+    if (value === "create") {
+      navigate(OPENCLAW_CREATE_PATH, { state: OPENCLAW_BOOTSTRAP_NAV_STATE });
+      return;
+    }
+    if (value === "list") {
+      navigate(OPENCLAW_LIST_PATH, { state: { ...OPENCLAW_BOOTSTRAP_NAV_STATE, mainTab: "list" } });
+      return;
+    }
+    navigate(OPENCLAW_BOOTSTRAP_PATH);
+  };
+
   return (
     <div className="mx-auto w-full space-y-6">
-      <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">OpenClaw Bootstrap</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">OpenClaw 网关镜像与命名空间</h1>
-            <p className="mt-2 max-w-[860px] text-sm leading-6 text-slate-600">
-              在此统一维护<strong>部署模式</strong>（网关 / Init 镜像地址）与可选的<strong>平台镜像目录 JSON</strong>。前台创建实例与实例详情<strong>不再</strong>提供镜像地址编辑，仅按此处模板选择模式。
-              保存后可在 <code className="rounded bg-slate-100 px-1">platform_kv</code> 调整{" "}
-              <code className="rounded bg-slate-100 px-1">appcenter_openclaw_bootstrap_v1</code> 等键。
-            </p>
-          </div>
-          <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full sm:w-32"
-              onClick={() => navigate(OPENCLAW_LIST_PATH, { state: OPENCLAW_BOOTSTRAP_NAV_STATE })}
-            >
-              实例列表
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full sm:w-32"
-              onClick={() => navigate(OPENCLAW_CREATE_PATH, { state: OPENCLAW_BOOTSTRAP_NAV_STATE })}
-            >
-              创建 OpenClaw
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="sm"
-              className="w-full sm:w-32"
-              onClick={() => navigate(OPENCLAW_BOOTSTRAP_PATH)}
-            >
-              引导配置
-            </Button>
-          </div>
-        </div>
+      <section className="rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/90 via-white to-slate-50/80 px-6 py-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-indigo-900/80">应用中心</p>
+        <h1 className="mt-1 text-2xl font-semibold text-slate-900">OpenClaw 网关镜像与命名空间</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          在此统一维护<strong>部署模式</strong>（网关 / Init 镜像地址）与可选的<strong>平台镜像目录 JSON</strong>。前台创建实例与实例详情<strong>不再</strong>提供镜像地址编辑，仅按此处模板选择模式。
+          保存后可在 <code className="rounded bg-slate-100 px-1">platform_kv</code> 调整{" "}
+          <code className="rounded bg-slate-100 px-1">appcenter_openclaw_bootstrap_v1</code> 等键。
+        </p>
       </section>
+
+      <Tabs value="bootstrap" onValueChange={onTabChange} className="gap-3">
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-slate-200/80 bg-slate-50/80 p-1">
+          <TabsTrigger value="create" className="rounded-lg">
+            部署向导
+          </TabsTrigger>
+          <TabsTrigger value="bootstrap" className="rounded-lg">
+            模板配置
+          </TabsTrigger>
+          <TabsTrigger value="list" className="rounded-lg">
+            已部署实例
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="space-y-2 rounded-lg border border-slate-100 bg-slate-50/70 p-4">

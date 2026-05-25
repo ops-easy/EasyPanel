@@ -9,6 +9,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { apiDelete, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import { cloudVmAppCenterCanWrite } from "@/lib/platform-permissions";
@@ -81,7 +82,7 @@ const HERMES_CAPABILITIES = [
 
 export type HermesPageTab = "list" | "create" | "bootstrap";
 
-const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab = "list" }) => {
+const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab = "create" }) => {
   const qc = useQueryClient();
   const { status } = useAuth();
   const isAdmin = status?.role === "admin";
@@ -250,37 +251,33 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-fuchsia-600">Hermes Agent</p>
-            <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-950">
-              <Bot className="h-6 w-6 text-fuchsia-600" />
-              Hermes 应用
-            </h1>
-            <p className="mt-2 max-w-[860px] text-sm leading-6 text-slate-600">
-              基于 NousResearch/hermes-agent 的 K8s 部署入口：支持 Gateway、Dashboard、Gateway + Dashboard 三种模式，
-              PVC 持久化、Secret 注入、访问暴露、运行时探测、升级回滚与日志事件回读。
-            </p>
-          </div>
-          <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end">
-            {(["list", "create", "bootstrap"] as const).map((id) => (
-              <Button
-                key={id}
-                variant={tab === id ? "default" : "outline"}
-                size="sm"
-                className="w-full sm:w-32"
-                onClick={() => setTab(id)}
-              >
-                {id === "list" ? "实例列表" : id === "create" ? "部署实例" : "引导配置"}
-              </Button>
-            ))}
-          </div>
-        </div>
+      <section className="rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/90 via-white to-slate-50/80 px-6 py-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-indigo-900/80">应用中心</p>
+        <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-slate-900">
+          <Bot className="h-7 w-7 text-indigo-600" />
+          Hermes 应用
+        </h1>
+        <p className="mt-2 max-w-3xl text-sm text-slate-600">
+          基于 NousResearch/hermes-agent 的 K8s 部署入口：支持 Gateway、Dashboard、Gateway + Dashboard 三种模式，
+          PVC 持久化、Secret 注入、访问暴露、运行时探测、升级回滚与日志事件回读。
+        </p>
       </section>
 
+      <Tabs value={tab} onValueChange={(value) => setTab(value as HermesPageTab)} className="gap-3">
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-slate-200/80 bg-slate-50/80 p-1">
+          <TabsTrigger value="create" className="rounded-lg">
+            部署向导
+          </TabsTrigger>
+          <TabsTrigger value="bootstrap" className="rounded-lg">
+            模板配置
+          </TabsTrigger>
+          <TabsTrigger value="list" className="rounded-lg">
+            已部署实例
+          </TabsTrigger>
+        </TabsList>
+
       {tab === "list" ? (
-        <>
+        <TabsContent value="list" className="outline-none">
           <section className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs text-slate-500">实例</p>
@@ -407,10 +404,11 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
               </Table>
             </div>
           </section>
-        </>
+        </TabsContent>
       ) : null}
 
       {tab === "create" ? (
+        <TabsContent value="create" className="outline-none">
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-slate-950">部署到 Kubernetes</h2>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -476,11 +474,13 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
             </Button>
           </div>
         </section>
+        </TabsContent>
       ) : null}
 
       {tab === "bootstrap" ? (
+        <TabsContent value="bootstrap" className="outline-none">
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-950">Hermes 引导配置</h2>
+          <h2 className="text-sm font-semibold text-slate-950">Hermes 模板配置</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             引导配置决定部署表单的默认命名空间、镜像、模式和模型字段；保存后不会覆盖已经创建的实例。
           </p>
@@ -513,10 +513,12 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
           </div>
           <Button className="mt-5 gap-2 bg-fuchsia-600 hover:bg-fuchsia-700" disabled={!canWrite || saveBootMut.isPending} onClick={() => saveBootMut.mutate()}>
             {saveBootMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings2 className="h-4 w-4" />}
-            保存引导配置
+            保存模板配置
           </Button>
         </section>
+        </TabsContent>
       ) : null}
+      </Tabs>
 
       {rows.length > 0 ? (
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

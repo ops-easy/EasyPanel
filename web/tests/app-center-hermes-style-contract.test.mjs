@@ -3,133 +3,120 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
-const readOptional = (path) => {
-  try {
-    return read(path);
-  } catch {
-    return "";
-  }
-};
 
-test("OpenClaw overview follows the Hermes app-center page rhythm", () => {
-  const source = read("../src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx");
+const openSearchTabsList =
+  /TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-slate-200\/80 bg-slate-50\/80 p-1"/;
 
-  assert.match(source, /const OPENCLAW_CAPABILITIES = \[/);
-  assert.match(source, /OpenClaw 管理能力/);
-  assert.match(source, /grid gap-3 sm:grid-cols-3/);
-  assert.match(source, /实例列表/);
-  assert.match(source, /创建 OpenClaw/);
-  assert.match(source, /引导配置/);
-  for (const label of ["部署网关", "对话侧栏", "网关探针", "访问暴露", "模型预设", "RBAC 与工具链"]) {
-    assert.match(source, new RegExp(label));
-  }
+test("OpenSearch remains the app-center tab rhythm reference", () => {
+  const source = read("../src/features/app-center/opensearch/pages/AppCenterOpenSearch.tsx");
 
-  assert.doesNotMatch(source, /bg-gradient-to-br/);
-  assert.doesNotMatch(source, /TabsList|TabsTrigger|TabsContent|<Tabs/);
+  assert.match(source, /bg-gradient-to-br/);
+  assert.match(source, /<Tabs value=\{tab\}/);
+  assert.match(source, openSearchTabsList);
+  assert.match(source, /TabsTrigger value="deploy"/);
+  assert.match(source, /TabsTrigger value="templates"/);
+  assert.match(source, /TabsTrigger value="instances"/);
+  assert.match(source, /TabsContent value="deploy"/);
 });
 
-test("container host overview follows the Hermes app-center page rhythm", () => {
-  const source = read("../src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx");
+test("Hermes uses OpenSearch-style page tabs instead of header buttons", () => {
+  const source = read("../src/features/app-center/hermes/pages/AppCenterHermes.tsx");
 
-  assert.match(source, /const CLOUD_VM_CAPABILITIES = \[/);
-  assert.match(source, /容器主机管理能力/);
-  assert.match(source, /grid gap-3 sm:grid-cols-3/);
-  assert.match(source, /实例列表/);
-  assert.match(source, /创建容器主机/);
-  assert.match(source, /引导配置/);
-  for (const label of ["SSH 工作机", "持久化数据盘", "资源监控", "自定义软件", "出站代理", "初始化脚本"]) {
-    assert.match(source, new RegExp(label));
-  }
-
-  assert.doesNotMatch(source, /bg-gradient-to-br/);
-  assert.doesNotMatch(source, /TabsList|TabsTrigger|TabsContent|<Tabs/);
+  assert.match(source, /initialTab = "create"/);
+  assert.match(source, /from "@\/shared\/ui\/tabs"/);
+  assert.match(source, /bg-gradient-to-br/);
+  assert.match(source, /<Tabs value=\{tab\}/);
+  assert.match(source, openSearchTabsList);
+  assert.match(source, /TabsTrigger value="create"[\s\S]*部署向导[\s\S]*TabsTrigger/);
+  assert.match(source, /TabsTrigger value="bootstrap"[\s\S]*模板配置[\s\S]*TabsTrigger/);
+  assert.match(source, /TabsTrigger value="list"[\s\S]*已部署实例[\s\S]*TabsTrigger/);
+  assert.match(source, /TabsContent value="create"/);
+  assert.match(source, /TabsContent value="bootstrap"/);
+  assert.match(source, /TabsContent value="list"/);
+  assert.doesNotMatch(source, /grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end/);
+  assert.doesNotMatch(source, /sm:w-32/);
 });
 
-for (const [name, path] of [
-  ["OpenClaw", "../src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx"],
-  ["container host", "../src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx"],
-]) {
-  test(`${name} bootstrap follows the Hermes card rhythm`, () => {
-    const source = read(path);
-
-    assert.match(source, /rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm/);
-    assert.match(source, /rounded-xl border border-slate-200 bg-white p-5 shadow-sm/);
-    assert.doesNotMatch(source, /bg-gradient-to-br|rounded-2xl|PAGE_PATH|navigator\.clipboard|Copy className/);
-  });
-}
-
-test("OpenClaw bootstrap uses neutral panels and actions", () => {
-  const source = read("../src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx");
-
-  assert.doesNotMatch(source, /border-violet-200|bg-violet-50|bg-violet-600|hover:bg-violet-700/);
-});
-
-test("container host bootstrap uses neutral panels and actions", () => {
-  const source = read("../src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx");
-
-  assert.doesNotMatch(
-    source,
-    /border-emerald-200|bg-emerald-50|border-emerald-100|bg-fuchsia-50|border-fuchsia-200|bg-emerald-600|hover:bg-emerald-700/,
-  );
-});
-
-test("OpenClaw and container host expose Hermes-style create routes", () => {
-  const routes = read("../src/app/routes/app-center-routes.tsx");
-  const cloudVmCreate = readOptional("../src/features/app-center/cloudvm/pages/AppCenterCloudVmCreate.tsx");
-  const openClawCreate = readOptional("../src/features/app-center/openclaw/pages/AppCenterOpenClawCreate.tsx");
-
-  assert.match(routes, /const AppCenterCloudVmCreate = lazy/);
-  assert.match(routes, /const AppCenterOpenClawCreate = lazy/);
-  assert.match(routes, /path="cloud-vm\/create"/);
-  assert.match(routes, /path="openclaw\/create"/);
-  assert.match(cloudVmCreate, /<AppCenterCloudVm initialTab="create" \/>/);
-  assert.match(openClawCreate, /<AppCenterOpenClaw initialTab="create" \/>/);
-});
-
-test("OpenClaw and container host page switchers expose list create and bootstrap", () => {
+test("OpenClaw and container host overview pages use OpenSearch-style tabs", () => {
   const cases = [
     {
-      name: "container host",
-      list: "../src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx",
-      bootstrap: "../src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx",
-      base: "/cluster/apps/cloud-vm",
-      create: "/cluster/apps/cloud-vm/create",
-      bootstrapPath: "/cluster/apps/cloud-vm/bootstrap",
+      sourcePath: "../src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
+      listPath: "/cluster/apps/openclaw",
+      createPath: "/cluster/apps/openclaw/create",
+      bootstrapPath: "/cluster/apps/openclaw/bootstrap",
     },
     {
-      name: "OpenClaw",
-      list: "../src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      bootstrap: "../src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
-      base: "/cluster/apps/openclaw",
-      create: "/cluster/apps/openclaw/create",
-      bootstrapPath: "/cluster/apps/openclaw/bootstrap",
+      sourcePath: "../src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx",
+      listPath: "/cluster/apps/cloud-vm",
+      createPath: "/cluster/apps/cloud-vm/create",
+      bootstrapPath: "/cluster/apps/cloud-vm/bootstrap",
     },
   ];
 
   for (const item of cases) {
-    for (const sourcePath of [item.list, item.bootstrap]) {
-      const source = read(sourcePath);
-      assert.match(source, new RegExp(item.base.replaceAll("/", "\\/")), `${item.name} should link list page`);
-      assert.match(source, new RegExp(item.create.replaceAll("/", "\\/")), `${item.name} should link create page`);
-      assert.match(source, new RegExp(item.bootstrapPath.replaceAll("/", "\\/")), `${item.name} should link bootstrap page`);
-      assert.match(source, /实例列表/);
-      assert.match(source, /引导配置/);
-    }
+    const source = read(item.sourcePath);
+    assert.match(source, /initialTab = "create"/);
+    assert.match(source, /from "@\/shared\/ui\/tabs"/);
+    assert.match(source, /bg-gradient-to-br/);
+    assert.match(source, /<Tabs value=\{mainTab\}/);
+    assert.match(source, openSearchTabsList);
+    assert.match(source, /TabsTrigger value="create"[\s\S]*部署向导[\s\S]*TabsTrigger/);
+    assert.match(source, /TabsTrigger value="bootstrap"[\s\S]*模板配置[\s\S]*TabsTrigger/);
+    assert.match(source, /TabsTrigger value="list"[\s\S]*已部署实例[\s\S]*TabsTrigger/);
+    assert.match(source, /mainTab: "list"/);
+    assert.match(source, /TabsContent value="create"/);
+    assert.match(source, /TabsContent value="list"/);
+    assert.match(source, new RegExp(item.listPath.replaceAll("/", "\\/")));
+    assert.match(source, new RegExp(item.createPath.replaceAll("/", "\\/")));
+    assert.match(source, new RegExp(item.bootstrapPath.replaceAll("/", "\\/")));
+    assert.doesNotMatch(source, /grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end/);
+    assert.doesNotMatch(source, /sm:w-32/);
   }
 });
 
-test("Hermes OpenClaw and container host use the same fixed page switcher sizing", () => {
-  const sources = [
-    "../src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-    "../src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-    "../src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx",
-    "../src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
-    "../src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx",
+test("OpenClaw and container host bootstrap pages use the same OpenSearch-style tabs", () => {
+  const cases = [
+    {
+      sourcePath: "../src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
+      listPath: "/cluster/apps/openclaw",
+      createPath: "/cluster/apps/openclaw/create",
+      bootstrapPath: "/cluster/apps/openclaw/bootstrap",
+    },
+    {
+      sourcePath: "../src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx",
+      listPath: "/cluster/apps/cloud-vm",
+      createPath: "/cluster/apps/cloud-vm/create",
+      bootstrapPath: "/cluster/apps/cloud-vm/bootstrap",
+    },
   ];
 
-  for (const sourcePath of sources) {
-    const source = read(sourcePath);
-    assert.match(source, /grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end/);
-    assert.match(source, /sm:w-32/);
+  for (const item of cases) {
+    const source = read(item.sourcePath);
+    assert.match(source, /from "@\/shared\/ui\/tabs"/);
+    assert.match(source, /rounded-2xl border border-indigo-200\/80 bg-gradient-to-br from-indigo-50\/90 via-white to-slate-50\/80 px-6 py-6 shadow-sm/);
+    assert.match(source, /<Tabs value="bootstrap"/);
+    assert.match(source, openSearchTabsList);
+    assert.match(source, /TabsTrigger value="create"[\s\S]*部署向导[\s\S]*TabsTrigger/);
+    assert.match(source, /TabsTrigger value="bootstrap"[\s\S]*模板配置[\s\S]*TabsTrigger/);
+    assert.match(source, /TabsTrigger value="list"[\s\S]*已部署实例[\s\S]*TabsTrigger/);
+    assert.match(source, new RegExp(item.listPath.replaceAll("/", "\\/")));
+    assert.match(source, new RegExp(item.createPath.replaceAll("/", "\\/")));
+    assert.match(source, new RegExp(item.bootstrapPath.replaceAll("/", "\\/")));
+    assert.doesNotMatch(source, /grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end/);
+    assert.doesNotMatch(source, /sm:w-32/);
   }
+});
+
+test("create route wrappers still mount the tabbed app pages", () => {
+  const routes = read("../src/app/routes/app-center-routes.tsx");
+  const cloudVmCreate = read("../src/features/app-center/cloudvm/pages/AppCenterCloudVmCreate.tsx");
+  const openClawCreate = read("../src/features/app-center/openclaw/pages/AppCenterOpenClawCreate.tsx");
+  const hermesCreate = read("../src/features/app-center/hermes/pages/AppCenterHermesCreate.tsx");
+
+  assert.match(routes, /path="cloud-vm\/create"/);
+  assert.match(routes, /path="openclaw\/create"/);
+  assert.match(routes, /path="hermes\/create"/);
+  assert.match(cloudVmCreate, /<AppCenterCloudVm initialTab="create" \/>/);
+  assert.match(openClawCreate, /<AppCenterOpenClaw initialTab="create" \/>/);
+  assert.match(hermesCreate, /<AppCenterHermes initialTab="create" \/>/);
 });

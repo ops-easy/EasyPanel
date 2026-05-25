@@ -20,7 +20,6 @@ import {
   Network,
   Plus,
   RefreshCw,
-  Settings2,
 } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
 import { Badge } from "@/shared/ui/badge";
@@ -38,6 +37,7 @@ import {
 } from "@/shared/ui/table";
 import { Textarea } from "@/shared/ui/textarea";
 import { Checkbox } from "@/shared/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { apiGetJson, apiPostJson } from "@/lib/api";
 import { cloudVmAppCenterCanWrite } from "@/lib/platform-permissions";
 import { LogoBaota, LogoDocker, LogoHysteria2, LogoNginx } from "@/features/app-center/cloudvm/components/CloudVmSoftwareLogos";
@@ -47,9 +47,10 @@ import { toast } from "sonner";
 const CLOUD_VM_LIST_PATH = "/cluster/apps/cloud-vm";
 const CLOUD_VM_CREATE_PATH = "/cluster/apps/cloud-vm/create";
 const BOOTSTRAP_PATH = "/cluster/apps/cloud-vm/bootstrap";
-type CloudVmPageTab = "list" | "create";
+type CloudVmPageTab = "list" | "create" | "bootstrap";
 type CloudVmRouteState = {
   allowIncompleteBootstrap?: boolean;
+  mainTab?: CloudVmPageTab;
 };
 
 const CLOUD_VM_CAPABILITIES = [
@@ -187,7 +188,7 @@ const CLI_PKG_OPTIONS: { id: string; label: string; Icon: LucideIcon }[] = [
   { id: "net-tools", label: "net-tools", Icon: Network },
 ];
 
-export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?: CloudVmPageTab }) {
+export default function AppCenterCloudVm({ initialTab = "create" }: { initialTab?: CloudVmPageTab }) {
   const { status } = useAuth();
   const perm = status?.permissions;
   const canWrite = cloudVmAppCenterCanWrite(status?.role, perm);
@@ -195,18 +196,24 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
   const navigate = useNavigate();
   const location = useLocation();
   const qc = useQueryClient();
-  const allowIncompleteBootstrap = (location.state as CloudVmRouteState | null)?.allowIncompleteBootstrap === true;
+  const routeState = location.state as CloudVmRouteState | null;
+  const allowIncompleteBootstrap = routeState?.allowIncompleteBootstrap === true;
   const incompleteBootstrapNavState = allowIncompleteBootstrap ? { allowIncompleteBootstrap: true } : undefined;
+  const routeMainTab =
+    routeState?.mainTab === "list" || routeState?.mainTab === "create" || routeState?.mainTab === "bootstrap"
+      ? routeState.mainTab
+      : undefined;
+  const effectiveInitialTab = routeMainTab ?? initialTab;
 
-  const [mainTab, setMainTab] = useState<CloudVmPageTab>(initialTab);
+  const [mainTab, setMainTab] = useState<CloudVmPageTab>(effectiveInitialTab);
   const [step, setStep] = useState(1);
 
   useEffect(() => {
-    setMainTab(initialTab);
-    if (initialTab === "create") {
+    setMainTab(effectiveInitialTab);
+    if (effectiveInitialTab === "create") {
       setStep(1);
     }
-  }, [initialTab]);
+  }, [effectiveInitialTab]);
 
   const bootQ = useQuery({
     queryKey: ["app-center-cloud-vm-bootstrap"],
@@ -383,6 +390,23 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
     navigate(CLOUD_VM_CREATE_PATH, { state: incompleteBootstrapNavState });
   };
 
+  const onMainTabChange = (value: string) => {
+    const next = value as CloudVmPageTab;
+    setMainTab(next);
+    if (next === "create") {
+      setStep(1);
+      navigate(CLOUD_VM_CREATE_PATH, { state: incompleteBootstrapNavState });
+      return;
+    }
+    if (next === "bootstrap") {
+      navigate(BOOTSTRAP_PATH);
+      return;
+    }
+    navigate(CLOUD_VM_LIST_PATH, {
+      state: { ...incompleteBootstrapNavState, mainTab: "list" },
+    });
+  };
+
   if (bootQ.isLoading) {
     return (
       <p className="flex items-center gap-2 text-sm text-slate-500">
@@ -409,46 +433,39 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">Container Host</p>
-            <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-950">
-              <HardDrive className="h-6 w-6 text-sky-600" />
-              容器主机
-            </h1>
-            <p className="mt-2 max-w-[860px] text-sm leading-6 text-slate-600">
-              Kubernetes 中的轻量 SSH 工作机入口：支持镜像模板、规格与数据盘、NodePort 登录、初始化脚本、
-              环境变量、自定义软件和 Hysteria2 出站代理。仅 <code className="rounded bg-slate-100 px-1">/data</code> 持久化。
-            </p>
-          </div>
-          <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end">
-            <Button variant={mainTab === "list" ? "default" : "outline"} size="sm" className="w-full sm:w-32" asChild>
-              <Link to={CLOUD_VM_LIST_PATH} state={incompleteBootstrapNavState}>实例列表</Link>
-            </Button>
-            {canWrite ? (
-              <Button variant={mainTab === "create" ? "default" : "outline"} size="sm" className="w-full sm:w-32" asChild>
-                <Link to={CLOUD_VM_CREATE_PATH} state={incompleteBootstrapNavState}>创建容器主机</Link>
-              </Button>
-            ) : null}
-            {isAdmin ? (
-              <Button type="button" variant="outline" size="sm" className="w-full gap-1.5 sm:w-32" asChild>
-                <Link to={BOOTSTRAP_PATH}>
-                  <Settings2 className="h-4 w-4" />
-                  引导配置
-                </Link>
-              </Button>
-            ) : null}
-          </div>
-        </div>
+      <section className="rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/90 via-white to-slate-50/80 px-6 py-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-indigo-900/80">应用中心</p>
+        <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-slate-900">
+          <HardDrive className="h-7 w-7 text-indigo-600" />
+          容器主机
+        </h1>
+        <p className="mt-2 max-w-3xl text-sm text-slate-600">
+          Kubernetes 中的轻量 SSH 工作机入口：支持镜像模板、规格与数据盘、NodePort 登录、初始化脚本、
+          环境变量、自定义软件和 Hysteria2 出站代理。仅 <code className="rounded bg-slate-100 px-1">/data</code> 持久化。
+        </p>
       </section>
 
       {listQ.data?.mysqlRequired && (
         <p className="text-sm text-amber-800">需要 MySQL 以保存实例元数据。</p>
       )}
 
+      <Tabs value={mainTab} onValueChange={onMainTabChange} className="gap-3">
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-slate-200/80 bg-slate-50/80 p-1">
+          <TabsTrigger value="create" className="rounded-lg">
+            部署向导
+          </TabsTrigger>
+          {isAdmin ? (
+            <TabsTrigger value="bootstrap" className="rounded-lg">
+              模板配置
+            </TabsTrigger>
+          ) : null}
+          <TabsTrigger value="list" className="rounded-lg">
+            已部署实例
+          </TabsTrigger>
+        </TabsList>
+
       {mainTab === "list" ? (
-        <>
+        <TabsContent value="list" className="outline-none">
           <section className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs text-slate-500">实例</p>
@@ -592,11 +609,12 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
             </Table>
           </div>
           </section>
-        </>
+        </TabsContent>
       ) : null}
 
       {canWrite && mainTab === "create" ? (
-          <section className="outline-none">
+          <TabsContent value="create" className="outline-none">
+          <section>
             <Card className="border-slate-200 shadow-sm">
               <CardHeader className="border-b border-slate-100 bg-slate-50/50">
                 <CardTitle className="text-base">创建容器主机</CardTitle>
@@ -1036,7 +1054,9 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
                       </Button>
                     ) : (
                       <Button type="button" variant="ghost" asChild>
-                        <Link to={CLOUD_VM_LIST_PATH}>返回实例列表</Link>
+                        <Link to={CLOUD_VM_LIST_PATH} state={{ ...incompleteBootstrapNavState, mainTab: "list" }}>
+                          返回实例列表
+                        </Link>
                       </Button>
                     )}
                   </div>
@@ -1066,7 +1086,9 @@ export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?:
               </CardContent>
             </Card>
           </section>
+          </TabsContent>
       ) : null}
+      </Tabs>
     </div>
   );
 }
