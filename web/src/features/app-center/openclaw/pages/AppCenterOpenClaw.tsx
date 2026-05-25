@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bot,
@@ -12,7 +12,6 @@ import {
   Radio,
   RefreshCw,
   Send,
-  Settings2,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -54,6 +53,7 @@ import {
 } from "@/shared/ui/sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import { Textarea } from "@/shared/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { apiGetJson, apiPostJson, ApiHttpError } from "@/lib/api";
 import { formatDateTimeShanghai } from "@/lib/datetime-cn";
 import { copyToClipboardSafe } from "@/lib/clipboard";
@@ -81,7 +81,7 @@ import {
 const OPENCLAW_LIST_PATH = "/cluster/apps/openclaw";
 const OPENCLAW_CREATE_PATH = "/cluster/apps/openclaw/create";
 const OPENCLAW_BOOTSTRAP_PATH = "/cluster/apps/openclaw/bootstrap";
-type OpenClawPageTab = "list" | "create";
+type OpenClawPageTab = "list" | "create" | "bootstrap";
 type OpenClawDeployWait = {
   id: string;
   token: string;
@@ -90,6 +90,7 @@ type OpenClawDeployWait = {
 type OpenClawRouteState = {
   deployWait?: OpenClawDeployWait;
   allowIncompleteBootstrap?: boolean;
+  mainTab?: OpenClawPageTab;
 };
 
 const OPENCLAW_CAPABILITIES = [
@@ -350,7 +351,7 @@ function openClawRunStatusBadge(st: OpenClawK8sStatus | undefined) {
   );
 }
 
-const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initialTab = "list" }) => {
+const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initialTab = "create" }) => {
   const qc = useQueryClient();
   const { status } = useAuth();
   const perm = status?.permissions;
@@ -359,8 +360,14 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
   const isAdmin = status?.role === "admin";
   const navigate = useNavigate();
   const location = useLocation();
-  const allowIncompleteBootstrap = (location.state as OpenClawRouteState | null)?.allowIncompleteBootstrap === true;
+  const routeState = location.state as OpenClawRouteState | null;
+  const allowIncompleteBootstrap = routeState?.allowIncompleteBootstrap === true;
   const incompleteBootstrapNavState = allowIncompleteBootstrap ? { allowIncompleteBootstrap: true } : undefined;
+  const routeMainTab =
+    routeState?.mainTab === "list" || routeState?.mainTab === "create" || routeState?.mainTab === "bootstrap"
+      ? routeState.mainTab
+      : undefined;
+  const effectiveInitialTab = routeMainTab ?? initialTab;
 
   const bootstrapQ = useQuery({
     queryKey: ["app-openclaw-bootstrap"],
@@ -378,7 +385,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
     staleTime: 300_000,
   });
 
-  const [mainTab, setMainTab] = useState<OpenClawPageTab>(initialTab);
+  const [mainTab, setMainTab] = useState<OpenClawPageTab>(effectiveInitialTab);
   const [step, setStep] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<InstanceRow | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
@@ -559,17 +566,18 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
   const rbacFromBootstrapRef = useRef(false);
 
   useEffect(() => {
-    setMainTab(initialTab);
-    if (initialTab === "create") {
+    setMainTab(effectiveInitialTab);
+    if (effectiveInitialTab === "create") {
       setStep(1);
     }
-  }, [initialTab]);
+  }, [effectiveInitialTab]);
 
   useEffect(() => {
     const routeDeployWait = (location.state as OpenClawRouteState | null)?.deployWait;
     if (!routeDeployWait) return;
     setDeployWait(routeDeployWait);
-    navigate(OPENCLAW_LIST_PATH, { replace: true, state: null });
+    setMainTab("list");
+    navigate(OPENCLAW_LIST_PATH, { replace: true, state: { mainTab: "list" } });
   }, [location.state, navigate]);
 
   const cloudVmQ = useQuery({
@@ -739,7 +747,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
       setDeployWait(nextDeployWait);
       setMainTab("list");
       setStep(1);
-      navigate(OPENCLAW_LIST_PATH, { state: { deployWait: nextDeployWait } });
+      navigate(OPENCLAW_LIST_PATH, { state: { deployWait: nextDeployWait, mainTab: "list" } });
       void qc.invalidateQueries({ queryKey: ["app-openclaw-instances"] });
       void qc.invalidateQueries({ queryKey: ["app-openclaw-k8s-status"] });
       void qc.invalidateQueries({ queryKey: ["app-center-openclaw-instances"] });
@@ -842,6 +850,23 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
     navigate(OPENCLAW_CREATE_PATH, { state: incompleteBootstrapNavState });
   };
 
+  const onMainTabChange = (value: string) => {
+    const next = value as OpenClawPageTab;
+    setMainTab(next);
+    if (next === "create") {
+      setStep(1);
+      navigate(OPENCLAW_CREATE_PATH, { state: incompleteBootstrapNavState });
+      return;
+    }
+    if (next === "bootstrap") {
+      navigate(OPENCLAW_BOOTSTRAP_PATH);
+      return;
+    }
+    navigate(OPENCLAW_LIST_PATH, {
+      state: { ...incompleteBootstrapNavState, mainTab: "list" },
+    });
+  };
+
   const submitDeploy = () => {
     const miss1 = step1Missing();
     if (miss1.length > 0) {
@@ -916,10 +941,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
       </p>
     );
   }
-  if (bootstrapQ.data && !bootstrapQ.data.bootstrapComplete && !allowIncompleteBootstrap) {
-    if (isAdmin) {
-      return <Navigate to={OPENCLAW_BOOTSTRAP_PATH} replace />;
-    }
+  if (bootstrapQ.data && !bootstrapQ.data.bootstrapComplete && !canWrite) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
         OpenClaw 部署模式尚未完成首次引导。请联系管理员打开{" "}
@@ -933,42 +955,35 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">OpenClaw Gateway</p>
-            <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-950">
-              <Bot className="h-6 w-6 text-violet-600" />
-              OpenClaw 网关
-            </h1>
-            <p className="mt-2 max-w-[860px] text-sm leading-6 text-slate-600">
-              K8s 内 OpenClaw 网关部署入口：支持 NodePort、Ingress、模型预设、网关探针、对话侧栏、RBAC
-              预设与工具链配置。实例创建后，网关 Token、模型切换和运行时修复集中在详情页管理。
-            </p>
-          </div>
-          <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3 lg:justify-self-end">
-            <Button variant={mainTab === "list" ? "default" : "outline"} size="sm" className="w-full sm:w-32" asChild>
-              <Link to={OPENCLAW_LIST_PATH} state={incompleteBootstrapNavState}>实例列表</Link>
-            </Button>
-            {canWrite ? (
-              <Button variant={mainTab === "create" ? "default" : "outline"} size="sm" className="w-full sm:w-32" asChild>
-                <Link to={OPENCLAW_CREATE_PATH} state={incompleteBootstrapNavState}>创建 OpenClaw</Link>
-              </Button>
-            ) : null}
-            {isAdmin ? (
-              <Button type="button" variant="outline" size="sm" className="w-full gap-1.5 sm:w-32" asChild>
-                <Link to={OPENCLAW_BOOTSTRAP_PATH}>
-                  <Settings2 className="h-4 w-4" />
-                  引导配置
-                </Link>
-              </Button>
-            ) : null}
-          </div>
-        </div>
+      <section className="rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/90 via-white to-slate-50/80 px-6 py-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-indigo-900/80">应用中心</p>
+        <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-slate-900">
+          <Bot className="h-7 w-7 text-indigo-600" />
+          OpenClaw 网关
+        </h1>
+        <p className="mt-2 max-w-3xl text-sm text-slate-600">
+          K8s 内 OpenClaw 网关部署入口：支持 NodePort、Ingress、模型预设、网关探针、对话侧栏、RBAC
+          预设与工具链配置。实例创建后，网关 Token、模型切换和运行时修复集中在详情页管理。
+        </p>
       </section>
 
+      <Tabs value={mainTab} onValueChange={onMainTabChange} className="gap-3">
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-slate-200/80 bg-slate-50/80 p-1">
+          <TabsTrigger value="create" className="rounded-lg">
+            部署向导
+          </TabsTrigger>
+          {isAdmin ? (
+            <TabsTrigger value="bootstrap" className="rounded-lg">
+              模板配置
+            </TabsTrigger>
+          ) : null}
+          <TabsTrigger value="list" className="rounded-lg">
+            已部署实例
+          </TabsTrigger>
+        </TabsList>
+
       {mainTab === "list" ? (
-        <>
+        <TabsContent value="list" className="outline-none">
           <section className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs text-slate-500">实例</p>
@@ -1295,11 +1310,12 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
             </Table>
           </div>
           </section>
-        </>
+        </TabsContent>
       ) : null}
 
       {canWrite && mainTab === "create" ? (
-          <section className="outline-none">
+          <TabsContent value="create" className="outline-none">
+          <section>
             <Card className="border-slate-200 shadow-sm">
               <CardHeader className="border-b border-slate-100 bg-slate-50/50">
                 <CardTitle className="text-base">创建 OpenClaw</CardTitle>
@@ -1884,7 +1900,9 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
               </CardContent>
             </Card>
           </section>
+          </TabsContent>
       ) : null}
+      </Tabs>
 
       <Sheet
         open={chatOpen}
