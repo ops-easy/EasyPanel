@@ -19,9 +19,10 @@ AI 对话复用“AI 巡检”里的 AI Provider 配置，不单独保存模型�
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
 | `GET` | `/api/ops/ai-chat/status` | 获取 AI 对话是否可用、Provider 类型、来源、模型和脱敏提示 |
+| `POST` | `/api/ops/ai-chat/stream` | 发送多轮对话消息，通过 SSE 返回流式增量回复 |
 | `POST` | `/api/ops/ai-chat` | 发送多轮对话消息，返回完整 AI 回复 |
 
-`POST /api/ops/ai-chat` 请求体字段：
+`POST /api/ops/ai-chat/stream` 与 `POST /api/ops/ai-chat` 请求体字段一致：
 
 - `messages`：最多 20 条，只允许 `user` / `assistant` 角色，最后一条必须是 `user`。
 - `routePath`：当前页面路径。
@@ -30,11 +31,22 @@ AI 对话复用“AI 巡检”里的 AI Provider 配置，不单独保存模型�
 
 后端会限制单条和总内容长度，并在服务端拼接系统提示与轻量页面上下文。对话不写入 MySQL、Redis 或平台 KV。
 
+流式接口使用 Server-Sent Events：
+
+- `event: meta`：返回脱敏后的 `provider`、`source`、`model`。
+- `event: delta`：返回增量文本，前端会追加到最后一条 assistant 消息。
+- `event: done`：返回 `latencyMs`。
+- `event: error`：返回用户可读错误，不包含密钥、Base URL 或实例 ID。
+
+如果浏览器或上游在收到任何增量前流式调用失败，前端会自动降级到非流式 `POST /api/ops/ai-chat`。
+
 ## 前端行为
 
 - 会话历史只保存在当前浏览器 `localStorage` 中。
 - 清空按钮只清除本地历史。
-- 第一版不使用流式输出，发送后等待完整回复。
+- 默认优先使用流式输出，边生成边渲染 Markdown。
+- 生成中显示停止按钮；停止后保留已经生成的内容，不写入后端。
+- 流式输出不可用且尚未收到增量时，会自动降级到非流式完整回复接口。
 - Markdown 回复复用 OpenClaw 对话 Markdown 渲染组件。
 - 未配置或未启用 Provider 时，管理员会看到配置入口，普通用户会看到联系管理员提示。
 

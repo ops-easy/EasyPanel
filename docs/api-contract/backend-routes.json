@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "backend-routes",
-  "routeCount": 509,
+  "routeCount": 511,
   "routes": [
     {
       "method": "GET",
@@ -2314,220 +2314,232 @@
       "sourceLine": 15
     },
     {
-      "method": "GET",
-      "pathPattern": "/api/ops/ai-provider",
+      "method": "POST",
+      "pathPattern": "/api/ops/ai-chat/stream",
+      "sourceFile": "api/common/core/ops_ai_chat_test.go",
+      "sourceLine": 159
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/ai-chat/stream",
       "sourceFile": "api/common/core/ops_center_handlers.go",
       "sourceLine": 17
     },
     {
-      "method": "PUT",
+      "method": "GET",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "api/common/core/ops_center_handlers.go",
       "sourceLine": 18
     },
     {
-      "method": "GET",
-      "pathPattern": "/api/ops/alerts",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 33
-    },
-    {
       "method": "PUT",
-      "pathPattern": "/api/ops/alerts",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 34
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/ops/alerts/alertmanager-webhook/regenerate",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 37
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/ops/alerts/log",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 36
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/ops/alerts/test-channel",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 35
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/ops/cluster-advisory",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 54
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/ops/cluster-advisory/ack",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 55
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/ops/cluster-advisory/dismiss-bell",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 56
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/ops/cluster-advisory/run",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 57
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/ops/grafana/config",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 24
-    },
-    {
-      "method": "PUT",
-      "pathPattern": "/api/ops/grafana/config",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 25
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/ops/grafana/dashboards",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 27
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/ops/grafana/dashboards/:uid",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 28
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/ops/grafana/sync",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 26
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/ops/inspect/reports",
-      "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 20
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/ops/inspect/run",
+      "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "api/common/core/ops_center_handlers.go",
       "sourceLine": 19
     },
     {
       "method": "GET",
-      "pathPattern": "/api/ops/inspect/tasks",
+      "pathPattern": "/api/ops/alerts",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 34
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/ops/alerts",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 35
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/alerts/alertmanager-webhook/regenerate",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 38
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/alerts/log",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 37
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/alerts/test-channel",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 36
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/cluster-advisory",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 55
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/cluster-advisory/ack",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 56
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/cluster-advisory/dismiss-bell",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 57
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/cluster-advisory/run",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 58
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/grafana/config",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 25
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/ops/grafana/config",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 26
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/grafana/dashboards",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 28
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/grafana/dashboards/:uid",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 29
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/ops/grafana/sync",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 27
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/ops/inspect/reports",
       "sourceFile": "api/common/core/ops_center_handlers.go",
       "sourceLine": 21
     },
     {
+      "method": "POST",
+      "pathPattern": "/api/ops/inspect/run",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 20
+    },
+    {
       "method": "GET",
-      "pathPattern": "/api/ops/inspect/tasks/:taskId",
+      "pathPattern": "/api/ops/inspect/tasks",
       "sourceFile": "api/common/core/ops_center_handlers.go",
       "sourceLine": 22
     },
     {
       "method": "GET",
-      "pathPattern": "/api/ops/monitoring/panels",
+      "pathPattern": "/api/ops/inspect/tasks/:taskId",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 30
+      "sourceLine": 23
     },
     {
-      "method": "PUT",
+      "method": "GET",
       "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "api/common/core/ops_center_handlers.go",
       "sourceLine": 31
     },
     {
-      "method": "POST",
-      "pathPattern": "/api/ops/vmlog/ai-analyze",
+      "method": "PUT",
+      "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 46
+      "sourceLine": 32
     },
     {
       "method": "POST",
-      "pathPattern": "/api/ops/vmlog/ai-analyze-row",
+      "pathPattern": "/api/ops/vmlog/ai-analyze",
       "sourceFile": "api/common/core/ops_center_handlers.go",
       "sourceLine": 47
     },
     {
       "method": "POST",
+      "pathPattern": "/api/ops/vmlog/ai-analyze-row",
+      "sourceFile": "api/common/core/ops_center_handlers.go",
+      "sourceLine": 48
+    },
+    {
+      "method": "POST",
       "pathPattern": "/api/ops/vmlog/details",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 43
+      "sourceLine": 44
     },
     {
       "method": "GET",
       "pathPattern": "/api/ops/vmlog/discover",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 41
+      "sourceLine": 42
     },
     {
       "method": "GET",
       "pathPattern": "/api/ops/vmlog/namespaces",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 40
+      "sourceLine": 41
     },
     {
       "method": "POST",
       "pathPattern": "/api/ops/vmlog/overview",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 42
+      "sourceLine": 43
     },
     {
       "method": "POST",
       "pathPattern": "/api/ops/vmlog/query",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 44
+      "sourceLine": 45
     },
     {
       "method": "POST",
       "pathPattern": "/api/ops/vmlog/stats",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 45
+      "sourceLine": 46
     },
     {
       "method": "GET",
       "pathPattern": "/api/ops/vmlog/status",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 39
+      "sourceLine": 40
     },
     {
       "method": "POST",
       "pathPattern": "/api/ops/vmlog/vm-shipper/apply",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 50
+      "sourceLine": 51
     },
     {
       "method": "POST",
       "pathPattern": "/api/ops/vmlog/vm-shipper/inspect",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 49
+      "sourceLine": 50
     },
     {
       "method": "POST",
       "pathPattern": "/api/ops/vmlog/vm-shipper/script",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 48
+      "sourceLine": 49
     },
     {
       "method": "GET",
       "pathPattern": "/api/ops/vmlog/vm-shipper/tasks",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 51
+      "sourceLine": 52
     },
     {
       "method": "GET",
       "pathPattern": "/api/ops/vmlog/vm-shipper/tasks/:taskId",
       "sourceFile": "api/common/core/ops_center_handlers.go",
-      "sourceLine": 52
+      "sourceLine": 53
     },
     {
       "method": "GET",

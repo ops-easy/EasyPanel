@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Bot, Loader2, Send, Settings, Trash2, UserRound } from "lucide-react";
+import { AlertCircle, Bot, Loader2, Send, Settings, Square, Trash2, UserRound } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
 import { OpenClawChatMarkdown } from "@/features/app-center/openclaw/components/OpenClawChatMarkdown";
-import { apiGetJson, apiPostJson, ApiHttpError } from "@/lib/api";
+import { API_BASE, apiFetchCredentials, apiGetJson, apiPostJson, ApiHttpError } from "@/lib/api";
 import { describeSitePath } from "@/lib/site-path-descriptions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/shared/ui/button";
@@ -39,6 +39,17 @@ type AIChatResponse = {
   source?: string;
   model?: string;
   latencyMs?: number;
+};
+
+type AIChatSendBody = {
+  messages: AIChatMessage[];
+  routePath: string;
+  routeDescription: string;
+  pageTitle: string;
+};
+
+type AIChatStreamResult = {
+  receivedDelta: boolean;
 };
 
 type AIChatSheetProps = {
@@ -88,6 +99,93 @@ function providerLabel(status?: AIChatStatus): string {
   return "OpenAI 兼容";
 }
 
+function parseAIChatSSEBlock(block: string): { event: string; data: Record<string, unknown> } | null {
+  const lines = block.split(/\r?\n/);
+  let event = "message";
+  const data: string[] = [];
+  for (const line of lines) {
+    if (line.startsWith("event:")) {
+      event = line.slice("event:".length).trim();
+    } else if (line.startsWith("data:")) {
+      data.push(line.slice("data:".length).trim());
+    }
+  }
+  if (data.length === 0) return null;
+  try {
+    const parsed = JSON.parse(data.join("\n"));
+    return parsed && typeof parsed === "object" ? { event, data: parsed as Record<string, unknown> } : null;
+  } catch {
+    return null;
+  }
+}
+
+async function streamAIChat(
+  body: AIChatSendBody,
+  onDelta: (delta: string) => void,
+  signal: AbortSignal
+): Promise<AIChatStreamResult> {
+  const res = await fetch(`${API_BASE}/api/ops/ai-chat/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: apiFetchCredentials(),
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!res.ok) {
+    let msg = res.statusText || "AI 流式对话失败";
+    try {
+      const j = (await res.json()) as { error?: string };
+      if (j?.error) msg = j.error;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  const bodyStream: ReadableStream<Uint8Array> | null = res.body;
+  if (!bodyStream) throw new Error("浏览器未返回流式响应体");
+  const reader = bodyStream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let receivedDelta = false;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const blocks = buffer.split(/\r?\n\r?\n/);
+    buffer = blocks.pop() ?? "";
+    for (const block of blocks) {
+      const parsed = parseAIChatSSEBlock(block);
+      if (!parsed) continue;
+      if (parsed.event === "delta") {
+        const delta = typeof parsed.data.delta === "string" ? parsed.data.delta : "";
+        if (delta) {
+          receivedDelta = true;
+          onDelta(delta);
+        }
+      }
+      if (parsed.event === "error") {
+        const msg = typeof parsed.data.error === "string" ? parsed.data.error : "AI 流式对话失败";
+        throw new Error(msg);
+      }
+    }
+  }
+  if (buffer.trim() !== "") {
+    const parsed = parseAIChatSSEBlock(buffer);
+    if (parsed?.event === "delta") {
+      const delta = typeof parsed.data.delta === "string" ? parsed.data.delta : "";
+      if (delta) {
+        receivedDelta = true;
+        onDelta(delta);
+      }
+    }
+  }
+  return { receivedDelta };
+}
+
+function fallbackAIChat(body: AIChatSendBody): Promise<AIChatResponse> {
+  return apiPostJson<AIChatResponse>("/api/ops/ai-chat", body);
+}
+
 export default function AIChatSheet({ open, onOpenChange }: AIChatSheetProps) {
   const location = useLocation();
   const { status: authStatus } = useAuth();
@@ -97,6 +195,7 @@ export default function AIChatSheet({ open, onOpenChange }: AIChatSheetProps) {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
   const viewportRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const routePath = useMemo(
     () => `${location.pathname}${location.search}${location.hash}`,
@@ -119,6 +218,13 @@ export default function AIChatSheet({ open, onOpenChange }: AIChatSheetProps) {
   }, [open]);
 
   useEffect(() => {
+    if (open) return;
+    const controller = abortRef.current;
+    abortRef.current = null;
+    controller?.abort();
+  }, [open]);
+
+  useEffect(() => {
     if (!open) return;
     const el = viewportRef.current;
     if (!el) return;
@@ -126,9 +232,16 @@ export default function AIChatSheet({ open, onOpenChange }: AIChatSheetProps) {
   }, [messages, open, sending]);
 
   const clearMessages = () => {
+    const controller = abortRef.current;
+    abortRef.current = null;
+    controller?.abort();
     setMessages([]);
     saveAIChatMessages([]);
     setSendError("");
+  };
+
+  const stopStreaming = () => {
+    abortRef.current?.abort();
   };
 
   const sendMessage = async () => {
@@ -141,20 +254,52 @@ export default function AIChatSheet({ open, onOpenChange }: AIChatSheetProps) {
     setDraft("");
     setSendError("");
     setSending(true);
-    try {
-      const pageTitle = typeof document === "undefined" ? "" : document.title;
-      const res = await apiPostJson<AIChatResponse>("/api/ops/ai-chat", {
-        messages: next,
-        routePath,
-        routeDescription,
-        pageTitle,
-      });
-      const merged = [...next, { role: "assistant" as const, content: res.message || "（空回复）" }].slice(-20);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let assistantContent = "";
+    const pageTitle = typeof document === "undefined" ? "" : document.title;
+    const body: AIChatSendBody = {
+      messages: next,
+      routePath,
+      routeDescription,
+      pageTitle,
+    };
+    const commitAssistant = (assistantText: string) => {
+      const merged = [...next, { role: "assistant" as const, content: assistantText || "（空回复）" }].slice(-20);
       setMessages(merged);
       saveAIChatMessages(merged);
+    };
+    try {
+      const streamed = await streamAIChat(body, (delta) => {
+        assistantContent += delta;
+        commitAssistant(assistantContent);
+      }, controller.signal);
+      if (!streamed.receivedDelta) {
+        commitAssistant("");
+      }
     } catch (error) {
-      setSendError(aiChatErrorMessage(error));
+      if (controller.signal.aborted) {
+        if (abortRef.current !== controller) return;
+        if (assistantContent.trim() === "") {
+          setMessages(next);
+          saveAIChatMessages(next);
+        }
+        return;
+      }
+      if (assistantContent.trim() !== "") {
+        setSendError(aiChatErrorMessage(error));
+        return;
+      }
+      try {
+        const res = await fallbackAIChat(body);
+        commitAssistant(res.message || "");
+      } catch (fallbackError) {
+        setSendError(aiChatErrorMessage(fallbackError));
+      }
     } finally {
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
       setSending(false);
     }
   };
@@ -285,10 +430,17 @@ export default function AIChatSheet({ open, onOpenChange }: AIChatSheetProps) {
               className="min-h-20 resize-none bg-white text-sm"
               disabled={sending || notReady}
             />
-            <Button type="button" size="icon-lg" className="mt-auto" onClick={() => void sendMessage()} disabled={!canSend}>
-              {sending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Send className="h-4 w-4" aria-hidden />}
-              <span className="sr-only">发送</span>
-            </Button>
+            {sending ? (
+              <Button type="button" size="icon-lg" variant="outline" className="mt-auto" onClick={stopStreaming}>
+                <Square className="h-4 w-4" aria-hidden />
+                <span className="sr-only">停止生成</span>
+              </Button>
+            ) : (
+              <Button type="button" size="icon-lg" className="mt-auto" onClick={() => void sendMessage()} disabled={!canSend}>
+                <Send className="h-4 w-4" aria-hidden />
+                <span className="sr-only">发送</span>
+              </Button>
+            )}
           </div>
         </div>
       </SheetContent>

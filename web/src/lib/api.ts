@@ -5,7 +5,7 @@
 export const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
 /** 与页面不同源时携带会话 Cookie（否则预检 /api 会 401，WebSocket 亦无法带登录态）。 */
-function apiFetchCredentials(): RequestCredentials {
+export function apiFetchCredentials(): RequestCredentials {
   const b = API_BASE.trim();
   if (b === "") return "same-origin";
   if (typeof window === "undefined") return "include";

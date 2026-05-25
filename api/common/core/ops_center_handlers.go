@@ -14,6 +14,7 @@ import (
 func registerOpsCenterRoutes(api *gin.RouterGroup, app *ServerApp) {
 	api.GET("/ops/ai-chat/status", handleOpsAIChatStatusGet(app))
 	api.POST("/ops/ai-chat", handleOpsAIChatPost(app))
+	api.POST("/ops/ai-chat/stream", handleOpsAIChatStreamPost(app))
 	api.GET("/ops/ai-provider", AdminOnlyMiddleware(app), handleOpsAIProviderGet(app))
 	api.PUT("/ops/ai-provider", AdminOnlyMiddleware(app), handleOpsAIProviderPut(app))
 	api.POST("/ops/inspect/run", AdminOnlyMiddleware(app), handleOpsInspectRun(app))

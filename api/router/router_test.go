@@ -64,6 +64,7 @@ performance:
 		"GET /api/dns/status",
 		"GET /api/ops/ai-chat/status",
 		"POST /api/ops/ai-chat",
+		"POST /api/ops/ai-chat/stream",
 		"GET /r/*rp",
 		"POST /r/*rp",
 		"GET /d/:token",
