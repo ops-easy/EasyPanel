@@ -44,7 +44,10 @@ import { LogoBaota, LogoDocker, LogoHysteria2, LogoNginx } from "@/features/app-
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+const CLOUD_VM_LIST_PATH = "/cluster/apps/cloud-vm";
+const CLOUD_VM_CREATE_PATH = "/cluster/apps/cloud-vm/create";
 const BOOTSTRAP_PATH = "/cluster/apps/cloud-vm/bootstrap";
+type CloudVmPageTab = "list" | "create";
 
 const CLOUD_VM_CAPABILITIES = [
   { title: "SSH 工作机", detail: "在 Kubernetes 中创建可 root 登录的容器化工作机，外部通过节点 IP + NodePort 访问。" },
@@ -181,7 +184,7 @@ const CLI_PKG_OPTIONS: { id: string; label: string; Icon: LucideIcon }[] = [
   { id: "net-tools", label: "net-tools", Icon: Network },
 ];
 
-export default function AppCenterCloudVm() {
+export default function AppCenterCloudVm({ initialTab = "list" }: { initialTab?: CloudVmPageTab }) {
   const { status } = useAuth();
   const perm = status?.permissions;
   const canWrite = cloudVmAppCenterCanWrite(status?.role, perm);
@@ -189,8 +192,15 @@ export default function AppCenterCloudVm() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  const [mainTab, setMainTab] = useState<"list" | "create">("list");
+  const [mainTab, setMainTab] = useState<CloudVmPageTab>(initialTab);
   const [step, setStep] = useState(1);
+
+  useEffect(() => {
+    setMainTab(initialTab);
+    if (initialTab === "create") {
+      setStep(1);
+    }
+  }, [initialTab]);
 
   const bootQ = useQuery({
     queryKey: ["app-center-cloud-vm-bootstrap"],
@@ -364,7 +374,7 @@ export default function AppCenterCloudVm() {
 
   const openCreateTab = () => {
     setStep(1);
-    setMainTab("create");
+    navigate(CLOUD_VM_CREATE_PATH);
   };
 
   if (bootQ.isLoading) {
@@ -407,21 +417,14 @@ export default function AppCenterCloudVm() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {(["list", "create"] as const).map((id) =>
-              id === "create" && !canWrite ? null : (
-                <Button
-                  key={id}
-                  variant={mainTab === id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    if (id === "create") openCreateTab();
-                    else setMainTab(id);
-                  }}
-                >
-                  {id === "list" ? "实例列表" : "创建容器主机"}
-                </Button>
-              )
-            )}
+            <Button variant={mainTab === "list" ? "default" : "outline"} size="sm" asChild>
+              <Link to={CLOUD_VM_LIST_PATH}>实例列表</Link>
+            </Button>
+            {canWrite ? (
+              <Button variant={mainTab === "create" ? "default" : "outline"} size="sm" asChild>
+                <Link to={CLOUD_VM_CREATE_PATH}>创建容器主机</Link>
+              </Button>
+            ) : null}
             {isAdmin ? (
               <Button type="button" variant="outline" size="sm" className="gap-1.5" asChild>
                 <Link to={BOOTSTRAP_PATH}>
@@ -1026,8 +1029,8 @@ export default function AppCenterCloudVm() {
                         上一步
                       </Button>
                     ) : (
-                      <Button type="button" variant="ghost" onClick={() => setMainTab("list")}>
-                        返回实例列表
+                      <Button type="button" variant="ghost" asChild>
+                        <Link to={CLOUD_VM_LIST_PATH}>返回实例列表</Link>
                       </Button>
                     )}
                   </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Loader2, Save } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -21,7 +21,9 @@ import {
   OPENCLAW_IMAGE_CATALOG_JSON_EXAMPLE,
 } from "@/lib/openclaw-image-catalog";
 
-const PAGE_PATH = "/cluster/apps/openclaw/bootstrap";
+const OPENCLAW_LIST_PATH = "/cluster/apps/openclaw";
+const OPENCLAW_CREATE_PATH = "/cluster/apps/openclaw/create";
+const OPENCLAW_BOOTSTRAP_PATH = "/cluster/apps/openclaw/bootstrap";
 
 type ModeRow = {
   id: string;
@@ -178,46 +180,33 @@ export default function AppCenterOpenClawBootstrap() {
 
   return (
     <div className="mx-auto w-full space-y-6">
-      <div className="rounded-2xl border border-violet-200/80 bg-gradient-to-br from-violet-50 via-white to-slate-50 px-6 py-8 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-violet-800/90">首次引导 · 管理员</p>
-        <h1 className="mt-1 text-2xl font-semibold text-slate-900">OpenClaw 网关镜像与命名空间</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          在此统一维护<strong>部署模式</strong>（网关 / Init 镜像地址）与可选的<strong>平台镜像目录 JSON</strong>。前台创建实例与实例详情<strong>不再</strong>提供镜像地址编辑，仅按此处模板选择模式。
-          保存后可在 <code className="rounded bg-slate-100 px-1">platform_kv</code> 调整{" "}
-          <code className="rounded bg-slate-100 px-1">appcenter_openclaw_bootstrap_v1</code> 等键。
-        </p>
-        <div className="mt-4 flex flex-col gap-2 rounded-lg border border-violet-200/80 bg-white/90 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-slate-500">本页地址（可收藏或发给运维）</p>
-            <p className="mt-1 break-all font-mono text-sm text-violet-900">
-              {typeof window !== "undefined" ? window.location.origin : ""}
-              {PAGE_PATH}
+      <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">OpenClaw Bootstrap</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">OpenClaw 网关镜像与命名空间</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              在此统一维护<strong>部署模式</strong>（网关 / Init 镜像地址）与可选的<strong>平台镜像目录 JSON</strong>。前台创建实例与实例详情<strong>不再</strong>提供镜像地址编辑，仅按此处模板选择模式。
+              保存后可在 <code className="rounded bg-slate-100 px-1">platform_kv</code> 调整{" "}
+              <code className="rounded bg-slate-100 px-1">appcenter_openclaw_bootstrap_v1</code> 等键。
             </p>
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="shrink-0 gap-1.5"
-            onClick={async () => {
-              const full =
-                typeof window !== "undefined" ? `${window.location.origin}${PAGE_PATH}` : PAGE_PATH;
-              try {
-                await navigator.clipboard.writeText(full);
-                toast.success("已复制完整 URL");
-              } catch {
-                toast.error("复制失败");
-              }
-            }}
-          >
-            <Copy className="h-3.5 w-3.5" />
-            复制完整地址
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link to={OPENCLAW_LIST_PATH}>实例列表</Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to={OPENCLAW_CREATE_PATH}>创建 OpenClaw</Link>
+            </Button>
+            <Button variant="default" size="sm" asChild>
+              <Link to={OPENCLAW_BOOTSTRAP_PATH}>引导配置</Link>
+            </Button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-6">
-        <div className="space-y-2 rounded-lg border border-dashed border-violet-200 bg-violet-50/40 p-4">
+      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="space-y-2 rounded-lg border border-slate-100 bg-slate-50/70 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <Label className="text-base">平台镜像目录（可选 · platform_kv）</Label>
@@ -252,7 +241,7 @@ export default function AppCenterOpenClawBootstrap() {
               <Button
                 type="button"
                 size="sm"
-                className="gap-1.5 bg-violet-600 hover:bg-violet-700"
+                className="gap-1.5 bg-slate-900 hover:bg-slate-800"
                 disabled={catalogPutMut.isPending}
                 onClick={() => catalogPutMut.mutate(catalogJsonDraft)}
               >
@@ -401,14 +390,14 @@ export default function AppCenterOpenClawBootstrap() {
 
         <Button
           type="button"
-          className="gap-2 bg-violet-600 hover:bg-violet-700"
+          className="gap-2 bg-slate-900 hover:bg-slate-800"
           disabled={saveMut.isPending || rows.some((r) => !r.id.trim() || !r.image.trim())}
           onClick={() => saveMut.mutate()}
         >
           {saveMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           保存并完成引导
         </Button>
-      </div>
+      </section>
     </div>
   );
 }

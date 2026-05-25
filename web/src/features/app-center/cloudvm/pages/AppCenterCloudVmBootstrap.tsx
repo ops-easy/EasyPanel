@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Loader2, Save } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
@@ -17,7 +17,9 @@ import {
 import { apiGetJson, apiPutJson } from "@/lib/api";
 import { toast } from "sonner";
 
-const PAGE_PATH = "/cluster/apps/cloud-vm/bootstrap";
+const CLOUD_VM_LIST_PATH = "/cluster/apps/cloud-vm";
+const CLOUD_VM_CREATE_PATH = "/cluster/apps/cloud-vm/create";
+const CLOUD_VM_BOOTSTRAP_PATH = "/cluster/apps/cloud-vm/bootstrap";
 
 /** 与 internal/cloud_vm_software.go 默认一致；Release 标签为 app/v2.6.5 */
 const DEFAULT_HYSTERIA_AMD64_URL =
@@ -122,47 +124,32 @@ export default function AppCenterCloudVmBootstrap() {
 
   return (
     <div className="mx-auto w-full space-y-6">
-      <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-slate-50 px-6 py-8 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800/90">首次引导 · 管理员</p>
-        <h1 className="mt-1 text-2xl font-semibold text-slate-900">容器主机镜像与命名空间</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          导入可拉取的 Ubuntu（或自定义）镜像；保存后前台不再强制进入本页，后续可在后台{" "}
-          <code className="rounded bg-slate-100 px-1">platform_kv</code> 调整{" "}
-          <code className="rounded bg-slate-100 px-1">appcenter_cloud_vm_bootstrap_v1</code>。
-        </p>
-        <div className="mt-4 flex flex-col gap-2 rounded-lg border border-emerald-200/80 bg-white/90 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-slate-500">本页地址（可收藏或发给运维）</p>
-            <p className="mt-1 break-all font-mono text-sm text-emerald-900">
-              {typeof window !== "undefined" ? window.location.origin : ""}
-              {PAGE_PATH}
+      <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">Container Host Bootstrap</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">容器主机镜像与命名空间</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              导入可拉取的 Ubuntu（或自定义）镜像；保存后前台不再强制进入本页，后续可在后台{" "}
+              <code className="rounded bg-slate-100 px-1">platform_kv</code> 调整{" "}
+              <code className="rounded bg-slate-100 px-1">appcenter_cloud_vm_bootstrap_v1</code>。
             </p>
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="shrink-0 gap-1.5"
-            onClick={async () => {
-              const full =
-                typeof window !== "undefined"
-                  ? `${window.location.origin}${PAGE_PATH}`
-                  : PAGE_PATH;
-              try {
-                await navigator.clipboard.writeText(full);
-                toast.success("已复制完整 URL");
-              } catch {
-                toast.error("复制失败");
-              }
-            }}
-          >
-            <Copy className="h-3.5 w-3.5" />
-            复制完整地址
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link to={CLOUD_VM_LIST_PATH}>实例列表</Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to={CLOUD_VM_CREATE_PATH}>创建容器主机</Link>
+            </Button>
+            <Button variant="default" size="sm" asChild>
+              <Link to={CLOUD_VM_BOOTSTRAP_PATH}>引导配置</Link>
+            </Button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-6">
+      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div>
           <Label>默认命名空间</Label>
           <Input value={ns} onChange={(e) => setNs(e.target.value)} className="font-mono text-sm" />
@@ -251,7 +238,7 @@ export default function AppCenterCloudVmBootstrap() {
                   placeholder="docker.io/library/ubuntu:22.04"
                 />
               </div>
-              <div className="sm:col-span-2 flex items-start gap-2 rounded-md border border-emerald-100 bg-emerald-50/50 px-2 py-2">
+              <div className="sm:col-span-2 flex items-start gap-2 rounded-md border border-slate-200 bg-white px-2 py-2">
                 <Checkbox
                   id={`baked-${i}`}
                   checked={row.bakedInSSH === true}
@@ -261,7 +248,7 @@ export default function AppCenterCloudVmBootstrap() {
                   }}
                 />
                 <label htmlFor={`baked-${i}`} className="cursor-pointer text-[11px] leading-snug text-slate-700">
-                  <span className="font-medium text-emerald-900">镜像已预装 OpenSSH（推荐自建镜像勾选）</span>
+                  <span className="font-medium text-slate-900">镜像已预装 OpenSSH（推荐自建镜像勾选）</span>
                   <span className="mt-0.5 block text-slate-600">
                     Dockerfile 中已安装 <code className="rounded bg-white/80 px-0.5">openssh-server</code> 时，平台启动脚本会跳过{" "}
                     <code className="rounded bg-white/80 px-0.5">apt-get</code>，首次 Pod 就绪更快。官方{" "}
@@ -285,8 +272,8 @@ export default function AppCenterCloudVmBootstrap() {
           ))}
         </div>
 
-        <div className="space-y-3 rounded-xl border border-fuchsia-200/70 bg-fuchsia-50/20 p-4">
-          <Label className="text-sm font-semibold text-fuchsia-950">Hysteria2 客户端 · 二进制下载地址（全局）</Label>
+        <div className="space-y-3 rounded-lg border border-slate-100 bg-slate-50/70 p-4">
+          <Label className="text-sm font-semibold text-slate-950">Hysteria2 客户端 · 二进制下载地址（全局）</Label>
           <p className="text-[11px] leading-relaxed text-slate-600">
             创建向导勾选 Hysteria2 时，Pod 按节点架构从此处配置的 <strong>http(s) 裸二进制</strong>拉取（平台会自动追加 ghproxy 等镜像尝试）。留空则使用官方 GitHub，路径为{" "}
             <code className="rounded bg-white px-0.5 font-mono text-[10px]">.../download/app/v2.6.5/hysteria-linux-amd64|arm64</code>（标签为{" "}
@@ -316,7 +303,7 @@ export default function AppCenterCloudVmBootstrap() {
 
         <Button
           type="button"
-          className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+          className="gap-2 bg-slate-900 hover:bg-slate-800"
           disabled={saveMut.isPending || rows.some((r) => !r.id.trim() || !r.image.trim())}
           onClick={() => saveMut.mutate()}
         >
@@ -327,7 +314,7 @@ export default function AppCenterCloudVmBootstrap() {
           )}
           保存并完成引导
         </Button>
-      </div>
+      </section>
     </div>
   );
 }

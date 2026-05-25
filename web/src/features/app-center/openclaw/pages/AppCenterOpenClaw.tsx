@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bot,
@@ -78,7 +78,18 @@ import {
   OPENCLAW_GATEWAY_HEALTH_INTERVAL_SEC_DEFAULT,
 } from "@/lib/openclaw-gateway-health";
 
+const OPENCLAW_LIST_PATH = "/cluster/apps/openclaw";
+const OPENCLAW_CREATE_PATH = "/cluster/apps/openclaw/create";
 const OPENCLAW_BOOTSTRAP_PATH = "/cluster/apps/openclaw/bootstrap";
+type OpenClawPageTab = "list" | "create";
+type OpenClawDeployWait = {
+  id: string;
+  token: string;
+  exposeMode: "nodeport" | "ingress";
+};
+type OpenClawRouteState = {
+  deployWait?: OpenClawDeployWait;
+};
 
 const OPENCLAW_CAPABILITIES = [
   { title: "部署网关", detail: "按模板下发 Deployment、Service、PVC、Secret 与 ConfigMap，支持官方镜像和自定义模式。" },
@@ -338,13 +349,15 @@ function openClawRunStatusBadge(st: OpenClawK8sStatus | undefined) {
   );
 }
 
-const AppCenterOpenClaw: React.FC = () => {
+const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initialTab = "list" }) => {
   const qc = useQueryClient();
   const { status } = useAuth();
   const perm = status?.permissions;
   const canWrite = cloudVmAppCenterCanWrite(status?.role, perm);
   const canRevealHyVm = cloudVmHysteriaRevealAllowed(status?.role, perm);
   const isAdmin = status?.role === "admin";
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const bootstrapQ = useQuery({
     queryKey: ["app-openclaw-bootstrap"],
@@ -362,7 +375,7 @@ const AppCenterOpenClaw: React.FC = () => {
     staleTime: 300_000,
   });
 
-  const [mainTab, setMainTab] = useState<"list" | "create">("list");
+  const [mainTab, setMainTab] = useState<OpenClawPageTab>(initialTab);
   const [step, setStep] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<InstanceRow | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
@@ -517,11 +530,7 @@ const AppCenterOpenClaw: React.FC = () => {
   const [deployModeId, setDeployModeId] = useState("");
   const bootstrapModeInitRef = useRef(false);
   const nsPrefilledFromBootstrapRef = useRef(false);
-  const [deployWait, setDeployWait] = useState<{
-    id: string;
-    token: string;
-    exposeMode: "nodeport" | "ingress";
-  } | null>(null);
+  const [deployWait, setDeployWait] = useState<OpenClawDeployWait | null>(null);
   const [exposeMode, setExposeMode] = useState<"nodeport" | "ingress">("nodeport");
   const [ingressName, setIngressName] = useState("");
   const [ingressHost, setIngressHost] = useState("");
@@ -545,6 +554,20 @@ const AppCenterOpenClaw: React.FC = () => {
   });
   const [precheckResult, setPrecheckResult] = useState<{ ok: boolean; message: string } | null>(null);
   const rbacFromBootstrapRef = useRef(false);
+
+  useEffect(() => {
+    setMainTab(initialTab);
+    if (initialTab === "create") {
+      setStep(1);
+    }
+  }, [initialTab]);
+
+  useEffect(() => {
+    const routeDeployWait = (location.state as OpenClawRouteState | null)?.deployWait;
+    if (!routeDeployWait) return;
+    setDeployWait(routeDeployWait);
+    navigate(OPENCLAW_LIST_PATH, { replace: true, state: null });
+  }, [location.state, navigate]);
 
   const cloudVmQ = useQuery({
     queryKey: ["app-center-cloud-vm-instances", "openclaw-wizard"],
@@ -705,13 +728,15 @@ const AppCenterOpenClaw: React.FC = () => {
           .map(([id]) => id),
       }),
     onSuccess: (data) => {
-      setDeployWait({
+      const nextDeployWait: OpenClawDeployWait = {
         id: data.instance.id,
         token: data.gatewayToken ?? "",
         exposeMode,
-      });
+      };
+      setDeployWait(nextDeployWait);
       setMainTab("list");
       setStep(1);
+      navigate(OPENCLAW_LIST_PATH, { state: { deployWait: nextDeployWait } });
       void qc.invalidateQueries({ queryKey: ["app-openclaw-instances"] });
       void qc.invalidateQueries({ queryKey: ["app-openclaw-k8s-status"] });
       void qc.invalidateQueries({ queryKey: ["app-center-openclaw-instances"] });
@@ -811,7 +836,7 @@ const AppCenterOpenClaw: React.FC = () => {
 
   const openCreateTab = () => {
     setStep(1);
-    setMainTab("create");
+    navigate(OPENCLAW_CREATE_PATH);
   };
 
   const submitDeploy = () => {
@@ -919,21 +944,14 @@ const AppCenterOpenClaw: React.FC = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {(["list", "create"] as const).map((id) =>
-              id === "create" && !canWrite ? null : (
-                <Button
-                  key={id}
-                  variant={mainTab === id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    if (id === "create") openCreateTab();
-                    else setMainTab(id);
-                  }}
-                >
-                  {id === "list" ? "实例列表" : "创建 OpenClaw"}
-                </Button>
-              )
-            )}
+            <Button variant={mainTab === "list" ? "default" : "outline"} size="sm" asChild>
+              <Link to={OPENCLAW_LIST_PATH}>实例列表</Link>
+            </Button>
+            {canWrite ? (
+              <Button variant={mainTab === "create" ? "default" : "outline"} size="sm" asChild>
+                <Link to={OPENCLAW_CREATE_PATH}>创建 OpenClaw</Link>
+              </Button>
+            ) : null}
             {isAdmin ? (
               <Button type="button" variant="outline" size="sm" className="gap-1.5" asChild>
                 <Link to={OPENCLAW_BOOTSTRAP_PATH}>

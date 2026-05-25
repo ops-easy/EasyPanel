@@ -22,6 +22,9 @@ const AppCenterCloudVm = lazy(() => import("@/features/app-center/cloudvm/pages/
 const AppCenterCloudVmBootstrap = lazy(
   () => import("@/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap")
 );
+const AppCenterCloudVmCreate = lazy(
+  () => import("@/features/app-center/cloudvm/pages/AppCenterCloudVmCreate")
+);
 const AppCenterCloudVmDetail = lazy(
   () => import("@/features/app-center/cloudvm/pages/AppCenterCloudVmDetail")
 );
@@ -30,6 +33,9 @@ const AppCenterOpenClaw = lazy(
 );
 const AppCenterOpenClawBootstrap = lazy(
   () => import("@/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap")
+);
+const AppCenterOpenClawCreate = lazy(
+  () => import("@/features/app-center/openclaw/pages/AppCenterOpenClawCreate")
 );
 const AppCenterOpenClawDetail = lazy(
   () => import("@/features/app-center/openclaw/pages/AppCenterOpenClawDetail")
@@ -121,6 +127,14 @@ export function appCenterRoutes(): ReactNode {
         }
       />
       <Route
+        path="cloud-vm/create"
+        element={
+          <RouteSuspense>
+            <AppCenterCloudVmCreate />
+          </RouteSuspense>
+        }
+      />
+      <Route
         path="cloud-vm/:id"
         element={
           <RouteSuspense>
@@ -141,6 +155,14 @@ export function appCenterRoutes(): ReactNode {
         element={
           <RouteSuspense>
             <AppCenterOpenClawBootstrap />
+          </RouteSuspense>
+        }
+      />
+      <Route
+        path="openclaw/create"
+        element={
+          <RouteSuspense>
+            <AppCenterOpenClawCreate />
           </RouteSuspense>
         }
       />
