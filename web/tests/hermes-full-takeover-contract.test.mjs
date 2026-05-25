@@ -23,16 +23,20 @@ test("Hermes detail page exposes real runtime management panels", () => {
   assert.match(logsEvents, /\/events/);
 });
 
-test("Hermes create page carries exposure and runtime readiness fields", () => {
+test("Hermes page carries create/bootstrap tabs plus exposure and runtime readiness fields", () => {
   const create = read("../src/features/app-center/hermes/pages/AppCenterHermes.tsx");
 
   assert.match(create, /HERMES_BOOTSTRAP_PATH = "\/cluster\/apps\/hermes\/bootstrap"/);
-  assert.match(create, /<Navigate to=\{HERMES_BOOTSTRAP_PATH\} replace \/>/);
-  assert.match(create, /Hermes 尚未完成首次引导/);
-  assert.match(create, /Hermes 管理能力/);
-  for (const label of ["部署实例", "运行时探测", "访问暴露", "升级/回滚", "日志与事件", "OpenClaw 迁移"]) {
-    assert.match(create, new RegExp(label));
+  assert.match(create, /export type HermesPageTab = "list" \| "create" \| "bootstrap"/);
+  assert.match(create, /initialTab = "create"/);
+  assert.match(create, /const \[tab, setTab\] = useState<HermesPageTab>\(initialTab\)/);
+  assert.match(create, /<Link to=\{HERMES_BOOTSTRAP_PATH\}/);
+  assert.match(create, /<Tabs value=\{tab\} onValueChange=\{\(value\) => setTab\(value as HermesPageTab\)\}/);
+  for (const value of ["create", "bootstrap", "list"]) {
+    assert.match(create, new RegExp(`TabsTrigger value="${value}"`));
+    assert.match(create, new RegExp(`TabsContent value="${value}"`));
   }
+  assert.match(create, /HERMES_CAPABILITIES/);
 
   for (const value of ["clusterIP", "nodePort", "loadBalancer", "ingress"]) {
     assert.match(create, new RegExp(value));

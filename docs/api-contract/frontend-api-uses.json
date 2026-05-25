@@ -135,7 +135,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/access-nodes",
       "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx",
-      "sourceLine": 65,
+      "sourceLine": 66,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -143,7 +143,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/bootstrap",
       "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx",
-      "sourceLine": 213,
+      "sourceLine": 220,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -151,7 +151,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/bootstrap",
       "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx",
-      "sourceLine": 60,
+      "sourceLine": 61,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -159,7 +159,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/cloud-vm/bootstrap",
       "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx",
-      "sourceLine": 90,
+      "sourceLine": 91,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -167,7 +167,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/instances",
       "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx",
-      "sourceLine": 220,
+      "sourceLine": 227,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -183,7 +183,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/instances",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 577,
+      "sourceLine": 585,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -223,7 +223,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/cloud-vm/instances",
       "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx",
-      "sourceLine": 331,
+      "sourceLine": 338,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -335,7 +335,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/instances/usage",
       "sourceFile": "web/src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx",
-      "sourceLine": 229,
+      "sourceLine": 236,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1095,7 +1095,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/bootstrap",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 367,
+      "sourceLine": 374,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1103,7 +1103,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/bootstrap",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
-      "sourceLine": 76,
+      "sourceLine": 77,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1119,7 +1119,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/openclaw/bootstrap",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
-      "sourceLine": 149,
+      "sourceLine": 150,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1135,7 +1135,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/app-center/openclaw/gateway-service-health",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 454,
+      "sourceLine": 461,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -1159,7 +1159,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/image-catalog",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
-      "sourceLine": 87,
+      "sourceLine": 88,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1167,7 +1167,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/openclaw/image-catalog",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
-      "sourceLine": 130,
+      "sourceLine": 131,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1183,7 +1183,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 422,
+      "sourceLine": 429,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1263,7 +1263,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/openclaw/instances/:param/chat",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 881,
+      "sourceLine": 906,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1375,7 +1375,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(chatRow.id",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 881,
+      "sourceLine": 906,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1383,7 +1383,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(id",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 775,
+      "sourceLine": 783,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1415,7 +1415,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(id",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 508,
+      "sourceLine": 515,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1535,7 +1535,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/app-center/openclaw/instances/${encodeURIComponent(snap.id",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 657,
+      "sourceLine": 665,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1543,7 +1543,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances/k8s-status",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 429,
+      "sourceLine": 436,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1551,7 +1551,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances/k8s-status",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 651,
+      "sourceLine": 659,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1575,7 +1575,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/openclaw/k8s-deploy",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 707,
+      "sourceLine": 715,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1583,7 +1583,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/rbac-presets",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 377,
+      "sourceLine": 384,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1591,7 +1591,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/rbac-presets",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx",
-      "sourceLine": 96,
+      "sourceLine": 97,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1607,7 +1607,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/toolchain-options",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 588,
+      "sourceLine": 596,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1623,7 +1623,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/openclaw/validate-upstream",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 753,
+      "sourceLine": 761,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4383,7 +4383,7 @@
       "method": "GET",
       "pathPattern": "/api/namespaces",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
-      "sourceLine": 404,
+      "sourceLine": 411,
       "needsManualReview": false,
       "kind": "http"
     },
