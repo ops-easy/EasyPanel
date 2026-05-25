@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "backend-routes",
-  "routeCount": 511,
+  "routeCount": 539,
   "routes": [
     {
       "method": "GET",
@@ -500,6 +500,174 @@
       "pathPattern": "/api/app-center/kafka/templates/:id",
       "sourceFile": "api/api/appcenter/service/kafka_handlers.go",
       "sourceLine": 32
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 21
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 22
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/mysql/instances/:id",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 41
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:id",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 39
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/mysql/instances/:id",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 40
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:id/backups",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 32
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances/:id/backups",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 33
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/mysql/instances/:id/backups/:backupId",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 35
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances/:id/backups/:backupId/restore",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 34
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:id/k8s-network",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 38
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:id/k8s-status",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 37
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances/:id/ping",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 23
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:id/processlist",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 27
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances/:id/query",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 36
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:id/runtime",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 24
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:id/schemas",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 25
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:id/tables",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 26
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:id/users",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 28
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances/:id/users",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 29
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/mysql/instances/:id/users/:user",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 31
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/mysql/instances/:id/users/:user/password",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 30
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/k8s-deploy",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 42
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/status",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 20
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/templates",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 43
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/templates",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 44
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/mysql/templates/:id",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 47
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/templates/:id",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 45
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/mysql/templates/:id",
+      "sourceFile": "api/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 46
     },
     {
       "method": "GET",
@@ -2557,7 +2725,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/query",
       "sourceFile": "api/common/core/dashboard_permissions_test.go",
-      "sourceLine": 310
+      "sourceLine": 324
     },
     {
       "method": "POST",

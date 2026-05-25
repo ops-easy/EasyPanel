@@ -13,6 +13,7 @@ const homeHubSource = read("../src/pages/HomeHub.tsx");
 const appCenterOrder = [
   "/cluster/apps/dashboard",
   "/cluster/apps/redis",
+  "/cluster/apps/mysql",
   "/cluster/apps/kafka",
   "/cluster/apps/opensearch",
   "/cluster/apps/dns",
@@ -56,6 +57,7 @@ test("app center dashboard quick entries and resource cards follow the same modu
     resourceCards,
     [
       "Redis \u5b9e\u4f8b",
+      "MySQL \u5b9e\u4f8b",
       "Kafka \u5b9e\u4f8b",
       "OpenSearch \u5b9e\u4f8b",
       "DNS \u670d\u52a1\u5546\u8d26\u53f7",
@@ -72,7 +74,7 @@ test("workbench app center card uses the same compact module order", () => {
   const appCenterCard = homeHubSource.slice(homeHubSource.indexOf("{showAppCenter && ("));
   assertInOrder(
     appCenterCard,
-    ["Redis", "Kafka", "OpenSearch", "DNS", "\u5bb9\u5668\u4e3b\u673a", "OpenClaw", "Hermes"],
+    ["Redis", "MySQL", "Kafka", "OpenSearch", "DNS", "\u5bb9\u5668\u4e3b\u673a", "OpenClaw", "Hermes"],
     "workbench app center card"
   );
 });

@@ -5,6 +5,7 @@ import { RouteSuspense } from "@/app/route-fallback";
 const AppCenterDashboard = lazy(() => import("@/features/app-center/layout/AppCenterDashboard"));
 const AppCenterLayout = lazy(() => import("@/features/app-center/layout/AppCenterLayout"));
 const AppCenterRedis = lazy(() => import("@/features/app-center/redis/pages/AppCenterRedis"));
+const AppCenterMySQL = lazy(() => import("@/features/app-center/mysql/pages/AppCenterMySQL"));
 const AppCenterOpenSearch = lazy(
   () => import("@/features/app-center/opensearch/pages/AppCenterOpenSearch")
 );
@@ -75,6 +76,14 @@ export function appCenterRoutes(): ReactNode {
         element={
           <RouteSuspense>
             <AppCenterRedis />
+          </RouteSuspense>
+        }
+      />
+      <Route
+        path="mysql"
+        element={
+          <RouteSuspense>
+            <AppCenterMySQL />
           </RouteSuspense>
         }
       />

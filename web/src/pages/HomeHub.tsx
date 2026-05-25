@@ -216,6 +216,11 @@ const HomeHub: React.FC = () => {
     queryFn: ({ signal }) =>
       apiGetJson<{ instances: unknown[] }>("/api/app-center/redis/instances", { signal }),
   });
+  const mysqlQ = useQuery({
+    queryKey: ["app-center-mysql-instances-hub"],
+    queryFn: ({ signal }) =>
+      apiGetJson<{ instances: unknown[] }>("/api/app-center/mysql/instances", { signal }),
+  });
   const kafkaQ = useQuery({
     queryKey: ["app-center-kafka-instances-hub"],
     queryFn: ({ signal }) =>
@@ -355,8 +360,9 @@ const HomeHub: React.FC = () => {
   const nBaotaTargets = cfg?.baotaTargets?.filter((t) => Boolean(t.url && t.hasApiKey)).length ?? (baotaOk ? 1 : 0);
   const ddnsOk = Boolean(cfg?.ddnsHost?.trim());
 
-  const { nRedis, nKafka, nCloudVm, nOpenClaw, nHermes, nOpenSearch, nDomains, appCenterTotal } = useMemo(() => {
+  const { nRedis, nMySQL, nKafka, nCloudVm, nOpenClaw, nHermes, nOpenSearch, nDomains, appCenterTotal } = useMemo(() => {
     const nr = redisQ.data?.instances?.length ?? 0;
+    const nm = mysqlQ.data?.instances?.length ?? 0;
     const nk = kafkaQ.data?.instances?.length ?? 0;
     const nc = cloudVmQ.data?.instances?.length ?? 0;
     const no = openClawQ.data?.instances?.length ?? 0;
@@ -365,16 +371,18 @@ const HomeHub: React.FC = () => {
     const nd = dnsDomainsQ.data?.domains?.length ?? 0;
     return {
       nRedis: nr,
+      nMySQL: nm,
       nKafka: nk,
       nCloudVm: nc,
       nOpenClaw: no,
       nHermes: nh,
       nOpenSearch: nos,
       nDomains: nd,
-      appCenterTotal: nr + nk + nc + no + nh + nos,
+      appCenterTotal: nr + nm + nk + nc + no + nh + nos,
     };
   }, [
     redisQ.data?.instances,
+    mysqlQ.data?.instances,
     kafkaQ.data?.instances,
     cloudVmQ.data?.instances,
     openClawQ.data?.instances,
@@ -629,9 +637,10 @@ const HomeHub: React.FC = () => {
               </HubStatusPill>
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">应用中心</h2>
-            <p className="mt-0.5 text-xs text-gray-400">Redis、Kafka、OpenSearch、DNS、容器主机、OpenClaw、Hermes</p>
+            <p className="mt-0.5 text-xs text-gray-400">Redis、MySQL、Kafka、OpenSearch、DNS、容器主机、OpenClaw、Hermes</p>
             <HubMetricGrid columns="grid-cols-3">
               <MetricItem label="Redis" value={nRedis} />
+              <MetricItem label="MySQL" value={nMySQL} />
               <MetricItem label="Kafka" value={nKafka} />
               <MetricItem label="OpenSearch" value={nOpenSearch} />
               <MetricItem label="域名" value={nDomains} />

@@ -34,6 +34,7 @@ type cachedEffPerm struct {
 	Baota                          string          `json:"baota"`
 	AppCenter                      string          `json:"appcenter"`
 	AppCenterRedis                 string          `json:"appcenterRedis"`
+	AppCenterMySQL                 string          `json:"appcenterMysql"`
 	AppCenterCloudVm               string          `json:"appcenterCloudVm"`
 	MaskSensitive                  bool            `json:"maskSensitive"`
 	LegacyViewer                   bool            `json:"legacyViewer"`
@@ -53,6 +54,7 @@ func effToCached(e *EffectiveDashboardPermissions) *cachedEffPerm {
 		Baota:                          e.Baota,
 		AppCenter:                      e.AppCenter,
 		AppCenterRedis:                 e.AppCenterRedis,
+		AppCenterMySQL:                 e.AppCenterMySQL,
 		AppCenterCloudVm:               e.AppCenterCloudVm,
 		MaskSensitive:                  e.MaskSensitive,
 		LegacyViewer:                   e.LegacyViewer,
@@ -73,6 +75,7 @@ func cachedToEff(c *cachedEffPerm) *EffectiveDashboardPermissions {
 		Baota:                          c.Baota,
 		AppCenter:                      c.AppCenter,
 		AppCenterRedis:                 c.AppCenterRedis,
+		AppCenterMySQL:                 firstNonEmpty(c.AppCenterMySQL, c.AppCenterRedis),
 		AppCenterCloudVm:               c.AppCenterCloudVm,
 		MaskSensitive:                  c.MaskSensitive,
 		LegacyViewer:                   c.LegacyViewer,

@@ -120,6 +120,44 @@ CREATE TABLE IF NOT EXISTS kubebt_app_redis_templates (
   created_by VARCHAR(64) NOT NULL DEFAULT '',
   UNIQUE KEY uniq_app_redis_tpl_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
+	{"kubebt_app_mysql_instances", `
+CREATE TABLE IF NOT EXISTS kubebt_app_mysql_instances (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(160) NOT NULL,
+  mode VARCHAR(32) NOT NULL,
+  config_json MEDIUMTEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  created_by VARCHAR(64) NOT NULL DEFAULT '',
+  UNIQUE KEY uniq_app_mysql_inst_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
+	{"kubebt_app_mysql_templates", `
+CREATE TABLE IF NOT EXISTS kubebt_app_mysql_templates (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(128) NOT NULL,
+  description VARCHAR(512) NULL,
+  config_json MEDIUMTEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  created_by VARCHAR(64) NOT NULL DEFAULT '',
+  UNIQUE KEY uniq_app_mysql_tpl_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
+	{"kubebt_app_mysql_backups", `
+CREATE TABLE IF NOT EXISTS kubebt_app_mysql_backups (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  instance_id BIGINT UNSIGNED NOT NULL,
+  backup_name VARCHAR(160) NOT NULL,
+  status VARCHAR(32) NOT NULL,
+  storage_ref VARCHAR(512) NOT NULL DEFAULT '',
+  size_bytes BIGINT NOT NULL DEFAULT 0,
+  started_at TIMESTAMP NULL,
+  finished_at TIMESTAMP NULL,
+  error_summary VARCHAR(512) NOT NULL DEFAULT '',
+  created_by VARCHAR(64) NOT NULL DEFAULT '',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_app_mysql_backup_inst (instance_id, id),
+  UNIQUE KEY uniq_app_mysql_backup_name (instance_id, backup_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
 	{"kubebt_app_opensearch_templates", `
 CREATE TABLE IF NOT EXISTS kubebt_app_opensearch_templates (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,

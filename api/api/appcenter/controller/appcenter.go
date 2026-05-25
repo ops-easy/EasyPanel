@@ -17,6 +17,7 @@ func New(app *appctx.ServerApp) *Controller {
 
 func (ctl *Controller) RegisterRoutes(api *gin.RouterGroup) {
 	appcentersvc.RegisterRedisRoutes(api, ctl.app)
+	appcentersvc.RegisterMySQLRoutes(api, ctl.app)
 	appcentersvc.RegisterKafkaRoutes(api, ctl.app)
 	appcentersvc.RegisterOpenSearchRoutes(api, ctl.app)
 	appcentersvc.RegisterOpenClawRoutes(api, ctl.app)

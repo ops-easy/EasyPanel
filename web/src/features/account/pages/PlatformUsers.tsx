@@ -135,6 +135,7 @@ type PermForm = {
   baota: ModuleAccess;
   appcenter: ModuleAccess;
   appcenterRedis: RedisScope;
+  appcenterMysql: RedisScope;
   appcenterCloudVm: RedisScope;
   /** 验证平台密码后可查看云主机 Hysteria2 客户端 YAML / 列表内网端点概要 */
   appcenterCloudVmHysteriaReveal: boolean;
@@ -153,6 +154,7 @@ const defaultPermForm = (): PermForm => ({
   baota: "ro",
   appcenter: "ro",
   appcenterRedis: "full",
+  appcenterMysql: "full",
   appcenterCloudVm: "full",
   appcenterCloudVmHysteriaReveal: false,
   maskSensitiveData: true,
@@ -177,9 +179,10 @@ function parsePermissionsJson(raw: string | undefined): { useCustom: boolean; fo
   try {
     const o = JSON.parse(t) as Record<string, unknown>;
     const appcenterRedis = normalizeRedisScope(o.appcenterRedis);
+    const appcenterMysql = normalizeRedisScope(o.appcenterMysql ?? o.appcenterRedis);
     const appcenterCloudVm = normalizeRedisScope(o.appcenterCloudVm ?? o.appcenterRedis);
     let appcenter = normalizeModule(o.appcenter);
-    if (appcenterRedis === "managed_only" || appcenterCloudVm === "managed_only") {
+    if (appcenterRedis === "managed_only" || appcenterMysql === "managed_only" || appcenterCloudVm === "managed_only") {
       appcenter = "rw";
     }
     const k8s = normalizeModule(o.k8s);
@@ -200,6 +203,7 @@ function parsePermissionsJson(raw: string | undefined): { useCustom: boolean; fo
         baota: normalizeModule(o.baota),
         appcenter,
         appcenterRedis,
+        appcenterMysql,
         appcenterCloudVm,
         appcenterCloudVmHysteriaReveal:
           typeof o.appcenterCloudVmHysteriaReveal === "boolean"
@@ -224,7 +228,11 @@ function buildPermissionsJson(
   if (role === "admin") return undefined;
   if (!useCustom) return "";
   let appcenter = form.appcenter;
-  if (form.appcenterRedis === "managed_only" || form.appcenterCloudVm === "managed_only") {
+  if (
+    form.appcenterRedis === "managed_only" ||
+    form.appcenterMysql === "managed_only" ||
+    form.appcenterCloudVm === "managed_only"
+  ) {
     appcenter = "rw";
   }
   const menuOut: Record<string, boolean> = {};
@@ -241,6 +249,7 @@ function buildPermissionsJson(
     baota: form.baota,
     appcenter,
     appcenterRedis: form.appcenterRedis,
+    appcenterMysql: form.appcenterMysql,
     appcenterCloudVm: form.appcenterCloudVm,
     appcenterCloudVmHysteriaReveal: form.appcenterCloudVmHysteriaReveal,
     maskSensitiveData: form.maskSensitiveData,
@@ -495,9 +504,13 @@ const PlatformUsers: React.FC = () => {
       const next = { ...f, [key]: v };
       if (key === "appcenter" && v === "none") {
         next.appcenterRedis = "full";
+        next.appcenterMysql = "full";
+        next.appcenterCloudVm = "full";
       }
       if (key === "appcenter" && v !== "none" && f.appcenter === "none") {
         next.appcenterRedis = "full";
+        next.appcenterMysql = "full";
+        next.appcenterCloudVm = "full";
       }
       if (key === "k8s") {
         if (v === "rw") {
@@ -882,6 +895,35 @@ const PlatformUsers: React.FC = () => {
                         {permForm.appcenterRedis === "managed_only" && (
                           <p className="text-xs text-amber-800/90">
                             「仅纳管」需应用中心为读写，保存时将自动设为读写。
+                          </p>
+                        )}
+                        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                          <Label className="shrink-0 text-sm text-gray-700">应用中心 · MySQL</Label>
+                          <Select
+                            value={permForm.appcenterMysql}
+                            onValueChange={(v) => {
+                              const rs = v as RedisScope;
+                              setPermForm((f) => ({
+                                ...f,
+                                appcenterMysql: rs,
+                                appcenter: rs === "managed_only" ? "rw" : f.appcenter,
+                              }));
+                            }}
+                            disabled={permForm.appcenter === "none"}
+                          >
+                            <SelectTrigger className="h-9 w-full sm:w-[200px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="full">完整</SelectItem>
+                              <SelectItem value="readonly">仅只读</SelectItem>
+                              <SelectItem value="managed_only">仅纳管自有实例</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {permForm.appcenterMysql === "managed_only" && (
+                          <p className="text-xs text-amber-800/90">
+                            MySQL「仅纳管」可登记和管理自己创建的外部实例，但不能执行 K8s 一键部署或写模板。
                           </p>
                         )}
                         <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">

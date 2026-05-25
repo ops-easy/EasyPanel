@@ -8,7 +8,7 @@ import (
 )
 
 // AppMySQLSchemaVersion 应用期望的平台表结构版本（仅用于日志与 meta 表；每次增表/增列请递增）。
-const AppMySQLSchemaVersion = 24
+const AppMySQLSchemaVersion = 25
 
 // mysqlMigrateSchema 在 CREATE TABLE 之后执行：补列、补索引，并在最后再次尝试创建仍缺失的表。
 func mysqlMigrateSchema(db *sql.DB) error {

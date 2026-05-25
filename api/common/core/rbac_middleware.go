@@ -98,6 +98,26 @@ func viewerEndpointForbidden(method, path string) bool {
 	if path == "/api/app-center/redis/k8s-deploy" && method == http.MethodPost {
 		return true
 	}
+	if strings.HasPrefix(path, "/api/app-center/mysql/instances") {
+		if method == http.MethodPost && path == "/api/app-center/mysql/instances" {
+			return true
+		}
+		if method == http.MethodPut || method == http.MethodDelete {
+			return true
+		}
+		if method == http.MethodPost && strings.Contains(path, "/query") {
+			return true
+		}
+		if method == http.MethodPost && (strings.Contains(path, "/backups") || strings.Contains(path, "/users")) {
+			return true
+		}
+	}
+	if path == "/api/app-center/mysql/k8s-deploy" && method == http.MethodPost {
+		return true
+	}
+	if strings.HasPrefix(path, "/api/app-center/mysql/templates") && method != http.MethodGet {
+		return true
+	}
 	if path == "/api/app-center/cloud-vm/bootstrap" && method == http.MethodPut {
 		return true
 	}
@@ -255,6 +275,10 @@ func ViewerRestrictionsMiddleware(app *ServerApp) gin.HandlerFunc {
 				return
 			}
 			if appRedisPathIsSensitiveRead(p, m) && appRedisMaskSensitive(eff) {
+				AbortAPIPermissionDenied(c)
+				return
+			}
+			if appMySQLPathIsSensitiveRead(p, m) && appRedisMaskSensitive(eff) {
 				AbortAPIPermissionDenied(c)
 				return
 			}

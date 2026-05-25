@@ -258,6 +258,20 @@ func TestPermissionMatrixCoversKeyModules(t *testing.T) {
 			want:   true,
 		},
 		{
+			name:   "mysql inherits redis scope unless explicitly set",
+			raw:    `{"k8s":"none","compute":"none","network":"none","baota":"none","appcenter":"rw","appcenterRedis":"readonly"}`,
+			method: http.MethodPost,
+			path:   "/api/app-center/mysql/k8s-deploy",
+			want:   true,
+		},
+		{
+			name:   "mysql can be full while redis is readonly",
+			raw:    `{"k8s":"none","compute":"none","network":"none","baota":"none","appcenter":"rw","appcenterRedis":"readonly","appcenterMysql":"full"}`,
+			method: http.MethodPost,
+			path:   "/api/app-center/mysql/instances/1/backups",
+			want:   false,
+		},
+		{
 			name:   "cloud vm managed only blocks create",
 			raw:    `{"k8s":"none","compute":"none","network":"none","baota":"none","appcenter":"rw","appcenterRedis":"full","appcenterCloudVm":"managed_only"}`,
 			method: http.MethodPost,

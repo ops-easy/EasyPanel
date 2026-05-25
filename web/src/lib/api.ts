@@ -72,6 +72,8 @@ export type PlatformPermissions = {
   baota?: string;
   appcenter?: string;
   appcenterRedis?: string;
+  /** 应用中心 MySQL 子域；未设置时与 appcenterRedis 一致 */
+  appcenterMysql?: string;
   /** 应用中心云主机子域；未设置时与 appcenterRedis 一致 */
   appcenterCloudVm?: string;
   /** 验证平台密码后可查看云主机 Hysteria2 客户端 YAML/分享链（与后端 reveal 接口一致） */

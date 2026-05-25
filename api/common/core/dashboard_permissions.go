@@ -36,6 +36,8 @@ type DashboardPermissionsJSON struct {
 	AppCenter string `json:"appcenter"`
 	// appcenterRedis: full | readonly | managed_only
 	AppCenterRedis string `json:"appcenterRedis"`
+	// appcenterMysql: full | readonly | managed_only; empty inherits appcenterRedis.
+	AppCenterMySQL string `json:"appcenterMysql,omitempty"`
 	// appcenterCloudVm: 应用中心「云主机」子域；空则继承 appcenterRedis
 	AppCenterCloudVm string `json:"appcenterCloudVm,omitempty"`
 	// MaskSensitiveData 为 true 时不返回 Redis 键/运行时等明细（仅列表概要）。
@@ -60,6 +62,8 @@ type EffectiveDashboardPermissions struct {
 	AppCenter string
 	// AppCenterRedis: full | readonly | managed_only
 	AppCenterRedis string
+	// AppCenterMySQL: full | readonly | managed_only; empty inherits AppCenterRedis.
+	AppCenterMySQL string
 	// AppCenterCloudVm: full | readonly | managed_only（空表示与 AppCenterRedis 相同）
 	AppCenterCloudVm string
 	MaskSensitive    bool
@@ -97,6 +101,7 @@ func defaultEffectiveAdmin() *EffectiveDashboardPermissions {
 		Baota:                          ModuleAccessRW,
 		AppCenter:                      ModuleAccessRW,
 		AppCenterRedis:                 AppCenterRedisScopeFull,
+		AppCenterMySQL:                 AppCenterRedisScopeFull,
 		AppCenterCloudVm:               AppCenterRedisScopeFull,
 		MaskSensitive:                  false,
 		LegacyViewer:                   false,
@@ -116,6 +121,7 @@ func defaultEffectiveLegacyViewer() *EffectiveDashboardPermissions {
 		Baota:                          ModuleAccessRO,
 		AppCenter:                      ModuleAccessRO,
 		AppCenterRedis:                 AppCenterRedisScopeFull,
+		AppCenterMySQL:                 AppCenterRedisScopeFull,
 		AppCenterCloudVm:               AppCenterRedisScopeFull,
 		MaskSensitive:                  true,
 		LegacyViewer:                   true,
@@ -151,6 +157,10 @@ func effectivePermissionsFromJSON(role string, raw string) *EffectiveDashboardPe
 	// 自定义权限用户不走旧版 viewer 全量黑名单，而走模块矩阵。
 	k8sAcc := normalizeModuleAccess(j.K8s)
 	redisScope := normalizeAppCenterRedisScope(j.AppCenterRedis)
+	mysqlScope := redisScope
+	if strings.TrimSpace(j.AppCenterMySQL) != "" {
+		mysqlScope = normalizeAppCenterRedisScope(j.AppCenterMySQL)
+	}
 	cloudVmScope := redisScope
 	if strings.TrimSpace(j.AppCenterCloudVm) != "" {
 		cloudVmScope = normalizeAppCenterRedisScope(j.AppCenterCloudVm)
@@ -176,6 +186,7 @@ func effectivePermissionsFromJSON(role string, raw string) *EffectiveDashboardPe
 		Baota:                          normalizeModuleAccess(j.Baota),
 		AppCenter:                      normalizeModuleAccess(j.AppCenter),
 		AppCenterRedis:                 redisScope,
+		AppCenterMySQL:                 mysqlScope,
 		AppCenterCloudVm:               cloudVmScope,
 		MaskSensitive:                  mask,
 		LegacyViewer:                   false,
@@ -534,11 +545,43 @@ func permissionEndpointForbidden(method, path string, eff *EffectiveDashboardPer
 			// POST /instances、PUT/DELETE /instances/:id 等在 handler 中按实例细查
 		}
 	}
+	if strings.HasPrefix(path, "/api/app-center/mysql/") {
+		if eff.AppCenter == ModuleAccessNone {
+			return true
+		}
+		scope := appCenterMySQLScope(eff)
+		if scope == AppCenterRedisScopeReadonly {
+			if httpMethodIsMutating(method) {
+				return true
+			}
+		}
+		if scope == AppCenterRedisScopeManagedOnly {
+			if path == "/api/app-center/mysql/k8s-deploy" && method == http.MethodPost {
+				return true
+			}
+			if strings.HasPrefix(path, "/api/app-center/mysql/templates") && method != http.MethodGet {
+				return true
+			}
+		}
+	}
 	// 读用户不看 Redis 明细
 	if appRedisPathIsSensitiveRead(path, method) && appRedisMaskSensitive(eff) {
 		return true
 	}
+	if appMySQLPathIsSensitiveRead(path, method) && appMySQLMaskSensitive(eff) {
+		return true
+	}
 	return false
+}
+
+func appCenterMySQLScope(eff *EffectiveDashboardPermissions) string {
+	if eff == nil {
+		return AppCenterRedisScopeReadonly
+	}
+	if strings.TrimSpace(eff.AppCenterMySQL) != "" {
+		return normalizeAppCenterRedisScope(eff.AppCenterMySQL)
+	}
+	return normalizeAppCenterRedisScope(eff.AppCenterRedis)
 }
 
 func appRedisMaskSensitive(eff *EffectiveDashboardPermissions) bool {
@@ -556,6 +599,23 @@ func appRedisMaskSensitive(eff *EffectiveDashboardPermissions) bool {
 	}
 	// 仅纳管自有实例：不提供键空间、控制台等明细能力
 	if eff.AppCenterRedis == AppCenterRedisScopeManagedOnly {
+		return true
+	}
+	return false
+}
+
+func appMySQLMaskSensitive(eff *EffectiveDashboardPermissions) bool {
+	if eff == nil {
+		return true
+	}
+	if eff.LegacyViewer {
+		return true
+	}
+	if eff.MaskSensitive {
+		return true
+	}
+	scope := appCenterMySQLScope(eff)
+	if scope == AppCenterRedisScopeReadonly || scope == AppCenterRedisScopeManagedOnly {
 		return true
 	}
 	return false
@@ -587,6 +647,37 @@ func appRedisPathIsSensitiveRead(path, method string) bool {
 	return false
 }
 
+func appMySQLPathIsSensitiveRead(path, method string) bool {
+	if !strings.HasPrefix(path, "/api/app-center/mysql/") {
+		return false
+	}
+	if method == http.MethodPost && strings.Contains(path, "/query") {
+		return true
+	}
+	if method != http.MethodGet {
+		return false
+	}
+	if strings.Contains(path, "/runtime") {
+		return true
+	}
+	if strings.Contains(path, "/schemas") {
+		return true
+	}
+	if strings.Contains(path, "/tables") {
+		return true
+	}
+	if strings.Contains(path, "/processlist") {
+		return true
+	}
+	if strings.Contains(path, "/users") {
+		return true
+	}
+	if strings.Contains(path, "/backups") {
+		return true
+	}
+	return false
+}
+
 // EffectivePermissionsToPublic 供 /api/config 与 /api/auth/status 返回。
 // ValidatePermissionsJSONString 校验 permissions_json 文本；空字符串表示沿用旧版 viewer 默认。
 func ValidatePermissionsJSONString(raw string) error {
@@ -601,6 +692,15 @@ func ValidatePermissionsJSONString(raw string) error {
 	if normalizeAppCenterRedisScope(j.AppCenterRedis) == AppCenterRedisScopeManagedOnly {
 		if normalizeModuleAccess(j.AppCenter) != ModuleAccessRW {
 			return errors.New("appcenterRedis 为 managed_only 时，appcenter 必须为 rw")
+		}
+	}
+	mysqlEff := normalizeAppCenterRedisScope(j.AppCenterRedis)
+	if strings.TrimSpace(j.AppCenterMySQL) != "" {
+		mysqlEff = normalizeAppCenterRedisScope(j.AppCenterMySQL)
+	}
+	if mysqlEff == AppCenterRedisScopeManagedOnly {
+		if normalizeModuleAccess(j.AppCenter) != ModuleAccessRW {
+			return errors.New("appcenterMysql managed_only requires appcenter=rw")
 		}
 	}
 	cloudEff := normalizeAppCenterRedisScope(j.AppCenterRedis)
@@ -627,6 +727,7 @@ func EffectivePermissionsToPublic(eff *EffectiveDashboardPermissions) gin.H {
 		"baota":                          eff.Baota,
 		"appcenter":                      eff.AppCenter,
 		"appcenterRedis":                 eff.AppCenterRedis,
+		"appcenterMysql":                 appCenterMySQLScope(eff),
 		"appcenterCloudVm":               eff.AppCenterCloudVm,
 		"maskSensitiveData":              eff.MaskSensitive,
 		"legacyViewer":                   eff.LegacyViewer,

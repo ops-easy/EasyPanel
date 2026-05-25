@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "frontend-api-uses",
-  "routeCount": 845,
+  "routeCount": 869,
   "routes": [
     {
       "method": "UNKNOWN",
@@ -63,7 +63,7 @@
       "method": "GET",
       "pathPattern": "/api/admin/users",
       "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
-      "sourceLine": 299,
+      "sourceLine": 308,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -71,7 +71,7 @@
       "method": "POST",
       "pathPattern": "/api/admin/users",
       "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
-      "sourceLine": 420,
+      "sourceLine": 429,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -79,7 +79,7 @@
       "method": "DELETE",
       "pathPattern": "/api/admin/users/:param",
       "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
-      "sourceLine": 432,
+      "sourceLine": 441,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -87,7 +87,7 @@
       "method": "PUT",
       "pathPattern": "/api/admin/users/:param",
       "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
-      "sourceLine": 407,
+      "sourceLine": 416,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -95,7 +95,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/admin/users/oidc/bind/start",
       "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
-      "sourceLine": 633,
+      "sourceLine": 646,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -103,7 +103,7 @@
       "method": "POST",
       "pathPattern": "/api/admin/users/oidc/unbind",
       "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
-      "sourceLine": 1197,
+      "sourceLine": 1239,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -111,7 +111,7 @@
       "method": "POST",
       "pathPattern": "/api/admin/users/totp/disable",
       "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
-      "sourceLine": 481,
+      "sourceLine": 490,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -119,7 +119,7 @@
       "method": "POST",
       "pathPattern": "/api/admin/users/totp/provision",
       "sourceFile": "web/src/features/account/pages/PlatformUsers.tsx",
-      "sourceLine": 459,
+      "sourceLine": 468,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -175,7 +175,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/instances",
       "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
-      "sourceLine": 48,
+      "sourceLine": 53,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -215,7 +215,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/instances",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 228,
+      "sourceLine": 233,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -383,7 +383,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances",
       "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
-      "sourceLine": 63,
+      "sourceLine": 68,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -391,7 +391,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 238,
+      "sourceLine": 243,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -679,7 +679,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances",
       "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
-      "sourceLine": 70,
+      "sourceLine": 75,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -687,7 +687,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 222,
+      "sourceLine": 227,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1093,6 +1093,198 @@
     },
     {
       "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances",
+      "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
+      "sourceLine": 47,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 214,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances",
+      "sourceFile": "web/src/pages/HomeHub.tsx",
+      "sourceLine": 222,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 242,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/mysql/instances/:param",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 257,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:param/backups",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 363,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances/:param/backups",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 382,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/mysql/instances/:param/backups/:param",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 406,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances/:param/backups/:param/restore",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 395,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances/:param/ping",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 268,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:param/processlist",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 354,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances/:param/query",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 322,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:param/runtime",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 335,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:param/schemas",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 344,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:param/users",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 372,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances/:param/users",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 417,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/mysql/instances/:param/users/:param",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 446,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/mysql/instances/:param/users/:param/password",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 433,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/app-center/mysql/instances/:param/users/${encodeURIComponent(u.username",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 446,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/app-center/mysql/instances/:param/users/${encodeURIComponent(userForm.passwordUser",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 433,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/k8s-deploy",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 278,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/status",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 208,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/templates",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 222,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/templates",
+      "sourceFile": "web/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
+      "sourceLine": 295,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
       "pathPattern": "/api/app-center/openclaw/bootstrap",
       "sourceFile": "web/src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx",
       "sourceLine": 374,
@@ -1175,7 +1367,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances",
       "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
-      "sourceLine": 55,
+      "sourceLine": 60,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1231,7 +1423,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 233,
+      "sourceLine": 238,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1639,7 +1831,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/opensearch/instances",
       "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
-      "sourceLine": 76,
+      "sourceLine": 81,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1655,7 +1847,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/opensearch/instances",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 243,
+      "sourceLine": 248,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2103,7 +2295,7 @@
       "method": "POST",
       "pathPattern": "/api/auth/logout",
       "sourceFile": "web/src/auth/auth-context.tsx",
-      "sourceLine": 104,
+      "sourceLine": 105,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2127,7 +2319,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/auth/status",
       "sourceFile": "web/src/auth/auth-context.tsx",
-      "sourceLine": 71,
+      "sourceLine": 72,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2135,7 +2327,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/auth/status",
       "sourceFile": "web/src/auth/auth-context.tsx",
-      "sourceLine": 75,
+      "sourceLine": 76,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2551,7 +2743,7 @@
       "method": "GET",
       "pathPattern": "/api/dns/accounts",
       "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
-      "sourceLine": 81,
+      "sourceLine": 86,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2687,7 +2879,7 @@
       "method": "GET",
       "pathPattern": "/api/dns/domains",
       "sourceFile": "web/src/features/app-center/layout/AppCenterDashboard.tsx",
-      "sourceLine": 87,
+      "sourceLine": 92,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2727,7 +2919,7 @@
       "method": "GET",
       "pathPattern": "/api/dns/domains",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 247,
+      "sourceLine": 252,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4455,7 +4647,7 @@
       "method": "GET",
       "pathPattern": "/api/network/devices",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 298,
+      "sourceLine": 303,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4919,7 +5111,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 271,
+      "sourceLine": 276,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4951,7 +5143,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/alerts",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 266,
+      "sourceLine": 271,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5063,7 +5255,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/reports",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 277,
+      "sourceLine": 282,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5119,7 +5311,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 283,
+      "sourceLine": 288,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5391,7 +5583,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/query",
       "sourceFile": "web/src/lib/api.ts",
-      "sourceLine": 639,
+      "sourceLine": 641,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5407,7 +5599,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/query_range",
       "sourceFile": "web/src/lib/api.ts",
-      "sourceLine": 652,
+      "sourceLine": 654,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5479,7 +5671,7 @@
       "method": "GET",
       "pathPattern": "/api/prometheus/status",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 290,
+      "sourceLine": 295,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -6359,7 +6551,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/bastion/vms",
       "sourceFile": "web/src/pages/HomeHub.tsx",
-      "sourceLine": 256,
+      "sourceLine": 261,
       "needsManualReview": false,
       "kind": "http"
     },

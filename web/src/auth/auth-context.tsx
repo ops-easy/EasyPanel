@@ -18,6 +18,7 @@ export type AuthPermissions = {
   baota?: string;
   appcenter?: string;
   appcenterRedis?: string;
+  appcenterMysql?: string;
   appcenterCloudVm?: string;
   appcenterCloudVmHysteriaReveal?: boolean;
   maskSensitiveData?: boolean;

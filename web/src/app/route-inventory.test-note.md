@@ -15,6 +15,7 @@ npm run build
 - `/cluster`
 - `/cluster/apps/dashboard`
 - `/cluster/apps/redis`
+- `/cluster/apps/mysql`
 - `/cluster/apps/kafka`
 - `/cluster/apps/opensearch`
 - `/cluster/apps/dns`

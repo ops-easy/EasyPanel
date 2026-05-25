@@ -52,6 +52,7 @@ export const criticalRoutes = [
   "/cluster/apps",
   "/cluster/apps/dashboard",
   "/cluster/apps/redis",
+  "/cluster/apps/mysql",
   "/cluster/apps/kafka",
   "/cluster/apps/kafka/instance/:id",
   "/cluster/apps/opensearch",

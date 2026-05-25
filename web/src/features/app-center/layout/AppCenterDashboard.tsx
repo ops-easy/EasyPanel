@@ -42,6 +42,11 @@ export default function AppCenterDashboard() {
       , { signal }),
   });
 
+  const mysqlQ = useQuery({
+    queryKey: ["app-center-mysql-instances-dash"],
+    queryFn: ({ signal }) => apiGetJson<{ instances: unknown[] }>("/api/app-center/mysql/instances", { signal }),
+  });
+
   const cloudVmQ = useQuery({
     queryKey: ["app-center-cloud-vm-instances"],
     queryFn: ({ signal }) =>
@@ -89,6 +94,7 @@ export default function AppCenterDashboard() {
   });
 
   const nInst = listQ.data?.instances?.length ?? 0;
+  const nMySQL = mysqlQ.data?.instances?.length ?? 0;
   const nCloudVm = cloudVmQ.data?.instances?.length ?? 0;
   const nOpenClaw = openClawQ.data?.instances?.length ?? 0;
   const nHermes = hermesQ.data?.instances?.length ?? 0;
@@ -122,6 +128,16 @@ export default function AppCenterDashboard() {
             >
               <Link to="/cluster/apps/redis">
                 Redis 缓存
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="secondary"
+              className="h-10 shrink-0 gap-1.5 border-sky-200/80 bg-sky-50/70 shadow-sm hover:bg-sky-100/80"
+            >
+              <Link to="/cluster/apps/mysql">
+                MySQL
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -202,6 +218,15 @@ export default function AppCenterDashboard() {
             <div>
               <p className="text-xs font-medium text-slate-500">Redis 实例</p>
               <p className="text-2xl font-semibold tabular-nums text-slate-900">{nInst}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-sky-100 bg-white p-4 shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-700">
+              <Database className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-slate-500">MySQL 实例</p>
+              <p className="text-2xl font-semibold tabular-nums text-slate-900">{nMySQL}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-violet-100 bg-white p-4 shadow-sm">

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 export type AppCenterNavItem = {
-  id: "dashboard" | "redis" | "kafka" | "opensearch" | "dns" | "cloudVm" | "openclaw" | "hermes";
+  id: "dashboard" | "redis" | "mysql" | "kafka" | "opensearch" | "dns" | "cloudVm" | "openclaw" | "hermes";
   to: string;
   label: string;
   sidebarLabel: string;
@@ -21,6 +21,7 @@ export type AppCenterNavItem = {
 export const APP_CENTER_NAV_ITEMS: AppCenterNavItem[] = [
   { id: "dashboard", to: "/cluster/apps/dashboard", label: "Dashboard", sidebarLabel: "Dashboard", icon: LayoutDashboard },
   { id: "redis", to: "/cluster/apps/redis", label: "Redis 缓存", sidebarLabel: "Redis", icon: Database },
+  { id: "mysql", to: "/cluster/apps/mysql", label: "MySQL", sidebarLabel: "MySQL", icon: Database },
   { id: "kafka", to: "/cluster/apps/kafka", label: "Kafka", sidebarLabel: "Kafka", icon: Layers },
   { id: "opensearch", to: "/cluster/apps/opensearch", label: "OpenSearch", sidebarLabel: "OpenSearch", icon: Search },
   { id: "dns", to: "/cluster/apps/dns", label: "DNS 管理", sidebarLabel: "DNS 管理", icon: Globe },

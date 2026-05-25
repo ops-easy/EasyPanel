@@ -121,6 +121,21 @@ export function openSearchAppCenterCanWrite(
   return redisAppCenterCanWrite(role, p);
 }
 
+function mysqlScope(p: PlatformPermissions | undefined | null): string | undefined {
+  return p?.appcenterMysql ?? p?.appcenterRedis;
+}
+
+export function mysqlAppCenterCanWrite(
+  role: string | undefined,
+  p: PlatformPermissions | undefined | null
+): boolean {
+  if (role === "admin") return true;
+  if (!p || p.legacyViewer) return false;
+  if (p.appcenter !== "rw") return false;
+  if (mysqlScope(p) === "readonly") return false;
+  return true;
+}
+
 /**
  * 应用中心云主机：写操作权限（创建/删除/引导配置等）。
  * `appcenterCloudVm` 未下发时继承 `appcenterRedis`；`managed_only` 与后端中间件一致时默认禁止写。
@@ -161,6 +176,18 @@ export function redisShowK8sDeployWizard(
 }
 
 /** 与旧版「viewer 仅只读」等价的界面限制（无自定义权限时） */
+export function mysqlShowK8sDeployWizard(
+  role: string | undefined,
+  p: PlatformPermissions | undefined | null
+): boolean {
+  if (role === "admin") return true;
+  if (!p || p.legacyViewer) return false;
+  if (p.appcenter !== "rw") return false;
+  const scope = mysqlScope(p);
+  if (scope === "readonly" || scope === "managed_only") return false;
+  return true;
+}
+
 export function isLegacyStyleViewer(
   role: string | undefined,
   cfgViewer: boolean | undefined,

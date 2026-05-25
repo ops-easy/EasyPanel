@@ -54,6 +54,8 @@ performance:
 		"GET /api/compute/activity",
 		"GET /api/k8s/summary",
 		"GET /api/app-center/redis/status",
+		"GET /api/app-center/mysql/status",
+		"POST /api/app-center/mysql/k8s-deploy",
 		"GET /api/bastion/targets",
 		"POST /api/pve/targets/:id/guests/:vmid/snapshots/:snapname/rollback",
 		"GET /api/vcenter/vms/:moref/snapshots",
