@@ -62,6 +62,8 @@ performance:
 		"DELETE /api/vcenter/vms/:moref/snapshots/:name",
 		"GET /api/vcenter/datastores",
 		"GET /api/dns/status",
+		"GET /api/ops/ai-chat/status",
+		"POST /api/ops/ai-chat",
 		"GET /r/*rp",
 		"POST /r/*rp",
 		"GET /d/:token",

@@ -8,7 +8,7 @@ import AppLayoutMobile from "./AppLayoutMobile";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const UserGuideSheet = React.lazy(() => import("./UserGuideSheet"));
+const FloatingAssistantDock = React.lazy(() => import("./FloatingAssistantDock"));
 
 const AppLayout: React.FC = () => {
   const isMobile = useIsMobile();
@@ -93,7 +93,7 @@ const AppLayout: React.FC = () => {
         </div>
       </div>
       <React.Suspense fallback={null}>
-        <UserGuideSheet tone={appChromeDark ? "dark" : "light"} />
+        <FloatingAssistantDock tone={appChromeDark ? "dark" : "light"} />
       </React.Suspense>
     </div>
   );

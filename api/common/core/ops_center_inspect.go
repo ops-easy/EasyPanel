@@ -569,16 +569,20 @@ func opsAIProviderFailureDiagnosis(app *ServerApp, bundle OpsAIProviderBundle, e
 }
 
 func opsAIProviderChatAPI(cfg Config, app *ServerApp, oc OpsAIProviderEndpoint, ai OpsAIInspectConfig, systemPrompt, userMsg string, timeoutSec int, maxTokensOverride int) (content string, latencyMs int64, err error) {
+	msgs := []openClawChatMsg{
+		{Role: "system", Content: strings.TrimSpace(systemPrompt)},
+		{Role: "user", Content: userMsg},
+	}
+	return opsAIProviderChatMessagesAPI(cfg, app, oc, ai, msgs, timeoutSec, maxTokensOverride)
+}
+
+func opsAIProviderChatMessagesAPI(cfg Config, app *ServerApp, oc OpsAIProviderEndpoint, ai OpsAIInspectConfig, msgs []openClawChatMsg, timeoutSec int, maxTokensOverride int) (content string, latencyMs int64, err error) {
 	if timeoutSec <= 0 {
 		timeoutSec = 120
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
 	defer cancel()
 
-	msgs := []openClawChatMsg{
-		{Role: "system", Content: strings.TrimSpace(systemPrompt)},
-		{Role: "user", Content: userMsg},
-	}
 	model := strings.TrimSpace(oc.Model)
 	mt := maxTokensOverride
 	if mt <= 0 {
@@ -642,11 +646,8 @@ func opsAIProviderChatAPI(cfg Config, app *ServerApp, oc OpsAIProviderEndpoint, 
 		return "", 0, fmt.Errorf("未配置 Base URL")
 	}
 	body := map[string]interface{}{
-		"model": model,
-		"messages": []map[string]string{
-			{"role": "system", "content": strings.TrimSpace(systemPrompt)},
-			{"role": "user", "content": userMsg},
-		},
+		"model":    model,
+		"messages": msgs,
 	}
 	if ai.ModelExtra.Temperature > 0 {
 		body["temperature"] = ai.ModelExtra.Temperature
