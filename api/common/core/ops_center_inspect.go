@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
@@ -722,6 +723,156 @@ func opsAIProviderChatMessagesAPI(cfg Config, app *ServerApp, oc OpsAIProviderEn
 		return "", latencyMs, fmt.Errorf("[OpenClaw 网关] 响应中无 choices（HTTP 虽为 2xx 但结构异常）")
 	}
 	return strings.TrimSpace(wrap.Choices[0].Message.Content), latencyMs, nil
+}
+
+func opsAIProviderChatMessagesStreamAPI(ctx context.Context, cfg Config, oc OpsAIProviderEndpoint, ai OpsAIInspectConfig, msgs []openClawChatMsg, timeoutSec int, maxTokensOverride int, onDelta func(string) error) (latencyMs int64, err error) {
+	if timeoutSec <= 0 {
+		timeoutSec = 120
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeoutSec)*time.Second)
+	defer cancel()
+
+	model := strings.TrimSpace(oc.Model)
+	mt := maxTokensOverride
+	if mt <= 0 {
+		mt = ai.ModelExtra.MaxTokens
+	}
+	body := map[string]interface{}{
+		"model":    model,
+		"messages": msgs,
+		"stream":   true,
+	}
+	if ai.ModelExtra.Temperature > 0 {
+		body["temperature"] = ai.ModelExtra.Temperature
+	}
+	if mt > 0 {
+		body["max_tokens"] = mt
+	}
+	xoHdr := ""
+	if opsUseOpenClawGatewayModelRouting(oc) {
+		bm, xo := openClawApplyGatewayModelRouting(strings.TrimSpace(model))
+		body["model"] = bm
+		xoHdr = xo
+	}
+
+	key, err := opsEncryptionKey(cfg)
+	if err != nil {
+		return 0, err
+	}
+	apiKey, _ := decryptSecret(key, oc.APIKeyEnc)
+	if strings.TrimSpace(apiKey) == "" {
+		return 0, fmt.Errorf("未配置 API Key")
+	}
+	base := strings.TrimRight(strings.TrimSpace(oc.BaseURL), "/")
+	if base == "" {
+		return 0, fmt.Errorf("未配置 Base URL")
+	}
+	u := openClawOpenAIChatCompletionsURL(base)
+	if u == "" {
+		return 0, fmt.Errorf("无法拼接 chat/completions URL")
+	}
+	raw, _ := json.Marshal(body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(raw))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	if strings.TrimSpace(xoHdr) != "" {
+		req.Header.Set("x-openclaw-model", strings.TrimSpace(xoHdr))
+	}
+	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: oc.SkipTLSVerify, MinVersion: tls.VersionTLS12}}
+	cli := &http.Client{Transport: tr}
+	t0 := time.Now()
+	resp, err := cli.Do(req)
+	if err != nil {
+		return time.Since(t0).Milliseconds(), fmt.Errorf("[OpenClaw 网关] 流式请求失败: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		rawBody, _ := io.ReadAll(resp.Body)
+		return time.Since(t0).Milliseconds(), fmt.Errorf("[OpenClaw 网关] HTTP %d: %s", resp.StatusCode, opsTruncateStr(string(rawBody), 400))
+	}
+	if err := opsAIProviderReadOpenAIStream(resp.Body, onDelta); err != nil {
+		return time.Since(t0).Milliseconds(), err
+	}
+	return time.Since(t0).Milliseconds(), nil
+}
+
+func opsAIProviderReadOpenAIStream(r io.Reader, onDelta func(string) error) error {
+	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, ":") {
+			continue
+		}
+		if !strings.HasPrefix(strings.ToLower(line), "data:") {
+			continue
+		}
+		data := strings.TrimSpace(strings.TrimPrefix(line, "data:"))
+		if data == "" {
+			continue
+		}
+		if data == "[DONE]" {
+			return nil
+		}
+		delta, err := opsAIProviderStreamDelta(data)
+		if err != nil {
+			return err
+		}
+		if delta == "" {
+			continue
+		}
+		if onDelta != nil {
+			if err := onDelta(delta); err != nil {
+				return err
+			}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("[OpenClaw 网关] 读取流式响应失败: %w", err)
+	}
+	return nil
+}
+
+func opsAIProviderStreamDelta(data string) (string, error) {
+	var apiErr struct {
+		Error struct {
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(data), &apiErr); err == nil && strings.TrimSpace(apiErr.Error.Message) != "" {
+		return "", fmt.Errorf("[OpenClaw 网关] %s", strings.TrimSpace(apiErr.Error.Message))
+	}
+	var wrap struct {
+		Choices []struct {
+			Delta struct {
+				Content string `json:"content"`
+			} `json:"delta"`
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+			Text string `json:"text"`
+		} `json:"choices"`
+	}
+	if err := json.Unmarshal([]byte(data), &wrap); err != nil {
+		return "", fmt.Errorf("[OpenClaw 网关] 解析流式响应失败: %w", err)
+	}
+	if len(wrap.Choices) == 0 {
+		return "", nil
+	}
+	if c := wrap.Choices[0].Delta.Content; c != "" {
+		return c, nil
+	}
+	if c := wrap.Choices[0].Message.Content; c != "" {
+		return c, nil
+	}
+	return wrap.Choices[0].Text, nil
 }
 
 func opsCallAIProviderSummary(app *ServerApp, cfg Config, bundle OpsAIProviderBundle, rep InspectionReport) (string, error) {

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -194,4 +195,77 @@ func handleOpsAIChatPost(app *ServerApp) gin.HandlerFunc {
 			"latencyMs": latencyMs,
 		})
 	}
+}
+
+func handleOpsAIChatStreamPost(app *ServerApp) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var body opsAIChatRequest
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "参数无效"})
+			return
+		}
+		msgs, err := validateOpsAIChatMessages(body.Messages)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		bundle, err := loadOpsAIProviderBundle(app.PlatformKV())
+		if err != nil {
+			RespondAPIError500(c, err.Error())
+			return
+		}
+		if !opsAIChatEndpointReady(bundle.Endpoint) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "AI Provider 未启用或尚未配置完整"})
+			return
+		}
+		if err := ResolveOpsAIProviderEndpoint(app, app.Cfg(), &bundle); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		systemPrompt := opsAIChatSystemPrompt(bundle.Endpoint, body)
+		providerMessages := make([]openClawChatMsg, 0, len(msgs)+1)
+		providerMessages = append(providerMessages, openClawChatMsg{Role: "system", Content: systemPrompt})
+		providerMessages = append(providerMessages, msgs...)
+		timeout := bundle.Endpoint.TimeoutSec
+		if timeout <= 0 {
+			timeout = 120
+		}
+
+		c.Header("Content-Type", "text/event-stream; charset=utf-8")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("X-Accel-Buffering", "no")
+		c.Status(http.StatusOK)
+		if err := writeOpsAIChatSSE(c, "meta", gin.H{
+			"provider": bundle.Endpoint.Provider,
+			"source":   bundle.Endpoint.Source,
+			"model":    bundle.Endpoint.Model,
+		}); err != nil {
+			return
+		}
+		latencyMs, err := opsAIProviderChatMessagesStreamAPI(c.Request.Context(), app.Cfg(), bundle.Endpoint, bundle.AI, providerMessages, timeout, 0, func(delta string) error {
+			return writeOpsAIChatSSE(c, "delta", gin.H{"delta": delta})
+		})
+		if err != nil {
+			short, detail := opsAIProviderFailureDiagnosis(app, bundle, err, timeout)
+			_ = writeOpsAIChatSSE(c, "error", gin.H{"error": short, "detail": detail})
+			return
+		}
+		_ = writeOpsAIChatSSE(c, "done", gin.H{"latencyMs": latencyMs})
+	}
+}
+
+func writeOpsAIChatSSE(c *gin.Context, event string, payload gin.H) error {
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(c.Writer, "event: %s\n", event); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(c.Writer, "data: %s\n\n", raw); err != nil {
+		return err
+	}
+	c.Writer.Flush()
+	return nil
 }

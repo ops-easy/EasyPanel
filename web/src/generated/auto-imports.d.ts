@@ -180,6 +180,7 @@ declare global {
   const Sidebar: typeof import('lucide-react').Sidebar
   const SlidersHorizontal: typeof import('lucide-react').SlidersHorizontal
   const Sparkles: typeof import('lucide-react').Sparkles
+  const Square: typeof import('lucide-react').Square
   const SquareTerminal: typeof import('lucide-react').SquareTerminal
   const Star: typeof import('lucide-react').Star
   const Suspense: typeof import('react').Suspense

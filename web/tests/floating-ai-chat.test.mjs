@@ -19,6 +19,7 @@ test("AI chat sheet uses provider-neutral chat API and local history", () => {
   const chat = read("../src/shared/layout/AIChatSheet.tsx");
 
   assert.match(chat, /\/api\/ops\/ai-chat\/status/);
+  assert.match(chat, /\/api\/ops\/ai-chat\/stream/);
   assert.match(chat, /\/api\/ops\/ai-chat"/);
   assert.doesNotMatch(chat, /\/api\/ops\/ai-provider/);
   assert.match(chat, /describeSitePath/);
@@ -26,6 +27,17 @@ test("AI chat sheet uses provider-neutral chat API and local history", () => {
   assert.match(chat, /localStorage/);
   assert.match(chat, /routeDescription/);
   assert.match(chat, /pageTitle/);
+});
+
+test("AI chat sheet streams responses with abort and non-stream fallback", () => {
+  const chat = read("../src/shared/layout/AIChatSheet.tsx");
+
+  assert.match(chat, /new AbortController\(\)/);
+  assert.match(chat, /ReadableStream/);
+  assert.match(chat, /stopStreaming/);
+  assert.match(chat, /streamAIChat/);
+  assert.match(chat, /fallbackAIChat/);
+  assert.match(chat, /apiPostJson<AIChatResponse>\("\/api\/ops\/ai-chat"/);
 });
 
 test("user guide sheet keeps guide API but no longer owns the floating button", () => {
