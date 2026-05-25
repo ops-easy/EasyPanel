@@ -13,6 +13,7 @@ const bastionHomeSource = read("../src/features/bastion/pages/BastionConsoleHome
 const headerSource = read("../src/shared/layout/Header.tsx");
 const globalSearchSource = read("../src/shared/layout/GlobalSearchBar.tsx");
 const userGuideSource = read("../src/shared/layout/UserGuideSheet.tsx");
+const floatingAssistantDockSource = read("../src/shared/layout/FloatingAssistantDock.tsx");
 
 test("bastion module home keeps the main app chrome", () => {
   for (const source of [desktopLayoutSource, mobileLayoutSource]) {
@@ -41,7 +42,7 @@ test("bastion module home keeps the top shell, full-width canvas, and console ho
   assert.match(desktopLayoutSource, /pathname === "\/cluster\/bastion\/"/);
   assert.match(desktopLayoutSource, /!\(isDocsShell \|\| isBastionShell\) && !hideAppChrome \? <Sidebar \/> : null/);
   assert.match(desktopLayoutSource, /<Header tone=\{appChromeDark \? "dark" : "light"\} \/>/);
-  assert.match(desktopLayoutSource, /<UserGuideSheet tone=\{appChromeDark \? "dark" : "light"\} \/>/);
+  assert.match(desktopLayoutSource, /<FloatingAssistantDock tone=\{appChromeDark \? "dark" : "light"\} \/>/);
   assert.match(desktopLayoutSource, /appChromeDark \? "bg-\[#0c0f14\]" : "bg-\[#F1F5F9\]"/);
   assert.match(desktopLayoutSource, /appChromeDark \|\| isPodTerminalShell \|\| isBastionFullBleed/);
 
@@ -66,6 +67,8 @@ test("bastion top chrome uses dark controls instead of white islands", () => {
   assert.match(globalSearchSource, /isDark\s*\?\s*"border border-slate-800 bg-\[#111820\] text-slate-100/);
 
   assert.match(userGuideSource, /type UserGuideSheetProps =/);
-  assert.match(userGuideSource, /const isDark = tone === "dark";/);
-  assert.match(userGuideSource, /isDark\s*\?\s*"border-slate-800 bg-slate-900 text-slate-100/);
+  assert.match(floatingAssistantDockSource, /type FloatingAssistantDockProps =/);
+  assert.match(floatingAssistantDockSource, /const isDark = tone === "dark";/);
+  assert.match(floatingAssistantDockSource, /isDark\s*\?\s*accent === "ai"/);
+  assert.match(floatingAssistantDockSource, /"border-slate-700 bg-slate-900 text-slate-100/);
 });

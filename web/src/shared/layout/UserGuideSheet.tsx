@@ -1,11 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
+import React, { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, BookOpen, ExternalLink, FileText, Loader2 } from "lucide-react";
+import { AlertCircle, ExternalLink, FileText, Loader2 } from "lucide-react";
 import { OpenClawChatMarkdown } from "@/features/app-center/openclaw/components/OpenClawChatMarkdown";
 import { ApiHttpError, apiGetJson } from "@/lib/api";
-import { cn } from "@/lib/utils";
 import { Button } from "@/shared/ui/button";
 import {
   Sheet,
@@ -39,6 +37,8 @@ type GuideResolveResponse = {
 
 type UserGuideSheetProps = {
   tone?: "light" | "dark";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 function guideErrorMessage(error: unknown): string {
@@ -47,15 +47,12 @@ function guideErrorMessage(error: unknown): string {
   return "当前页面暂无指南";
 }
 
-export default function UserGuideSheet({ tone = "light" }: UserGuideSheetProps) {
+export default function UserGuideSheet({ tone = "light", open, onOpenChange }: UserGuideSheetProps) {
   const location = useLocation();
-  const isDark = tone === "dark";
-  const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  void tone;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const sheetOpen = open ?? internalOpen;
+  const setSheetOpen = onOpenChange ?? setInternalOpen;
 
   const routePath = useMemo(
     () => `${location.pathname}${location.search}${location.hash}`,
@@ -66,7 +63,7 @@ export default function UserGuideSheet({ tone = "light" }: UserGuideSheetProps) 
     queryKey: ["page-guide", routePath],
     queryFn: ({ signal }) =>
       apiGetJson<GuideResolveResponse>(`/api/docs/guides/resolve?path=${encodeURIComponent(routePath)}`, { signal }),
-    enabled: open,
+    enabled: sheetOpen,
     retry: false,
     staleTime: 30_000,
   });
@@ -80,28 +77,8 @@ export default function UserGuideSheet({ tone = "light" }: UserGuideSheetProps) 
   const guideDocHref = doc ? `/docs/guides/doc/${doc.id}` : "";
   const previewHref = doc ? doc.previewUrl || `/r/${doc.id}.html` : "";
 
-  const fab = (
-    <Button
-      type="button"
-      variant="secondary"
-      size="icon"
-      onClick={() => setOpen(true)}
-      className={cn(
-        "pointer-events-auto fixed bottom-5 right-5 z-[60] h-12 w-12 rounded-full border shadow-lg ring-1 md:bottom-6 md:right-6",
-        isDark ? "border-slate-800 bg-slate-900 text-slate-100 ring-white/10 hover:bg-slate-800" : "border-slate-200/90 bg-white ring-black/5 hover:bg-slate-50"
-      )}
-      aria-label="打开使用文档"
-      title="使用文档"
-    >
-      <BookOpen className={cn("h-5 w-5", isDark ? "text-slate-200" : "text-slate-700")} />
-    </Button>
-  );
-
   return (
-    <>
-      {mounted && !open && typeof document !== "undefined" ? createPortal(fab, document.body) : null}
-
-      <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent
           side="right"
           showCloseButton={false}
@@ -146,7 +123,7 @@ export default function UserGuideSheet({ tone = "light" }: UserGuideSheetProps) 
                   {doc ? (
                     <div className="flex flex-wrap gap-2">
                       <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2 text-xs" asChild>
-                        <Link to={guideDocHref} onClick={() => setOpen(false)}>
+                        <Link to={guideDocHref} onClick={() => setSheetOpen(false)}>
                           <FileText className="h-3.5 w-3.5" aria-hidden />
                           打开文档
                         </Link>
@@ -188,7 +165,6 @@ export default function UserGuideSheet({ tone = "light" }: UserGuideSheetProps) 
             ) : null}
           </div>
         </SheetContent>
-      </Sheet>
-    </>
+    </Sheet>
   );
 }
