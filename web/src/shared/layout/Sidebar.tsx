@@ -1133,10 +1133,32 @@ const Sidebar: React.FC = () => {
                     ? "flex items-center space-x-3 rounded-xl px-4 py-3.5 text-sm font-medium text-emerald-700 hover:bg-gray-50"
                     : "flex items-center space-x-3 rounded-xl px-4 py-3.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900";
                 return (
-                  <Link key={item.id} to={item.to} className={dnsParentCls}>
-                    <Icon size={20} className={dnsExact ? "text-emerald-600" : appCenterDnsActive ? "text-emerald-500" : "text-gray-400"} />
-                    <span>{item.sidebarLabel}</span>
-                  </Link>
+                  <React.Fragment key={item.id}>
+                    <Link to={item.to} className={dnsParentCls}>
+                      <Icon size={20} className={dnsExact ? "text-emerald-600" : appCenterDnsActive ? "text-emerald-500" : "text-gray-400"} />
+                      <span>{item.sidebarLabel}</span>
+                    </Link>
+                    {appCenterDnsActive && (
+                      <div className="ml-3 border-l-2 border-blue-100 pl-2">
+                        {[
+                          { to: "/cluster/apps/dns/accounts", label: "服务商账号", Icon: KeyRound },
+                          { to: "/cluster/apps/dns/domains",  label: "域名管理",   Icon: Globe },
+                          { to: "/cluster/apps/dns/records",  label: "解析记录",   Icon: Server },
+                          { to: "/cluster/apps/dns/failover", label: "健康监测",   Icon: NodeActivityIcon },
+                          { to: "/cluster/apps/dns/scheduled",label: "定时任务",   Icon: Calendar },
+                          { to: "/cluster/apps/dns/certs",    label: "SSL 证书",   Icon: ShieldCheck },
+                        ].map(({ to, label, Icon }) => {
+                          const active = location.pathname === to || location.pathname.startsWith(to + "/");
+                          return (
+                            <Link key={to} to={to} className={navLinkTint(active, "blue")}>
+                              <Icon size={16} className={iconTint(active, "blue")} />
+                              <span>{label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </React.Fragment>
                 );
               }
               return (
@@ -1146,26 +1168,6 @@ const Sidebar: React.FC = () => {
                 </Link>
               );
             })}
-            {appCenterDnsActive && (
-              <div className="ml-3 border-l-2 border-blue-100 pl-2">
-                {[
-                  { to: "/cluster/apps/dns/accounts", label: "服务商账号", Icon: KeyRound },
-                  { to: "/cluster/apps/dns/domains",  label: "域名管理",   Icon: Globe },
-                  { to: "/cluster/apps/dns/records",  label: "解析记录",   Icon: Server },
-                  { to: "/cluster/apps/dns/failover", label: "健康监测",   Icon: NodeActivityIcon },
-                  { to: "/cluster/apps/dns/scheduled",label: "定时任务",   Icon: Calendar },
-                  { to: "/cluster/apps/dns/certs",    label: "SSL 证书",   Icon: ShieldCheck },
-                ].map(({ to, label, Icon }) => {
-                  const active = location.pathname === to || location.pathname.startsWith(to + "/");
-                  return (
-                    <Link key={to} to={to} className={navLinkTint(active, "blue")}>
-                      <Icon size={16} className={iconTint(active, "blue")} />
-                      <span>{label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
           </>
         ) : showAiInspectNav && isAiinspect ? (
           <>

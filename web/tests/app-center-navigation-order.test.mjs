@@ -48,6 +48,24 @@ test("app center sidebar consumes the same shared module order", () => {
   assert.doesNotMatch(sidebarSource, /appCenterRedisActive|appCenterKafkaActive|appCenterOpenSearchActive/);
 });
 
+test("app center sidebar keeps DNS child links directly under the DNS parent", () => {
+  const appCenterSidebar = sidebarSource.slice(
+    sidebarSource.indexOf("APP_CENTER_MODULE_NAV_ITEMS.map"),
+    sidebarSource.indexOf("showAiInspectNav && isAiinspect")
+  );
+
+  assert.doesNotMatch(
+    appCenterSidebar,
+    /APP_CENTER_MODULE_NAV_ITEMS\.map\([\s\S]*\}\)\}\s*\{appCenterDnsActive && \(/,
+    "DNS child links must not be appended after the full app center module list"
+  );
+  assert.match(
+    appCenterSidebar,
+    /if \(item\.id === "dns"\) \{[\s\S]*appCenterDnsActive &&[\s\S]*\/cluster\/apps\/dns\/accounts/,
+    "DNS child links should be rendered from the DNS item branch"
+  );
+});
+
 test("app center dashboard quick entries and resource cards follow the same module order", () => {
   const quickEntries = dashboardSource.slice(dashboardSource.indexOf("flex flex-wrap gap-2"));
   assertInOrder(quickEntries, appCenterOrder.slice(1), "dashboard quick entries");
