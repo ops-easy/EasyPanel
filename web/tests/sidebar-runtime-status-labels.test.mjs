@@ -17,3 +17,15 @@ test("sidebar runtime status uses connected or unconfigured labels", () => {
   assert.doesNotMatch(sidebarSource, /"vCenter 已配置"/);
   assert.doesNotMatch(sidebarSource, /"宝塔 可达"/);
 });
+
+test("hub sidebar module entries do not show runtime status hints", () => {
+  const hubSidebar = sidebarSource.slice(
+    sidebarSource.indexOf("isHub ? ("),
+    sidebarSource.indexOf("showPlatformAudit")
+  );
+
+  assert.doesNotMatch(hubSidebar, /hint=\{pveEntryHint\}/);
+  assert.doesNotMatch(hubSidebar, /hint=\{openWrtEntryHint\}/);
+  assert.doesNotMatch(sidebarSource, /const pveEntryHint/);
+  assert.doesNotMatch(sidebarSource, /const openWrtEntryHint/);
+});

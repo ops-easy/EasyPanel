@@ -1,5 +1,5 @@
 ﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -772,12 +772,9 @@ const AppCenterOpenClawDetail: React.FC = () => {
     );
   }
   if (bootstrapQ.data && !bootstrapQ.data.bootstrapComplete) {
-    if (isAdmin) {
-      return <Navigate to={OPENCLAW_BOOTSTRAP_PATH} replace />;
-    }
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        OpenClaw 部署模式尚未完成首次引导。请联系管理员打开{" "}
+        OpenClaw 部署模式尚未完成首次引导。{isAdmin ? "请打开" : "请联系管理员打开"}{" "}
         <Link to={OPENCLAW_BOOTSTRAP_PATH} className="font-mono font-semibold underline">
           {OPENCLAW_BOOTSTRAP_PATH}
         </Link>

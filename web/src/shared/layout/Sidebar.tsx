@@ -204,19 +204,6 @@ function iconTint(isActive: boolean, tint: "blue" | "violet" | "amber" | "emeral
   return m[tint];
 }
 
-function NavItemText({ label, hint }: { label: string; hint?: string }) {
-  return (
-    <span className="flex min-w-0 flex-col leading-tight">
-      <span className="truncate">{label}</span>
-      {hint ? (
-        <span className="mt-0.5 truncate text-[10px] font-normal leading-3 text-gray-400">
-          {hint}
-        </span>
-      ) : null}
-    </span>
-  );
-}
-
 type K8sNavItem = {
   id: K8sSidebarMenuItem["key"];
   to: string | { pathname: string; search?: string };
@@ -485,14 +472,6 @@ const Sidebar: React.FC = () => {
       : pveTargetCount > 0
         ? "PVE 已连接"
         : "PVE 未配置";
-  const pveEntryHint = pveStatusLoading
-    ? "PVE 检查中"
-    : pveTargetsQ.isError
-      ? "PVE 未配置"
-      : pveTargetCount > 0
-        ? "PVE 已连接"
-        : "PVE 未配置";
-
   const openWrtDeviceCount =
     networkDevicesQ.data?.devices?.filter((device) => device.kind === "openwrt").length ?? 0;
   const openWrtStatusLoading = canFetchShellStatus && showNetworkNav && networkDevicesQ.isLoading;
@@ -510,14 +489,6 @@ const Sidebar: React.FC = () => {
       : openWrtDeviceCount > 0
         ? "OpenWrt 已连接"
         : "OpenWrt 未配置";
-  const openWrtEntryHint = openWrtStatusLoading
-    ? "OpenWrt 检查中"
-    : networkDevicesQ.isError
-      ? "OpenWrt 未配置"
-      : openWrtDeviceCount > 0
-        ? "OpenWrt 已连接"
-        : "OpenWrt 未配置";
-
   const k8sLive = cfg?.k8sConfigured === true;
   const k8sFile = cfg?.k8sRuntimeConfigured === true;
   const k8sDotClass = statusLoading
@@ -836,13 +807,13 @@ const Sidebar: React.FC = () => {
             {showComputeNav && (
               <Link to="/cluster/compute/dashboard" className={navLinkTint(false, "violet")}>
                 <Monitor size={20} className="text-gray-400" />
-                <NavItemText label="虚拟化与主机" hint={pveEntryHint} />
+                <span>虚拟化与主机</span>
               </Link>
             )}
             {showNetworkNav && (
               <Link to="/cluster/network/dashboard" className={navLinkTint(false, "slate")}>
                 <Network size={20} className="text-gray-400" />
-                <NavItemText label="网络设备" hint={openWrtEntryHint} />
+                <span>网络设备</span>
               </Link>
             )}
             {showBaotaNav && (

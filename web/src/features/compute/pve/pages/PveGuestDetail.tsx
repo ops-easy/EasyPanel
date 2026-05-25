@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Cpu, HardDrive, Loader2, Monitor, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
@@ -380,6 +380,7 @@ function PveConsolePanel({
   const [viewOnly, setViewOnly] = useState(false);
   const screenRef = useRef<HTMLDivElement | null>(null);
   const rfbRef = useRef<NoVNCRFB | null>(null);
+  const viewOnlyRef = useRef(viewOnly);
 
   const ticketMut = useMutation({
     mutationFn: () =>
@@ -422,7 +423,7 @@ function PveConsolePanel({
         rfb.clipViewport = false;
         rfb.dragViewport = false;
         rfb.focusOnClick = true;
-        rfb.viewOnly = viewOnly;
+        rfb.viewOnly = viewOnlyRef.current;
         rfb.addEventListener("connect", () => {
           setViewerStatus("已连接");
           setViewerError("");
@@ -455,6 +456,7 @@ function PveConsolePanel({
   }, [proxyWsUrl, ticket]);
 
   useEffect(() => {
+    viewOnlyRef.current = viewOnly;
     if (rfbRef.current) rfbRef.current.viewOnly = viewOnly;
   }, [viewOnly]);
 
@@ -573,12 +575,12 @@ export default function PveGuestDetail() {
     refetchInterval: (q) => taskDone(q.state.data?.task) ? false : 1200,
   });
 
-  const invalidateGuest = () => {
+  const invalidateGuest = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ["pve-guest-detail", targetId, node, canonicalGuestType, vmid] });
     void queryClient.invalidateQueries({ queryKey: ["pve-guest-snapshots", targetId, node, canonicalGuestType, vmid] });
     void queryClient.invalidateQueries({ queryKey: ["pve-guests", targetId] });
     void queryClient.invalidateQueries({ queryKey: ["pve-tasks", targetId] });
-  };
+  }, [canonicalGuestType, node, queryClient, targetId, vmid]);
 
   useEffect(() => {
     if (!taskId || !taskDone(taskQ.data?.task)) return;
@@ -586,7 +588,7 @@ export default function PveGuestDetail() {
     else toast.success("PVE 任务已完成");
     setTaskId("");
     invalidateGuest();
-  }, [taskId, taskQ.data?.task]);
+  }, [taskId, taskQ.data?.task, invalidateGuest]);
 
   const submitTask = (data: PveTaskEnvelope, fallbackMessage: string) => {
     const id = taskIdFromPayload(data);
