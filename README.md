@@ -13,7 +13,7 @@ Kube-BT-Sync 是面向自建 Kubernetes、Homelab 与小型私有云环境的运
 | Ingress 同步 | 监听带注解的 Ingress，将域名与上游规则同步到宝塔 Nginx，支持 HTTPS 证书配置 |
 | 应用中心 | 管理 Redis、Kafka、OpenSearch、Cloud VM、OpenClaw、DNS 等实例和模板 |
 | vCenter 与堡垒机 | 纳管 vSphere 虚拟机、ESXi 主机、WebMKS 控制台、SSH/SFTP、云主机和来宾性能数据 |
-| 监控与日志 | 对接 Prometheus、VictoriaMetrics、VictoriaLogs、Harbor、企业微信告警和巡检报告 |
+| 监控与日志 | 对接 Prometheus、VictoriaMetrics、VictoriaLogs、Harbor、企业微信告警、巡检报告和全局 AI 对话 |
 | 文档中心 | 内置 Markdown 编辑器、附件上传、公开分享页面、Excalidraw 白板和 CDN 静态资源配置 |
 | 账号与安全 | 本地账号、TOTP、OIDC、角色权限、审计日志、访问统计和平台外观配置 |
 
@@ -221,6 +221,7 @@ metadata:
 - [Kubernetes 部署说明](./k8s/README.md)
 - [MetalLB 与 ingress-nginx 说明](./docs/kubernetes-metallb-ingress-nginx.md)
 - [Kubernetes Dashboard 与 Prometheus 对接](./docs/kubernetes-dashboard-prometheus.md)
+- [全局 AI 对话助手](./docs/ai-chat-assistant.md)
 - [文档公开页静态资源 CDN](./docs/external-assets-for-oss.md)
 - [前端开发说明](./web/README.md)
 - [Kafka 限速压测手册](./k8s/backend/kafka-throttle-perf.md)
