@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, Loader2, RefreshCw, Rocket, Settings2, Trash2 } from "lucide-react";
+import { Bot, ChevronLeft, ChevronRight, Loader2, RefreshCw, Rocket, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
@@ -80,6 +81,12 @@ const HERMES_CAPABILITIES = [
   { title: "OpenClaw 迁移", detail: "在 Hermes Pod 内执行 hermes claw migrate，承接 OpenClaw user-data 数据。" },
 ] as const;
 
+const HERMES_STEPS = [
+  { n: 1, title: "K8s 资源", detail: "命名空间、Deployment、Service、镜像" },
+  { n: 2, title: "运行与暴露", detail: "运行模式、PVC、副本、访问方式" },
+  { n: 3, title: "模型与密钥", detail: "模型提供方、模型名、API Server Key" },
+] as const;
+
 export type HermesPageTab = "list" | "create" | "bootstrap";
 
 const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab = "create" }) => {
@@ -87,6 +94,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
   const { status } = useAuth();
   const canWrite = cloudVmAppCenterCanWrite(status?.role, status?.permissions);
   const [tab, setTab] = useState<HermesPageTab>(initialTab);
+  const [step, setStep] = useState(1);
   const [apiKey, setApiKey] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -127,6 +135,9 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
 
   React.useEffect(() => {
     setTab(initialTab);
+    if (initialTab === "create") {
+      setStep(1);
+    }
   }, [initialTab]);
 
   React.useEffect(() => {
@@ -157,6 +168,22 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
           })),
     [boot?.modes]
   );
+
+  const goNext = () => {
+    if (step < 3) setStep((s) => s + 1);
+  };
+
+  const goPrev = () => {
+    if (step > 1) setStep((s) => s - 1);
+  };
+
+  const onTabChange = (value: string) => {
+    const next = value as HermesPageTab;
+    setTab(next);
+    if (next === "create") {
+      setStep(1);
+    }
+  };
 
   const saveBootMut = useMutation({
     mutationFn: () =>
@@ -191,6 +218,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
       toast.success(res.apiServerKey ? "Hermes 已部署，API Server Key 已写入 Secret" : "Hermes 已部署");
       setApiKey("");
       setTab("list");
+      setStep(1);
       void qc.invalidateQueries({ queryKey: ["app-hermes-instances"] });
       void qc.invalidateQueries({ queryKey: ["app-hermes-k8s-status"] });
     },
@@ -257,7 +285,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
         </p>
       </section>
 
-      <Tabs value={tab} onValueChange={(value) => setTab(value as HermesPageTab)} className="gap-3">
+      <Tabs value={tab} onValueChange={onTabChange} className="gap-3">
         <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-slate-200/80 bg-slate-50/80 p-1">
           <TabsTrigger value="create" className="rounded-lg">
             部署向导
@@ -294,7 +322,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
                 <p className="mt-1 text-xs text-slate-500">创建实例后，完整运维能力集中在实例详情页。</p>
               </div>
               {canWrite ? (
-                <Button type="button" size="sm" className="gap-1.5 bg-fuchsia-600 hover:bg-fuchsia-700" onClick={() => setTab("create")}>
+                <Button type="button" size="sm" className="gap-1.5 bg-indigo-600 hover:bg-indigo-700" onClick={() => onTabChange("create")}>
                   <Rocket className="h-4 w-4" />
                   部署实例
                 </Button>
@@ -343,7 +371,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
                         <div className="flex flex-col items-center gap-3 text-sm text-slate-500">
                           <span>暂无 Hermes 实例</span>
                           {canWrite ? (
-                            <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("create")}>
+                            <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => onTabChange("create")}>
                               <Rocket className="h-4 w-4" />
                               部署实例
                             </Button>
@@ -403,70 +431,148 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
 
       {tab === "create" ? (
         <TabsContent value="create" className="outline-none">
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-950">部署到 Kubernetes</h2>
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            <Field label="显示名称" value={form.displayName} onChange={(v) => setForm({ ...form, displayName: v })} />
-            <Field label="命名空间" value={form.namespace} onChange={(v) => setForm({ ...form, namespace: v })} mono />
-            <Field label="Deployment" value={form.deploymentName} onChange={(v) => setForm({ ...form, deploymentName: v })} mono />
-            <Field label="Service" value={form.serviceName} onChange={(v) => setForm({ ...form, serviceName: v })} mono />
-            <Field label="镜像" value={form.image} onChange={(v) => setForm({ ...form, image: v })} mono />
-            <Field label="PVC 容量" value={form.storageSize} onChange={(v) => setForm({ ...form, storageSize: v })} mono />
-            <div className="space-y-1.5">
-              <Label>运行模式</Label>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {modeOptions.map((mode) => (
-                  <button
-                    type="button"
-                    key={mode.id}
-                    onClick={() => setForm({ ...form, mode: mode.id })}
-                    className={`rounded-lg border px-3 py-2 text-sm font-medium ${form.mode === mode.id ? "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-900" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-                  >
-                    {mode.label || MODE_LABEL[mode.id] || mode.id}
-                  </button>
-                ))}
+        <section>
+          <Card className="border-slate-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">部署 Hermes</CardTitle>
+              <CardDescription className="text-xs leading-relaxed">
+                与 OpenClaw 相同的分步流程：先确认 K8s 资源，再设置运行与暴露，最后填写模型和密钥后部署。
+              </CardDescription>
+              <ol className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                {HERMES_STEPS.map((item) => {
+                  const active = step === item.n;
+                  const done = step > item.n;
+                  return (
+                    <li
+                      key={item.n}
+                      className={`rounded-lg border px-3 py-3 text-sm ${
+                        active
+                          ? "border-indigo-400 bg-indigo-50/90"
+                          : done
+                            ? "border-emerald-200/80 bg-emerald-50/50"
+                            : "border-slate-200 bg-white"
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <span
+                          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+                            active ? "bg-indigo-600 text-white" : done ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-600"
+                          }`}
+                        >
+                          {item.n}
+                        </span>
+                        <div>
+                          <p className="font-medium text-slate-950">{item.title}</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500">{item.detail}</p>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {step === 1 ? (
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <Field label="显示名称" value={form.displayName} onChange={(v) => setForm({ ...form, displayName: v })} />
+                  <Field label="命名空间" value={form.namespace} onChange={(v) => setForm({ ...form, namespace: v })} mono />
+                  <Field label="Deployment" value={form.deploymentName} onChange={(v) => setForm({ ...form, deploymentName: v })} mono />
+                  <Field label="Service" value={form.serviceName} onChange={(v) => setForm({ ...form, serviceName: v })} mono />
+                  <div className="space-y-1.5 lg:col-span-2">
+                    <Field label="镜像" value={form.image} onChange={(v) => setForm({ ...form, image: v })} mono />
+                    <p className="text-xs leading-5 text-slate-500">
+                      镜像和默认命名空间来自模板配置，可在「模板配置」页统一调整。
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
+              {step === 2 ? (
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="space-y-1.5 lg:col-span-2">
+                    <Label>运行模式</Label>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      {modeOptions.map((mode) => (
+                        <button
+                          type="button"
+                          key={mode.id}
+                          onClick={() => setForm({ ...form, mode: mode.id })}
+                          className={`rounded-lg border px-3 py-2 text-left text-sm font-medium ${
+                            form.mode === mode.id ? "border-indigo-300 bg-indigo-50 text-indigo-900" : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          {mode.label || MODE_LABEL[mode.id] || mode.id}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <Field label="PVC 容量" value={form.storageSize} onChange={(v) => setForm({ ...form, storageSize: v })} mono />
+                  <Field label="副本数" value={form.replicas} onChange={(v) => setForm({ ...form, replicas: v })} mono />
+                  <div className="space-y-1.5 lg:col-span-2">
+                    <Label>暴露方式</Label>
+                    <div className="grid gap-2 sm:grid-cols-4">
+                      {EXPOSE_MODES.map((mode) => (
+                        <button
+                          type="button"
+                          key={mode}
+                          onClick={() => setForm({ ...form, exposeMode: mode })}
+                          className={`rounded-lg border px-3 py-2 text-left text-sm font-medium ${
+                            form.exposeMode === mode
+                              ? "border-indigo-300 bg-indigo-50 text-indigo-900"
+                              : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          {mode}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <Field label="NodePort" value={form.nodePort} onChange={(v) => setForm({ ...form, nodePort: v })} mono />
+                  <Field label="Ingress Host" value={form.ingressHost} onChange={(v) => setForm({ ...form, ingressHost: v })} mono />
+                  <Field label="Public URL" value={form.publicUrl} onChange={(v) => setForm({ ...form, publicUrl: v })} mono />
+                </div>
+              ) : null}
+
+              {step === 3 ? (
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <Field label="模型提供方" value={form.modelProvider} onChange={(v) => setForm({ ...form, modelProvider: v })} mono />
+                  <Field label="模型名" value={form.modelName} onChange={(v) => setForm({ ...form, modelName: v })} mono />
+                  <div className="space-y-1.5 lg:col-span-2">
+                    <Label>API_SERVER_KEY（可空，平台自动生成并写入 Secret）</Label>
+                    <Input type="password" autoComplete="off" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-3 text-xs leading-5 text-slate-600 lg:col-span-2">
+                    将创建 <span className="font-mono text-slate-800">{form.namespace || "hermes"}</span> 命名空间内的 Hermes Deployment、
+                    Service、PVC 与 Secret；保存模板配置只同步当前默认值，不会覆盖已创建实例。
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+                <Button type="button" variant="outline" size="sm" className="gap-1" onClick={goPrev} disabled={step <= 1}>
+                  <ChevronLeft className="h-4 w-4" />
+                  上一步
+                </Button>
+                {step < 3 ? (
+                  <Button type="button" size="sm" className="gap-1 bg-indigo-600 hover:bg-indigo-700" onClick={goNext}>
+                    下一步
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <>
+                    <Button type="button" variant="outline" size="sm" className="gap-2" disabled={!canWrite || saveBootMut.isPending} onClick={() => saveBootMut.mutate()}>
+                      <Settings2 className="h-4 w-4" />
+                      同步为默认引导
+                    </Button>
+                    <Button type="button" size="sm" className="gap-2 bg-indigo-600 hover:bg-indigo-700" disabled={!canWrite || deployMut.isPending} onClick={() => deployMut.mutate()}>
+                      {deployMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+                      部署 Hermes
+                    </Button>
+                  </>
+                )}
               </div>
-            </div>
-            <Field label="模型提供方" value={form.modelProvider} onChange={(v) => setForm({ ...form, modelProvider: v })} mono />
-            <Field label="模型名" value={form.modelName} onChange={(v) => setForm({ ...form, modelName: v })} mono />
-            <div className="space-y-1.5 lg:col-span-2">
-              <Label>暴露方式</Label>
-              <div className="grid gap-2 sm:grid-cols-4">
-                {EXPOSE_MODES.map((mode) => (
-                  <button
-                    type="button"
-                    key={mode}
-                    onClick={() => setForm({ ...form, exposeMode: mode })}
-                    className={`rounded-lg border px-3 py-2 text-sm font-medium ${
-                      form.exposeMode === mode
-                        ? "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-900"
-                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    {mode}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <Field label="副本数" value={form.replicas} onChange={(v) => setForm({ ...form, replicas: v })} mono />
-            <Field label="NodePort" value={form.nodePort} onChange={(v) => setForm({ ...form, nodePort: v })} mono />
-            <Field label="Ingress Host" value={form.ingressHost} onChange={(v) => setForm({ ...form, ingressHost: v })} mono />
-            <Field label="Public URL" value={form.publicUrl} onChange={(v) => setForm({ ...form, publicUrl: v })} mono />
-            <div className="space-y-1.5 lg:col-span-2">
-              <Label>API_SERVER_KEY（可空，平台自动生成并写入 Secret）</Label>
-              <Input type="password" autoComplete="off" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
-            </div>
-          </div>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Button className="gap-2 bg-fuchsia-600 hover:bg-fuchsia-700" disabled={!canWrite || deployMut.isPending} onClick={() => deployMut.mutate()}>
-              {deployMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-              部署 Hermes
-            </Button>
-            <Button variant="outline" className="gap-2" disabled={!canWrite || saveBootMut.isPending} onClick={() => saveBootMut.mutate()}>
-              <Settings2 className="h-4 w-4" />
-              同步为默认引导
-            </Button>
-          </div>
+            </CardContent>
+          </Card>
         </section>
         </TabsContent>
       ) : null}
@@ -494,7 +600,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
                     onClick={() => setForm({ ...form, mode: mode.id })}
                     className={`rounded-lg border px-3 py-3 text-left text-sm ${
                       form.mode === mode.id
-                        ? "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-950"
+                        ? "border-indigo-300 bg-indigo-50 text-indigo-950"
                         : "border-slate-200 text-slate-700 hover:bg-slate-50"
                     }`}
                   >
@@ -505,7 +611,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
               </div>
             </div>
           </div>
-          <Button className="mt-5 gap-2 bg-fuchsia-600 hover:bg-fuchsia-700" disabled={!canWrite || saveBootMut.isPending} onClick={() => saveBootMut.mutate()}>
+          <Button className="mt-5 gap-2 bg-indigo-600 hover:bg-indigo-700" disabled={!canWrite || saveBootMut.isPending} onClick={() => saveBootMut.mutate()}>
             {saveBootMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings2 className="h-4 w-4" />}
             保存模板配置
           </Button>

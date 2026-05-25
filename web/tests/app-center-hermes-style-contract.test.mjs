@@ -135,6 +135,7 @@ test("multi-step deploy cards keep the OpenSearch content rhythm", () => {
   const sources = [
     read("../src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx"),
     read("../src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx"),
+    read("../src/features/app-center/hermes/pages/AppCenterHermes.tsx"),
   ];
 
   for (const source of sources) {
@@ -146,4 +147,17 @@ test("multi-step deploy cards keep the OpenSearch content rhythm", () => {
     assert.doesNotMatch(source, /justify-between gap-3 border-t border-slate-100/);
     assert.doesNotMatch(source, /返回实例列表/);
   }
+});
+
+test("Hermes deploy flow uses the same next-step wizard pattern", () => {
+  const source = read("../src/features/app-center/hermes/pages/AppCenterHermes.tsx");
+
+  assert.match(source, /const HERMES_STEPS = \[/);
+  assert.match(source, /const \[step, setStep\] = useState\(1\)/);
+  assert.match(source, /const goNext = \(\) =>/);
+  assert.match(source, /const goPrev = \(\) =>/);
+  assert.match(source, /HERMES_STEPS\.map/);
+  assert.match(source, /step < 3/);
+  assert.match(source, /ChevronLeft/);
+  assert.match(source, /ChevronRight/);
 });
