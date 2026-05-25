@@ -54,7 +54,7 @@ const ComputeProviderHealthStrip: React.FC<ComputeProviderHealthStripProps> = ({
         <Button asChild variant="outline" size="sm" className="h-9 gap-2">
           <Link to="/cluster/compute/config">
             <Settings className="h-4 w-4" />
-            接入配置
+            配置
           </Link>
         </Button>
       </div>

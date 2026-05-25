@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAppConfig } from "@/hooks/use-app-config";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Button } from "@/shared/ui/button";
 import {
@@ -13,8 +13,9 @@ import {
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
 import { YamlEditor } from "@/shared/ui/YamlEditor";
-import { apiGetJson, apiPostJson, type AppConfig } from "@/lib/api";
+import { apiPostJson } from "@/lib/api";
 import { defaultK8sIngressYamlExample } from "@/lib/buildK8sIngressYaml";
+import { DDNS_HELP } from "@/lib/ddns-help";
 import IngressGraphicalForm from "@/features/cluster/components/IngressGraphicalForm";
 
 interface PublishIngressProps {
@@ -69,11 +70,17 @@ const PublishIngress: React.FC<PublishIngressProps> = ({ onApplied }) => {
           <p className="text-sm text-gray-500">
             表单向导中可勾选<strong>同步到宝塔</strong>；开启后与 README 一致，为 Ingress 打上{" "}
             <code className="rounded bg-gray-100 px-1 text-xs">baota-sync</code> 等注解后由同步任务下发宝塔反代。
-            关闭则仅创建普通 Ingress。表单模式也可直接开启宝塔 HTTPS；证书来源支持使用全局默认或按 Ingress 指定宝塔证书名。平台级 PEM/KEY 仅能在宝塔设置中保存，不会写入 Ingress 注解或 YAML。当前宝塔默认回源目标来自宝塔设置：{" "}
+            关闭则仅创建普通 Ingress。表单模式也可直接开启宝塔 HTTPS；证书来源支持使用全局默认或按 Ingress 指定宝塔证书名。平台级 PEM/KEY 仅能在宝塔设置中保存，不会写入 Ingress 注解或 YAML。
+          </p>
+          <p className="mt-2 text-sm text-gray-500">
+            {DDNS_HELP.publishIntro} 当前计算出的默认回源目标是{" "}
             <span className="font-mono text-xs">{originScheme}://{originHost}:{originPort}</span>
-            。若在表单里勾选<strong>开启宝塔 HTTPS</strong>，则会默认切到本地 Ingress HTTPS 回源；若宝塔设置中填写了固定回源端口，则仍优先使用该端口。YAML 模式仍兼容旧的{" "}
+            。{DDNS_HELP.defaultBehavior}
+          </p>
+          <p className="mt-2 text-sm text-gray-500">
+            YAML 模式仍兼容旧的{" "}
             <code className="rounded bg-gray-100 px-1 text-xs">ddns-scheme</code> /{" "}
-            <code className="rounded bg-gray-100 px-1 text-xs">ddns-port</code> 注解覆盖。
+            <code className="rounded bg-gray-100 px-1 text-xs">ddns-port</code> 注解覆盖：{DDNS_HELP.annotationSummary}
           </p>
         </div>
       </div>
@@ -101,7 +108,7 @@ const PublishIngress: React.FC<PublishIngressProps> = ({ onApplied }) => {
 
         <TabsContent value="yaml">
           <p className="mb-2 text-sm text-gray-500">
-            直接粘贴完整 Ingress YAML，提交后由服务端 Apply 到集群（与 README「方式二」一致）。
+            直接粘贴完整 Ingress YAML，提交后由服务端 Apply 到集群（与 README「方式二」一致）。只有需要给某一条 Ingress 改协议或端口时，才手写 ddns-scheme / ddns-port。
           </p>
           <div className="mb-3">
             <YamlEditor value={yamlText} onChange={setYamlText} height="min(45vh, 360px)" />

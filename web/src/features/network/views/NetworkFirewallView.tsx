@@ -35,7 +35,7 @@ export function NetworkFirewallView({
             devices={devices}
             canWrite={canWrite}
             canViewRaw={canViewRaw}
-            triggerLabel="配置防火墙"
+            triggerLabel="接管防火墙配置"
           />
         }
       />

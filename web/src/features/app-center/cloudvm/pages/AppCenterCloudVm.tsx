@@ -8,7 +8,6 @@ import {
   Archive,
   ChevronLeft,
   ChevronRight,
-  Copy,
   Cpu,
   Download,
   FileCode,
@@ -20,6 +19,7 @@ import {
   Loader2,
   Network,
   Plus,
+  RefreshCw,
   Settings2,
 } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
@@ -28,7 +28,6 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   Table,
   TableBody,
@@ -46,6 +45,15 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const BOOTSTRAP_PATH = "/cluster/apps/cloud-vm/bootstrap";
+
+const CLOUD_VM_CAPABILITIES = [
+  { title: "SSH 工作机", detail: "在 Kubernetes 中创建可 root 登录的容器化工作机，外部通过节点 IP + NodePort 访问。" },
+  { title: "持久化数据盘", detail: "数据集中落到 /data，镜像重启后保留工作目录、Docker 数据、站点文件和脚本日志。" },
+  { title: "资源监控", detail: "接入 Kubernetes Prometheus 后，在列表直接显示 CPU 与内存相对 limit 的使用率。" },
+  { title: "自定义软件", detail: "创建时可选择 Docker、Nginx、宝塔、Hysteria2 客户端和常用 CLI 工具。" },
+  { title: "出站代理", detail: "Hysteria2 客户端可暴露集群内 HTTP/SOCKS 代理，供 OpenClaw 等 Pod 走出站链路。" },
+  { title: "初始化脚本", detail: "支持 bash 初始化脚本、环境变量、command 与 args，便于把工作机做成可复用模板。" },
+] as const;
 
 type Bootstrap = {
   bootstrapComplete: boolean;
@@ -197,7 +205,7 @@ export default function AppCenterCloudVm() {
       , { signal }),
   });
 
-  const instances = listQ.data?.instances ?? [];
+  const instances = useMemo(() => listQ.data?.instances ?? [], [listQ.data?.instances]);
   const usageQ = useQuery({
     queryKey: ["app-center-cloud-vm-usage"],
     queryFn: ({ signal }) =>
@@ -216,6 +224,12 @@ export default function AppCenterCloudVm() {
     }
     return m;
   }, [usageQ.data?.items]);
+  const runningCount = useMemo(
+    () => instances.filter((row) => row.summary?.phase === "running").length,
+    [instances]
+  );
+  const defaultImageLabel = bootQ.data?.images?.[0]?.label || "未配置";
+  const listRefreshing = listQ.isFetching || usageQ.isFetching;
 
   const [form, setForm] = useState({
     name: "",
@@ -334,19 +348,6 @@ export default function AppCenterCloudVm() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const copyBootstrapPath = async () => {
-    const full =
-      typeof window !== "undefined"
-        ? `${window.location.origin}${BOOTSTRAP_PATH}`
-        : BOOTSTRAP_PATH;
-    try {
-      await navigator.clipboard.writeText(full);
-      toast.success("已复制镜像模板页完整地址");
-    } catch {
-      toast.error("复制失败");
-    }
-  };
-
   const step1Ok =
     form.name.trim().length >= 2 && Boolean(form.imageId) && form.rootPassword.length >= 8;
 
@@ -391,101 +392,117 @@ export default function AppCenterCloudVm() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-50 via-white to-indigo-50/40 px-6 py-8 shadow-sm">
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="space-y-5">
+      <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-sky-800/90">应用中心 · 容器主机</p>
-            <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-slate-900">
-              <HardDrive className="h-7 w-7 text-sky-600" />
+            <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">Container Host</p>
+            <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-950">
+              <HardDrive className="h-6 w-6 text-sky-600" />
               容器主机
             </h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-600">
-              四步创建：系统与密码 → 规格与数据盘 → 网络与高级 → 可选自定义软件。仅{" "}
-              <code className="rounded bg-slate-100 px-1">/data</code> 持久化；外网通过节点 IP + NodePort 使用 root 登录。
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Kubernetes 中的轻量 SSH 工作机入口：支持镜像模板、规格与数据盘、NodePort 登录、初始化脚本、
+              环境变量、自定义软件和 Hysteria2 出站代理。仅 <code className="rounded bg-slate-100 px-1">/data</code> 持久化。
             </p>
           </div>
-          {canWrite && (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                className="h-10 gap-1.5 bg-sky-600 hover:bg-sky-700"
-                onClick={openCreateTab}
-              >
-                <Plus className="h-4 w-4" />
-                创建容器主机
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {isAdmin && (
-          <div className="mt-4 flex flex-col gap-2 rounded-xl border border-sky-200/90 bg-white/90 px-4 py-3 text-sm text-slate-700 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-start gap-2">
-              <Settings2 className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" />
-              <div className="min-w-0">
-                <p className="font-medium text-slate-900">镜像与命名空间模板（后台）</p>
-                <p className="mt-1 break-all font-mono text-xs text-slate-600">
-                  前台路径：<span className="text-sky-800">{BOOTSTRAP_PATH}</span>
-                  <span className="text-slate-400">（完整 URL 见右侧复制）</span>
-                </p>
-              </div>
-            </div>
-            <div className="flex shrink-0 flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
+            {(["list", "create"] as const).map((id) =>
+              id === "create" && !canWrite ? null : (
+                <Button
+                  key={id}
+                  variant={mainTab === id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    if (id === "create") openCreateTab();
+                    else setMainTab(id);
+                  }}
+                >
+                  {id === "list" ? "实例列表" : "创建容器主机"}
+                </Button>
+              )
+            )}
+            {isAdmin ? (
               <Button type="button" variant="outline" size="sm" className="gap-1.5" asChild>
                 <Link to={BOOTSTRAP_PATH}>
-                  打开配置页
+                  <Settings2 className="h-4 w-4" />
+                  引导配置
                 </Link>
               </Button>
-              <Button type="button" variant="secondary" size="sm" className="gap-1.5" onClick={copyBootstrapPath}>
-                <Copy className="h-3.5 w-3.5" />
-                复制完整地址
-              </Button>
-            </div>
+            ) : null}
           </div>
-        )}
-      </div>
+        </div>
+      </section>
 
       {listQ.data?.mysqlRequired && (
         <p className="text-sm text-amber-800">需要 MySQL 以保存实例元数据。</p>
       )}
 
-      <Tabs
-        value={canWrite ? mainTab : "list"}
-        onValueChange={(v) => {
-          if (!canWrite) return;
-          setMainTab(v as "list" | "create");
-          if (v === "create") setStep(1);
-        }}
-        className="w-full"
-      >
-        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-slate-200/80 bg-slate-50/80 p-1 sm:w-auto">
-          <TabsTrigger
-            value="list"
-            className="gap-1.5 rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-          >
-            <HardDrive className="h-4 w-4 shrink-0" />
-            实例列表
-          </TabsTrigger>
-          {canWrite ? (
-            <TabsTrigger
-              value="create"
-              className="gap-1.5 rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-            >
-              <Plus className="h-4 w-4 shrink-0" />
-              创建容器主机
-            </TabsTrigger>
-          ) : null}
-        </TabsList>
+      {mainTab === "list" ? (
+        <>
+          <section className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs text-slate-500">实例</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950">{instances.length}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs text-slate-500">运行中</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950">{runningCount}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs text-slate-500">默认镜像</p>
+              <p className="mt-1 truncate text-sm font-medium text-slate-950">{defaultImageLabel}</p>
+            </div>
+          </section>
 
-        <TabsContent value="list" className="mt-4 space-y-4 outline-none">
+          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-950">容器主机管理能力</h2>
+                <p className="mt-1 text-xs text-slate-500">创建后可在实例详情里管理 SSH、资源、终端和运行配置。</p>
+              </div>
+              {canWrite ? (
+                <Button type="button" size="sm" className="gap-1.5 bg-sky-600 hover:bg-sky-700" onClick={openCreateTab}>
+                  <Plus className="h-4 w-4" />
+                  创建容器主机
+                </Button>
+              ) : null}
+            </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {CLOUD_VM_CAPABILITIES.map((item) => (
+                <div key={item.title} className="min-h-[92px] rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-3">
+                  <p className="text-sm font-medium text-slate-950">{item.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           {usageQ.data?.prometheusConfigured === false && instances.length > 0 ? (
             <p className="text-xs text-slate-600">
               未配置 Kubernetes Prometheus（<code className="rounded bg-slate-100 px-1">prometheusUrlK8s</code>
               ），列表仅显示创建时间与阶段；配置后可显示 CPU/内存占用率（相对 limit）。
             </p>
           ) : null}
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-slate-950">容器主机实例</h2>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              disabled={listRefreshing}
+              onClick={() => {
+                void listQ.refetch();
+                void usageQ.refetch();
+              }}
+            >
+              <RefreshCw className={cn("h-4 w-4", listRefreshing && "animate-spin")} />
+              刷新状态
+            </Button>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-slate-100">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -501,13 +518,16 @@ export default function AppCenterCloudVm() {
               <TableBody>
                 {instances.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-10 text-center text-slate-500">
-                      暂无实例
-                      {canWrite ? (
-                        <>
-                          ，可切换到「创建容器主机」按步骤新建
-                        </>
-                      ) : null}
+                    <TableCell colSpan={7} className="py-10 text-center">
+                      <div className="flex flex-col items-center gap-3 text-sm text-slate-500">
+                        <span>暂无容器主机实例</span>
+                        {canWrite ? (
+                          <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={openCreateTab}>
+                            <Plus className="h-4 w-4" />
+                            创建容器主机
+                          </Button>
+                        ) : null}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -562,10 +582,12 @@ export default function AppCenterCloudVm() {
               </TableBody>
             </Table>
           </div>
-        </TabsContent>
+          </section>
+        </>
+      ) : null}
 
-        {canWrite ? (
-          <TabsContent value="create" className="mt-4 outline-none">
+      {canWrite && mainTab === "create" ? (
+          <section className="outline-none">
             <Card className="border-slate-200 shadow-sm">
               <CardHeader className="border-b border-slate-100 bg-slate-50/50">
                 <CardTitle className="text-base">创建容器主机</CardTitle>
@@ -1034,9 +1056,8 @@ export default function AppCenterCloudVm() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        ) : null}
-      </Tabs>
+          </section>
+      ) : null}
     </div>
   );
 }

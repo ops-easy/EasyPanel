@@ -15,21 +15,26 @@ test("router configuration drawer is separated from access setup", () => {
   assert.match(drawer, /生成预览/);
   assert.match(drawer, /确认应用/);
   assert.match(drawer, /高级模式/);
-  assert.doesNotMatch(access, /路由器配置接管|生成预览|确认应用|高级模式/);
+  assert.doesNotMatch(access, /生成预览|确认应用|高级模式/);
 });
 
 test("resource views expose context-specific configuration actions", () => {
   for (const [file, label] of [
-    ["NetworkInterfacesView.tsx", "配置接口"],
-    ["NetworkClientsView.tsx", "配置终端策略"],
-    ["NetworkWirelessView.tsx", "配置无线"],
-    ["NetworkFirewallView.tsx", "配置防火墙"],
-    ["NetworkMonitoringView.tsx", "配置采集"],
+    ["NetworkInterfacesView.tsx", "接管接口配置"],
+    ["NetworkClientsView.tsx", "接管终端策略"],
+    ["NetworkWirelessView.tsx", "接管无线配置"],
+    ["NetworkFirewallView.tsx", "接管防火墙配置"],
+    ["NetworkMonitoringView.tsx", "接管采集配置"],
   ]) {
     const source = read(`../src/features/network/views/${file}`);
     assert.match(source, new RegExp(label));
     assert.match(source, /NetworkRouterConfigDrawer/);
+    assert.doesNotMatch(source, /triggerLabel="配置/);
   }
+
+  const devices = read("../src/features/network/views/NetworkDevicesView.tsx");
+  assert.match(devices, /triggerLabel="路由器配置接管"/);
+  assert.doesNotMatch(devices, /triggerLabel="路由器配置"/);
 });
 
 test("router config drawer defaults to structured forms with advanced fallback", () => {

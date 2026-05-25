@@ -19,7 +19,7 @@ export type AppCenterNavItem = {
 };
 
 export const APP_CENTER_NAV_ITEMS: AppCenterNavItem[] = [
-  { id: "dashboard", to: "/cluster/apps/dashboard", label: "Dashboard", sidebarLabel: "概览", icon: LayoutDashboard },
+  { id: "dashboard", to: "/cluster/apps/dashboard", label: "Dashboard", sidebarLabel: "Dashboard", icon: LayoutDashboard },
   { id: "redis", to: "/cluster/apps/redis", label: "Redis 缓存", sidebarLabel: "Redis", icon: Database },
   { id: "kafka", to: "/cluster/apps/kafka", label: "Kafka", sidebarLabel: "Kafka", icon: Layers },
   { id: "opensearch", to: "/cluster/apps/opensearch", label: "OpenSearch", sidebarLabel: "OpenSearch", icon: Search },

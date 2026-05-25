@@ -30,7 +30,7 @@ test("compute workspace exposes resource-first routes", () => {
 });
 
 test("compute navigation is resource-first and keeps unconfigured providers out of daily nav", () => {
-  for (const label of ["总览", "虚拟机 / CT", "宿主机 / 节点", "存储", "任务活动", "配置"]) {
+  for (const label of ["Dashboard", "虚拟机 / CT", "宿主机 / 节点", "存储", "任务活动", "配置"]) {
     assert.match(subnav, new RegExp(label.replace("/", "\\/")));
   }
 
@@ -59,6 +59,7 @@ test("sidebar mirrors the resource-first compute navigation", () => {
     assert.match(computeSidebar, new RegExp(to.replaceAll("/", "\\/")));
   }
 
+  assert.doesNotMatch(computeSidebar, /to="\/cluster\/compute\/dashboard"/);
   assert.doesNotMatch(computeSidebar, /to="\/cluster\/compute\/pve\/dashboard"/);
   assert.doesNotMatch(computeSidebar, /to="\/cluster\/compute\/vcenter\/dashboard"/);
 });

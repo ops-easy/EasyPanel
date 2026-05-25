@@ -6,8 +6,26 @@ import (
 	"strings"
 	"time"
 
+	pveprovider "kube-bt-sync/api/pve/provider"
+
 	"github.com/gin-gonic/gin"
 )
+
+func loginPVEConfigured(app *ServerApp) bool {
+	if app == nil {
+		return false
+	}
+	targets, err := pveprovider.LoadTargets(app.PlatformKV())
+	if err != nil {
+		return false
+	}
+	for _, target := range targets {
+		if strings.TrimSpace(target.BaseURL) != "" {
+			return true
+		}
+	}
+	return false
+}
 
 // handleLoginPublicStatus GET /api/login/public-status — 无需登录；供登录页展示探活摘要（不返回宝塔面板 URL，避免泄露域名/端口）。
 func handleLoginPublicStatus(app *ServerApp) gin.HandlerFunc {
@@ -44,6 +62,7 @@ func handleLoginPublicStatus(app *ServerApp) gin.HandlerFunc {
 			"runtime": gin.H{
 				"k8sConnected":             app.K8s() != nil,
 				"k8sRuntimeConfigured":     app.Runtime() != nil && K8sRuntimeConfigured(app.Runtime()),
+				"pveConfigured":            loginPVEConfigured(app),
 				"vcenterConfigured":        cfg.vCenterConfigured(),
 				"vcenterRuntimeConfigured": VCenterRuntimeCredentialsPresent(cfg),
 				"redisConfigured":          RedisAddrConfigured(cfg),

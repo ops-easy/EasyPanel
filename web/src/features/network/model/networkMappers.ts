@@ -40,7 +40,9 @@ type OpenWrtFirewallSection = {
 };
 
 type OpenWrtInterfacesMapperShape = {
+  interfaces?: Array<Record<string, unknown>>;
   interfaceDump?: { interface?: Array<Record<string, unknown>> };
+  ipAddr?: Array<Record<string, unknown>>;
 };
 
 export const openWrtFamilyLabels: Array<[keyof OpenWrtFamilies, string]> = [
@@ -109,6 +111,84 @@ function inferInterfaceGroup(name: string, detail: string): string {
   if (text.includes("br-") || text.includes("bridge")) return "bridge";
   if (/(\beth|^eth|\ben|^en)/.test(text)) return "物理口";
   return "逻辑口";
+}
+
+function cleanInterfaceText(value: unknown): string {
+  return String(value ?? "").trim();
+}
+
+function openWrtInterfaceKeyCandidates(row?: Record<string, unknown>): string[] {
+  if (!row) return [];
+  const keys = [row.name, row.interface, row.ifname, row.device, row.l3_device, row.dev]
+    .map((value) => cleanInterfaceText(value))
+    .filter(Boolean);
+  return Array.from(new Set(keys));
+}
+
+function indexOpenWrtInterfaceRows(rows?: Array<Record<string, unknown>>): Map<string, Record<string, unknown>> {
+  const indexed = new Map<string, Record<string, unknown>>();
+  for (const row of rows ?? []) {
+    for (const key of openWrtInterfaceKeyCandidates(row)) {
+      if (!indexed.has(key)) indexed.set(key, row);
+    }
+  }
+  return indexed;
+}
+
+function findOpenWrtInterfaceRow(indexed: Map<string, Record<string, unknown>>, row: Record<string, unknown>): Record<string, unknown> | undefined {
+  for (const key of openWrtInterfaceKeyCandidates(row)) {
+    const found = indexed.get(key);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+function firstKnownText(...values: unknown[]): string {
+  for (const value of values) {
+    const text = cleanInterfaceText(value);
+    if (text) return text;
+  }
+  return "";
+}
+
+function firstOptionalNumber(...values: unknown[]): number | undefined {
+  for (const value of values) {
+    const n = optionalNumber(value);
+    if (n != null) return n;
+  }
+  return undefined;
+}
+
+function openWrtInterfaceAddress(item: Record<string, unknown>, ipAddrRow?: Record<string, unknown>, legacyRow?: Record<string, unknown>): string {
+  const ubusAddress = formatIPv4List(item["ipv4-address"]);
+  if (ubusAddress !== "-") return ubusAddress;
+  const ipAddrAddress = formatAddrInfoList(ipAddrRow?.addr_info);
+  if (ipAddrAddress !== "-") return ipAddrAddress;
+  return networkText(item.ip ?? item.ipaddr ?? item.ipAddress ?? item.address ?? legacyRow?.ip ?? legacyRow?.address);
+}
+
+function normalizeOpenWrtInterfaceState(...values: unknown[]): string {
+  for (const value of values) {
+    if (value === true || value === 1) return "up";
+    if (value === false || value === 0) return "down";
+    const text = cleanInterfaceText(value);
+    if (!text) continue;
+    const lower = text.toLowerCase();
+    if (["up", "unknown"].includes(lower)) return lower;
+    if (["down", "dormant", "notpresent", "lowerlayerdown"].includes(lower)) return lower;
+    return text;
+  }
+  return "down";
+}
+
+function openWrtInterfaceRate(item: Record<string, unknown>, legacyRow?: Record<string, unknown>) {
+  const rx = firstOptionalNumber(item.rxBytesPerSecond, item.rx_bytes_per_second, item.rxBps, legacyRow?.rxBytesPerSecond, legacyRow?.rx_bytes_per_second, legacyRow?.rxBps);
+  const tx = firstOptionalNumber(item.txBytesPerSecond, item.tx_bytes_per_second, item.txBps, legacyRow?.txBytesPerSecond, legacyRow?.tx_bytes_per_second, legacyRow?.txBps);
+  return {
+    rx,
+    tx,
+    rateUnit: rx != null || tx != null ? ("bytes" as const) : undefined,
+  };
 }
 
 export function mapSystemSummary(data?: OpenWrtOverview): OpenWrtSystemSummary {
@@ -199,27 +279,30 @@ export function mapIkuaiInterfaces(data?: IkuaiInterfacesResult): NetworkInterfa
 }
 
 export function mapOpenWrtInterfaces(data?: OpenWrtInterfaces): NetworkInterfaceRow[] {
-  const items = data?.interfaceDump?.interface?.length
+  const ipAddrRowsByKey = indexOpenWrtInterfaceRows(data?.ipAddr);
+  const legacyRowsByKey = indexOpenWrtInterfaceRows(data?.interfaces);
+  const baseRows = data?.interfaceDump?.interface?.length
     ? data.interfaceDump.interface
-    : data?.interfaces?.length
-      ? data.interfaces
-      : (data?.ipAddr ?? []);
-  return items.map((item) => {
-    const name = networkText(item.name ?? item.interface ?? item.ifname, "unknown");
-    const up = item.up === true || item.up === 1 || item.status === "up" || item.operstate === "UP";
-    const address = formatIPv4List(item["ipv4-address"]);
-    const detail = networkText(item.device ?? item.l3_device ?? item.ifname ?? item.proto ?? item.link_type);
+    : data?.ipAddr?.length
+      ? data.ipAddr
+      : (data?.interfaces ?? []);
+  return baseRows.map((item) => {
+    const ipAddrRow = findOpenWrtInterfaceRow(ipAddrRowsByKey, item);
+    const legacyRow = findOpenWrtInterfaceRow(legacyRowsByKey, item);
+    const name = networkText(item.name ?? item.interface ?? item.ifname ?? ipAddrRow?.ifname ?? legacyRow?.name, "unknown");
+    const detail = networkText(firstKnownText(item.device, item.l3_device, ipAddrRow?.ifname, item.ifname, item.proto, ipAddrRow?.link_type, legacyRow?.comment, legacyRow?.mac));
+    const rate = openWrtInterfaceRate(item, legacyRow);
     return {
       provider: "openwrt",
       name,
       group: inferInterfaceGroup(name, detail),
-      address: address !== "-" ? address : formatAddrInfoList(item.addr_info),
-      state: up ? "up" : networkText(item.status ?? item.operstate ?? item.proto ?? "down"),
+      address: openWrtInterfaceAddress(item, ipAddrRow, legacyRow),
+      state: normalizeOpenWrtInterfaceState(item.up, item.status, item.operstate, ipAddrRow?.operstate, ipAddrRow?.state, legacyRow?.up, legacyRow?.status),
       detail,
-      rx: optionalNumber(item.rxBytesPerSecond),
-      tx: optionalNumber(item.txBytesPerSecond),
-      rateUnit: item.rxBytesPerSecond != null || item.txBytesPerSecond != null ? "bytes" : undefined,
-      raw: item,
+      rx: rate.rx,
+      tx: rate.tx,
+      rateUnit: rate.rateUnit,
+      raw: { item, ipAddrRow, legacyRow },
     };
   });
 }
@@ -324,18 +407,84 @@ function uciEnabled(value: unknown): boolean {
   return ["1", "true", "yes", "on"].includes(cleanUciText(value, "").toLowerCase());
 }
 
+function uciDisabled(value: unknown): boolean {
+  return ["0", "false", "no", "off"].includes(cleanUciText(value, "").toLowerCase());
+}
+
+function firewallEnabledText(value: unknown, fallback = "未启用"): string {
+  if (uciEnabled(value)) return "已启用";
+  if (uciDisabled(value)) return "未启用";
+  return cleanUciText(value, fallback);
+}
+
+function firewallTargetText(value: unknown, fallback = "-"): string {
+  const text = cleanUciText(value, fallback);
+  const upper = text.toUpperCase();
+  if (upper === "ACCEPT") return "允许";
+  if (upper === "DROP") return "丢弃";
+  if (upper === "REJECT") return "拒绝";
+  if (upper === "DNAT") return "目标 NAT";
+  if (upper === "SNAT") return "源 NAT";
+  if (upper === "MASQUERADE") return "地址伪装";
+  return text;
+}
+
 function firewallPolicy(options: Record<string, string>): string {
-  return `入 ${cleanUciText(options.input)} / 出 ${cleanUciText(options.output)} / 转 ${cleanUciText(options.forward)}`;
+  return `入站 ${firewallTargetText(options.input)} / 出站 ${firewallTargetText(options.output)} / 转发 ${firewallTargetText(options.forward)}`;
+}
+
+const firewallOptionLabels: Record<string, string> = {
+  dest: "目标区",
+  dest_ip: "内部地址",
+  dest_port: "内部端口",
+  dest_mac: "目标 MAC",
+  dest_subnet: "目标地址",
+  enabled: "状态",
+  family: "地址族",
+  ipset: "IP 集合",
+  masq: "源 NAT",
+  mtu_fix: "MSS 修正",
+  network: "覆盖网络",
+  proto: "协议",
+  reflection: "NAT 回流",
+  snat_ip: "SNAT 地址",
+  snat_port: "SNAT 端口",
+  src: "来源区",
+  src_dip: "外部地址",
+  src_dport: "外部端口",
+  src_ip: "来源地址",
+  src_mac: "来源 MAC",
+  src_port: "来源端口",
+  src_subnet: "来源地址",
+  target: "动作",
+};
+
+function firewallOptionValue(key: string, value: string): string {
+  if (["target", "input", "output", "forward"].includes(key)) return firewallTargetText(value);
+  if (["enabled", "masq", "mtu_fix", "reflection"].includes(key)) return firewallEnabledText(value);
+  if (key === "proto") return value.replace(/\s+/g, ", ");
+  return value;
 }
 
 function firewallOptionSummary(options: Record<string, string>, keys: string[]): string {
   const parts = keys
     .map((key) => {
       const value = cleanUciText(options[key], "");
-      return value ? `${key}: ${value}` : "";
+      const label = firewallOptionLabels[key] ?? "配置";
+      return value ? `${label} ${firewallOptionValue(key, value)}` : "";
     })
     .filter(Boolean);
   return parts.length > 0 ? parts.join(" / ") : "-";
+}
+
+function firewallEndpoint(ip: unknown, port: unknown, zone: unknown, fallback = "-"): string {
+  const addr = cleanUciText(ip, "");
+  const portText = cleanUciText(port, "");
+  const zoneText = cleanUciText(zone, "");
+  if (addr && portText) return `${addr}:${portText}`;
+  if (addr) return addr;
+  if (portText) return portText;
+  return zoneText || fallback;
 }
 
 function firewallTypeLabel(type: string): string {
@@ -387,21 +536,18 @@ export function summarizeOpenWrtFirewallSection(section: OpenWrtFirewallSection)
       name: "默认防火墙策略",
       kind: label,
       value: firewallPolicy(options),
-      detail: `SYN flood ${uciEnabled(options.syn_flood) ? "已防护" : "未启用"}，full cone ${cleanUciText(options.fullcone, "未启用")}`,
-      raw: section,
+      detail: `SYN flood ${uciEnabled(options.syn_flood) ? "已防护" : "未启用"} / full cone ${firewallEnabledText(options.fullcone)}`,
     };
   }
   if (type === "zone") {
     const name = cleanUciText(options.name, "未命名区域");
-    const network = cleanUciText(options.network);
     const nat = uciEnabled(options.masq);
     return {
       provider: "openwrt",
       name: `区域 ${name}`,
       kind: nat ? "防火墙区域 / 源 NAT" : label,
-      value: network,
-      detail: `${firewallPolicy(options)}${nat ? " / 已启用 masquerade" : ""}`,
-      raw: section,
+      value: firewallPolicy(options),
+      detail: firewallOptionSummary(options, ["network", "masq", "mtu_fix"]),
     };
   }
   if (type === "forwarding") {
@@ -411,20 +557,19 @@ export function summarizeOpenWrtFirewallSection(section: OpenWrtFirewallSection)
       provider: "openwrt",
       name: `${src} -> ${dest}`,
       kind: label,
-      value: "允许区域转发",
-      detail: `允许 ${src} 区域转发到 ${dest} 区域`,
-      raw: section,
+      value: "允许转发",
+      detail: firewallOptionSummary(options, ["src", "dest", "enabled"]),
     };
   }
   if (type === "redirect") {
-    const dest = [options.dest_ip, options.dest_port].map((x) => cleanUciText(x, "")).filter(Boolean).join(":");
+    const srcPort = cleanUciText(options.src_dport, "-");
+    const dest = firewallEndpoint(options.dest_ip, options.dest_port, options.dest);
     return {
       provider: "openwrt",
       name: cleanUciText(options.name, "端口转发"),
       kind: label,
-      value: `${cleanUciText(options.src_dport, "-")} -> ${dest || cleanUciText(options.dest, "-")}`,
-      detail: firewallOptionSummary(options, ["proto", "src", "dest", "target"]),
-      raw: section,
+      value: `${srcPort} -> ${dest}`,
+      detail: firewallOptionSummary(options, ["proto", "src", "dest", "target", "src_dip", "src_dport", "dest_ip", "dest_port", "reflection", "enabled"]),
     };
   }
   if (type === "rule") {
@@ -432,9 +577,8 @@ export function summarizeOpenWrtFirewallSection(section: OpenWrtFirewallSection)
       provider: "openwrt",
       name: cleanUciText(options.name, "访问规则"),
       kind: label,
-      value: cleanUciText(options.target, "-"),
-      detail: firewallOptionSummary(options, ["proto", "src", "dest", "dest_port"]),
-      raw: section,
+      value: firewallTargetText(options.target),
+      detail: firewallOptionSummary(options, ["proto", "src", "src_ip", "src_port", "dest", "dest_ip", "dest_port", "target", "enabled"]),
     };
   }
   if (type === "nat") {
@@ -442,9 +586,8 @@ export function summarizeOpenWrtFirewallSection(section: OpenWrtFirewallSection)
       provider: "openwrt",
       name: cleanUciText(options.name, "NAT 规则"),
       kind: label,
-      value: cleanUciText(options.target, "-"),
-      detail: firewallOptionSummary(options, ["proto", "src", "dest", "snat_ip", "snat_port"]),
-      raw: section,
+      value: firewallTargetText(options.target, "源 NAT"),
+      detail: firewallOptionSummary(options, ["proto", "src", "dest", "src_ip", "src_port", "dest_ip", "dest_port", "snat_ip", "snat_port", "target", "enabled"]),
     };
   }
   return {
@@ -452,8 +595,7 @@ export function summarizeOpenWrtFirewallSection(section: OpenWrtFirewallSection)
     name: cleanUciText(options.name, label),
     kind: label,
     value: `${Object.keys(options).length} 项`,
-    detail: Object.keys(options).slice(0, 5).join(" / ") || "配置段",
-    raw: section,
+    detail: "已整理为防火墙配置段，详情可在原始数据中查看",
   };
 }
 

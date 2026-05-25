@@ -76,3 +76,17 @@ test("workbench app center card uses the same compact module order", () => {
     "workbench app center card"
   );
 });
+
+test("OpenClaw bootstrap page relies on app center navigation instead of an extra back link", () => {
+  const bootstrapSource = read("../src/features/app-center/openclaw/pages/AppCenterOpenClawBootstrap.tsx");
+
+  assert.doesNotMatch(bootstrapSource, /返回 OpenClaw/);
+  assert.doesNotMatch(bootstrapSource, /ArrowLeft/);
+});
+
+test("container host bootstrap page relies on app center navigation instead of an extra back link", () => {
+  const bootstrapSource = read("../src/features/app-center/cloudvm/pages/AppCenterCloudVmBootstrap.tsx");
+
+  assert.doesNotMatch(bootstrapSource, /返回容器主机/);
+  assert.doesNotMatch(bootstrapSource, /ArrowLeft/);
+});

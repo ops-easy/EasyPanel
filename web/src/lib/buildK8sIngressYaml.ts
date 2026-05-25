@@ -118,6 +118,9 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "nginx"
     kube-bt-sync.io/baota-sync: "true"
+    # 可选：只为这一条 Ingress 覆盖宝塔回源协议/端口；不写则使用宝塔设置里的 ddnsHost + defaultPort。
+    # kube-bt-sync.io/ddns-scheme: "https"
+    # kube-bt-sync.io/ddns-port: "30443"
 spec:
   ingressClassName: nginx
   rules:

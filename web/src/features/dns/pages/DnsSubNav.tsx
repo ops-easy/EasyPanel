@@ -4,7 +4,7 @@ import { Activity, Calendar, Globe, KeyRound, LayoutDashboard, ShieldCheck, Serv
 import { cn } from "@/lib/utils";
 
 const links = [
-  { to: "/cluster/apps/dns", label: "概览", icon: LayoutDashboard, exact: true },
+  { to: "/cluster/apps/dns", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/cluster/apps/dns/accounts", label: "服务商账号", icon: KeyRound, exact: false },
   { to: "/cluster/apps/dns/domains", label: "域名管理", icon: Globe, exact: false },
   { to: "/cluster/apps/dns/records", label: "解析记录", icon: Server, exact: false },

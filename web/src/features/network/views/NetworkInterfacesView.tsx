@@ -34,7 +34,7 @@ export function NetworkInterfacesView({
             devices={devices}
             canWrite={canWrite}
             canViewRaw={canViewRaw}
-            triggerLabel="配置接口"
+            triggerLabel="接管接口配置"
           />
         }
       />

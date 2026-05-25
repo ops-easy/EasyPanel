@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
-import { apiGetJson, type AppConfig } from "@/lib/api";
+import { apiGetJson } from "@/lib/api";
 import { buildK8sIngressYaml } from "@/lib/buildK8sIngressYaml";
+import { DDNS_HELP } from "@/lib/ddns-help";
 
 type ServiceRow = { namespace: string; name: string; ports: number[] };
 
@@ -143,7 +144,7 @@ const IngressGraphicalForm: React.FC<IngressGraphicalFormProps> = ({
       `域名 ${domain.trim()}`,
       `Service ${serviceName}:${port}`,
       baotaSyncEnabled
-        ? `回源 ${effectiveOriginScheme.toUpperCase()}://${originHost || "未设置"}:${effectiveOriginPort}`
+        ? `回源 ${effectiveOriginScheme.toUpperCase()}://${originHost || "未设置 ddnsHost"}:${effectiveOriginPort}`
         : "不同步宝塔",
     ];
     if (baotaSyncEnabled && baotaHttpsEnabled) {
@@ -291,8 +292,8 @@ const IngressGraphicalForm: React.FC<IngressGraphicalFormProps> = ({
           ) : null}
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600 sm:col-span-2 lg:col-span-2">
             当前按宝塔设置与表单选项计算的回源目标：
-            <span className="font-mono text-slate-800"> {effectiveOriginScheme.toUpperCase()}://{originHost || "未设置"}:{effectiveOriginPort}</span>
-            。勾选“开启宝塔 HTTPS”后会切到 HTTPS 回源；若宝塔设置中填写了固定回源端口，则仍优先使用该端口。
+            <span className="font-mono text-slate-800"> {effectiveOriginScheme.toUpperCase()}://{originHost || "未设置 ddnsHost"}:{effectiveOriginPort}</span>
+            。{DDNS_HELP.defaultBehavior} {DDNS_HELP.annotationSummary}
           </div>
           <div className="flex flex-col justify-center gap-2 rounded-lg border border-gray-200 px-3 py-3 sm:col-span-2 lg:col-span-3">
             <div className="flex items-center justify-between gap-3">
@@ -312,7 +313,7 @@ const IngressGraphicalForm: React.FC<IngressGraphicalFormProps> = ({
               />
             </div>
             <p className="text-xs text-gray-500">
-              开启后会追加 <code className="rounded bg-gray-100 px-0.5">baota-https</code> 注解，并让宝塔反代按 HTTPS 回源；端口优先使用宝塔设置中的固定回源端口，未设置时默认走本地 Ingress HTTPS 端口。HTTP 对外访问仍保留。
+              开启后会追加 <code className="rounded bg-gray-100 px-0.5">baota-https</code> 注解，并让宝塔反代按 HTTPS 回源；端口优先使用宝塔设置中的固定回源端口，未设置时默认走本地 Ingress HTTPS 端口。HTTP 对外访问仍保留。{DDNS_HELP.ddnsSchemeAnnotation}
             </p>
           </div>
           {baotaHttpsEnabled ? (

@@ -58,7 +58,7 @@ export function NetworkDevicesView({
                       devices={devices}
                       canWrite={canWrite}
                       canViewRaw={canViewRaw}
-                      triggerLabel="路由器配置"
+                      triggerLabel="路由器配置接管"
                     />
                   </TableCell>
                 </TableRow>

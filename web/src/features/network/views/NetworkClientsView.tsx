@@ -34,7 +34,7 @@ export function NetworkClientsView({
             devices={devices}
             canWrite={canWrite}
             canViewRaw={canViewRaw}
-            triggerLabel="配置终端策略"
+            triggerLabel="接管终端策略"
           />
         }
       />

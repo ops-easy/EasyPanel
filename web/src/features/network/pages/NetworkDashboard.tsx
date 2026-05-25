@@ -225,12 +225,12 @@ const NetworkDashboard: React.FC = () => {
               网络资源中心
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              日常入口按资源对象组织：设备、接口、终端、无线、防火墙和监控统一检索；iKuai 与 OpenWrt 只作为数据来源筛选，接入信息集中放在接入设置页。
+              日常入口按资源对象组织：设备、接口、终端、无线、防火墙和监控统一检索；iKuai 与 OpenWrt 只作为数据来源筛选，接入信息集中放在配置页。
             </p>
           </div>
           <Button asChild className="w-fit gap-2 bg-cyan-700 hover:bg-cyan-800">
-            <Link to={providerConfigured ? "/cluster/network/devices" : "/cluster/network/config"}>
-              {providerConfigured ? "查看设备" : "打开接入设置"}
+            <Link to={providerConfigured ? "/cluster/network/devices" : "/cluster/network/access"}>
+              {providerConfigured ? "查看设备" : "打开配置"}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
@@ -241,7 +241,7 @@ const NetworkDashboard: React.FC = () => {
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold text-slate-950">接入源健康</h2>
           <Button asChild variant="outline" size="sm">
-            <Link to="/cluster/network/config">接入设置</Link>
+            <Link to="/cluster/network/access">配置</Link>
           </Button>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
@@ -267,7 +267,7 @@ const NetworkDashboard: React.FC = () => {
           hint="接入记录"
           tone="slate"
         />
-        <NetworkMetricCard label="接入入口" value={providerConfigured ? "已就绪" : "待接入"} hint="统一接入设置" tone="amber" />
+        <NetworkMetricCard label="配置入口" value={providerConfigured ? "已就绪" : "待配置"} hint="统一配置" tone="amber" />
       </section>
 
       {providerConfigured ? (
@@ -276,7 +276,7 @@ const NetworkDashboard: React.FC = () => {
             <h2 className="text-sm font-semibold text-slate-950">资源入口</h2>
             <Button asChild variant="outline" size="sm" className="gap-2">
               <Link to="/cluster/network/devices">
-                路由器配置
+                路由器配置接管
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -295,7 +295,7 @@ const NetworkDashboard: React.FC = () => {
             未配置来源时首页只展示接入状态。保存数据源后，接口、终端、无线、防火墙和监控页面会自动成为日常工作入口。
           </p>
           <Button asChild className="mt-4 bg-cyan-700 hover:bg-cyan-800">
-            <Link to="/cluster/network/config">去接入设置</Link>
+            <Link to="/cluster/network/access">去配置</Link>
           </Button>
         </section>
       )}

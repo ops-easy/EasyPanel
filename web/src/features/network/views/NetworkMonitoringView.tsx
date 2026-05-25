@@ -37,7 +37,7 @@ export function NetworkMonitoringView({
             devices={devices}
             canWrite={canWrite}
             canViewRaw={canViewRaw}
-            triggerLabel="配置采集"
+            triggerLabel="接管采集配置"
           />
         }
       />

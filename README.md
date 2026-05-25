@@ -163,7 +163,8 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
 | `KUBEBT_ENABLE_BACKGROUND_JOBS` | 是否启用后台同步、巡检和通知任务；多副本时仅保留一个副本为 `true` |
 | `BAOTA_URL` / `BAOTA_API_KEY` | 宝塔面板 API 地址与密钥 |
 | `INGRESS_BAOTA_SYNC_ENABLED` | 是否启用 Ingress 到宝塔的后台同步 |
-| `DDNS_HOST` / `DEFAULT_PORT` | Ingress 同步时默认上游域名与端口 |
+| `DDNS_HOST` / `DEFAULT_PORT` | 宝塔反代默认回源到集群入口时使用的地址与 HTTP 端口 |
+| `BAOTA_UPSTREAM_HOST` / `BAOTA_UPSTREAM_PORT` / `BAOTA_UPSTREAM_SCHEME` | 可选的固定回源覆盖；非空时优先于 `DDNS_HOST` / `DEFAULT_PORT` |
 | `MYSQL_DSN` 或 `MYSQL_HOST` 系列 | MySQL 连接配置 |
 | `REDIS_ADDR` / `REDIS_PASSWORD` | Redis 连接配置 |
 | `PROMETHEUS_URL_K8S` / `VM_SELECT_URL_K8S` | Kubernetes 监控数据源 |
@@ -183,6 +184,16 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
 kubectl annotate ingress <name> -n <namespace> kube-bt-sync.io/baota-sync="true"
 ```
 
+### DDNS 回源与覆盖规则
+
+`ddnsHost` 是宝塔反向代理访问集群入口时使用的主机名或节点 IP，不是业务域名 `rules.host`。通常填解析到公网入口节点的 DDNS 域名；没有 DDNS 时也可以填固定公网 IP、内网穿透域名或边缘节点地址。
+
+默认：HTTP + DEFAULT_PORT。也就是宝塔默认回源到 `http://<ddnsHost>:<DEFAULT_PORT>`，这里的 `DEFAULT_PORT` 通常对应 ingress-nginx 在节点上监听的 HTTP 端口。若配置了 `BAOTA_UPSTREAM_HOST`、`BAOTA_UPSTREAM_PORT` 或 `BAOTA_UPSTREAM_SCHEME`，宝塔设置里的固定回源优先。
+
+开启宝塔 HTTPS 后，`kube-bt-sync.io/baota-https: "true"` 会让宝塔侧启用 HTTPS；如果没有额外写 `ddns-scheme`，回源协议会默认切到 HTTPS，并使用 `INGRESS_NGINX_HOST_HTTPS_PORT` / `HTTPS_PORT` 对应的 HTTPS 入口端口。HTTP 对外访问不会因为这个注解自动删除。
+
+`ddns-port` 和 `ddns-scheme` 是为历史 YAML 与少数特殊服务保留的单条覆盖：它们只影响单条 Ingress 生成的宝塔反代，不会修改全局 `ddnsHost`、`DEFAULT_PORT` 或宝塔设置。常规场景优先在「宝塔设置」里维护全局回源，只有某个 Ingress 必须走不同端口或协议时才写这两个注解。
+
 常用注解：
 
 | 注解 | 说明 |
@@ -190,7 +201,8 @@ kubectl annotate ingress <name> -n <namespace> kube-bt-sync.io/baota-sync="true"
 | `kube-bt-sync.io/baota-sync: "true"` | 标记为受管 Ingress |
 | `kube-bt-sync.io/baota-https: "true"` | 在宝塔侧启用 HTTPS |
 | `kube-bt-sync.io/baota-ssl-cert-name: "<cert>"` | 指定宝塔证书名称 |
-| `kube-bt-sync.io/ddns-port: "<port>"` | 覆盖默认上游端口 |
+| `kube-bt-sync.io/ddns-scheme: "http\|https"` | 覆盖单条 Ingress 的宝塔回源协议 |
+| `kube-bt-sync.io/ddns-port: "<port>"` | 覆盖单条 Ingress 的宝塔回源端口 |
 | `i4t.com/baota-sync: "true"` | 旧版兼容注解 |
 
 示例：
@@ -201,6 +213,9 @@ metadata:
     kube-bt-sync.io/baota-sync: "true"
     kube-bt-sync.io/baota-https: "true"
     kube-bt-sync.io/baota-ssl-cert-name: "example-cert"
+    # 可选：只影响单条 Ingress
+    # kube-bt-sync.io/ddns-scheme: "https"
+    # kube-bt-sync.io/ddns-port: "30443"
 ```
 
 ## 数据持久化

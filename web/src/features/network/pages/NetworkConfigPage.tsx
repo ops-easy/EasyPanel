@@ -195,7 +195,7 @@ function IkuaiConfigPanel({
             iKuai 数据源
           </h2>
           <p className="mt-1 text-sm leading-6 text-slate-600">
-            这里保存平台访问 iKuai Web/API 与 Prometheus 的接入信息。终端备注、限速、端口映射等路由器配置请从资源页进入。
+            这里保存平台访问 iKuai Web/API 与 Prometheus 的接入信息。终端备注、限速、端口映射等路由器配置接管入口请从资源页进入。
           </p>
         </div>
         <Badge variant={device ? "default" : "outline"}>{device ? "已保存" : "未配置"}</Badge>
@@ -432,13 +432,13 @@ export default function NetworkConfigPage() {
       <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
         <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">Network Access</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">Network Config</p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-950">
               <Settings className="h-6 w-6 text-cyan-700" />
-              网络接入设置
+              网络配置
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              本页只维护平台接入信息：管理地址、凭据和监控标签。路由器配置请从资源页进入，避免接入和日常运维混在一起。
+              本页只维护平台接入信息：管理地址、凭据和监控标签。路由器配置接管入口请从资源页进入，避免接入和日常运维混在一起。
             </p>
           </div>
           <Badge variant="outline" className="w-fit bg-white text-slate-700">

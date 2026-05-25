@@ -18,7 +18,8 @@ test("network routes expose resource-first pages and redirect legacy vendor rout
   for (const view of ["devices", "interfaces", "clients", "wireless", "connections", "monitoring"]) {
     assert.match(routes, new RegExp(`path="${view}"[\\s\\S]*<NetworkResourcePage view="${view}" \\/>`));
   }
-  assert.match(routes, /path="config"[\s\S]*<NetworkConfigPage \/>/);
+  assert.match(routes, /path="access"[\s\S]*<NetworkConfigPage \/>/);
+  assert.match(routes, /path="config"[\s\S]*to="\/cluster\/network\/access"/);
 
   for (const [legacy, target] of [
     ["ikuai/dashboard", "/cluster/network/devices?provider=ikuai"],
@@ -50,11 +51,29 @@ test("network navigation is organized by resources instead of vendors", () => {
     "/cluster/network/wireless",
     "/cluster/network/connections",
     "/cluster/network/monitoring",
-    "/cluster/network/config",
+    "/cluster/network/access",
   ]) {
     assert.match(subnav, new RegExp(`to:\\s*["']${path}`));
-    assert.match(sidebar, new RegExp(`to="${path}"`));
   }
+
+  const networkSidebar = sidebar.slice(
+    sidebar.indexOf("showNetworkNav && isNetwork"),
+    sidebar.indexOf("showAppCenterNav && isAppcenter")
+  );
+
+  for (const path of [
+    "/cluster/network/devices",
+    "/cluster/network/interfaces",
+    "/cluster/network/clients",
+    "/cluster/network/wireless",
+    "/cluster/network/connections",
+    "/cluster/network/monitoring",
+    "/cluster/network/access",
+  ]) {
+    assert.match(networkSidebar, new RegExp(`to="${path}"`));
+  }
+  assert.doesNotMatch(networkSidebar, /to="\/cluster\/network\/dashboard"/);
+  assert.doesNotMatch(networkSidebar, /hint=\{openWrtEntryHint\}/);
 
   for (const oldLabel of [
     "iKuai 总览",
@@ -69,26 +88,35 @@ test("network navigation is organized by resources instead of vendors", () => {
   }
 });
 
-test("network access setup is named separately from router configuration actions", () => {
+test("network access page is consistently named configuration while router actions stay explicit", () => {
   const config = read("../src/features/network/pages/NetworkConfigPage.tsx");
   const editor = read("../src/features/network/pages/NetworkConfigEditor.tsx");
   const drawer = read("../src/features/network/router-config/NetworkRouterConfigDrawer.tsx");
+  const networkSidebar = sidebar.slice(
+    sidebar.indexOf("showNetworkNav && isNetwork"),
+    sidebar.indexOf("showBaotaNav && isBaota")
+  );
 
-  assert.match(subnav, /接入设置/);
-  assert.match(sidebar, /接入设置/);
-  assert.doesNotMatch(subnav, /label:\s*"配置"/);
-  assert.match(config, /网络接入设置/);
+  assert.match(subnav, /label:\s*"配置"/);
+  assert.match(networkSidebar, />配置<\/span>/);
+  assert.doesNotMatch(subnav, /接入设置/);
+  assert.doesNotMatch(networkSidebar, /接入设置/);
+  assert.match(config, /网络配置/);
+  assert.doesNotMatch(config, /网络接入设置/);
+  assert.match(config, /路由器配置接管入口请从资源页进入/);
 
   assert.match(editor, /NetworkRouterConfigDrawer/);
+  assert.match(editor, /triggerLabel = "路由器配置接管"/);
   assert.match(drawer, /路由器配置接管/);
-  assert.match(drawer, /请先在接入设置页接入 iKuai 或 OpenWrt/);
+  assert.match(drawer, /triggerLabel = "路由器配置接管"/);
+  assert.match(drawer, /请先在配置页接入 iKuai 或 OpenWrt/);
 });
 
 test("network dashboard is an entry workspace without permanent setup forms or raw payloads", () => {
   assert.match(dashboard, /网络资源中心/);
   assert.match(dashboard, /NetworkResourceCard/);
   assert.match(dashboard, /\/cluster\/network\/devices/);
-  assert.match(dashboard, /\/cluster\/network\/config/);
+  assert.match(dashboard, /\/cluster\/network\/access/);
 
   assert.doesNotMatch(dashboard, /DeviceConfigurationPanel/);
   assert.doesNotMatch(dashboard, /<Input\b/);
@@ -136,8 +164,10 @@ test("network resource pages do not block usable rows behind unrelated slow prov
 
   assert.match(queries, /const viewLoading\b/);
   assert.match(queries, /const backgroundLoading\b/);
-  assert.match(queries, /rowsLength === 0 && viewLoading/);
+  assert.match(queries, /const loading = rowsLength === 0 && \(devicesLoading \|\| viewLoading\)/);
+  assert.match(queries, /const backgroundLoading = rowsLength > 0 && \(devicesLoading \|\| viewLoading\)/);
   assert.doesNotMatch(queries, /const loading =\s*[\s\S]*ikuaiStreamQ\.isLoading[\s\S]*openWrtFirewallQ\.isLoading/);
+  assert.doesNotMatch(queries, /devicesLoading \|\| \(rowsLength === 0 && viewLoading\)/);
 });
 
 test("network interface resource page maps OpenWrt SSH ubus payloads", () => {
@@ -194,14 +224,14 @@ test("network config layout keeps section tabs compact across provider forms", (
   assert.match(openWrtActions, /rounded-lg[^"]*min-w-0[^"]*overflow-hidden/);
 });
 
-test("network access setup page does not mix in router configuration actions", () => {
+test("network configuration page does not mix in router configuration actions", () => {
   const config = read("../src/features/network/pages/NetworkConfigPage.tsx");
 
-  assert.match(config, /网络接入设置/);
+  assert.match(config, /网络配置/);
   assert.match(config, /接入信息/);
   assert.match(config, /OpenWrt 接入/);
   assert.match(config, /本页只维护平台接入信息/);
-  assert.match(config, /路由器配置请从资源页进入/);
+  assert.match(config, /路由器配置接管入口请从资源页进入/);
   assert.doesNotMatch(config, /NetworkRouterConfigDrawer/);
   assert.doesNotMatch(config, /NetworkConfigEditor/);
   assert.doesNotMatch(config, /OpenWrtActionPanel/);
@@ -272,7 +302,8 @@ test("network resource shell centralizes filters loading errors and raw disclosu
 test("network dashboard separates access health from router config entry", () => {
   assert.match(dashboard, /接入源健康/);
   assert.match(dashboard, /资源入口/);
-  assert.match(dashboard, /路由器配置/);
-  assert.match(dashboard, /接入设置/);
+  assert.match(dashboard, /路由器配置接管/);
+  assert.match(dashboard, /打开配置/);
+  assert.doesNotMatch(dashboard, /接入设置/);
   assert.doesNotMatch(dashboard, /<Input\b|<Textarea\b|JSON\.stringify/);
 });

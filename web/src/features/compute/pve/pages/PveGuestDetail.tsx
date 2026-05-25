@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Cpu, HardDrive, Loader2, Monitor, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -522,8 +522,19 @@ function PveConsolePanel({
 
 export default function PveGuestDetail() {
   const { targetId = "", node = "", guestType = "qemu", vmid = "" } = useParams();
+  const [searchParams] = useSearchParams();
   const canonicalGuestType = normalizePveGuestType(guestType);
   const queryClient = useQueryClient();
+  const requestedTab = searchParams.get("tab");
+  const initialTab =
+    requestedTab === "metrics" ||
+    requestedTab === "hardware" ||
+    requestedTab === "snapshots" ||
+    requestedTab === "console" ||
+    requestedTab === "ssh" ||
+    requestedTab === "sftp"
+      ? requestedTab
+      : "overview";
   const [hardwareOpen, setHardwareOpen] = useState(false);
   const [taskId, setTaskId] = useState("");
   const bastionTargetId = `pve:${targetId}:${node}:${canonicalGuestType}:${vmid}`;
@@ -671,7 +682,7 @@ export default function PveGuestDetail() {
         </div>
       ) : null}
 
-      <Tabs defaultValue="overview" className="w-full space-y-4">
+      <Tabs defaultValue={initialTab} className="w-full space-y-4">
         <TabsList className="flex-wrap">
           <TabsTrigger value="overview">概览</TabsTrigger>
           <TabsTrigger value="metrics">性能</TabsTrigger>

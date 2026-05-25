@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, Loader2, RefreshCw, Rocket, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -68,11 +68,23 @@ const MODE_LABEL: Record<string, string> = {
 
 const EXPOSE_MODES = ["clusterIP", "nodePort", "loadBalancer", "ingress"] as const;
 
+const HERMES_BOOTSTRAP_PATH = "/cluster/apps/hermes/bootstrap";
+
+const HERMES_CAPABILITIES = [
+  { title: "部署实例", detail: "下发 Gateway、Dashboard 或组合模式，并写入 PVC、Secret、ConfigMap 与 Service。" },
+  { title: "运行时探测", detail: "进入实例详情后可执行真实探测，确认 Gateway、Dashboard 与模型列表是否可用。" },
+  { title: "访问暴露", detail: "支持 clusterIP、nodePort、loadBalancer 与 ingress，详情页可直接调整暴露配置。" },
+  { title: "升级/回滚", detail: "在详情页切换镜像、副本，并保留上一版本镜像用于回滚。" },
+  { title: "日志与事件", detail: "拉取 Pod 日志和相关 Kubernetes Events，便于排查启动和运行问题。" },
+  { title: "OpenClaw 迁移", detail: "在 Hermes Pod 内执行 hermes claw migrate，承接 OpenClaw user-data 数据。" },
+] as const;
+
 export type HermesPageTab = "list" | "create" | "bootstrap";
 
 const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab = "list" }) => {
   const qc = useQueryClient();
   const { status } = useAuth();
+  const isAdmin = status?.role === "admin";
   const canWrite = cloudVmAppCenterCanWrite(status?.role, status?.permissions);
   const [tab, setTab] = useState<HermesPageTab>(initialTab);
   const [apiKey, setApiKey] = useState("");
@@ -134,6 +146,16 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
   const readyCount = useMemo(
     () => rows.filter((x) => x.ready || statusQ.data?.statuses?.[x.id]?.ready).length,
     [rows, statusQ.data?.statuses]
+  );
+  const modeOptions = useMemo(
+    () =>
+      boot?.modes?.length
+        ? boot.modes
+        : (["gateway", "dashboard", "gateway-dashboard"] as const).map((id) => ({
+            id,
+            label: MODE_LABEL[id],
+          })),
+    [boot?.modes]
   );
 
   const saveBootMut = useMutation({
@@ -200,6 +222,32 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
     onError: (e) => toast.error(String(e)),
   });
 
+  if (bootstrapQ.isLoading) {
+    return (
+      <p className="flex items-center gap-2 text-sm text-slate-500">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        加载…
+      </p>
+    );
+  }
+
+  if (boot && !boot.bootstrapComplete) {
+    if (isAdmin && initialTab !== "bootstrap") {
+      return <Navigate to={HERMES_BOOTSTRAP_PATH} replace />;
+    }
+    if (!isAdmin) {
+      return (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          Hermes 尚未完成首次引导。请联系管理员打开{" "}
+          <Link to={HERMES_BOOTSTRAP_PATH} className="font-mono font-semibold underline">
+            {HERMES_BOOTSTRAP_PATH}
+          </Link>{" "}
+          完成配置。
+        </div>
+      );
+    }
+  }
+
   return (
     <div className="space-y-5">
       <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
@@ -212,13 +260,13 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
               基于 NousResearch/hermes-agent 的 K8s 部署入口：支持 Gateway、Dashboard、Gateway + Dashboard 三种模式，
-              PVC 持久化、Secret 注入与 Deployment/Service 状态回读。
+              PVC 持久化、Secret 注入、访问暴露、运行时探测、升级回滚与日志事件回读。
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {(["list", "create", "bootstrap"] as const).map((id) => (
               <Button key={id} variant={tab === id ? "default" : "outline"} size="sm" onClick={() => setTab(id)}>
-                {id === "list" ? "实例" : id === "create" ? "部署" : "引导"}
+                {id === "list" ? "实例列表" : id === "create" ? "部署实例" : "引导配置"}
               </Button>
             ))}
           </div>
@@ -239,6 +287,29 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs text-slate-500">默认镜像</p>
               <p className="mt-1 truncate font-mono text-sm text-slate-950">{boot?.defaultImage || "-"}</p>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-950">Hermes 管理能力</h2>
+                <p className="mt-1 text-xs text-slate-500">创建实例后，完整运维能力集中在实例详情页。</p>
+              </div>
+              {canWrite ? (
+                <Button type="button" size="sm" className="gap-1.5 bg-fuchsia-600 hover:bg-fuchsia-700" onClick={() => setTab("create")}>
+                  <Rocket className="h-4 w-4" />
+                  部署实例
+                </Button>
+              ) : null}
+            </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {HERMES_CAPABILITIES.map((item) => (
+                <div key={item.title} className="min-h-[92px] rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-3">
+                  <p className="text-sm font-medium text-slate-950">{item.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -271,7 +342,17 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
                     </TableRow>
                   ) : rows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="py-10 text-center text-sm text-slate-500">暂无 Hermes 实例</TableCell>
+                      <TableCell colSpan={8} className="py-10 text-center">
+                        <div className="flex flex-col items-center gap-3 text-sm text-slate-500">
+                          <span>暂无 Hermes 实例</span>
+                          {canWrite ? (
+                            <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("create")}>
+                              <Rocket className="h-4 w-4" />
+                              部署实例
+                            </Button>
+                          ) : null}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ) : rows.map((row) => {
                     const st = statusQ.data?.statuses?.[row.id];
@@ -336,14 +417,14 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
             <div className="space-y-1.5">
               <Label>运行模式</Label>
               <div className="grid gap-2 sm:grid-cols-3">
-                {(["gateway", "dashboard", "gateway-dashboard"] as const).map((mode) => (
+                {modeOptions.map((mode) => (
                   <button
                     type="button"
-                    key={mode}
-                    onClick={() => setForm({ ...form, mode })}
-                    className={`rounded-lg border px-3 py-2 text-sm font-medium ${form.mode === mode ? "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-900" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                    key={mode.id}
+                    onClick={() => setForm({ ...form, mode: mode.id })}
+                    className={`rounded-lg border px-3 py-2 text-sm font-medium ${form.mode === mode.id ? "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-900" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
                   >
-                    {MODE_LABEL[mode]}
+                    {mode.label || MODE_LABEL[mode.id] || mode.id}
                   </button>
                 ))}
               </div>
@@ -401,7 +482,28 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
             <Field label="默认命名空间" value={form.namespace} onChange={(v) => setForm({ ...form, namespace: v })} mono />
             <Field label="默认镜像" value={form.image} onChange={(v) => setForm({ ...form, image: v })} mono />
             <Field label="默认容量" value={form.storageSize} onChange={(v) => setForm({ ...form, storageSize: v })} mono />
+            <Field label="默认模型提供方" value={form.modelProvider} onChange={(v) => setForm({ ...form, modelProvider: v })} mono />
             <Field label="默认模型" value={form.modelName} onChange={(v) => setForm({ ...form, modelName: v })} mono />
+            <div className="space-y-2 lg:col-span-2">
+              <Label>默认运行模式</Label>
+              <div className="grid gap-2 md:grid-cols-3">
+                {modeOptions.map((mode) => (
+                  <button
+                    type="button"
+                    key={mode.id}
+                    onClick={() => setForm({ ...form, mode: mode.id })}
+                    className={`rounded-lg border px-3 py-3 text-left text-sm ${
+                      form.mode === mode.id
+                        ? "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-950"
+                        : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="block font-medium">{mode.label || MODE_LABEL[mode.id] || mode.id}</span>
+                    {mode.description ? <span className="mt-1 block text-xs leading-5 text-slate-500">{mode.description}</span> : null}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           <Button className="mt-5 gap-2 bg-fuchsia-600 hover:bg-fuchsia-700" disabled={!canWrite || saveBootMut.isPending} onClick={() => saveBootMut.mutate()}>
             {saveBootMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings2 className="h-4 w-4" />}

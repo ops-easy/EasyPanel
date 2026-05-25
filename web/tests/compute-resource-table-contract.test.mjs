@@ -51,3 +51,16 @@ test("compute filters expose semantic pressed states for custom controls", () =>
   assert.match(filters, /健康状态/);
   assert.match(filters, /搜索名称、ID、节点、IP/);
 });
+
+test("compute row actions deep link to console and ssh detail tabs", () => {
+  const actions = read("../src/features/compute/components/ComputeRowActions.tsx");
+  const vcenterDetail = read("../src/features/vcenter/pages/VCenterVMDetail.tsx");
+  const pveDetail = read("../src/features/compute/pve/pages/PveGuestDetail.tsx");
+
+  assert.match(actions, /tab=console/);
+  assert.match(actions, /tab=ssh/);
+  assert.match(vcenterDetail, /useSearchParams/);
+  assert.match(vcenterDetail, /defaultValue=\{initialTab\}/);
+  assert.match(pveDetail, /useSearchParams/);
+  assert.match(pveDetail, /defaultValue=\{initialTab\}/);
+});

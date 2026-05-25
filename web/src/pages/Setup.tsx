@@ -16,6 +16,7 @@ import {
 } from "@/shared/ui/select";
 import { toast } from "sonner";
 import { apiGetJson, apiPostJson, type SetupStatus } from "@/lib/api";
+import { DDNS_HELP } from "@/lib/ddns-help";
 
 type K8sMode = "none" | "incluster" | "kubeconfig";
 
@@ -355,7 +356,9 @@ const Setup: React.FC = () => {
                 <Server className="h-5 w-5 text-amber-600" />
                 可选：Ingress ↔ 宝塔同步
               </CardTitle>
-              <CardDescription>默认关闭；开启后需填写宝塔 URL 与 API Key，并建议配置 K8s</CardDescription>
+              <CardDescription>
+                默认关闭；开启后需填写宝塔 URL 与 API Key，并建议配置 K8s。DDNS 只决定宝塔反代如何回源到集群入口，不是业务访问域名。
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2">
@@ -364,7 +367,11 @@ const Setup: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label>baotaUrl</Label>
-                <Input value={baotaUrl} onChange={(e) => setBaotaUrl(e.target.value)} placeholder="留空则不同步" />
+                <Input
+                  value={baotaUrl}
+                  onChange={(e) => setBaotaUrl(e.target.value)}
+                  placeholder="例如 https://bt.example.com:8888；留空则不同步"
+                />
               </div>
               <div className="space-y-2">
                 <Label>baotaApiKey</Label>
@@ -377,17 +384,27 @@ const Setup: React.FC = () => {
                 />
               </div>
               <div className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-                <Label className="cursor-pointer">HTTPS 跳过 TLS</Label>
+                <Label className="cursor-pointer">跳过宝塔面板 TLS 证书校验</Label>
                 <Switch checked={baotaSkipTls} onCheckedChange={setBaotaSkipTls} />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>ddnsHost</Label>
-                  <Input value={ddnsHost} onChange={(e) => setDdnsHost(e.target.value)} />
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>{DDNS_HELP.hostLabel}</Label>
+                  <Input
+                    value={ddnsHost}
+                    onChange={(e) => setDdnsHost(e.target.value)}
+                    placeholder={DDNS_HELP.hostPlaceholder}
+                  />
+                  <p className="text-xs leading-5 text-slate-500">{DDNS_HELP.hostHint}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>defaultPort</Label>
-                  <Input value={defaultPort} onChange={(e) => setDefaultPort(e.target.value)} />
+                  <Label>{DDNS_HELP.defaultPortLabel}</Label>
+                  <Input
+                    value={defaultPort}
+                    onChange={(e) => setDefaultPort(e.target.value)}
+                    placeholder={DDNS_HELP.defaultPortPlaceholder}
+                  />
+                  <p className="text-xs leading-5 text-slate-500">{DDNS_HELP.defaultPortHint}</p>
                 </div>
                 <div className="space-y-2">
                   <Label>syncIntervalSec</Label>
@@ -397,8 +414,12 @@ const Setup: React.FC = () => {
                     value={syncIntervalSec}
                     onChange={(e) => setSyncIntervalSec(Number(e.target.value))}
                   />
+                  <p className="text-xs leading-5 text-slate-500">后台扫描带 baota-sync 注解的 Ingress 的间隔，保存后热重载。</p>
                 </div>
               </div>
+              <p className="text-xs leading-5 text-slate-500">
+                {DDNS_HELP.defaultBehavior} {DDNS_HELP.ddnsPortAnnotation} {DDNS_HELP.ddnsSchemeAnnotation}
+              </p>
               <div className="space-y-2">
                 <Label>baotaSslCertName（可选，宝塔证书夹名称）</Label>
                 <Input value={baotaSslCertName} onChange={(e) => setBaotaSslCertName(e.target.value)} />
