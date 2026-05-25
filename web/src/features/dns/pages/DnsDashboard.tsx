@@ -55,7 +55,7 @@ export default function DnsDashboard() {
         <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-blue-200/20 blur-3xl" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">DNS 管理 · 概览</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">DNS 管理 · Dashboard</p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-[26px]">
               <LayoutDashboard className="h-7 w-7 text-slate-600" />
               Dashboard

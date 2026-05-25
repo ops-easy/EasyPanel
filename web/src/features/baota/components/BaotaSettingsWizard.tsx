@@ -34,6 +34,7 @@ import {
   CollapsibleTrigger,
 } from "@/shared/ui/collapsible";
 import type { RuntimeSettingsDTO } from "@/lib/api";
+import { DDNS_HELP } from "@/lib/ddns-help";
 import { cn } from "@/lib/utils";
 
 type BaotaSettingsWizardProps = {
@@ -251,36 +252,41 @@ const BaotaSettingsWizard: React.FC<BaotaSettingsWizardProps> = ({
       <StepSection
         index={2}
         title="同步策略"
-        description="控制 Ingress 到宝塔站点与反向代理的同步入口，并设置默认回源地址、端口和协议。"
+        description="控制 Ingress 到宝塔站点与反向代理的同步入口，并设置宝塔默认回源到集群入口时使用的地址、端口和协议。"
         icon={Route}
       >
         <div className="space-y-4">
           <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-medium text-slate-900">Ingress ↔ 宝塔同步</p>
-              <p className="mt-1 text-xs text-slate-500">开启后后台同步任务会处理带注解的 Ingress；关闭时仍可保留面板接入配置。</p>
+              <p className="mt-1 text-xs text-slate-500">开启后后台同步任务会处理带注解的 Ingress；关闭时仍可保留面板配置。</p>
             </div>
             <Switch
               checked={Boolean(form.ingressBaotaSyncEnabled)}
               onCheckedChange={(x) => setField("ingressBaotaSyncEnabled", x)}
             />
           </div>
+          <div className="rounded-lg border border-amber-100 bg-amber-50/70 px-3 py-3 text-xs leading-6 text-amber-950">
+            {DDNS_HELP.defaultBehavior} {DDNS_HELP.annotationSummary}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label>DDNS / 节点访问地址 ddnsHost</Label>
+              <Label>{DDNS_HELP.hostLabel}</Label>
               <Input
                 value={String(form.ddnsHost ?? "")}
                 onChange={(e) => setField("ddnsHost", e.target.value)}
-                placeholder="例如 203.0.113.10 或 edge.example.com"
+                placeholder={DDNS_HELP.hostPlaceholder}
               />
+              <FieldHint>{DDNS_HELP.hostHint}</FieldHint>
             </div>
             <div className="space-y-2">
-              <Label>默认上游端口 defaultPort</Label>
+              <Label>{DDNS_HELP.defaultPortLabel}</Label>
               <Input
                 value={String(form.defaultPort ?? "")}
                 onChange={(e) => setField("defaultPort", e.target.value)}
-                placeholder="如 80"
+                placeholder={DDNS_HELP.defaultPortPlaceholder}
               />
+              <FieldHint>{DDNS_HELP.defaultPortHint}</FieldHint>
             </div>
             <div className="space-y-2">
               <Label>同步间隔 syncIntervalSec</Label>
@@ -290,14 +296,16 @@ const BaotaSettingsWizard: React.FC<BaotaSettingsWizardProps> = ({
                 value={Number(form.syncIntervalSec ?? 30)}
                 onChange={(e) => setField("syncIntervalSec", Number(e.target.value))}
               />
+              <FieldHint>后台同步任务扫描受管 Ingress 的间隔；只影响自动同步频率，不改变宝塔回源地址。</FieldHint>
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label>回源地址 baotaUpstreamHost（可选）</Label>
+              <Label>{DDNS_HELP.upstreamHostLabel}</Label>
               <Input
                 value={String(form.baotaUpstreamHost ?? "")}
                 onChange={(e) => setField("baotaUpstreamHost", e.target.value)}
-                placeholder="留空则回退到 ddnsHost"
+                placeholder={DDNS_HELP.upstreamHostPlaceholder}
               />
+              <FieldHint>{DDNS_HELP.upstreamHostHint}</FieldHint>
             </div>
             <div className="space-y-2">
               <Label>回源协议 baotaUpstreamScheme</Label>
@@ -313,17 +321,21 @@ const BaotaSettingsWizard: React.FC<BaotaSettingsWizardProps> = ({
                   <SelectItem value="https">HTTPS</SelectItem>
                 </SelectContent>
               </Select>
+              <FieldHint>{DDNS_HELP.upstreamSchemeHint}</FieldHint>
             </div>
             <div className="space-y-2">
-              <Label>回源端口 baotaUpstreamPort（可选）</Label>
+              <Label>{DDNS_HELP.upstreamPortLabel}</Label>
               <Input
                 value={String(form.baotaUpstreamPort ?? "")}
                 onChange={(e) => setField("baotaUpstreamPort", e.target.value)}
-                placeholder="留空则按协议走默认端口"
+                placeholder={DDNS_HELP.upstreamPortPlaceholder}
               />
+              <FieldHint>{DDNS_HELP.upstreamPortHint}</FieldHint>
             </div>
           </div>
-          <FieldHint>入口控制器安装、清单下载和节点监听端口请在「集群设置」维护；本页只维护宝塔接入与同步策略。</FieldHint>
+          <FieldHint>
+            入口控制器安装、清单下载和节点监听端口请在「集群设置」维护；本页只维护宝塔接入与同步策略。{DDNS_HELP.ddnsPortAnnotation} {DDNS_HELP.ddnsSchemeAnnotation}
+          </FieldHint>
         </div>
       </StepSection>
 

@@ -35,11 +35,11 @@ const scanEntries = [
 const requiredPhrases = new Map([
   [
     "src/features/compute/pages/ComputeDashboard.tsx",
-    ["虚拟主机资源中心", "虚拟机、宿主机、存储和任务活动", "打开配置"],
+    ["虚拟化 Dashboard", "虚拟机、宿主机、存储和任务活动", "打开配置"],
   ],
   [
     "src/features/network/pages/NetworkDashboard.tsx",
-    ["网络资源中心", "设备、接口、终端、无线、防火墙和监控", "打开接入设置", "iKuai 数据源", "OpenWrt 接入"],
+    ["网络资源中心", "设备、接口、终端、无线、防火墙和监控", "打开配置", "路由器配置接管", "iKuai 数据源", "OpenWrt 接入"],
   ],
   [
     "src/features/compute/pages/PVEPage.tsx",
@@ -51,11 +51,11 @@ const requiredPhrases = new Map([
   ],
   [
     "src/features/compute/layout/ComputeSubNav.tsx",
-    ["总览", "虚拟机 / CT", "宿主机 / 节点", "存储", "配置"],
+    ["Dashboard", "虚拟机 / CT", "宿主机 / 节点", "存储", "配置"],
   ],
   [
     "src/features/network/layout/NetworkSubNav.tsx",
-    ["总览", "设备", "接口", "终端", "无线", "防火墙", "监控", "接入设置"],
+    ["Dashboard", "设备", "接口", "终端", "无线", "防火墙", "监控", "配置"],
   ],
   [
     "src/shared/layout/Sidebar.tsx",

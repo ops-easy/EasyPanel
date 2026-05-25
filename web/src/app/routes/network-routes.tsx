@@ -74,8 +74,9 @@ export function networkRoutes(): ReactNode {
           </RouteSuspense>
         }
       />
+      <Route path="config" element={<Navigate to="/cluster/network/access" replace />} />
       <Route
-        path="config"
+        path="access"
         element={
           <RouteSuspense>
             <NetworkConfigPage />

@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Copy, Loader2, Save } from "lucide-react";
+import { Copy, Loader2, Save } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
@@ -122,15 +122,6 @@ export default function AppCenterCloudVmBootstrap() {
 
   return (
     <div className="mx-auto w-full space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variant="ghost" size="sm" asChild className="gap-1.5">
-          <Link to="/cluster/apps/cloud-vm">
-            <ArrowLeft className="h-4 w-4" />
-            返回容器主机
-          </Link>
-        </Button>
-      </div>
-
       <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-slate-50 px-6 py-8 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800/90">首次引导 · 管理员</p>
         <h1 className="mt-1 text-2xl font-semibold text-slate-900">容器主机镜像与命名空间</h1>

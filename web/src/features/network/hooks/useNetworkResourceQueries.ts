@@ -42,8 +42,8 @@ export function streamPath(device?: NetworkDevice): string {
 }
 
 export function resolveNetworkResourceLoading(rowsLength: number, devicesLoading: boolean, viewLoading: boolean) {
-  const loading = devicesLoading || (rowsLength === 0 && viewLoading);
-  const backgroundLoading = !loading && rowsLength > 0 && viewLoading;
+  const loading = rowsLength === 0 && (devicesLoading || viewLoading);
+  const backgroundLoading = rowsLength > 0 && (devicesLoading || viewLoading);
   return { loading, backgroundLoading };
 }
 

@@ -82,7 +82,7 @@ test("Compute 子导航改为资源对象入口，PVE 旧子路由保留重定�
     "/cluster/network/wireless",
     "/cluster/network/connections",
     "/cluster/network/monitoring",
-    "/cluster/network/config",
+    "/cluster/network/access",
   ]) {
     assert.match(networkSubNav, new RegExp(`to:\\s*["']${path}`));
   }

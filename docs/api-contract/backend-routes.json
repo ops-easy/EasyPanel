@@ -1129,37 +1129,37 @@
       "method": "GET",
       "pathPattern": "/api/compute/activity",
       "sourceFile": "api/common/core/compute_handlers.go",
-      "sourceLine": 692
+      "sourceLine": 777
     },
     {
       "method": "GET",
       "pathPattern": "/api/compute/guests",
       "sourceFile": "api/common/core/compute_handlers.go",
-      "sourceLine": 689
+      "sourceLine": 774
     },
     {
       "method": "GET",
       "pathPattern": "/api/compute/hosts",
       "sourceFile": "api/common/core/compute_handlers.go",
-      "sourceLine": 690
+      "sourceLine": 775
     },
     {
       "method": "GET",
       "pathPattern": "/api/compute/providers",
       "sourceFile": "api/common/core/compute_handlers.go",
-      "sourceLine": 687
+      "sourceLine": 772
     },
     {
       "method": "GET",
       "pathPattern": "/api/compute/storage",
       "sourceFile": "api/common/core/compute_handlers.go",
-      "sourceLine": 691
+      "sourceLine": 776
     },
     {
       "method": "GET",
       "pathPattern": "/api/compute/summary",
       "sourceFile": "api/common/core/compute_handlers.go",
-      "sourceLine": 688
+      "sourceLine": 773
     },
     {
       "method": "GET",

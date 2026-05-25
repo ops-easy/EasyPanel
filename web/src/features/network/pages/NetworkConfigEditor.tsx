@@ -12,7 +12,7 @@ export default function NetworkConfigEditor({
   devices,
   canWrite,
   canViewRaw,
-  triggerLabel = "路由器配置",
+  triggerLabel = "路由器配置接管",
   triggerVariant = "outline",
   triggerSize = "sm",
   triggerClassName = "h-9 gap-2",

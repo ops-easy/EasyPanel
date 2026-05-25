@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -308,6 +309,84 @@ func computeEnrichRows(rows []gin.H, kind string) []gin.H {
 	return rows
 }
 
+func computeHealthRank(health string) int {
+	switch health {
+	case "critical":
+		return 4
+	case "warning":
+		return 3
+	case "unknown":
+		return 2
+	case "idle":
+		return 1
+	case "ok":
+		return 0
+	default:
+		return 0
+	}
+}
+
+func computeUsageMap(row gin.H) map[string]any {
+	switch usage := row["usage"].(type) {
+	case gin.H:
+		return map[string]any(usage)
+	case map[string]any:
+		return usage
+	default:
+		return nil
+	}
+}
+
+func computeUsagePressure(row gin.H, kind string) (string, string, bool) {
+	usage := computeUsageMap(row)
+	if len(usage) == 0 {
+		return "", "", false
+	}
+	candidates := []struct {
+		key   string
+		label string
+	}{}
+	switch kind {
+	case "hosts":
+		candidates = []struct {
+			key   string
+			label string
+		}{
+			{key: "cpuPct", label: "CPU 使用率"},
+			{key: "memoryPct", label: "内存使用率"},
+			{key: "diskPct", label: "存储使用率"},
+		}
+	case "storage":
+		candidates = []struct {
+			key   string
+			label string
+		}{
+			{key: "diskPct", label: "存储使用率"},
+		}
+	default:
+		return "", "", false
+	}
+
+	maxPct := 0.0
+	maxLabel := ""
+	for _, candidate := range candidates {
+		if pct, ok := computeFloat(usage[candidate.key]); ok {
+			pct = computePctValue(pct)
+			if pct > maxPct {
+				maxPct = pct
+				maxLabel = candidate.label
+			}
+		}
+	}
+	if maxPct >= 95 {
+		return "critical", fmt.Sprintf("%s %.1f%%", maxLabel, maxPct), true
+	}
+	if maxPct >= 85 {
+		return "warning", fmt.Sprintf("%s %.1f%%", maxLabel, maxPct), true
+	}
+	return "", "", false
+}
+
 func computeBuildSummary(rowsByKind map[string][]gin.H, warnings []string) gin.H {
 	counts := gin.H{}
 	health := gin.H{"ok": 0, "idle": 0, "warning": 0, "critical": 0, "unknown": 0}
@@ -322,6 +401,11 @@ func computeBuildSummary(rowsByKind map[string][]gin.H, warnings []string) gin.H
 			if h == "" {
 				h = "unknown"
 			}
+			statusLabel := row["statusLabel"]
+			if pressureHealth, pressureLabel, ok := computeUsagePressure(row, key); ok && computeHealthRank(pressureHealth) > computeHealthRank(h) {
+				h = pressureHealth
+				statusLabel = pressureLabel
+			}
 			if _, ok := health[h]; !ok {
 				health[h] = 0
 			}
@@ -333,12 +417,13 @@ func computeBuildSummary(rowsByKind map[string][]gin.H, warnings []string) gin.H
 			}
 			if h == "critical" || h == "warning" {
 				item := gin.H{
-					"kind":       key,
-					"provider":   row["provider"],
-					"resourceId": row["resourceId"],
-					"name":       row["name"],
-					"health":     h,
-					"status":     row["status"],
+					"kind":        key,
+					"provider":    row["provider"],
+					"resourceId":  row["resourceId"],
+					"name":        row["name"],
+					"health":      h,
+					"status":      row["status"],
+					"statusLabel": statusLabel,
 				}
 				if key == "activity" {
 					recentFailures = append(recentFailures, item)

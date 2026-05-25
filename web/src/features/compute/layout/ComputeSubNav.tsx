@@ -96,7 +96,7 @@ const ComputeSubNav: React.FC = () => {
     const base: ComputeNavLink[] = [
       {
         to: "/cluster/compute/dashboard",
-        label: "总览",
+        label: "Dashboard",
         icon: LayoutDashboard,
         aliases: ["/cluster/compute/vcenter/dashboard", "/cluster/compute/pve/dashboard"],
       },

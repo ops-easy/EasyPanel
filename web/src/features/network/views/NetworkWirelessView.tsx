@@ -41,7 +41,7 @@ export function NetworkWirelessView({
             devices={devices}
             canWrite={canWrite}
             canViewRaw={canViewRaw}
-            triggerLabel="配置无线"
+            triggerLabel="接管无线配置"
           />
         }
       />

@@ -120,10 +120,10 @@ export function NetworkResourceShell({
       {devices.length === 0 ? (
         <section className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
           <p className="text-sm font-medium text-slate-900">还没有接入网络来源</p>
-          <p className="mt-2 text-sm leading-6 text-slate-500">先在接入设置保存 iKuai 或 OpenWrt，资源视图会自动启用。</p>
+          <p className="mt-2 text-sm leading-6 text-slate-500">先在配置页保存 iKuai 或 OpenWrt，资源视图会自动启用。</p>
           <Button asChild className="mt-4 bg-cyan-700 hover:bg-cyan-800">
-            <Link to="/cluster/network/config">
-              打开接入设置
+            <Link to="/cluster/network/access">
+              打开配置
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>

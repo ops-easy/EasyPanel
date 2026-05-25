@@ -120,3 +120,49 @@ func TestComputeSummaryCountsRowsByHealthAndProvider(t *testing.T) {
 		t.Fatalf("warningCount = %v, want 1", summary["warningCount"])
 	}
 }
+
+func TestComputeSummaryIncludesUsagePressureHotspots(t *testing.T) {
+	rowsByKind := map[string][]gin.H{
+		"guests": {},
+		"hosts": {
+			{
+				"provider":   "pve",
+				"resourceId": "node-a",
+				"name":       "node-a",
+				"health":     "ok",
+				"usage": gin.H{
+					"memoryPct": 96.1,
+				},
+			},
+		},
+		"storage": {
+			{
+				"provider":   "vcenter",
+				"resourceId": "datastore-1",
+				"name":       "datastore-1",
+				"health":     "ok",
+				"usage": gin.H{
+					"diskPct": 91.2,
+				},
+			},
+		},
+		"activity": {},
+	}
+
+	summary := computeBuildSummary(rowsByKind, nil)
+	hotspots := summary["hotspots"].([]gin.H)
+	if len(hotspots) != 2 {
+		t.Fatalf("hotspots len = %d, want 2: %#v", len(hotspots), hotspots)
+	}
+
+	byID := map[any]gin.H{}
+	for _, item := range hotspots {
+		byID[item["resourceId"]] = item
+	}
+	if byID["node-a"]["health"] != "critical" {
+		t.Fatalf("node-a hotspot = %#v, want critical", byID["node-a"])
+	}
+	if byID["datastore-1"]["health"] != "warning" {
+		t.Fatalf("datastore-1 hotspot = %#v, want warning", byID["datastore-1"])
+	}
+}

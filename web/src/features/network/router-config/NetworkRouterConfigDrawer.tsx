@@ -77,7 +77,7 @@ export default function NetworkRouterConfigDrawer({
   devices,
   canWrite,
   canViewRaw,
-  triggerLabel = "路由器配置",
+  triggerLabel = "路由器配置接管",
   triggerVariant = "outline",
   triggerSize = "sm",
   triggerClassName = "h-9 gap-2",
@@ -251,7 +251,7 @@ export default function NetworkRouterConfigDrawer({
               <div className="grid gap-2">
                 <Label>当前接口</Label>
                 <div className="flex min-h-10 items-center rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
-                  {currentEndpoint || "请先在接入设置页接入 iKuai 或 OpenWrt"}
+                  {currentEndpoint || "请先在配置页接入 iKuai 或 OpenWrt"}
                 </div>
               </div>
             </div>

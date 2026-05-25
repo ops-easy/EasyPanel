@@ -12,9 +12,12 @@ test("compute dashboard is an operations overview instead of only entry cards", 
   assert.match(dashboard, /ComputePageHeader/);
   assert.match(dashboard, /ComputeProviderHealthStrip/);
   assert.match(dashboard, /\/api\/compute\/summary/);
+  assert.match(dashboard, /虚拟化 Dashboard/);
+  assert.match(dashboard, /今日关注/);
   assert.match(dashboard, /异常资源/);
   assert.match(dashboard, /容量热点/);
   assert.match(dashboard, /最近活动/);
+  assert.match(dashboard, /资源入口/);
   assert.match(dashboard, /先接入 vCenter 或 PVE/);
   assert.match(dashboard, /to="\/cluster\/compute\/config"/);
 });

@@ -44,6 +44,7 @@ type LoginChallenge = {
 type LoginRuntimeSummary = {
   k8sConnected?: boolean;
   k8sRuntimeConfigured?: boolean;
+  pveConfigured?: boolean;
   vcenterConfigured?: boolean;
   vcenterRuntimeConfigured?: boolean;
   redisConfigured?: boolean;
@@ -373,7 +374,7 @@ function LoginRuntimeStatusPanel({
   const tiles: LoginStatusTile[] = loading
     ? [
         "Kubernetes",
-        "vCenter",
+        "PVE",
         "Redis",
         "MySQL",
         "宝塔",
@@ -386,7 +387,7 @@ function LoginRuntimeStatusPanel({
         icon:
           label === "Kubernetes" ? (
             <Layers className="h-4 w-4" />
-          ) : label === "vCenter" ? (
+          ) : label === "PVE" ? (
             <Monitor className="h-4 w-4" />
           ) : label === "Redis" ? (
             <Server className="h-4 w-4" />
@@ -408,10 +409,10 @@ function LoginRuntimeStatusPanel({
           icon: <Layers className="h-4 w-4" />,
         }),
         {
-          label: "vCenter",
-          state: rt?.vcenterConfigured ? "已配置" : "未配置",
-          detail: rt?.vcenterConfigured ? "凭据与地址已保存" : rt?.vcenterRuntimeConfigured ? "凭据不完整" : "虚拟化入口待接入",
-          tone: rt?.vcenterConfigured ? "ok" : rt?.vcenterRuntimeConfigured ? "warn" : "pending",
+          label: "PVE",
+          state: rt?.pveConfigured ? "已配置" : "未配置",
+          detail: rt?.pveConfigured ? "PVE 接入信息已保存" : "PVE 入口待接入",
+          tone: rt?.pveConfigured ? "ok" : "pending",
           icon: <Monitor className="h-4 w-4" />,
         },
         runtimeConnectionTile({
@@ -640,31 +641,6 @@ const Login: React.FC = () => {
     navigate({ pathname: location.pathname, search: qs ? `?${qs}` : "" }, { replace: true });
   }, [location.pathname, location.search, navigate]);
 
-  /** 大屏禁止 html/body 纵向滚动（避免双滚动条）；小屏允许纵向滚动，避免营销区把登录表单顶出可视区。 */
-  useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtml = html.style.overflow;
-    const prevBody = body.style.overflow;
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const apply = () => {
-      if (mq.matches) {
-        html.style.overflow = "hidden";
-        body.style.overflow = "hidden";
-      } else {
-        html.style.overflow = prevHtml;
-        body.style.overflow = prevBody;
-      }
-    };
-    apply();
-    mq.addEventListener("change", apply);
-    return () => {
-      mq.removeEventListener("change", apply);
-      html.style.overflow = prevHtml;
-      body.style.overflow = prevBody;
-    };
-  }, []);
-
   const redirectTarget = useMemo(() => {
     const st = (location.state as { from?: unknown } | null)?.from;
     if (typeof st === "string") {
@@ -830,7 +806,7 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="login-page-v2 relative min-h-[100dvh] min-h-screen w-full overflow-x-hidden overflow-y-auto bg-white lg:overflow-y-hidden dark:bg-slate-950">
+    <div className="login-page-v2 relative min-h-[100dvh] min-h-screen w-full overflow-x-hidden overflow-y-auto bg-white dark:bg-slate-950">
       <div className="login-page-v2-grid-bg login-page-v2-grid-bg--pulse pointer-events-none absolute inset-0 opacity-60" />
       <div
         className="login-page-v2-scan-line pointer-events-none absolute left-0 right-0 top-0 h-px opacity-15 dark:opacity-25"
@@ -879,12 +855,6 @@ const Login: React.FC = () => {
               </p>
             </div>
 
-            <LoginRuntimeStatusPanel
-              payload={pubQ.data}
-              loading={pubQ.isPending}
-              error={pubQ.isError ? (pubQ.error as Error) : null}
-            />
-
             <div className="login-v2-fade-in-up login-v2-d200 grid w-full grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4">
               {HERO_MODULE_ITEMS.map((item) => (
                 <TechBadge
@@ -899,6 +869,12 @@ const Login: React.FC = () => {
                 </TechBadge>
               ))}
             </div>
+
+            <LoginRuntimeStatusPanel
+              payload={pubQ.data}
+              loading={pubQ.isPending}
+              error={pubQ.isError ? (pubQ.error as Error) : null}
+            />
           </div>
         </div>
 

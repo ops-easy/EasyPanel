@@ -26,6 +26,14 @@ test("Hermes detail page exposes real runtime management panels", () => {
 test("Hermes create page carries exposure and runtime readiness fields", () => {
   const create = read("../src/features/app-center/hermes/pages/AppCenterHermes.tsx");
 
+  assert.match(create, /HERMES_BOOTSTRAP_PATH = "\/cluster\/apps\/hermes\/bootstrap"/);
+  assert.match(create, /<Navigate to=\{HERMES_BOOTSTRAP_PATH\} replace \/>/);
+  assert.match(create, /Hermes 尚未完成首次引导/);
+  assert.match(create, /Hermes 管理能力/);
+  for (const label of ["部署实例", "运行时探测", "访问暴露", "升级/回滚", "日志与事件", "OpenClaw 迁移"]) {
+    assert.match(create, new RegExp(label));
+  }
+
   for (const value of ["clusterIP", "nodePort", "loadBalancer", "ingress"]) {
     assert.match(create, new RegExp(value));
   }

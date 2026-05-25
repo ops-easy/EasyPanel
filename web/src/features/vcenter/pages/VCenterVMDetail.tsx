@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ChevronDown, Loader2, Pencil, Radio } from "lucide-react";
 import { toast } from "sonner";
@@ -64,8 +64,11 @@ function formatGiBFromKB(capacityKB: number): string {
 
 const VCenterVMDetail: React.FC = () => {
   const { moref = "" } = useParams<{ moref: string }>();
+  const [searchParams] = useSearchParams();
   const decoded = decodeURIComponent(moref);
   const queryClient = useQueryClient();
+  const requestedTab = searchParams.get("tab");
+  const initialTab = requestedTab === "metrics" || requestedTab === "ssh" || requestedTab === "console" ? requestedTab : "overview";
 
   const detailQ = useQuery({
     queryKey: ["vcenter-vm", decoded],
@@ -274,7 +277,7 @@ const VCenterVMDetail: React.FC = () => {
       )}
 
       {detailQ.data && (
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs defaultValue={initialTab} className="w-full">
           <TabsList className="mb-4 flex-wrap">
             <TabsTrigger value="overview">概况与网络</TabsTrigger>
             <TabsTrigger value="metrics">资源监控</TabsTrigger>

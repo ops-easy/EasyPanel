@@ -481,16 +481,16 @@ const Sidebar: React.FC = () => {
   const pveStatusLabel = pveStatusLoading
     ? "PVE …"
     : pveTargetsQ.isError
-      ? "PVE 状态未知"
+      ? "PVE 未配置"
       : pveTargetCount > 0
-        ? `PVE ${pveTargetCount} 目标`
+        ? "PVE 已连接"
         : "PVE 未配置";
   const pveEntryHint = pveStatusLoading
     ? "PVE 检查中"
     : pveTargetsQ.isError
-      ? "PVE 状态未知"
+      ? "PVE 未配置"
       : pveTargetCount > 0
-        ? `PVE ${pveTargetCount} 目标`
+        ? "PVE 已连接"
         : "PVE 未配置";
 
   const openWrtDeviceCount =
@@ -506,16 +506,16 @@ const Sidebar: React.FC = () => {
   const openWrtStatusLabel = openWrtStatusLoading
     ? "OpenWrt …"
     : networkDevicesQ.isError
-      ? "OpenWrt 状态未知"
+      ? "OpenWrt 未配置"
       : openWrtDeviceCount > 0
-        ? `OpenWrt ${openWrtDeviceCount} 设备`
+        ? "OpenWrt 已连接"
         : "OpenWrt 未配置";
   const openWrtEntryHint = openWrtStatusLoading
     ? "OpenWrt 检查中"
     : networkDevicesQ.isError
-      ? "OpenWrt 状态未知"
+      ? "OpenWrt 未配置"
       : openWrtDeviceCount > 0
-        ? `OpenWrt ${openWrtDeviceCount} 设备`
+        ? "OpenWrt 已连接"
         : "OpenWrt 未配置";
 
   const k8sLive = cfg?.k8sConfigured === true;
@@ -531,26 +531,9 @@ const Sidebar: React.FC = () => {
     ? "Kubernetes …"
     : k8sLive
       ? "Kubernetes 已连接"
-      : k8sFile
-        ? "Kubernetes 已填写（未连集群）"
-        : "Kubernetes 未配置";
+      : "Kubernetes 未配置";
 
   const vcLive = cfg?.vcenterConfigured === true;
-  const vcFile = cfg?.vcenterRuntimeConfigured === true;
-  const vcDotClass = statusLoading
-    ? "bg-slate-300"
-    : vcLive
-      ? "bg-emerald-500"
-      : vcFile
-        ? "bg-amber-500"
-        : "bg-slate-400";
-  const vcStatusLabel = statusLoading
-    ? "vCenter …"
-    : vcLive
-      ? "vCenter 已配置"
-      : vcFile
-        ? "vCenter 已填写（缺密码或未验证）"
-        : "vCenter 未配置";
 
   const redisAddrOk = isViewer
     ? cfg?.redisAddrPresent === true
@@ -570,13 +553,13 @@ const Sidebar: React.FC = () => {
     ? "Redis …"
     : isViewer
       ? redisAddrOk
-        ? "Redis 已填写"
-        : "Redis"
+        ? "Redis 已连接"
+        : "Redis 未配置"
       : !cfg?.redisConfigured
         ? "Redis 未配置"
         : cfg?.redisConnected
           ? "Redis 已连接"
-          : "Redis 未连接";
+          : "Redis 未配置";
 
   const k8sNavFiltered = isViewer
     ? k8sNavItems.filter(
@@ -634,13 +617,6 @@ const Sidebar: React.FC = () => {
     location.pathname === "/docs/guides" || location.pathname.startsWith("/docs/guides/");
 
   const computeProviderConfigured = Boolean(vcLive || pveTargetCount > 0);
-  const computeDashboardActive =
-    location.pathname === "/cluster/compute" ||
-    location.pathname === "/cluster/compute/" ||
-    location.pathname === "/cluster/compute/dashboard" ||
-    location.pathname === "/cluster/compute/vcenter/dashboard" ||
-    location.pathname === "/cluster/compute/pve/dashboard" ||
-    location.pathname === "/cluster/vcenter/dashboard";
   const computeGuestsActive =
     location.pathname === "/cluster/compute/guests" ||
     location.pathname.startsWith("/cluster/compute/guests/") ||
@@ -680,10 +656,6 @@ const Sidebar: React.FC = () => {
     location.pathname.startsWith("/cluster/compute/tools") ||
     location.pathname.startsWith("/cluster/vcenter/tools");
   const computeBastionActive = location.pathname.startsWith("/cluster/bastion");
-  const networkDashboardActive =
-    location.pathname === "/cluster/network" ||
-    location.pathname === "/cluster/network/" ||
-    location.pathname === "/cluster/network/dashboard";
   const networkDevicesActive =
     location.pathname === "/cluster/network/devices" ||
     location.pathname === "/cluster/network/ikuai" ||
@@ -711,6 +683,8 @@ const Sidebar: React.FC = () => {
     location.pathname === "/cluster/network/ikuai/exporter" ||
     location.pathname === "/cluster/network/openwrt/exporter";
   const networkConfigActive =
+    location.pathname === "/cluster/network/access" ||
+    location.pathname.startsWith("/cluster/network/access/") ||
     location.pathname === "/cluster/network/config" ||
     location.pathname.startsWith("/cluster/network/config/");
 
@@ -770,7 +744,7 @@ const Sidebar: React.FC = () => {
                   ? "slate"
                   : "emerald";
 
-  const dashLabel = isDocs || isCompute || isNetwork || isAppcenter ? "概览" : isBastion ? "控制台" : "Dashboard";
+  const dashLabel = isBastion ? "控制台" : "Dashboard";
 
   return (
     <aside
@@ -972,16 +946,6 @@ const Sidebar: React.FC = () => {
                 虚拟化与主机
               </p>
             </div>
-            <Link
-              to="/cluster/compute/dashboard"
-              className={navLinkTint(computeDashboardActive, "violet")}
-            >
-              <Monitor
-                size={20}
-                className={iconTint(computeDashboardActive, "violet")}
-              />
-              <span>总览</span>
-            </Link>
             {computeProviderConfigured ? (
               <>
                 <Link
@@ -1085,16 +1049,6 @@ const Sidebar: React.FC = () => {
               </p>
             </div>
             <Link
-              to="/cluster/network/dashboard"
-              className={navLinkTint(networkDashboardActive, "slate")}
-            >
-              <LayoutDashboard
-                size={20}
-                className={iconTint(networkDashboardActive, "slate")}
-              />
-              <span>总览</span>
-            </Link>
-            <Link
               to="/cluster/network/devices"
               className={navLinkTint(networkDevicesActive, "slate")}
             >
@@ -1102,7 +1056,7 @@ const Sidebar: React.FC = () => {
                 size={20}
                 className={iconTint(networkDevicesActive, "slate")}
               />
-              <NavItemText label="设备" hint={openWrtEntryHint} />
+              <span>设备</span>
             </Link>
             <Link
               to="/cluster/network/interfaces"
@@ -1155,14 +1109,14 @@ const Sidebar: React.FC = () => {
               <span>监控</span>
             </Link>
             <Link
-              to="/cluster/network/config"
+              to="/cluster/network/access"
               className={navLinkTint(networkConfigActive, "slate")}
             >
               <Settings
                 size={20}
                 className={iconTint(networkConfigActive, "slate")}
               />
-              <span>接入设置</span>
+              <span>配置</span>
             </Link>
           </>
         ) : showBaotaNav && isBaota ? (
@@ -1316,10 +1270,6 @@ const Sidebar: React.FC = () => {
               <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${k8sDotClass}`} />
               <span className="text-xs text-gray-600">{k8sStatusLabel}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${vcDotClass}`} />
-              <span className="text-xs text-gray-600">{vcStatusLabel}</span>
-            </div>
             {showComputeNav ? (
               <div className="flex items-center gap-2">
                 <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${pveDotClass}`} />
@@ -1369,7 +1319,7 @@ const Sidebar: React.FC = () => {
                     ? "MySQL 未配置"
                     : (authStatus?.mysqlReachable ?? cfg?.mysqlReachable)
                       ? "MySQL 已连接"
-                      : "MySQL 未连接"}
+                      : "MySQL 未配置"}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -1390,16 +1340,14 @@ const Sidebar: React.FC = () => {
                   : !baotaConfigured
                     ? "宝塔 未配置"
                     : ok
-                      ? "宝塔 可达"
-                      : check?.baota.status === "error"
-                        ? "宝塔 不可达"
-                        : "宝塔 待检查"}
+                      ? "宝塔 已连接"
+                      : "宝塔 未配置"}
               </span>
             </div>
           </div>
           {cfg && (
-            <p className="mt-2 truncate text-[11px] text-gray-500" title={cfg.ddnsHost || "未配置"}>
-              DDNS: {cfg.ddnsHost || "未配置"}
+            <p className="mt-2 truncate text-[11px] text-gray-500" title={cfg.ddnsHost ? "已连接" : "未配置"}>
+              DDNS: {cfg.ddnsHost ? "已连接" : "未配置"}
             </p>
           )}
           {cfg && (

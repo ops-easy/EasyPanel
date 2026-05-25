@@ -98,7 +98,6 @@ test("compute sidebar follows the same coarse order as compute top navigation", 
   assertInOrder(
     computeSidebar,
     [
-      'to="/cluster/compute/dashboard"',
       'to="/cluster/compute/guests"',
       'to="/cluster/compute/hosts"',
       'to="/cluster/compute/storage"',
@@ -112,6 +111,30 @@ test("compute sidebar follows the same coarse order as compute top navigation", 
   );
   assert.match(computeSidebar, /<span>IP 扫描<\/span>/);
   assert.doesNotMatch(computeSidebar, /<span>内网工具箱<\/span>/);
+  assert.doesNotMatch(computeSidebar, /to="\/cluster\/compute\/dashboard"/);
+});
+
+test("network sidebar uses the workspace dashboard only once", () => {
+  const networkSidebar = sidebarSource.slice(
+    sidebarSource.indexOf("showNetworkNav && isNetwork"),
+    sidebarSource.indexOf("showAppCenterNav && isAppcenter")
+  );
+
+  assertInOrder(
+    networkSidebar,
+    [
+      'to="/cluster/network/devices"',
+      'to="/cluster/network/interfaces"',
+      'to="/cluster/network/clients"',
+      'to="/cluster/network/wireless"',
+      'to="/cluster/network/connections"',
+      'to="/cluster/network/monitoring"',
+      'to="/cluster/network/access"',
+    ],
+    "network sidebar"
+  );
+  assert.doesNotMatch(networkSidebar, /to="\/cluster\/network\/dashboard"/);
+  assert.doesNotMatch(networkSidebar, /hint=\{openWrtEntryHint\}/);
 });
 
 test("header workspace switcher opens bastion module home before terminal sessions", () => {
@@ -211,7 +234,7 @@ test("main shell surfaces PVE and OpenWrt setup status before drilling in", () =
   assert.match(computeDashboardSource, /打开配置|先接入 vCenter 或 PVE/);
 
   assert.match(networkDashboardSource, /\/api\/network\/devices/);
-  assert.match(networkDashboardSource, /\/cluster\/network\/config/);
+  assert.match(networkDashboardSource, /\/cluster\/network\/access/);
   assert.match(networkDashboardSource, /OpenWrt 接入|未接入/);
 });
 
@@ -248,10 +271,10 @@ test("user-facing navigation keeps vCenter features under compute", () => {
   );
   assert.match(
     sidebarSource,
-    /isDocs \|\| isCompute \|\| isNetwork \|\| isAppcenter \? "概览"/
+    /const dashLabel = isBastion \? "控制台" : "Dashboard"/
   );
-  assert.match(computeSubNavSource, /to:\s*"\/cluster\/compute\/dashboard"[\s\S]*label:\s*"总览"/);
-  assert.match(sidebarSource, /to="\/cluster\/compute\/dashboard"[\s\S]*<span>总览<\/span>/);
+  assert.match(computeSubNavSource, /to:\s*"\/cluster\/compute\/dashboard"[\s\S]*label:\s*"Dashboard"/);
+  assert.doesNotMatch(sidebarSource, /showComputeNav && isCompute[\s\S]*to="\/cluster\/compute\/dashboard"/);
   assert.doesNotMatch(sidebarSource, /to="\/cluster\/compute\/vcenter\/dashboard"[\s\S]*<span>vCenter<\/span>/);
   assert.doesNotMatch(computeDashboardSource, /兼容策略|\/cluster\/vcenter|旧路径会自动跳转/);
 

@@ -114,6 +114,7 @@ declare global {
   const Link2: typeof import('lucide-react').Link2
   const LinkIcon: typeof import('lucide-react').LinkIcon
   const List: typeof import('lucide-react').List
+  const ListChecks: typeof import('lucide-react').ListChecks
   const ListOrdered: typeof import('lucide-react').ListOrdered
   const ListTree: typeof import('lucide-react').ListTree
   const Loader2: typeof import('lucide-react').Loader2

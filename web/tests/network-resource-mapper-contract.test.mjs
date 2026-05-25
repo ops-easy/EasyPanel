@@ -47,6 +47,36 @@ test("network mappers own provider-specific transformations", () => {
   assert.doesNotMatch(mappers, /name:\s*row\.section \|\| row\.key/);
 });
 
+test("OpenWrt interface mapper merges ubus ip-addr and legacy metric rows", () => {
+  const mappers = read("../src/features/network/model/networkMappers.ts");
+
+  assert.match(mappers, /interfaces\?: Array<Record<string, unknown>>;/);
+  assert.match(mappers, /interfaceDump\?: \{ interface\?: Array<Record<string, unknown>> \};/);
+  assert.match(mappers, /ipAddr\?: Array<Record<string, unknown>>;/);
+  assert.match(mappers, /function openWrtInterfaceKeyCandidates/);
+  assert.match(mappers, /const ipAddrRowsByKey = indexOpenWrtInterfaceRows\(data\?\.ipAddr/);
+  assert.match(mappers, /const legacyRowsByKey = indexOpenWrtInterfaceRows\(data\?\.interfaces/);
+  assert.match(mappers, /const baseRows = data\?\.interfaceDump\?\.interface\?\.length/);
+  assert.match(mappers, /formatAddrInfoList\(ipAddrRow\?\.addr_info\)/);
+  assert.match(mappers, /openWrtInterfaceRate\(item, legacyRow\)/);
+  assert.doesNotMatch(mappers, /data\?\.interfaceDump\?\.interface\?\.length[\s\S]*: data\?\.interfaces\?\.length[\s\S]*: \(data\?\.ipAddr \?\? \[\]\)/);
+});
+
+test("OpenWrt firewall mapper turns UCI firewall sections into readable rows", () => {
+  const mappers = read("../src/features/network/model/networkMappers.ts");
+
+  for (const type of ["zone", "forwarding", "redirect", "rule", "nat"]) {
+    assert.match(mappers, new RegExp(`type === "${type}"`));
+  }
+
+  for (const label of ["来源区", "目标区", "协议", "动作", "外部端口", "内部地址", "内部端口", "SNAT 地址", "当前连接数"]) {
+    assert.match(mappers, new RegExp(label));
+  }
+
+  assert.doesNotMatch(mappers, /return value \? `\$\{key\}: \$\{value\}`/);
+  assert.doesNotMatch(mappers, /detail:\s*Object\.keys\(options\)\.slice/);
+});
+
 test("large resource page no longer owns mapper implementation", () => {
   const page = read("../src/features/network/pages/NetworkResourcePage.tsx");
   assert.doesNotMatch(page, /function mapOpenWrtInterfaces/);

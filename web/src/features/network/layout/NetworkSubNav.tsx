@@ -4,14 +4,14 @@ import { Activity, Cable, Gauge, LayoutDashboard, Network, RadioTower, Settings,
 import { cn } from "@/lib/utils";
 
 const links = [
-  { to: "/cluster/network/dashboard", label: "总览", icon: LayoutDashboard },
+  { to: "/cluster/network/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/cluster/network/devices", label: "设备", icon: Network },
   { to: "/cluster/network/interfaces", label: "接口", icon: Cable },
   { to: "/cluster/network/clients", label: "终端", icon: Users },
   { to: "/cluster/network/wireless", label: "无线", icon: Wifi },
   { to: "/cluster/network/connections", label: "防火墙", icon: Activity },
   { to: "/cluster/network/monitoring", label: "监控", icon: Gauge },
-  { to: "/cluster/network/config", label: "接入设置", icon: Settings },
+  { to: "/cluster/network/access", label: "配置", icon: Settings },
 ] as const;
 
 const legacyActiveMap: Record<string, string> = {
@@ -29,6 +29,7 @@ const legacyActiveMap: Record<string, string> = {
   "/cluster/network/openwrt/wireless": "/cluster/network/wireless",
   "/cluster/network/openwrt/connections": "/cluster/network/connections",
   "/cluster/network/openwrt/exporter": "/cluster/network/monitoring",
+  "/cluster/network/config": "/cluster/network/access",
 };
 
 function normalizedPath(pathname: string): string {

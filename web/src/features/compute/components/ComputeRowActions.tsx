@@ -50,25 +50,32 @@ function hasAction(row: ComputeRow, action: string): boolean {
   return (row.actions ?? row.capabilities ?? []).includes(action);
 }
 
+function withDetailTab(path: string | null, tab: "console" | "ssh"): string | null {
+  if (!path) return null;
+  const separator = path.includes("?") ? "&" : "?";
+  const query = tab === "console" ? "tab=console" : "tab=ssh";
+  return `${path}${separator}${query}`;
+}
+
 const ComputeRowActions: React.FC<{ view: ComputeView; row: ComputeRow }> = ({ view, row }) => {
   const detailTo = computeDetailPath(view, row);
-  const showConsole = view === "guests" && hasAction(row, "console") && detailTo;
-  const showSsh = view === "guests" && hasAction(row, "ssh") && detailTo;
+  const consoleTo = view === "guests" && hasAction(row, "console") ? withDetailTab(detailTo, "console") : null;
+  const sshTo = view === "guests" && hasAction(row, "ssh") ? withDetailTab(detailTo, "ssh") : null;
   const showPower = view === "guests" && hasAction(row, "power");
 
   return (
     <div className="flex justify-end gap-1">
-      {showConsole ? (
+      {consoleTo ? (
         <Button variant="ghost" size="sm" className="h-8 gap-1 px-2" asChild>
-          <Link to={detailTo}>
+          <Link to={consoleTo}>
             <Monitor className="h-3.5 w-3.5" />
             控制台
           </Link>
         </Button>
       ) : null}
-      {showSsh ? (
+      {sshTo ? (
         <Button variant="ghost" size="sm" className="h-8 gap-1 px-2" asChild>
-          <Link to={detailTo}>
+          <Link to={sshTo}>
             <SquareTerminal className="h-3.5 w-3.5" />
             SSH
           </Link>
@@ -95,4 +102,3 @@ const ComputeRowActions: React.FC<{ view: ComputeView; row: ComputeRow }> = ({ v
 };
 
 export default ComputeRowActions;
-
