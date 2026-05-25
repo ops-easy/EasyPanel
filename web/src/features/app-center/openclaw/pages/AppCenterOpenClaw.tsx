@@ -53,7 +53,6 @@ import {
   SheetTitle,
 } from "@/shared/ui/sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Textarea } from "@/shared/ui/textarea";
 import { apiGetJson, apiPostJson, ApiHttpError } from "@/lib/api";
 import { formatDateTimeShanghai } from "@/lib/datetime-cn";
@@ -80,6 +79,15 @@ import {
 } from "@/lib/openclaw-gateway-health";
 
 const OPENCLAW_BOOTSTRAP_PATH = "/cluster/apps/openclaw/bootstrap";
+
+const OPENCLAW_CAPABILITIES = [
+  { title: "部署网关", detail: "按模板下发 Deployment、Service、PVC、Secret 与 ConfigMap，支持官方镜像和自定义模式。" },
+  { title: "对话侧栏", detail: "从实例列表直接打开多轮对话，由平台后端代连集群内 OpenAI 兼容接口。" },
+  { title: "网关探针", detail: "一键探测 Ingress 或 NodePort 暴露入口，快速确认 /v1/chat/completions 是否可达。" },
+  { title: "访问暴露", detail: "支持 NodePort 和 Ingress + 宝塔同步注解，公开地址集中登记在实例列表与详情页。" },
+  { title: "模型预设", detail: "内置 MiniMax、OpenAI、智谱、Ollama、千问兼容、Kimi 等上游预设与预检。" },
+  { title: "RBAC 与工具链", detail: "按只读、编辑、管理员预设绑定 ServiceAccount，并写入 tools.profile 与提示词包。" },
+] as const;
 
 type OpenClawBootstrapMode = {
   id: string;
@@ -461,6 +469,14 @@ const AppCenterOpenClaw: React.FC = () => {
   }, [k8sStatusQ.data?.statuses, q.data?.instances]);
 
   const listRefreshing = q.isFetching || k8sStatusQ.isFetching;
+  const readyCount = useMemo(() => {
+    const statuses = k8sStatusQ.data?.statuses ?? {};
+    return rows.filter((row) => {
+      const st = statuses[row.id];
+      return st?.phase === "ready" || (st?.podPhase === "Running" && st?.podReady === true);
+    }).length;
+  }, [k8sStatusQ.data?.statuses, rows]);
+  const defaultModeLabel = bootstrapModes[0]?.label || "未配置";
 
   const chatSheetSt = chatRow ? k8sStatusQ.data?.statuses?.[chatRow.id] : undefined;
   const chatSheetGate = !chatRow ? { ok: true as const } : openClawChatAllowed(chatSheetSt);
@@ -888,85 +904,94 @@ const AppCenterOpenClaw: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-violet-200/80 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50/30 px-6 py-8 shadow-sm">
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="space-y-5">
+      <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-violet-800/90">应用中心 · OpenClaw</p>
-            <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-slate-900">
-              <Bot className="h-7 w-7 text-violet-600" />
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">OpenClaw Gateway</p>
+            <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-slate-950">
+              <Bot className="h-6 w-6 text-violet-600" />
               OpenClaw 网关
             </h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-600">
-              向集群下发官方镜像、只读 ClusterRole 与网关 Token。支持 <strong>NodePort</strong>（端口由集群随机分配）或{" "}
-              <strong>Ingress + 宝塔同步注解</strong>，填写域名后由宝塔面板反代。对接上游大模型默认 <strong>MiniMax M2.7</strong>，另可选智谱、<strong>Ollama</strong>、
-              <strong>千问兼容</strong>、<strong>Kimi</strong> 等预设；<strong>AI 巡检</strong>请在「AI 巡检」页选用本处登记的实例（无需在列表同步）。
-              在<strong>实例列表</strong>中可打开<strong>对话</strong>侧栏：由<strong>本平台后端</strong>代连集群内{" "}
-              <code className="rounded bg-violet-100/80 px-1">/v1/chat/completions</code>。网关 Token 与模型切换见实例<strong>详情 → 管理配置</strong>。
-              Control UI 若报 <strong>origin not allowed</strong>：在「详情 → 配置文件」编辑{" "}
-              <code className="rounded bg-violet-100/80 px-1">openclaw.json</code> 中的 <code className="rounded bg-violet-100/80 px-1">gateway.controlUi.allowedOrigins</code>，保存后视需要滚动重启。
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              K8s 内 OpenClaw 网关部署入口：支持 NodePort、Ingress、模型预设、网关探针、对话侧栏、RBAC
+              预设与工具链配置。实例创建后，网关 Token、模型切换和运行时修复集中在详情页管理。
             </p>
           </div>
-          {canWrite ? (
-            <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
+            {(["list", "create"] as const).map((id) =>
+              id === "create" && !canWrite ? null : (
+                <Button
+                  key={id}
+                  variant={mainTab === id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    if (id === "create") openCreateTab();
+                    else setMainTab(id);
+                  }}
+                >
+                  {id === "list" ? "实例列表" : "创建 OpenClaw"}
+                </Button>
+              )
+            )}
+            {isAdmin ? (
+              <Button type="button" variant="outline" size="sm" className="gap-1.5" asChild>
+                <Link to={OPENCLAW_BOOTSTRAP_PATH}>
+                  <Settings2 className="h-4 w-4" />
+                  引导配置
+                </Link>
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      {mainTab === "list" ? (
+        <>
+          <section className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs text-slate-500">实例</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950">{rows.length}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs text-slate-500">运行中</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950">{readyCount}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs text-slate-500">默认模式</p>
+              <p className="mt-1 truncate text-sm font-medium text-slate-950">{defaultModeLabel}</p>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-950">OpenClaw 管理能力</h2>
+                <p className="mt-1 text-xs text-slate-500">创建网关后，对话、探针、配置、RBAC 与暴露入口集中在实例详情和列表操作中。</p>
+              </div>
+              {canWrite ? (
               <Button
                 type="button"
-                className="h-10 gap-1.5 bg-violet-600 hover:bg-violet-700"
+                size="sm"
+                className="gap-1.5 bg-violet-600 hover:bg-violet-700"
                 onClick={openCreateTab}
               >
                 <Plus className="h-4 w-4" />
-                创建实例
+                创建 OpenClaw
               </Button>
+              ) : null}
             </div>
-          ) : null}
-        </div>
-        {isAdmin ? (
-          <div className="mt-4 flex flex-col gap-2 rounded-xl border border-violet-200/90 bg-white/90 px-4 py-3 text-sm text-slate-700 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-start gap-2">
-              <Settings2 className="mt-0.5 h-4 w-4 shrink-0 text-violet-600" />
-              <div className="min-w-0">
-                <p className="font-medium text-slate-900">部署模式模板（platform_kv）</p>
-                <p className="mt-1 break-all font-mono text-xs text-slate-600">
-                  前台路径：<span className="text-violet-800">{OPENCLAW_BOOTSTRAP_PATH}</span>
-                </p>
-              </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {OPENCLAW_CAPABILITIES.map((item) => (
+                <div key={item.title} className="min-h-[92px] rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-3">
+                  <p className="text-sm font-medium text-slate-950">{item.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
+                </div>
+              ))}
             </div>
-            <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1.5" asChild>
-              <Link to={OPENCLAW_BOOTSTRAP_PATH}>打开配置页</Link>
-            </Button>
-          </div>
-        ) : null}
-      </div>
+          </section>
 
-      <Tabs
-        value={canWrite ? mainTab : "list"}
-        onValueChange={(v) => {
-          if (!canWrite) return;
-          setMainTab(v as "list" | "create");
-          if (v === "create") setStep(1);
-        }}
-        className="w-full"
-      >
-        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-slate-200/80 bg-slate-50/80 p-1 sm:w-auto">
-          <TabsTrigger
-            value="list"
-            className="gap-1.5 rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-          >
-            <Bot className="h-4 w-4 shrink-0" />
-            实例列表
-          </TabsTrigger>
-          {canWrite ? (
-            <TabsTrigger
-              value="create"
-              className="gap-1.5 rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-            >
-              <Plus className="h-4 w-4 shrink-0" />
-              创建 OpenClaw
-            </TabsTrigger>
-          ) : null}
-        </TabsList>
-
-        <TabsContent value="list" className="mt-4 space-y-4 outline-none">
+          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           {openClawInitRevisionIssues.length > 0 ? (
             <Alert variant="default" className="border-amber-300 bg-amber-50/90 text-amber-950">
               <AlertTitle>OpenClaw 集群模板与当前平台版本不一致</AlertTitle>
@@ -1082,7 +1107,8 @@ const AppCenterOpenClaw: React.FC = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-slate-950">OpenClaw 实例</h2>
             <Button
               type="button"
               variant="outline"
@@ -1092,10 +1118,10 @@ const AppCenterOpenClaw: React.FC = () => {
               onClick={() => refreshOpenClawList()}
             >
               <RefreshCw className={cn("h-4 w-4", listRefreshing && "animate-spin")} />
-              刷新列表
+              刷新状态
             </Button>
           </div>
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <div className="overflow-x-auto rounded-lg border border-slate-100">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -1118,9 +1144,16 @@ const AppCenterOpenClaw: React.FC = () => {
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-10 text-center text-slate-500">
-                      暂无登记
-                      {canWrite ? "，可切换到「创建 OpenClaw」部署" : null}
+                    <TableCell colSpan={8} className="py-10 text-center">
+                      <div className="flex flex-col items-center gap-3 text-sm text-slate-500">
+                        <span>暂无 OpenClaw 实例</span>
+                        {canWrite ? (
+                          <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={openCreateTab}>
+                            <Plus className="h-4 w-4" />
+                            创建 OpenClaw
+                          </Button>
+                        ) : null}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -1240,10 +1273,12 @@ const AppCenterOpenClaw: React.FC = () => {
               </TableBody>
             </Table>
           </div>
-        </TabsContent>
+          </section>
+        </>
+      ) : null}
 
-        {canWrite ? (
-          <TabsContent value="create" className="mt-4 outline-none">
+      {canWrite && mainTab === "create" ? (
+          <section className="outline-none">
             <Card className="border-slate-200 shadow-sm">
               <CardHeader className="border-b border-slate-100 bg-slate-50/50">
                 <CardTitle className="text-base">创建 OpenClaw</CardTitle>
@@ -1827,9 +1862,8 @@ const AppCenterOpenClaw: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        ) : null}
-      </Tabs>
+          </section>
+      ) : null}
 
       <Sheet
         open={chatOpen}
