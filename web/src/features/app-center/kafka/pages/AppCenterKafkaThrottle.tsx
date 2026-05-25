@@ -42,6 +42,12 @@ type RolloutRes = {
   message?: string;
 };
 
+type KafkaThrottleWorkspaceProps = {
+  instanceId: number;
+  embedded?: boolean;
+  showNavigation?: boolean;
+};
+
 function cfgStr(c: Record<string, unknown>, k: string): string {
   const v = c[k];
   return typeof v === "string" ? v : "";
@@ -102,10 +108,11 @@ async function verifyQuotaAfterPut(
   throw new Error(`读回校验未通过：期望 user=${user.trim()} producer=${wantProd} consumer=${wantCons}，实际 ${got}。请稍后重试。`);
 }
 
-export default function AppCenterKafkaThrottle() {
-  const { id } = useParams();
-  const parsedId = Number.parseInt(id ?? "0", 10);
-  const instanceId = Number.isFinite(parsedId) && parsedId > 0 ? parsedId : 0;
+export function KafkaThrottleWorkspace({
+  instanceId,
+  embedded = false,
+  showNavigation = true,
+}: KafkaThrottleWorkspaceProps) {
   const invalidInstanceId = instanceId <= 0;
   const qc = useQueryClient();
   const { status: auth } = useAuth();
@@ -244,17 +251,18 @@ export default function AppCenterKafkaThrottle() {
   });
 
   if (invalidInstanceId) {
-    return <Navigate to="/cluster/apps/kafka" replace />;
+    return showNavigation ? <Navigate to="/cluster/apps/kafka" replace /> : null;
   }
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,96rem)] space-y-5 pb-12">
+    <div className={embedded ? "w-full space-y-5" : "mx-auto w-full max-w-[min(100%,96rem)] space-y-5 pb-12"}>
       {statusQ.data?.mysqlReachable === false ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-950">
           需要平台 MySQL。请配置 <code className="rounded bg-white px-1">MYSQL_DSN</code>。
         </div>
       ) : null}
 
+      {showNavigation ? (
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" asChild>
@@ -272,6 +280,7 @@ export default function AppCenterKafkaThrottle() {
           </Badge>
         </div>
       </div>
+      ) : null}
 
       <Card className="border-slate-200/80 bg-slate-50/50 shadow-sm">
         <CardContent className="py-4 text-sm text-slate-700">
@@ -522,4 +531,11 @@ export default function AppCenterKafkaThrottle() {
       </div>
     </div>
   );
+}
+
+export default function AppCenterKafkaThrottle() {
+  const { id } = useParams();
+  const parsedId = Number.parseInt(id ?? "0", 10);
+  const instanceId = Number.isFinite(parsedId) && parsedId > 0 ? parsedId : 0;
+  return <KafkaThrottleWorkspace instanceId={instanceId} />;
 }

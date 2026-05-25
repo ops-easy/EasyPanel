@@ -663,7 +663,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 277,
+      "sourceLine": 281,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -671,7 +671,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
-      "sourceLine": 131,
+      "sourceLine": 138,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -695,7 +695,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/kafka/instances/:param",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 754,
+      "sourceLine": 760,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -703,7 +703,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/acls",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 426,
+      "sourceLine": 431,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -711,7 +711,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/kafka/instances/:param/acls",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 690,
+      "sourceLine": 696,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -719,7 +719,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/kafka/instances/:param/acls/delete",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 722,
+      "sourceLine": 728,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -727,7 +727,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/cluster",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 443,
+      "sourceLine": 448,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -735,7 +735,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/app-center/kafka/instances/:param/consumer-group-lag",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 471,
+      "sourceLine": 476,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -743,7 +743,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/consumer-groups",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 420,
+      "sourceLine": 425,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -751,7 +751,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/exposure",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 367,
+      "sourceLine": 372,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -759,7 +759,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/kafka/instances/:param/exposure",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 378,
+      "sourceLine": 383,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -767,7 +767,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/kafka/instances/:param/perf-test",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 538,
+      "sourceLine": 543,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -775,7 +775,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/kafka/instances/:param/perf-test/:param",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 561,
+      "sourceLine": 566,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -783,7 +783,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/perf-test/:param",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 487,
+      "sourceLine": 492,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -791,7 +791,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/kafka/instances/:param/perf-test/${encodeURIComponent(name",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 561,
+      "sourceLine": 566,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -799,7 +799,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/perf-test/${encodeURIComponent(perfJobName",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 487,
+      "sourceLine": 492,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -807,7 +807,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/kafka/instances/:param/perf-test/validate",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 523,
+      "sourceLine": 528,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -815,7 +815,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/perf-tests",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 478,
+      "sourceLine": 483,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -823,7 +823,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/quotas",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 434,
+      "sourceLine": 439,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -831,7 +831,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/quotas",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
-      "sourceLine": 60,
+      "sourceLine": 66,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -839,7 +839,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/quotas",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
-      "sourceLine": 152,
+      "sourceLine": 159,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -847,7 +847,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/kafka/instances/:param/quotas",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 704,
+      "sourceLine": 710,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -855,7 +855,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/kafka/instances/:param/quotas",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
-      "sourceLine": 201,
+      "sourceLine": 208,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -863,7 +863,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/rollout",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 354,
+      "sourceLine": 359,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -871,7 +871,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/rollout",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
-      "sourceLine": 137,
+      "sourceLine": 144,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -879,7 +879,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/kafka/instances/:param/scram-users",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 732,
+      "sourceLine": 738,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -887,7 +887,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/kafka/instances/:param/scram-users/:param",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 745,
+      "sourceLine": 751,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -895,7 +895,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/kafka/instances/:param/scram-users/${encodeURIComponent(username",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 745,
+      "sourceLine": 751,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -903,7 +903,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 404,
+      "sourceLine": 409,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -911,7 +911,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
-      "sourceLine": 146,
+      "sourceLine": 153,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -919,7 +919,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 636,
+      "sourceLine": 642,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -927,7 +927,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 649,
+      "sourceLine": 655,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -935,7 +935,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param/configs",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 452,
+      "sourceLine": 457,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -943,7 +943,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param/configs",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 777,
+      "sourceLine": 783,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -951,7 +951,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param/messages",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 818,
+      "sourceLine": 824,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -959,7 +959,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param/messages",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 799,
+      "sourceLine": 805,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -967,7 +967,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param/throttle",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
-      "sourceLine": 55,
+      "sourceLine": 61,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -975,7 +975,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/:param/throttle",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
-      "sourceLine": 181,
+      "sourceLine": 188,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -983,7 +983,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(selectedTopic",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 452,
+      "sourceLine": 457,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -991,7 +991,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(selectedTopic",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 818,
+      "sourceLine": 824,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -999,7 +999,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(selectedTopic",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 777,
+      "sourceLine": 783,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1007,7 +1007,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(selectedTopic",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 799,
+      "sourceLine": 805,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1015,7 +1015,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(t",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 649,
+      "sourceLine": 655,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1023,7 +1023,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(topic",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
-      "sourceLine": 55,
+      "sourceLine": 61,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1031,7 +1031,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/kafka/instances/:param/topics/${encodeURIComponent(topic",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
-      "sourceLine": 181,
+      "sourceLine": 188,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1039,7 +1039,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/kafka/k8s-deploy",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 573,
+      "sourceLine": 578,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1047,7 +1047,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/status",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 261,
+      "sourceLine": 265,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1055,7 +1055,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/status",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafkaThrottle.tsx",
-      "sourceLine": 116,
+      "sourceLine": 123,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1063,7 +1063,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/templates",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 271,
+      "sourceLine": 275,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1071,7 +1071,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/kafka/templates",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 614,
+      "sourceLine": 620,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1079,7 +1079,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/kafka/templates/:param",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 626,
+      "sourceLine": 632,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1087,7 +1087,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/kafka/templates/:param",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 611,
+      "sourceLine": 617,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1999,7 +1999,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/redis/instances",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 2624,
+      "sourceLine": 2637,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2007,7 +2007,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/redis/instances/:param",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1039,
+      "sourceLine": 1052,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2015,7 +2015,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/bigkeys",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1023,
+      "sourceLine": 1036,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2023,7 +2023,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/clients",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1009,
+      "sourceLine": 1022,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2039,7 +2039,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/k8s-status",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1608,
+      "sourceLine": 1621,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2047,7 +2047,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/keys",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 931,
+      "sourceLine": 944,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2055,7 +2055,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/keys",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 946,
+      "sourceLine": 959,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2063,7 +2063,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/keys",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 992,
+      "sourceLine": 1005,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2071,7 +2071,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/keys",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1439,
+      "sourceLine": 1452,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2079,7 +2079,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/redis/instances/:param/keys/delete",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1030,
+      "sourceLine": 1043,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2111,7 +2111,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/app-center/redis/k8s-deploy",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1834,
+      "sourceLine": 1847,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -2119,7 +2119,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/runtime",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 845,
+      "sourceLine": 858,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2127,7 +2127,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/app-center/redis/runtime/ws",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 870,
+      "sourceLine": 883,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -2159,7 +2159,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/templates",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1746,
+      "sourceLine": 1759,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4495,7 +4495,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/storage-classes",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1796,
+      "sourceLine": 1809,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4567,7 +4567,7 @@
       "method": "GET",
       "pathPattern": "/api/namespaces",
       "sourceFile": "web/src/features/app-center/kafka/pages/AppCenterKafka.tsx",
-      "sourceLine": 266,
+      "sourceLine": 270,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4583,7 +4583,7 @@
       "method": "GET",
       "pathPattern": "/api/namespaces",
       "sourceFile": "web/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1802,
+      "sourceLine": 1815,
       "needsManualReview": false,
       "kind": "http"
     },

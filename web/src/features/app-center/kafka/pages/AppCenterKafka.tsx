@@ -2,11 +2,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ChevronDown, Copy, Gauge, Loader2, Plus, RefreshCw, Trash2, Layers, Server } from "lucide-react";
+import { ChevronDown, Copy, Database, Gauge, Layers, Loader2, Plus, RefreshCw, SlidersHorizontal, Terminal, Trash2 } from "lucide-react";
 import { ApiHttpError, apiDeleteJson, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import type { ApiHttpErrorCheck } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import { cloudVmAppCenterCanWrite } from "@/lib/platform-permissions";
+import { KafkaThrottleWorkspace } from "@/features/app-center/kafka/pages/AppCenterKafkaThrottle";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
@@ -246,15 +247,18 @@ const SASL_MECH_OPTIONS = [
 type AppCenterKafkaInnerProps = {
   /** 来自路由 `/kafka/instance/:id` 时传入，此时只渲染该实例的管理区 */
   routeInstanceId?: number | null;
+  embedded?: boolean;
 };
 
-const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstanceId }) => {
+const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstanceId, embedded = false }) => {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { status: auth } = useAuth();
   const canWrite = cloudVmAppCenterCanWrite(auth?.role, auth?.permissions);
-  const instanceId = routeInstanceId && routeInstanceId > 0 ? routeInstanceId : 0;
-  const isInstanceDetailPage = instanceId > 0 && routeInstanceId != null && routeInstanceId > 0;
+  const hasRouteInstanceId = routeInstanceId != null && routeInstanceId > 0;
+  const instanceId = hasRouteInstanceId ? routeInstanceId : 0;
+  const isInstanceWorkspaceMode = instanceId > 0 && hasRouteInstanceId;
+  const isStandaloneInstanceRoute = isInstanceWorkspaceMode && !embedded;
 
   const statusQ = useQuery({
     queryKey: ["app-center-kafka-status"],
@@ -278,9 +282,10 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
     enabled: statusQ.data?.mysqlReachable === true,
   });
 
-  const [mainTab, setMainTab] = useState<"instances" | "deploy" | "templates">("instances");
+  const [mainTab, setMainTab] = useState<"kafka" | "install" | "templates">("kafka");
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [manageSubTab, setManageSubTab] = useState<
-    "cluster" | "exposure" | "topics" | "perf" | "consumers" | "acl" | "scram"
+    "cluster" | "exposure" | "topics" | "perf" | "consumers" | "acl" | "scram" | "throttle"
   >("topics");
 
   const [ns, setNs] = useState("default");
@@ -591,7 +596,8 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
       }
       const iid = r.instanceId;
       if (typeof iid === "number" && iid > 0) {
-        navigate(`/cluster/apps/kafka/instance/${iid}`);
+        setMainTab("kafka");
+        setSelectedId(iid);
       }
       void qc.invalidateQueries({ queryKey: ["app-center-kafka-instances"] });
       void qc.invalidateQueries({ queryKey: ["kafka-rollout", iid] });
@@ -860,6 +866,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
 
   const instances = useMemo(() => instQ.data?.instances ?? [], [instQ.data?.instances]);
   const selectedInst = useMemo(() => instances.find((i) => i.id === instanceId), [instances, instanceId]);
+  const selectedListInst = useMemo(() => instances.find((i) => i.id === selectedId), [instances, selectedId]);
   const instSaslMech = (cfgStr(selectedInst?.config ?? {}, "saslMechanism") || "SCRAM-SHA-512").toUpperCase();
   const scramSupported = clusterReady && instSaslMech !== "PLAIN";
   /** ACL / 配额中的登录名，不含 User: 前缀 */
@@ -882,6 +889,12 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
     return (quotasQ.data?.quotas ?? []).find((q) => (q.user || "").toLowerCase() === key);
   }, [quotasQ.data?.quotas, scramKafkaUserName]);
   const instKafkaRep = cfgNum(selectedInst?.config ?? {}, "kafkaReplicas", 3);
+
+  useEffect(() => {
+    if (selectedId == null) return;
+    if (instances.some((i) => i.id === selectedId)) return;
+    setSelectedId(null);
+  }, [instances, selectedId]);
 
   useEffect(() => {
     if (manageSubTab === "perf" && selectedTopic) {
@@ -918,31 +931,42 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
   }, [exposureQ.data, selectedInst, instKafkaRep]);
 
   return (
-    <div className="mx-auto w-full max-w-[min(100%,96rem)] space-y-5 pb-12">
+    <div className={embedded ? "w-full space-y-4" : "mx-auto w-full max-w-[min(100%,96rem)] space-y-5 pb-12"}>
       {statusQ.data?.mysqlReachable === false ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-950">
           需要平台 MySQL。请配置 <code className="rounded bg-white px-1">MYSQL_DSN</code>。
         </div>
       ) : null}
 
-      {isInstanceDetailPage ? (
+      {isInstanceWorkspaceMode ? (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/cluster/apps/kafka">返回实例列表</Link>
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/cluster/apps/kafka/instance/${instanceId}/throttle`}>限速配置</Link>
-              </Button>
-              <h1 className="text-xl font-semibold tracking-tight text-slate-900">
-                {selectedInst?.name ?? `Kafka #${instanceId}`}
-              </h1>
+          {isStandaloneInstanceRoute ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/cluster/apps/kafka">返回实例列表</Link>
+                </Button>
+                <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+                  {selectedInst?.name ?? `Kafka #${instanceId}`}
+                </h1>
+                <Badge variant="outline" className="font-mono text-xs">
+                  {cfgStr(selectedInst?.config ?? {}, "namespace")}/{cfgStr(selectedInst?.config ?? {}, "baseName")}
+                </Badge>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200/80 bg-slate-50/70 px-4 py-3">
+              <div>
+                <p className="text-xs text-slate-500">实例详情</p>
+                <h2 className="mt-0.5 text-lg font-semibold text-slate-900">
+                  {selectedInst?.name ?? `Kafka #${instanceId}`}
+                </h2>
+              </div>
               <Badge variant="outline" className="font-mono text-xs">
                 {cfgStr(selectedInst?.config ?? {}, "namespace")}/{cfgStr(selectedInst?.config ?? {}, "baseName")}
               </Badge>
             </div>
-          </div>
+          )}
           {/* workspace: inlined below — see KAFKA_INSTANCE_WORKSPACE */}
                     <>
                       <Card className="border-slate-200/80 shadow-sm">
@@ -1037,6 +1061,10 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
                             </TabsTrigger>
                             <TabsTrigger value="acl" className="px-4">
                               ACL
+                            </TabsTrigger>
+                            <TabsTrigger value="throttle" className="gap-1 px-4">
+                              <SlidersHorizontal className="h-3.5 w-3.5 opacity-80" aria-hidden />
+                              限速
                             </TabsTrigger>
                             <TabsTrigger value="scram" className="px-4">
                               SCRAM 用户
@@ -2201,11 +2229,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
                                   <CardTitle className="text-base">Topic ACL 与客户端配额</CardTitle>
                                   <CardDescription>
                                     按用户（Principal）与 Topic 图形化授权；可选同步设置<strong>用户级配额限速</strong>（以{" "}
-                                    <strong>MiB/s</strong> 填写，平台换算为 Kafka 字节/秒）。Topic 复制限速请用{" "}
-                                    <Link className="font-medium text-sky-700 underline" to={`/cluster/apps/kafka/instance/${instanceId}/throttle`}>
-                                      独立限速页
-                                    </Link>
-                                    。
+                                    <strong>MiB/s</strong> 填写，平台换算为 Kafka 字节/秒）。Topic 复制限速可切换到「限速」Tab。
                                   </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
@@ -2540,6 +2564,10 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
                             </div>
                           </TabsContent>
 
+                          <TabsContent value="throttle" className="mt-0">
+                            <KafkaThrottleWorkspace instanceId={instanceId} embedded showNavigation={false} />
+                          </TabsContent>
+
                           <TabsContent value="scram" className="mt-0">
                             <Card className="min-h-[20rem] border-slate-200/80 shadow-sm">
                               <CardHeader>
@@ -2723,47 +2751,69 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
         </div>
       ) : null}
 
-      {!isInstanceDetailPage ? (
+      {!isInstanceWorkspaceMode ? (
         <>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-800 shadow-sm">
-                <Layers className="h-6 w-6" aria-hidden />
-              </div>
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-amber-50/70 via-white to-cyan-50/50 px-6 py-8 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h1 className="text-xl font-semibold tracking-tight text-slate-900">Kafka</h1>
-                <p className="text-sm text-slate-500">
-                  实例列表与部署模版；Topic、ACL 等在「管理配置」页；Topic/用户限速在独立「限速」页，保存后会读回校验再提示成功。
+                <p className="text-xs font-semibold uppercase tracking-wider text-amber-800/90">Kafka 消息队列 · 实例</p>
+                <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 sm:text-[26px]">
+                  云消息队列 Kafka
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
+                  平台部署的 Kafka 集群在同一张实例表里管理；选中实例后，下方统一处理运行状态、Topic、消费者组、ACL、SCRAM 用户与限速。
                 </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 shrink-0 gap-1.5 border-amber-200 bg-white text-amber-950 hover:bg-amber-50"
+                  disabled={!canWrite || !statusQ.data?.mysqlReachable}
+                  onClick={() => setMainTab("install")}
+                >
+                  <Terminal className="h-4 w-4" />
+                  创建
+                </Button>
+                <Button type="button" variant="secondary" className="h-10 gap-1.5" onClick={() => void instQ.refetch()}>
+                  <RefreshCw className={cn("h-4 w-4", instQ.isFetching && "animate-spin")} />
+                  刷新
+                </Button>
               </div>
             </div>
           </div>
 
-          <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as typeof mainTab)}>
-        <TabsList className="h-11 flex-wrap gap-1">
-          <TabsTrigger value="instances" className="gap-1.5">
-            <Server className="h-4 w-4" />
+          <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as typeof mainTab)} className="w-full">
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-slate-200/80 bg-slate-50/80 p-1 sm:w-auto">
+          <TabsTrigger value="kafka" className="gap-1.5 rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <Database className="h-4 w-4 shrink-0" />
             实例列表
           </TabsTrigger>
-          <TabsTrigger value="deploy">部署新集群</TabsTrigger>
-          <TabsTrigger value="templates">部署模版</TabsTrigger>
+          <TabsTrigger value="install" className="gap-1.5 rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <Terminal className="h-4 w-4 shrink-0" />
+            部署向导
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="gap-1.5 rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <Layers className="h-4 w-4 shrink-0" />
+            模板中心
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="instances" className="mt-4 space-y-4">
+        <TabsContent value="kafka" className="mt-4 space-y-4 outline-none">
           <Card className="border-slate-200/80 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Kafka 实例</CardTitle>
-              <CardDescription>选择一行查看滚动部署状态；全部就绪后可管理 Topic、消费者组与 ACL。</CardDescription>
+              <CardDescription>单击行查看下方实例详情；全部就绪后可管理 Topic、消费者组、ACL、SCRAM 与限速。</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                     <TableRow>
+                    <TableHead className="w-[92px]">实例 ID</TableHead>
                     <TableHead>名称</TableHead>
                     <TableHead>命名空间</TableHead>
                     <TableHead>部署名</TableHead>
                     <TableHead>SASL</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
                     <TableHead className="w-[100px] text-right">删除</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -2771,7 +2821,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
                   {                    instances.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center text-sm text-slate-500">
-                        暂无实例，请先在「部署新集群」创建。
+                        暂无实例，请先在「部署向导」创建。
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -2779,22 +2829,20 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
                       const c = i.config;
                       const sm = cfgStr(c, "saslMechanism") || "SCRAM-SHA-512";
                       return (
-                        <TableRow key={i.id}>
+                        <TableRow
+                          key={i.id}
+                          onClick={() => setSelectedId((prev) => (prev === i.id ? null : i.id))}
+                          className={cn(
+                            "cursor-pointer border-slate-100 transition-colors",
+                            selectedId === i.id ? "bg-amber-50/80 hover:bg-amber-50" : "hover:bg-slate-50/80"
+                          )}
+                        >
+                          <TableCell className="font-mono text-xs text-slate-600">{i.id}</TableCell>
                           <TableCell className="font-medium">{i.name}</TableCell>
                           <TableCell className="font-mono text-xs">{cfgStr(c, "namespace")}</TableCell>
                           <TableCell className="font-mono text-xs">{cfgStr(c, "baseName")}</TableCell>
                           <TableCell className="text-xs">{sm}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex flex-wrap justify-end gap-1">
-                              <Button size="sm" variant="outline" asChild>
-                                <Link to={`/cluster/apps/kafka/instance/${i.id}`}>管理配置</Link>
-                              </Button>
-                              <Button size="sm" variant="secondary" asChild>
-                                <Link to={`/cluster/apps/kafka/instance/${i.id}/throttle`}>限速</Link>
-                              </Button>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                             <Button
                               size="sm"
                               variant="ghost"
@@ -2817,18 +2865,29 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
             </CardContent>
           </Card>
 
-          <Card className="border-slate-100 bg-slate-50/50 shadow-sm">
-            <CardContent className="py-6 text-sm text-slate-600">
-              在列表中点击「管理配置」打开配置页；点击「限速」进入独立限速页（含读回校验）。部署成功后也会自动跳转到配置页。
-            </CardContent>
-          </Card>
+          {selectedListInst ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span>实例详情</span>
+                <span className="text-slate-300">/</span>
+                <span className="font-mono text-slate-700">{selectedListInst.name}</span>
+              </div>
+              <AppCenterKafkaInner routeInstanceId={selectedId} embedded />
+            </div>
+          ) : !instQ.isLoading && instances.length > 0 ? (
+            <Card className="border-dashed border-slate-200">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center text-sm text-slate-500">
+                请在上方表格中选择一行实例
+              </CardContent>
+            </Card>
+          ) : null}
 
         </TabsContent>
 
-        <TabsContent value="deploy" className="mt-4 space-y-4">
+        <TabsContent value="install" className="mt-4 space-y-4 outline-none">
           <Card className="border-slate-200/80 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-base">部署新集群</CardTitle>
+              <CardTitle className="text-base">部署向导</CardTitle>
               <CardDescription>与容器主机类似：先选命名空间与模版，再提交到当前连接的 Kubernetes。</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

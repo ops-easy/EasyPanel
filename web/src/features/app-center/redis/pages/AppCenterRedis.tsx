@@ -439,6 +439,13 @@ export default function AppCenterRedis() {
       , { signal }),
   });
 
+  const refreshOverview = () => {
+    void configQ.refetch();
+    void statusQ.refetch();
+    void listQ.refetch();
+  };
+  const overviewRefreshing = configQ.isFetching || statusQ.isFetching || listQ.isFetching;
+
   const filteredInstances = useMemo(() => {
     let list = listQ.data?.instances ?? [];
     if (instanceSourceFilter === "platform") {
@@ -486,39 +493,45 @@ export default function AppCenterRedis() {
               <strong className="font-medium text-slate-800">纳管</strong>（仅登记连接信息）可在下方列表区分；运维能力与全局指标见侧栏「Dashboard」。
             </p>
           </div>
-          {canWriteRedis && (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                className="h-10 shrink-0 gap-1.5 bg-emerald-600 shadow-sm hover:bg-emerald-700"
-                disabled={!statusQ.data?.mysqlReachable}
-                onClick={() => setManagePanelOpen((o) => !o)}
-              >
-                {managePanelOpen ? (
-                  <>
-                    <Minimize2 className="h-4 w-4" />
-                    收起纳管表单
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4" />
-                    纳管实例
-                  </>
-                )}
-              </Button>
-              {showK8sDeployWizard ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {canWriteRedis ? (
+              <>
                 <Button
                   type="button"
-                  variant="outline"
-                  className="h-10 shrink-0 gap-1.5 border-emerald-200 bg-white text-emerald-900 hover:bg-emerald-50"
-                  onClick={() => setMainTab("install")}
+                  className="h-10 shrink-0 gap-1.5 bg-emerald-600 shadow-sm hover:bg-emerald-700"
+                  disabled={!statusQ.data?.mysqlReachable}
+                  onClick={() => setManagePanelOpen((o) => !o)}
                 >
-                  <Terminal className="h-4 w-4" />
-                  创建
+                  {managePanelOpen ? (
+                    <>
+                      <Minimize2 className="h-4 w-4" />
+                      收起纳管表单
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      纳管实例
+                    </>
+                  )}
                 </Button>
-              ) : null}
-            </div>
-          )}
+                {showK8sDeployWizard ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 shrink-0 gap-1.5 border-emerald-200 bg-white text-emerald-900 hover:bg-emerald-50"
+                    onClick={() => setMainTab("install")}
+                  >
+                    <Terminal className="h-4 w-4" />
+                    创建
+                  </Button>
+                ) : null}
+              </>
+            ) : null}
+            <Button type="button" variant="secondary" className="h-10 gap-1.5" onClick={refreshOverview}>
+              <RefreshCw className={cn("h-4 w-4", overviewRefreshing && "animate-spin")} />
+              刷新
+            </Button>
+          </div>
         </div>
       </div>
 
