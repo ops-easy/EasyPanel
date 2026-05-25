@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -31,6 +32,104 @@ func RuntimeSettingsToConfigYAML(rs *RuntimeSettings) ([]byte, error) {
 		}
 	}
 	return yaml.Marshal(&doc)
+}
+
+func setupConfigYAML(rs *RuntimeSettings, dashboardPasswordPlain, dashboardSessionSecret string) ([]byte, error) {
+	if rs == nil {
+		return nil, errors.New("配置为空")
+	}
+	rsCopy := *rs
+	rsCopy.Version = 1
+	rsCopy.Initialized = true
+	raw, err := RuntimeSettingsToConfigYAML(&rsCopy)
+	if err != nil {
+		return nil, err
+	}
+	var doc map[string]interface{}
+	if err := yaml.Unmarshal(raw, &doc); err != nil {
+		return nil, err
+	}
+	if doc == nil {
+		doc = make(map[string]interface{})
+	}
+	doc["app"] = map[string]interface{}{
+		"version":     1,
+		"initialized": true,
+	}
+
+	server := yamlMap(doc["server"])
+	server["address"] = firstConfigValue(rsCopy.DashboardListenAddr, ":8080")
+	server["publicUrl"] = strings.TrimSpace(rsCopy.PlatformPublicURL)
+	server["user"] = strings.TrimSpace(rsCopy.DashboardUser)
+	server["password"] = dashboardPasswordPlain
+	if sec := strings.TrimSpace(dashboardSessionSecret); sec != "" {
+		server["sessionSecret"] = sec
+	}
+	if rsCopy.DashboardSessionDays > 0 {
+		server["sessionDays"] = rsCopy.DashboardSessionDays
+	}
+	server["cookieSecure"] = rsCopy.DashboardCookieSecure
+	doc["server"] = server
+
+	dbCfg := Config{
+		MySQLDSN:      strings.TrimSpace(rsCopy.MySQLDSN),
+		MySQLHost:     strings.TrimSpace(rsCopy.MySQLHost),
+		MySQLPort:     rsCopy.MySQLPort,
+		MySQLDatabase: strings.TrimSpace(rsCopy.MySQLDatabase),
+		MySQLUser:     strings.TrimSpace(rsCopy.MySQLUser),
+		MySQLPassword: rsCopy.MySQLPassword,
+	}
+	FinalizeConnectionStrings(&dbCfg)
+	db := make(map[string]interface{})
+	if strings.TrimSpace(rsCopy.MySQLDSN) != "" {
+		db["dsn"] = strings.TrimSpace(rsCopy.MySQLDSN)
+	} else {
+		db["host"] = dbCfg.MySQLHost
+		db["port"] = dbCfg.MySQLPort
+		db["db"] = dbCfg.MySQLDatabase
+		db["username"] = dbCfg.MySQLUser
+		db["password"] = dbCfg.MySQLPassword
+	}
+	doc["db"] = db
+
+	redisCfg := Config{
+		RedisAddr:           strings.TrimSpace(rsCopy.RedisAddr),
+		RedisHost:           strings.TrimSpace(rsCopy.RedisHost),
+		RedisPort:           rsCopy.RedisPort,
+		RedisPassword:       rsCopy.RedisPassword,
+		RedisDB:             rsCopy.RedisDB,
+		RedisKeyPrefix:      rsCopy.RedisKeyPrefix,
+		RedisMode:           rsCopy.RedisMode,
+		RedisSentinelMaster: rsCopy.RedisSentinelMaster,
+	}
+	FinalizeConnectionStrings(&redisCfg)
+	redis := make(map[string]interface{})
+	if strings.TrimSpace(redisCfg.RedisAddr) != "" {
+		redis["address"] = redisCfg.RedisAddr
+	}
+	if redisCfg.RedisPassword != "" {
+		redis["password"] = redisCfg.RedisPassword
+	}
+	redis["db"] = redisCfg.RedisDB
+	if strings.TrimSpace(redisCfg.RedisKeyPrefix) != "" {
+		redis["keyPrefix"] = strings.TrimSpace(redisCfg.RedisKeyPrefix)
+	}
+	if strings.TrimSpace(redisCfg.RedisMode) != "" {
+		redis["mode"] = strings.TrimSpace(redisCfg.RedisMode)
+	}
+	if strings.TrimSpace(redisCfg.RedisSentinelMaster) != "" {
+		redis["sentinelMaster"] = strings.TrimSpace(redisCfg.RedisSentinelMaster)
+	}
+	doc["redis"] = redis
+
+	return yaml.Marshal(doc)
+}
+
+func yamlMap(v interface{}) map[string]interface{} {
+	if m, ok := v.(map[string]interface{}); ok && m != nil {
+		return m
+	}
+	return make(map[string]interface{})
 }
 
 // shouldPersistDynamicRuntimeField 过滤不应写入 MySQL 动态配置的字段。

@@ -435,7 +435,7 @@ runtime:
 	}
 }
 
-func TestNewServerAppIgnoresRuntimeConfigFile(t *testing.T) {
+func TestNewServerAppIgnoresRuntimeConfigFileUntilBootstrapReady(t *testing.T) {
 	clearConfigEnv(t)
 	configPath := filepath.Join(t.TempDir(), "config.yaml")
 	if err := os.WriteFile(configPath, []byte(`
@@ -459,8 +459,8 @@ server:
 		t.Fatalf("NewServerApp: %v", err)
 	}
 
-	if !app.Initialized() {
-		t.Fatalf("app is not initialized")
+	if app.Initialized() {
+		t.Fatalf("app should stay uninitialized without MySQL and Redis bootstrap config")
 	}
 	if got := app.Cfg().PlatformPublicURL; got != "https://from-config.example.com" {
 		t.Fatalf("PlatformPublicURL = %q", got)

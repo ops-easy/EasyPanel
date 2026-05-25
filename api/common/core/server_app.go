@@ -103,6 +103,8 @@ func (s *ServerApp) Reload() error {
 	defer cancel()
 
 	cfg := LoadConfig()
+	applyConfigFilePath(&cfg, setupConfigFilePath(s.dataDir), false)
+	finalizeLoadedConfig(&cfg)
 
 	var mysqlDB *sql.DB
 	s.mysqlConnectErr = ""
@@ -217,7 +219,11 @@ func (s *ServerApp) Reload() error {
 	s.sshStore = sshStore
 	s.vc = vc
 	s.runtime = rs
-	s.initialized = true
+	initialized := cfg.Validate() == nil && mysqlDB != nil
+	if initialized && strings.TrimSpace(cfg.RedisAddr) != "" && s.redis == nil {
+		initialized = false
+	}
+	s.initialized = initialized
 	return nil
 }
 
