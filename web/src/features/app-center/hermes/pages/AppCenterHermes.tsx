@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, Loader2, RefreshCw, Rocket, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -85,7 +85,6 @@ export type HermesPageTab = "list" | "create" | "bootstrap";
 const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab = "create" }) => {
   const qc = useQueryClient();
   const { status } = useAuth();
-  const isAdmin = status?.role === "admin";
   const canWrite = cloudVmAppCenterCanWrite(status?.role, status?.permissions);
   const [tab, setTab] = useState<HermesPageTab>(initialTab);
   const [apiKey, setApiKey] = useState("");
@@ -232,21 +231,16 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
     );
   }
 
-  if (boot && !boot.bootstrapComplete) {
-    if (isAdmin && initialTab !== "bootstrap") {
-      return <Navigate to={HERMES_BOOTSTRAP_PATH} replace />;
-    }
-    if (!isAdmin) {
-      return (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          Hermes 尚未完成首次引导。请联系管理员打开{" "}
-          <Link to={HERMES_BOOTSTRAP_PATH} className="font-mono font-semibold underline">
-            {HERMES_BOOTSTRAP_PATH}
-          </Link>{" "}
-          完成配置。
-        </div>
-      );
-    }
+  if (boot && !boot.bootstrapComplete && !canWrite) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        Hermes 尚未完成首次引导。请联系管理员打开{" "}
+        <Link to={HERMES_BOOTSTRAP_PATH} className="font-mono font-semibold underline">
+          {HERMES_BOOTSTRAP_PATH}
+        </Link>{" "}
+        完成配置。
+      </div>
+    );
   }
 
   return (

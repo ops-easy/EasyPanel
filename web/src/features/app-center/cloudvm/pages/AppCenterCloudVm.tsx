@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -416,10 +416,7 @@ export default function AppCenterCloudVm({ initialTab = "create" }: { initialTab
     );
   }
 
-  if (bootQ.data && !bootQ.data.bootstrapComplete && !allowIncompleteBootstrap) {
-    if (isAdmin) {
-      return <Navigate to={BOOTSTRAP_PATH} replace />;
-    }
+  if (bootQ.data && !bootQ.data.bootstrapComplete && !canWrite) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
         容器主机镜像尚未完成首次引导。管理员请打开{" "}

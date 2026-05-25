@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bot,
@@ -941,10 +941,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
       </p>
     );
   }
-  if (bootstrapQ.data && !bootstrapQ.data.bootstrapComplete && !allowIncompleteBootstrap) {
-    if (isAdmin) {
-      return <Navigate to={OPENCLAW_BOOTSTRAP_PATH} replace />;
-    }
+  if (bootstrapQ.data && !bootstrapQ.data.bootstrapComplete && !canWrite) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
         OpenClaw 部署模式尚未完成首次引导。请联系管理员打开{" "}

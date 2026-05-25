@@ -120,3 +120,13 @@ test("create route wrappers still mount the tabbed app pages", () => {
   assert.match(openClawCreate, /<AppCenterOpenClaw initialTab="create" \/>/);
   assert.match(hermesCreate, /<AppCenterHermes initialTab="create" \/>/);
 });
+
+test("app center modules do not auto-redirect incomplete bootstrap to template config", () => {
+  const cloudVm = read("../src/features/app-center/cloudvm/pages/AppCenterCloudVm.tsx");
+  const openClaw = read("../src/features/app-center/openclaw/pages/AppCenterOpenClaw.tsx");
+  const hermes = read("../src/features/app-center/hermes/pages/AppCenterHermes.tsx");
+
+  assert.doesNotMatch(cloudVm, /return <Navigate to=\{BOOTSTRAP_PATH\} replace \/>/);
+  assert.doesNotMatch(openClaw, /return <Navigate to=\{OPENCLAW_BOOTSTRAP_PATH\} replace \/>/);
+  assert.doesNotMatch(hermes, /return <Navigate to=\{HERMES_BOOTSTRAP_PATH\} replace \/>/);
+});
