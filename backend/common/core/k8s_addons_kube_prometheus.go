@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	appsv1 "k8s.io/api/apps/v1"
+	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,6 +59,109 @@ type KubePromStackInstallResult struct {
 	ServiceName       string
 	Namespace         string
 	ReleaseName       string
+}
+
+type kubePrometheusStackAccessCheck struct {
+	Verb     string
+	Group    string
+	Resource string
+	Label    string
+}
+
+var kubePrometheusStackAccessChecks = []kubePrometheusStackAccessCheck{
+	{Verb: "create", Group: "apiextensions.k8s.io", Resource: "customresourcedefinitions", Label: "创建/更新 Prometheus Operator CRD"},
+	{Verb: "create", Group: "rbac.authorization.k8s.io", Resource: "clusterroles", Label: "创建 ClusterRole"},
+	{Verb: "escalate", Group: "rbac.authorization.k8s.io", Resource: "clusterroles", Label: "对 ClusterRole 执行 escalate"},
+	{Verb: "bind", Group: "rbac.authorization.k8s.io", Resource: "clusterroles", Label: "对 ClusterRole 执行 bind"},
+	{Verb: "create", Group: "rbac.authorization.k8s.io", Resource: "clusterrolebindings", Label: "创建 ClusterRoleBinding"},
+}
+
+func checkKubePrometheusStackInstallRBAC(ctx context.Context, k8s *kubernetes.Clientset) error {
+	if k8s == nil {
+		return fmt.Errorf("Kubernetes 未连接")
+	}
+	var missing []string
+	for _, check := range kubePrometheusStackAccessChecks {
+		resp, err := k8s.AuthorizationV1().SelfSubjectAccessReviews().Create(ctx, &authorizationv1.SelfSubjectAccessReview{
+			Spec: authorizationv1.SelfSubjectAccessReviewSpec{
+				ResourceAttributes: &authorizationv1.ResourceAttributes{
+					Verb:     check.Verb,
+					Group:    check.Group,
+					Resource: check.Resource,
+				},
+			},
+		}, metav1.CreateOptions{})
+		if err != nil {
+			return fmt.Errorf("检查 kube-prometheus-stack 安装权限失败: %w", err)
+		}
+		if resp == nil || !resp.Status.Allowed {
+			label := check.Label
+			if resp != nil && strings.TrimSpace(resp.Status.Reason) != "" {
+				label += "（" + strings.TrimSpace(resp.Status.Reason) + "）"
+			}
+			missing = append(missing, label)
+		}
+	}
+	if len(missing) > 0 {
+		return errors.New(kubePrometheusStackRBACHelp(missing, ""))
+	}
+	return nil
+}
+
+func FriendlyKubePrometheusStackInstallError(err error) string {
+	if err == nil {
+		return ""
+	}
+	s := err.Error()
+	low := strings.ToLower(s)
+	if strings.Contains(low, "attempting to grant rbac permissions not currently held") ||
+		(strings.Contains(low, "clusterroles.rbac.authorization.k8s.io") && strings.Contains(low, "forbidden") && strings.Contains(low, "grant rbac permissions")) {
+		return kubePrometheusStackRBACHelp([]string{"缺少对 ClusterRole 的 bind/escalate 或 cluster-admin 等价权限"}, s)
+	}
+	return s
+}
+
+func kubePrometheusStackRBACHelp(missing []string, original string) string {
+	sa := kubePrometheusStackServiceAccountHint()
+	if sa == "" {
+		sa = "<namespace>:<serviceAccount>"
+	}
+	var b strings.Builder
+	b.WriteString("kube-prometheus-stack 需要 EasyPanel 具备集群管理员级 RBAC 安装权限（创建/升级 CRD、ClusterRole、ClusterRoleBinding，并允许 bind/escalate）。")
+	if len(missing) > 0 {
+		b.WriteString("当前 Kubernetes 凭据缺少：")
+		b.WriteString(strings.Join(missing, "、"))
+		b.WriteString("。")
+	}
+	b.WriteString("请使用集群管理员身份执行：kubectl create clusterrolebinding easypanel-platform-admin --clusterrole=cluster-admin --serviceaccount=")
+	b.WriteString(sa)
+	b.WriteString(" --dry-run=client -o yaml | kubectl apply -f -。")
+	b.WriteString("如果你使用 Helm 或自定义 ServiceAccount，请把 --serviceaccount 替换为实际的 <namespace>:<serviceAccount>；授权或应用最新 rbac.full 清单后重启 EasyPanel Pod 再重试。")
+	if strings.TrimSpace(original) != "" {
+		b.WriteString("原始错误：")
+		b.WriteString(original)
+	}
+	return b.String()
+}
+
+func kubePrometheusStackServiceAccountHint() string {
+	ns := strings.TrimSpace(os.Getenv("POD_NAMESPACE"))
+	if ns == "" {
+		if raw, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
+			ns = strings.TrimSpace(string(raw))
+		}
+	}
+	if ns == "" {
+		ns = "easy"
+	}
+	sa := strings.TrimSpace(os.Getenv("EASYPANEL_SERVICE_ACCOUNT"))
+	if sa == "" {
+		sa = strings.TrimSpace(os.Getenv("POD_SERVICE_ACCOUNT"))
+	}
+	if sa == "" {
+		sa = "easypanel"
+	}
+	return ns + ":" + sa
 }
 
 // RewriteKubePrometheusRenderedImages 将 helm template 输出中的常见公网镜像前缀改写为 DaoCloud 加速（与 ingress 清单改写思路一致）。
@@ -256,6 +361,9 @@ func InstallKubePrometheusStack(ctx context.Context, app *ServerApp, mirror Mani
 	}
 	namespace := firstValidAddonNamespace(opts.Namespace, kubePromStackNamespace)
 	releaseName := firstValidAddonReleaseName(opts.ReleaseName, kubePromStackReleaseName)
+	if err := checkKubePrometheusStackInstallRBAC(ctx, app.K8s()); err != nil {
+		return nil, err
+	}
 
 	workDir, err := os.MkdirTemp("", "easypanel-kps-*")
 	if err != nil {

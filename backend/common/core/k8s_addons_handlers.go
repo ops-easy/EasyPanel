@@ -626,7 +626,7 @@ func handleK8sAddonsKubePrometheusStackInstall(c *gin.Context, app *ServerApp) {
 	defer cancel()
 	res, err := InstallKubePrometheusStack(ctx, app, mirror, cfg, opts)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": FriendlyKubePrometheusStackInstallError(err)})
 		return
 	}
 	verifyCtx, verifyCancel := context.WithTimeout(c.Request.Context(), 16*time.Minute)
