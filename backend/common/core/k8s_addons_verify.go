@@ -200,7 +200,7 @@ func ingressDeploymentNeedsHostNetFix(dep *appsv1.Deployment, wantHTTP, wantHTTP
 }
 
 // RunIngressNginxHostNetworkVerification 单次检查（不含自动修复）。doTCP/doHTTP 在无法解析节点 IP 时会跳过。
-func RunIngressNginxHostNetworkVerification(ctx context.Context, k8s *kubernetes.Clientset, wantHTTP, wantHTTPS int32, doTCP, doHTTP bool) IngressAddonVerification {
+func RunIngressNginxHostNetworkVerification(ctx context.Context, k8s *kubernetes.Clientset, namespace string, wantHTTP, wantHTTPS int32, doTCP, doHTTP bool) IngressAddonVerification {
 	now := time.Now().UTC().Format(time.RFC3339)
 	out := IngressAddonVerification{
 		CheckedAt: now,
@@ -208,7 +208,7 @@ func RunIngressNginxHostNetworkVerification(ctx context.Context, k8s *kubernetes
 		Issues:    nil,
 		Remedies:  nil,
 	}
-	ns := ingressNginxControllerNamespace
+	ns := firstValidAddonNamespace(namespace, ingressNginxControllerNamespace)
 
 	if k8s == nil {
 		out.Issues = append(out.Issues, "Kubernetes 客户端未初始化")
@@ -219,8 +219,8 @@ func RunIngressNginxHostNetworkVerification(ctx context.Context, k8s *kubernetes
 	_, err := k8s.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			out.Checks = append(out.Checks, IngressAddonCheck{Name: "namespace", OK: false, Detail: "ingress-nginx 不存在"})
-			out.Issues = append(out.Issues, "命名空间 ingress-nginx 不存在")
+			out.Checks = append(out.Checks, IngressAddonCheck{Name: "namespace", OK: false, Detail: ns + " 不存在"})
+			out.Issues = append(out.Issues, "命名空间 "+ns+" 不存在")
 			out.Remedies = append(out.Remedies, "清单可能未成功应用或命名空间被删除：请重新执行「安装 / 升级 ingress-nginx」。")
 			return out
 		}
@@ -235,7 +235,7 @@ func RunIngressNginxHostNetworkVerification(ctx context.Context, k8s *kubernetes
 		if apierrors.IsNotFound(err) {
 			out.Checks = append(out.Checks, IngressAddonCheck{Name: "deployment", OK: false, Detail: "未找到 ingress-nginx-controller"})
 			out.Issues = append(out.Issues, "未找到 Deployment ingress-nginx-controller")
-			out.Remedies = append(out.Remedies, "等待资源创建完成，或重新安装；可用 kubectl get deploy -n ingress-nginx 查看。")
+			out.Remedies = append(out.Remedies, "等待资源创建完成，或重新安装；可用 kubectl get deploy -n "+ns+" 查看。")
 			return out
 		}
 		out.Checks = append(out.Checks, IngressAddonCheck{Name: "deployment", OK: false, Detail: err.Error()})
@@ -290,7 +290,7 @@ func RunIngressNginxHostNetworkVerification(ctx context.Context, k8s *kubernetes
 	})
 	if !rolloutOK {
 		out.Issues = append(out.Issues, "Deployment 尚未完成就绪滚动（Ready/Available 副本不足或 Generation 未观测）")
-		out.Remedies = append(out.Remedies, "执行 kubectl describe deploy -n ingress-nginx ingress-nginx-controller 与 kubectl get pods -n ingress-nginx 查看原因。")
+		out.Remedies = append(out.Remedies, "执行 kubectl describe deploy -n "+ns+" ingress-nginx-controller 与 kubectl get pods -n "+ns+" 查看原因。")
 	}
 
 	list, err := k8s.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{LabelSelector: ingressControllerPodLabelKey})
@@ -327,12 +327,12 @@ func RunIngressNginxHostNetworkVerification(ctx context.Context, k8s *kubernetes
 		})
 		if !allHostNet {
 			out.Issues = append(out.Issues, "部分控制器 Pod 未使用 hostNetwork（与 Deployment 不一致时多为旧 Pod）")
-			out.Remedies = append(out.Remedies, "删除控制器 Pod 使其按新模板重建：kubectl delete pod -n ingress-nginx -l app.kubernetes.io/component=controller")
+			out.Remedies = append(out.Remedies, "删除控制器 Pod 使其按新模板重建：kubectl delete pod -n "+ns+" -l app.kubernetes.io/component=controller")
 		}
 		if !allReady {
 			out.Issues = append(out.Issues, "控制器 Pod 未全部 Running+Ready")
 			out.Remedies = append(out.Remedies, "hostNetwork 下若 80/443 被节点其它进程占用会导致 CrashLoop：在节点执行 ss -lntp | grep ':80\\b' 或对应端口排查。")
-			out.Remedies = append(out.Remedies, "查看事件：kubectl describe pod -n ingress-nginx -l app.kubernetes.io/component=controller")
+			out.Remedies = append(out.Remedies, "查看事件：kubectl describe pod -n "+ns+" -l app.kubernetes.io/component=controller")
 		}
 
 		if doTCP || doHTTP {
@@ -404,7 +404,7 @@ func RunIngressNginxHostNetworkVerification(ctx context.Context, k8s *kubernetes
 }
 
 // WaitVerifyIngressNginxHostNetwork 轮询验证；remediate 时在发现模板配置漂移时重复调用 FinishIngressNginxHostNetwork。
-func WaitVerifyIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clientset, wantHTTP, wantHTTPS int32, opts IngressVerifyOpts) IngressAddonVerification {
+func WaitVerifyIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clientset, namespace string, wantHTTP, wantHTTPS int32, opts IngressVerifyOpts) IngressAddonVerification {
 	if opts.PollEvery <= 0 {
 		opts.PollEvery = 12 * time.Second
 	}
@@ -412,13 +412,14 @@ func WaitVerifyIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clie
 		opts.MaxRepairAttempts = 10
 	}
 	start := time.Now()
+	ns := firstValidAddonNamespace(namespace, ingressNginxControllerNamespace)
 	repairs := 0
 	var auto []string
 	var last IngressAddonVerification
 	snapshot := func() IngressAddonVerification {
 		snapCtx, snapCancel := context.WithTimeout(context.Background(), 25*time.Second)
 		defer snapCancel()
-		return RunIngressNginxHostNetworkVerification(snapCtx, k8s, wantHTTP, wantHTTPS, opts.ProbeTCP, opts.ProbeHTTP)
+		return RunIngressNginxHostNetworkVerification(snapCtx, k8s, ns, wantHTTP, wantHTTPS, opts.ProbeTCP, opts.ProbeHTTP)
 	}
 	for {
 		if err := ctx.Err(); err != nil {
@@ -434,9 +435,9 @@ func WaitVerifyIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clie
 		}
 
 		if opts.Remediate && repairs < opts.MaxRepairAttempts && k8s != nil {
-			dep, err := k8s.AppsV1().Deployments(ingressNginxControllerNamespace).Get(ctx, ingressNginxControllerDeployName, metav1.GetOptions{})
+			dep, err := k8s.AppsV1().Deployments(ns).Get(ctx, ingressNginxControllerDeployName, metav1.GetOptions{})
 			if err == nil && dep != nil && ingressDeploymentNeedsHostNetFix(dep, wantHTTP, wantHTTPS) {
-				_ = FinishIngressNginxHostNetwork(ctx, k8s, wantHTTP, wantHTTPS, nil)
+				_ = FinishIngressNginxHostNetwork(ctx, k8s, ns, wantHTTP, wantHTTPS, nil)
 				repairs++
 				auto = append(auto, fmt.Sprintf("已自动重新应用 hostNetwork/端口/Service（第 %d 次）", repairs))
 				select {
@@ -454,7 +455,7 @@ func WaitVerifyIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clie
 			}
 		}
 
-		last = RunIngressNginxHostNetworkVerification(ctx, k8s, wantHTTP, wantHTTPS, opts.ProbeTCP, opts.ProbeHTTP)
+		last = RunIngressNginxHostNetworkVerification(ctx, k8s, ns, wantHTTP, wantHTTPS, opts.ProbeTCP, opts.ProbeHTTP)
 		last.WaitedSeconds = int(time.Since(start).Seconds())
 		last.AutoRepairs = append([]string(nil), auto...)
 		if last.OK {

@@ -175,6 +175,18 @@ type RuntimeSettings struct {
 	IngressNginxHostHTTPSPort int `json:"ingressNginxHostHttpsPort,omitempty"`
 	// 控制器固定调度到的 Node 名称（kubectl get nodes 的 NAME）；空表示安装时不默认固定（仍可页面上指定）
 	IngressNginxControllerNodeName string `json:"ingressNginxControllerNodeName,omitempty"`
+	// ingress-nginx 一键安装目标命名空间；空表示默认 ingress-nginx
+	IngressNginxNamespace string `json:"ingressNginxNamespace,omitempty"`
+	// kube-prometheus-stack 一键安装目标命名空间与 Helm release；空表示 easypanel-monitoring / kbt-prom
+	KubePrometheusStackNamespace   string `json:"kubePrometheusStackNamespace,omitempty"`
+	KubePrometheusStackReleaseName string `json:"kubePrometheusStackReleaseName,omitempty"`
+	// VictoriaLogs 一键安装目标命名空间与 Helm release；空表示 easypanel-logging / eplogs
+	VictoriaLogsNamespace   string `json:"victoriaLogsNamespace,omitempty"`
+	VictoriaLogsReleaseName string `json:"victoriaLogsReleaseName,omitempty"`
+	// metrics-server / Kubernetes Dashboard 一键安装目标；空表示 kube-system / kubernetes-dashboard
+	MetricsServerNamespace         string `json:"metricsServerNamespace,omitempty"`
+	KubernetesDashboardNamespace   string `json:"kubernetesDashboardNamespace,omitempty"`
+	KubernetesDashboardReleaseName string `json:"kubernetesDashboardReleaseName,omitempty"`
 	// 一键安装拉取 YAML：auto | ghproxy_preferred | direct | ghproxy_only（国内建议 ghproxy_preferred）
 	K8sAddonsManifestMirror string `json:"k8sAddonsManifestMirror,omitempty"`
 	// vCenter 虚拟机列表 Redis 缓存 TTL（秒）

@@ -55,6 +55,7 @@ func handleGetRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 		if out.VictoriaLogsRetentionDays <= 0 {
 			out.VictoriaLogsRetentionDays = 180
 		}
+		fillRuntimeK8sAddonDefaults(&out)
 		c.JSON(http.StatusOK, out)
 	}
 }
@@ -77,6 +78,10 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 		body.BaotaSSLPemContent = strings.TrimSpace(body.BaotaSSLPemContent)
 		body.BaotaSSLKeyContent = strings.TrimSpace(body.BaotaSSLKeyContent)
 		body.IngressNginxControllerNodeName = strings.TrimSpace(body.IngressNginxControllerNodeName)
+		if err := normalizeRuntimeK8sAddonDefaults(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		body.VictoriaLogsURL = strings.TrimSpace(body.VictoriaLogsURL)
 		body.VMLogVectorDownloadBaseURL = vmShipperNormalizeVectorDownloadBaseURL(strings.TrimSpace(body.VMLogVectorDownloadBaseURL))
 		if body.VictoriaLogsURL != "" {

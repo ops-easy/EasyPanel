@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { Checkbox } from "@/shared/ui/checkbox";
+import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Progress } from "@/shared/ui/progress";
 import {
@@ -58,6 +59,7 @@ type MetricsServerAddonSlice = {
 
 type KubernetesDashboardAddonSlice = {
   namespace?: string;
+  releaseName?: string;
   namespaceExists?: boolean;
   installed?: boolean;
   uiPodsLikelyReady?: boolean;
@@ -88,9 +90,9 @@ function isMirrorMode(v: string): v is MirrorMode {
 }
 
 const MANUAL_STEPS = `# 手动安装（国内镜像思路与平台一键安装一致）
-# 1) metrics-server v0.7.2，下载后替换 registry.k8s.io → m.daocloud.io/registry.k8s.io
+# 1) metrics-server latest/components.yaml，下载后替换 registry.k8s.io → m.daocloud.io/registry.k8s.io
 curl -fsSL -o components.yaml \\
-  "https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml"
+  "https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml"
 sed -i.bak 's|registry.k8s.io/|m.daocloud.io/registry.k8s.io/|g' components.yaml
 kubectl apply -f components.yaml
 # 自签 kubelet 证书环境常见需要：
@@ -150,6 +152,9 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
   }, [cfg?.k8sAddonsManifestMirror]);
 
   const [kubeletInsecureTls, setKubeletInsecureTls] = useState(true);
+  const [metricsServerNamespace, setMetricsServerNamespace] = useState("kube-system");
+  const [dashboardNamespace, setDashboardNamespace] = useState("kubernetes-dashboard");
+  const [dashboardReleaseName, setDashboardReleaseName] = useState("kubernetes-dashboard");
   const [installOpen, setInstallOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState("");
@@ -183,6 +188,22 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
     return () => clearInterval(id);
   }, [busy, verifyBusy]);
 
+  useEffect(() => {
+    const msNs = String(st?.metricsServer?.namespace || cfg?.metricsServerNamespace || "").trim();
+    if (msNs) setMetricsServerNamespace(msNs);
+    const dashNs = String(st?.kubernetesDashboard?.namespace || cfg?.kubernetesDashboardNamespace || "").trim();
+    if (dashNs) setDashboardNamespace(dashNs);
+    const dashRel = String(st?.kubernetesDashboard?.releaseName || cfg?.kubernetesDashboardReleaseName || "").trim();
+    if (dashRel) setDashboardReleaseName(dashRel);
+  }, [
+    cfg?.kubernetesDashboardNamespace,
+    cfg?.kubernetesDashboardReleaseName,
+    cfg?.metricsServerNamespace,
+    st?.kubernetesDashboard?.namespace,
+    st?.kubernetesDashboard?.releaseName,
+    st?.metricsServer?.namespace,
+  ]);
+
   const runInstall = useCallback(async () => {
     setInstallOpen(false);
     setBusy(true);
@@ -194,6 +215,9 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
         loginTokenHint?: string;
         prometheusHint?: string;
       }>("/api/k8s/addons/dashboard-monitoring/install", {
+        metricsServerNamespace,
+        dashboardNamespace,
+        dashboardReleaseName,
         manifestMirror,
         kubeletInsecureTls,
       });
@@ -212,14 +236,16 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
       setBusy(false);
       setPhase("");
     }
-  }, [kubeletInsecureTls, manifestMirror, qc]);
+  }, [dashboardNamespace, dashboardReleaseName, kubeletInsecureTls, manifestMirror, metricsServerNamespace, qc]);
 
   const runVerify = useCallback(async () => {
     setVerifyBusy(true);
     setPhase("正在检查 metrics-server 与 Dashboard Deployment 就绪情况…");
     try {
       const res = await apiGetJson<{ verification: IngressAddonVerification }>(
-        "/api/k8s/addons/dashboard-monitoring/verify?maxWaitSec=180",
+        `/api/k8s/addons/dashboard-monitoring/verify?maxWaitSec=180&metricsServerNamespace=${encodeURIComponent(
+          metricsServerNamespace,
+        )}&dashboardNamespace=${encodeURIComponent(dashboardNamespace)}`,
       );
       setVerification(res.verification);
       if (res.verification.ok) {
@@ -234,7 +260,7 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
       setVerifyBusy(false);
       setPhase("");
     }
-  }, [qc]);
+  }, [dashboardNamespace, metricsServerNamespace, qc]);
 
   const ms = st?.metricsServer;
   const kd = st?.kubernetesDashboard;
@@ -244,7 +270,7 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
       <CardHeader className="pb-2">
         <CardTitle className="text-lg text-slate-900">Kubernetes Dashboard · metrics-server（可选 Web UI · 国内镜像）</CardTitle>
         <CardDescription className="text-sm text-slate-600">
-          一键安装官方 <strong className="text-slate-800">metrics-server v0.7.2</strong> 与{" "}
+          一键安装官方 <strong className="text-slate-800">metrics-server latest/components.yaml</strong> 与{" "}
           <strong className="text-slate-800">Dashboard 2.7（recommended 清单）</strong>：清单下载策略与上方 ingress 相同（jsDelivr / ghproxy）；容器镜像将{" "}
           <code className="rounded bg-white px-0.5 text-[11px]">registry.k8s.io</code> 改写为{" "}
           <code className="rounded bg-white px-0.5 text-[11px]">m.daocloud.io/registry.k8s.io</code>，将{" "}
@@ -384,6 +410,36 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
 
         {isAdmin ? (
           <div className="space-y-3 rounded-xl border-2 border-violet-200/90 bg-white/90 p-4 shadow-sm">
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">metrics-server namespace</Label>
+                <Input
+                  className="h-9 font-mono text-xs"
+                  value={metricsServerNamespace}
+                  onChange={(e) => setMetricsServerNamespace(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Dashboard namespace</Label>
+                <Input
+                  className="h-9 font-mono text-xs"
+                  value={dashboardNamespace}
+                  onChange={(e) => setDashboardNamespace(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Dashboard release（标识）</Label>
+                <Input
+                  className="h-9 font-mono text-xs"
+                  value={dashboardReleaseName}
+                  onChange={(e) => setDashboardReleaseName(e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="text-[11px] leading-relaxed text-slate-600">
+              metrics-server 只提供资源用量 API（kubectl top / Dashboard 用量条），Dashboard 是可选 Web UI；平台图表仍使用 Prometheus
+              或 VictoriaMetrics vmselect。当前安装保留 Dashboard 2.7 recommended.yaml 兼容路径，metrics-server 使用官方 latest/components.yaml。
+            </p>
             <div className="flex items-start gap-3">
               <Checkbox
                 id="kubelet-insecure-tls"

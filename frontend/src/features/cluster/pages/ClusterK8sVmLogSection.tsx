@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { APP_CONFIG_QUERY_KEY } from "@/hooks/use-app-config";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardCopy, Loader2, Save } from "lucide-react";
-import { apiGetJson, apiPutJson, type RuntimeSettingsDTO } from "@/lib/api";
+import { apiGetJson, apiPostJson, apiPutJson, type RuntimeSettingsDTO } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -34,6 +34,29 @@ type VmLogNamespacesRes = {
   namespaces: string[];
 };
 
+type VmLogAddonStatus = {
+  victoriaLogs?: {
+    namespace?: string;
+    releaseName?: string;
+    serviceName?: string;
+    internalUrl?: string;
+    installed?: boolean;
+    statefulSetReady?: boolean;
+    runtimeUrlHint?: string;
+    collectorInstallHint?: string;
+    datasourceBoundaryHint?: string;
+  };
+};
+
+type VmLogAddonVerification = {
+  ok: boolean;
+  checkedAt?: string;
+  checks?: { name: string; ok: boolean; detail?: string }[];
+  issues?: string[];
+  remedies?: string[];
+  waitedSeconds?: number;
+};
+
 const ClusterK8sVmLogSection: React.FC = () => {
   const { status } = useAuth();
   const isAdmin = status?.role === "admin";
@@ -42,6 +65,16 @@ const ClusterK8sVmLogSection: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [pickNs, setPickNs] = useState<string>("");
+  const [installing, setInstalling] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [installNamespace, setInstallNamespace] = useState("easypanel-logging");
+  const [installRelease, setInstallRelease] = useState("eplogs");
+  const [installRetentionDays, setInstallRetentionDays] = useState(180);
+  const [installStorageClassName, setInstallStorageClassName] = useState("");
+  const [installStorageSize, setInstallStorageSize] = useState("20Gi");
+  const [collectorEnabled, setCollectorEnabled] = useState(true);
+  const [autoWriteRuntime, setAutoWriteRuntime] = useState(true);
+  const [verification, setVerification] = useState<VmLogAddonVerification | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,8 +106,22 @@ const ClusterK8sVmLogSection: React.FC = () => {
     retry: 1,
   });
 
+  const addonsQ = useQuery({
+    queryKey: ["k8s-addons-status", "victoria-logs"],
+    queryFn: ({ signal }) => apiGetJson<VmLogAddonStatus>("/api/k8s/addons/status", { signal }),
+    retry: 1,
+    refetchInterval: 30_000,
+  });
+
   const victoriaUrl = String(form?.victoriaLogsUrl ?? "").trim();
   const retentionDays = Number(form?.victoriaLogsRetentionDays ?? 180) || 180;
+
+  useEffect(() => {
+    const vl = addonsQ.data?.victoriaLogs;
+    if (vl?.namespace) setInstallNamespace(vl.namespace);
+    if (vl?.releaseName) setInstallRelease(vl.releaseName);
+    if (retentionDays > 0) setInstallRetentionDays(retentionDays);
+  }, [addonsQ.data?.victoriaLogs, retentionDays]);
 
   const onSave = async () => {
     if (!form || !isAdmin) return;
@@ -108,6 +155,71 @@ const ClusterK8sVmLogSection: React.FC = () => {
     toast.message("已填入地址，请点击保存");
   };
 
+  const installVictoriaLogs = async () => {
+    if (!isAdmin) return;
+    setInstalling(true);
+    setVerification(null);
+    try {
+      const res = await apiPostJson<{
+        message?: string;
+        victoriaLogsUrl?: string;
+        runtimePatched?: boolean;
+        patchError?: string;
+        verification?: VmLogAddonVerification;
+      }>("/api/k8s/addons/victoria-logs/install", {
+        namespace: installNamespace,
+        releaseName: installRelease,
+        retentionDays: installRetentionDays,
+        storageClassName: installStorageClassName,
+        storageSize: installStorageSize,
+        collectorEnabled,
+        autoWriteRuntime,
+      });
+      if (res.verification) setVerification(res.verification);
+      if (res.victoriaLogsUrl) setForm((prev) => (prev ? { ...prev, victoriaLogsUrl: res.victoriaLogsUrl } : prev));
+      if (res.runtimePatched && res.victoriaLogsUrl) {
+        setForm((prev) =>
+          prev
+            ? { ...prev, victoriaLogsUrl: res.victoriaLogsUrl, victoriaLogsRetentionDays: installRetentionDays }
+            : prev,
+        );
+      }
+      const msg = String(res.message || "").trim() || "VictoriaLogs 部署流程已完成";
+      if (res.patchError || (res.verification && !res.verification.ok)) toast.warning(msg);
+      else toast.success(msg);
+      void qc.invalidateQueries({ queryKey: ["k8s-addons-status"] });
+      void qc.invalidateQueries({ queryKey: ["ops-vmlog-status"] });
+      void qc.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
+      await load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setInstalling(false);
+    }
+  };
+
+  const verifyVictoriaLogs = async () => {
+    setVerifying(true);
+    try {
+      const qs = new URLSearchParams({
+        namespace: installNamespace,
+        releaseName: installRelease,
+        maxWaitSec: "180",
+      });
+      const res = await apiGetJson<{ verification: VmLogAddonVerification }>(
+        `/api/k8s/addons/victoria-logs/verify?${qs.toString()}`,
+      );
+      setVerification(res.verification);
+      if (res.verification.ok) toast.success("VictoriaLogs 自检通过");
+      else toast.warning("VictoriaLogs 自检未完全通过，请查看报告");
+      void qc.invalidateQueries({ queryKey: ["k8s-addons-status"] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const namespaces = nsQ.data?.namespaces ?? [];
 
   return (
@@ -128,6 +240,95 @@ const ClusterK8sVmLogSection: React.FC = () => {
           </div>
         ) : (
           <>
+            <div className="rounded-lg border border-cyan-200/90 bg-cyan-50/60 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-semibold text-cyan-950">一键部署 VictoriaLogs</p>
+                {addonsQ.data?.victoriaLogs?.installed ? (
+                  <span className="rounded bg-emerald-600 px-2 py-0.5 text-[11px] font-medium text-white">已就绪</span>
+                ) : (
+                  <span className="rounded bg-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-700">未就绪</span>
+                )}
+              </div>
+              <p className="mt-1 text-[11px] leading-relaxed text-cyan-950/90">
+                VictoriaLogs 是日志系统，使用 LogsQL / VMLog 查询；Prometheus / VictoriaMetrics vmselect 是指标系统，不是同一个入口。
+                单库 chart 负责存储，collector chart 负责采集 Kubernetes 容器日志。
+              </p>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">目标命名空间</Label>
+                  <Input className="font-mono text-xs" value={installNamespace} disabled={!isAdmin} onChange={(e) => setInstallNamespace(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Helm release</Label>
+                  <Input className="font-mono text-xs" value={installRelease} disabled={!isAdmin} onChange={(e) => setInstallRelease(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">retentionDays</Label>
+                  <Input
+                    type="number"
+                    min={7}
+                    max={730}
+                    className="font-mono text-xs"
+                    value={installRetentionDays}
+                    disabled={!isAdmin}
+                    onChange={(e) => setInstallRetentionDays(parseInt(e.target.value, 10) || 180)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">PVC 大小</Label>
+                  <Input className="font-mono text-xs" value={installStorageSize} disabled={!isAdmin} onChange={(e) => setInstallStorageSize(e.target.value)} placeholder="20Gi" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">StorageClass（可选）</Label>
+                  <Input
+                    className="font-mono text-xs"
+                    value={installStorageClassName}
+                    disabled={!isAdmin}
+                    onChange={(e) => setInstallStorageClassName(e.target.value)}
+                    placeholder="留空使用集群默认"
+                  />
+                </div>
+                <div className="space-y-2 text-xs text-slate-700">
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={collectorEnabled} disabled={!isAdmin} onChange={(e) => setCollectorEnabled(e.target.checked)} />
+                    部署 victoria-logs-collector 采集容器日志
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={autoWriteRuntime} disabled={!isAdmin} onChange={(e) => setAutoWriteRuntime(e.target.checked)} />
+                    安装后自动写入 victoriaLogsUrl
+                  </label>
+                </div>
+              </div>
+              {addonsQ.data?.victoriaLogs?.internalUrl ? (
+                <p className="mt-2 break-all font-mono text-[11px] text-cyan-900">{addonsQ.data.victoriaLogs.internalUrl}</p>
+              ) : null}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button type="button" disabled={!isAdmin || installing || verifying} onClick={() => void installVictoriaLogs()}>
+                  {installing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  安装 / 升级 VictoriaLogs
+                </Button>
+                <Button type="button" variant="outline" disabled={verifying || installing} onClick={() => void verifyVictoriaLogs()}>
+                  {verifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  自检
+                </Button>
+              </div>
+              {verification ? (
+                <div className="mt-3 rounded-md border border-white bg-white/80 px-3 py-2 text-[11px]">
+                  <p className={verification.ok ? "font-medium text-emerald-700" : "font-medium text-amber-800"}>
+                    {verification.ok ? "自检通过" : "自检未完全通过"}
+                    {verification.waitedSeconds ? ` · ${verification.waitedSeconds}s` : ""}
+                  </p>
+                  {verification.checks?.map((c) => (
+                    <p key={c.name} className="mt-1">
+                      <span className={c.ok ? "text-emerald-700" : "text-red-700"}>{c.ok ? "OK" : "FAIL"}</span>{" "}
+                      <span className="font-mono">{c.name}</span>
+                      {c.detail ? <span className="ml-1 text-slate-600">{c.detail}</span> : null}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
             <div className="space-y-2">
               <Label className="text-xs">victoriaLogsUrl（HTTP 根地址，无路径尾缀）</Label>
               <Input

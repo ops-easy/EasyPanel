@@ -16,6 +16,8 @@ import (
 
 type k8sAddonsIngressBody struct {
 	IngressManifestURL string `json:"ingressManifestUrl"`
+	Namespace          string `json:"namespace"`
+	IngressClassName   string `json:"ingressClassName"`
 	HostHTTPPort       int    `json:"hostHttpPort"`
 	HostHTTPSPort      int    `json:"hostHttpsPort"`
 	ManifestMirror     string `json:"manifestMirror"`
@@ -23,6 +25,7 @@ type k8sAddonsIngressBody struct {
 }
 
 type k8sAddonsIngressControllerNodeBody struct {
+	Namespace          string `json:"namespace"`
 	ControllerNodeName string `json:"controllerNodeName"`
 }
 
@@ -33,6 +36,28 @@ func resolveManifestMirror(bodyMirror string, cfg Config) ManifestMirrorMode {
 	return ParseManifestMirrorMode(cfg.K8sAddonsManifestMirror)
 }
 
+func ingressAddonNamespaceFromBody(body k8sAddonsIngressBody, rs *RuntimeSettings) (string, error) {
+	ns := strings.TrimSpace(body.Namespace)
+	if ns == "" {
+		ns = effectiveIngressNginxNamespace(rs)
+	}
+	if err := validateK8sAddonNamespace(ns); err != nil {
+		return "", err
+	}
+	return ns, nil
+}
+
+func ingressAddonNamespaceFromQuery(c *gin.Context, rs *RuntimeSettings) (string, error) {
+	ns := strings.TrimSpace(c.Query("namespace"))
+	if ns == "" {
+		ns = effectiveIngressNginxNamespace(rs)
+	}
+	if err := validateK8sAddonNamespace(ns); err != nil {
+		return "", err
+	}
+	return ns, nil
+}
+
 func handleK8sAddonsStatus(c *gin.Context, app *ServerApp) {
 	if !GuardK8s(c, app.K8s()) {
 		return
@@ -40,7 +65,7 @@ func handleK8sAddonsStatus(c *gin.Context, app *ServerApp) {
 	k8s := app.K8s()
 	cfg := app.Cfg()
 	ctx := c.Request.Context()
-	nsIng := "ingress-nginx"
+	nsIng := effectiveIngressNginxNamespace(app.Runtime())
 
 	ingNsExists := false
 	if _, err := k8s.CoreV1().Namespaces().Get(ctx, nsIng, metav1.GetOptions{}); err == nil {
@@ -108,8 +133,8 @@ func handleK8sAddonsStatus(c *gin.Context, app *ServerApp) {
 	wantNode := effectiveIngressNginxControllerNodeName(app.Runtime(), cfg)
 	nodeMatch := (wantNode == "" && depPinnedNode == "") || (wantNode != "" && depPinnedNode == wantNode)
 
-	dashStack := K8sDashboardMonitoringStackStatus(ctx, k8s)
-	kps := KubePrometheusStackAddonStatus(ctx, k8s, app.Cfg())
+	dashStack := K8sDashboardMonitoringStackStatus(ctx, k8s, app.Runtime())
+	kps := KubePrometheusStackAddonStatus(ctx, k8s, app.Cfg(), app.Runtime())
 	payload := gin.H{
 		"checkedAt": time.Now().UTC().Format(time.RFC3339),
 		"manifestMirror": gin.H{
@@ -144,6 +169,7 @@ func handleK8sAddonsStatus(c *gin.Context, app *ServerApp) {
 		payload[k] = v
 	}
 	payload["kubePrometheusStack"] = kps
+	payload["victoriaLogs"] = VictoriaLogsAddonStatus(ctx, k8s, app.Runtime(), cfg)
 	c.JSON(http.StatusOK, payload)
 }
 
@@ -154,6 +180,11 @@ func handleK8sAddonsIngressNginxInstall(c *gin.Context, app *ServerApp) {
 	var body k8sAddonsIngressBody
 	_ = c.ShouldBindJSON(&body)
 	cfg := app.Cfg()
+	ns, err := ingressAddonNamespaceFromBody(body, app.Runtime())
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace 无效: " + err.Error()})
+		return
+	}
 	manifestURL := strings.TrimSpace(body.IngressManifestURL)
 	if manifestURL == "" {
 		manifestURL = strings.TrimSpace(cfg.IngressNginxManifestURL)
@@ -187,21 +218,21 @@ func handleK8sAddonsIngressNginxInstall(c *gin.Context, app *ServerApp) {
 			return
 		}
 	}
-	if err := InstallIngressNginxHostNetwork(ctx, app.K8s(), app.K8sREST(), cfg, manifestURL, mirror, httpP, httpsP, nodePin); err != nil {
+	if err := InstallIngressNginxHostNetwork(ctx, app.K8s(), app.K8sREST(), cfg, manifestURL, mirror, ns, httpP, httpsP, nodePin); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	verifyCtx, verifyCancel := context.WithTimeout(c.Request.Context(), 8*time.Minute)
 	defer verifyCancel()
-	verification := WaitVerifyIngressNginxHostNetwork(verifyCtx, app.K8s(), httpP, httpsP, IngressVerifyOpts{
+	verification := WaitVerifyIngressNginxHostNetwork(verifyCtx, app.K8s(), ns, httpP, httpsP, IngressVerifyOpts{
 		PollEvery:         10 * time.Second,
 		Remediate:         true,
 		MaxRepairAttempts: 12,
 		ProbeTCP:          true,
 		ProbeHTTP:         true,
 	})
-	SetAuditDetail(c, fmt.Sprintf("安装 ingress-nginx hostNetwork http=%d https=%d node=%q verify_ok=%v", httpP, httpsP, nodeName, verification.OK))
-	msg := fmt.Sprintf("ingress-nginx 已安装，控制器已设为 hostNetwork（HTTP %d / HTTPS %d）", httpP, httpsP)
+	SetAuditDetail(c, fmt.Sprintf("安装 ingress-nginx namespace=%s hostNetwork http=%d https=%d node=%q verify_ok=%v", ns, httpP, httpsP, nodeName, verification.OK))
+	msg := fmt.Sprintf("ingress-nginx 已安装到命名空间 %s，控制器已设为 hostNetwork（HTTP %d / HTTPS %d）", ns, httpP, httpsP)
 	if nodeName != "" {
 		msg += fmt.Sprintf("，固定节点 %s", nodeName)
 	}
@@ -212,6 +243,7 @@ func handleK8sAddonsIngressNginxInstall(c *gin.Context, app *ServerApp) {
 		"ok":                            true,
 		"hostHttpPort":                  httpP,
 		"hostHttpsPort":                 httpsP,
+		"namespace":                     ns,
 		"message":                       msg,
 		"manifestMirror":                K8sAddonsManifestMirrorCanonical(mirror),
 		"ingressNginxK8sRegistryMirror": !cfg.IngressNginxSkipK8sRegistryMirror,
@@ -231,14 +263,23 @@ func handleK8sAddonsIngressControllerNode(c *gin.Context, app *ServerApp) {
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 4*time.Minute)
 	defer cancel()
+	ns := strings.TrimSpace(body.Namespace)
+	if ns == "" {
+		ns = effectiveIngressNginxNamespace(app.Runtime())
+	}
+	if err := validateK8sAddonNamespace(ns); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace 无效: " + err.Error()})
+		return
+	}
 	name := strings.TrimSpace(body.ControllerNodeName)
-	if err := PatchIngressNginxControllerNode(ctx, app.K8s(), name); err != nil {
+	if err := PatchIngressNginxControllerNode(ctx, app.K8s(), ns, name); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	SetAuditDetail(c, fmt.Sprintf("ingress-nginx 控制器调度节点: %q", name))
+	SetAuditDetail(c, fmt.Sprintf("ingress-nginx namespace=%s 控制器调度节点: %q", ns, name))
 	c.JSON(http.StatusOK, gin.H{
 		"ok":                 true,
+		"namespace":          ns,
 		"controllerNodeName": name,
 		"message": func() string {
 			if name == "" {
@@ -253,14 +294,21 @@ func handleK8sAddonsIngressNginxUninstall(c *gin.Context, app *ServerApp) {
 	if !GuardK8s(c, app.K8s()) {
 		return
 	}
+	var body k8sAddonsIngressBody
+	_ = c.ShouldBindJSON(&body)
+	ns, err := ingressAddonNamespaceFromBody(body, app.Runtime())
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace 无效: " + err.Error()})
+		return
+	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 8*time.Minute)
 	defer cancel()
-	if err := UninstallKubernetesNamespace(ctx, app.K8s(), "ingress-nginx"); err != nil {
+	if err := UninstallKubernetesNamespace(ctx, app.K8s(), ns); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	SetAuditDetail(c, "卸载 ingress-nginx：删除命名空间 ingress-nginx")
-	c.JSON(http.StatusOK, gin.H{"ok": true, "message": "已卸载 ingress-nginx（ingress-nginx 及相关 Webhook）"})
+	SetAuditDetail(c, "卸载 ingress-nginx：删除命名空间 "+ns)
+	c.JSON(http.StatusOK, gin.H{"ok": true, "namespace": ns, "message": "已卸载 ingress-nginx（" + ns + " 及相关 Webhook）"})
 }
 
 func handleK8sAddonsIngressHostPorts(c *gin.Context, app *ServerApp) {
@@ -273,6 +321,11 @@ func handleK8sAddonsIngressHostPorts(c *gin.Context, app *ServerApp) {
 		return
 	}
 	cfg := app.Cfg()
+	ns, err := ingressAddonNamespaceFromBody(body, app.Runtime())
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace 无效: " + err.Error()})
+		return
+	}
 	httpP := int32(body.HostHTTPPort)
 	if httpP <= 0 {
 		httpP = effectiveIngressNginxHostHTTPPort(app.Runtime(), cfg)
@@ -287,13 +340,13 @@ func handleK8sAddonsIngressHostPorts(c *gin.Context, app *ServerApp) {
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Minute)
 	defer cancel()
-	if err := PatchIngressNginxHostPorts(ctx, app.K8s(), httpP, httpsP); err != nil {
+	if err := PatchIngressNginxHostPorts(ctx, app.K8s(), ns, httpP, httpsP); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	verifyCtx, verifyCancel := context.WithTimeout(c.Request.Context(), 3*time.Minute)
 	defer verifyCancel()
-	verification := WaitVerifyIngressNginxHostNetwork(verifyCtx, app.K8s(), httpP, httpsP, IngressVerifyOpts{
+	verification := WaitVerifyIngressNginxHostNetwork(verifyCtx, app.K8s(), ns, httpP, httpsP, IngressVerifyOpts{
 		PollEvery:         8 * time.Second,
 		Remediate:         true,
 		MaxRepairAttempts: 6,
@@ -302,6 +355,7 @@ func handleK8sAddonsIngressHostPorts(c *gin.Context, app *ServerApp) {
 	})
 	c.JSON(http.StatusOK, gin.H{
 		"ok":            true,
+		"namespace":     ns,
 		"hostHttpPort":  httpP,
 		"hostHttpsPort": httpsP,
 		"verification":  verification,
@@ -313,6 +367,11 @@ func handleK8sAddonsIngressVerify(c *gin.Context, app *ServerApp) {
 		return
 	}
 	cfg := app.Cfg()
+	ns, err := ingressAddonNamespaceFromQuery(c, app.Runtime())
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace 无效: " + err.Error()})
+		return
+	}
 	maxSec, _ := strconv.Atoi(c.DefaultQuery("maxWaitSec", "0"))
 	if maxSec < 0 {
 		maxSec = 0
@@ -339,19 +398,19 @@ func handleK8sAddonsIngressVerify(c *gin.Context, app *ServerApp) {
 	if maxSec <= 0 {
 		reqCtx := c.Request.Context()
 		if remediate && app.K8s() != nil {
-			dep, err := app.K8s().AppsV1().Deployments(ingressNginxControllerNamespace).Get(reqCtx, ingressNginxControllerDeployName, metav1.GetOptions{})
+			dep, err := app.K8s().AppsV1().Deployments(ns).Get(reqCtx, ingressNginxControllerDeployName, metav1.GetOptions{})
 			if err == nil && dep != nil && ingressDeploymentNeedsHostNetFix(dep, httpP, httpsP) {
-				_ = FinishIngressNginxHostNetwork(reqCtx, app.K8s(), httpP, httpsP, nil)
+				_ = FinishIngressNginxHostNetwork(reqCtx, app.K8s(), ns, httpP, httpsP, nil)
 			}
 		}
-		rep := RunIngressNginxHostNetworkVerification(reqCtx, app.K8s(), httpP, httpsP, probeTCP, probeHTTP)
+		rep := RunIngressNginxHostNetworkVerification(reqCtx, app.K8s(), ns, httpP, httpsP, probeTCP, probeHTTP)
 		c.JSON(http.StatusOK, gin.H{"verification": rep})
 		return
 	}
 
 	vctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(maxSec)*time.Second)
 	defer cancel()
-	rep := WaitVerifyIngressNginxHostNetwork(vctx, app.K8s(), httpP, httpsP, IngressVerifyOpts{
+	rep := WaitVerifyIngressNginxHostNetwork(vctx, app.K8s(), ns, httpP, httpsP, IngressVerifyOpts{
 		PollEvery:         10 * time.Second,
 		Remediate:         remediate,
 		MaxRepairAttempts: 15,
@@ -362,8 +421,11 @@ func handleK8sAddonsIngressVerify(c *gin.Context, app *ServerApp) {
 }
 
 type k8sAddonsDashboardMonitoringBody struct {
-	ManifestMirror     string `json:"manifestMirror"`
-	KubeletInsecureTLS *bool  `json:"kubeletInsecureTls"`
+	MetricsServerNamespace string `json:"metricsServerNamespace"`
+	DashboardNamespace     string `json:"dashboardNamespace"`
+	DashboardReleaseName   string `json:"dashboardReleaseName"`
+	ManifestMirror         string `json:"manifestMirror"`
+	KubeletInsecureTLS     *bool  `json:"kubeletInsecureTls"`
 }
 
 func handleK8sAddonsDashboardMonitoringInstall(c *gin.Context, app *ServerApp) {
@@ -373,6 +435,22 @@ func handleK8sAddonsDashboardMonitoringInstall(c *gin.Context, app *ServerApp) {
 	var body k8sAddonsDashboardMonitoringBody
 	_ = c.ShouldBindJSON(&body)
 	cfg := app.Cfg()
+	metricsNS := strings.TrimSpace(body.MetricsServerNamespace)
+	if metricsNS == "" {
+		metricsNS = effectiveMetricsServerNamespace(app.Runtime())
+	}
+	if err := validateK8sAddonNamespace(metricsNS); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "metricsServerNamespace 无效: " + err.Error()})
+		return
+	}
+	dashboardNS := strings.TrimSpace(body.DashboardNamespace)
+	if dashboardNS == "" {
+		dashboardNS = effectiveKubernetesDashboardNamespace(app.Runtime())
+	}
+	if err := validateK8sAddonNamespace(dashboardNS); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "dashboardNamespace 无效: " + err.Error()})
+		return
+	}
 	mirror := resolveManifestMirror(body.ManifestMirror, cfg)
 	kubeTLS := true
 	if body.KubeletInsecureTLS != nil {
@@ -380,31 +458,49 @@ func handleK8sAddonsDashboardMonitoringInstall(c *gin.Context, app *ServerApp) {
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 18*time.Minute)
 	defer cancel()
-	if err := InstallK8sDashboardMonitoringStack(ctx, app.K8s(), app.K8sREST(), cfg, mirror, kubeTLS); err != nil {
+	if err := InstallK8sDashboardMonitoringStack(ctx, app.K8s(), app.K8sREST(), cfg, mirror, metricsNS, dashboardNS, kubeTLS); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	verifyCtx, verifyCancel := context.WithTimeout(c.Request.Context(), 8*time.Minute)
 	defer verifyCancel()
-	verification := WaitVerifyK8sDashboardMonitoringStack(verifyCtx, app.K8s(), 10*time.Second, 7*time.Minute+30*time.Second)
+	verification := WaitVerifyK8sDashboardMonitoringStack(verifyCtx, app.K8s(), metricsNS, dashboardNS, 10*time.Second, 7*time.Minute+30*time.Second)
 	msg := "已安装 metrics-server、Kubernetes Dashboard 2.7（recommended）及登录用 ServiceAccount easypanel-dashboard-admin；清单走国内友好下载线，容器镜像默认改写为 DaoCloud 加速前缀（与 ingress 一致，未关闭 registry 镜像改写时）。"
 	if !verification.OK {
 		msg += " 自检未全部通过，请展开 verification 查看明细与处理建议。"
 	}
-	SetAuditDetail(c, fmt.Sprintf("一键安装 K8s Dashboard+metrics-server verify_ok=%v kubelet_insecure_tls=%v", verification.OK, kubeTLS))
+	SetAuditDetail(c, fmt.Sprintf("一键安装 K8s Dashboard+metrics-server metrics_ns=%s dashboard_ns=%s verify_ok=%v kubelet_insecure_tls=%v", metricsNS, dashboardNS, verification.OK, kubeTLS))
 	c.JSON(http.StatusOK, gin.H{
-		"ok":                 true,
-		"message":            msg,
-		"manifestMirror":     K8sAddonsManifestMirrorCanonical(mirror),
-		"kubeletInsecureTls": kubeTLS,
-		"verification":       verification,
-		"loginTokenHint":     "kubectl create token easypanel-dashboard-admin -n kubernetes-dashboard --duration=24h",
-		"prometheusHint":     "本平台「集群 → 监控」等页面的 Prometheus / vmselect 地址仍在集群设置中单独配置 prometheusUrlK8s、vmSelectUrlK8s；与 Dashboard Web UI 独立。若需完整 PromQL 指标栈，可另装 kube-prometheus-stack 后填入集群内 Service URL。",
+		"ok":                     true,
+		"message":                msg,
+		"manifestMirror":         K8sAddonsManifestMirrorCanonical(mirror),
+		"metricsServerNamespace": metricsNS,
+		"dashboardNamespace":     dashboardNS,
+		"kubeletInsecureTls":     kubeTLS,
+		"verification":           verification,
+		"loginTokenHint":         "kubectl create token easypanel-dashboard-admin -n " + dashboardNS + " --duration=24h",
+		"prometheusHint":         "本平台「集群 → 监控」等页面的 Prometheus / vmselect 地址仍在集群设置中单独配置 prometheusUrlK8s、vmSelectUrlK8s；与 Dashboard Web UI 独立。若需完整 PromQL 指标栈，可另装 kube-prometheus-stack 后填入集群内 Service URL。",
 	})
 }
 
 func handleK8sAddonsDashboardMonitoringVerify(c *gin.Context, app *ServerApp) {
 	if !GuardK8s(c, app.K8s()) {
+		return
+	}
+	metricsNS := strings.TrimSpace(c.Query("metricsServerNamespace"))
+	if metricsNS == "" {
+		metricsNS = effectiveMetricsServerNamespace(app.Runtime())
+	}
+	if err := validateK8sAddonNamespace(metricsNS); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "metricsServerNamespace 无效: " + err.Error()})
+		return
+	}
+	dashboardNS := strings.TrimSpace(c.Query("dashboardNamespace"))
+	if dashboardNS == "" {
+		dashboardNS = effectiveKubernetesDashboardNamespace(app.Runtime())
+	}
+	if err := validateK8sAddonNamespace(dashboardNS); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "dashboardNamespace 无效: " + err.Error()})
 		return
 	}
 	maxSec, _ := strconv.Atoi(c.DefaultQuery("maxWaitSec", "120"))
@@ -417,14 +513,22 @@ func handleK8sAddonsDashboardMonitoringVerify(c *gin.Context, app *ServerApp) {
 	wait := time.Duration(maxSec) * time.Second
 	vctx, cancel := context.WithTimeout(c.Request.Context(), wait)
 	defer cancel()
-	verification := WaitVerifyK8sDashboardMonitoringStack(vctx, app.K8s(), 8*time.Second, wait)
+	verification := WaitVerifyK8sDashboardMonitoringStack(vctx, app.K8s(), metricsNS, dashboardNS, 8*time.Second, wait)
 	c.JSON(http.StatusOK, gin.H{"verification": verification})
 }
 
 type k8sAddonsKubePromBody struct {
+	Namespace               string   `json:"namespace"`
+	ReleaseName             string   `json:"releaseName"`
+	Retention               string   `json:"retention"`
+	ScrapeInterval          string   `json:"scrapeInterval"`
+	StorageClassName        string   `json:"storageClassName"`
+	StorageSize             string   `json:"storageSize"`
 	ManifestMirror          string   `json:"manifestMirror"`
 	GrafanaEnabled          bool     `json:"grafanaEnabled"`
 	AlertmanagerEnabled     bool     `json:"alertmanagerEnabled"`
+	NodeExporterEnabled     *bool    `json:"nodeExporterEnabled"`
+	KubeStateMetricsEnabled *bool    `json:"kubeStateMetricsEnabled"`
 	AutoSwitchPrometheusURL *bool    `json:"autoSwitchPrometheusUrl"`
 	ClearVMSelect           *bool    `json:"clearVmSelect"`
 	KubeEtcdEnabled         *bool    `json:"kubeEtcdEnabled"`
@@ -441,6 +545,22 @@ func handleK8sAddonsKubePrometheusStackInstall(c *gin.Context, app *ServerApp) {
 	var body k8sAddonsKubePromBody
 	_ = c.ShouldBindJSON(&body)
 	cfg := app.Cfg()
+	namespace := strings.TrimSpace(body.Namespace)
+	if namespace == "" {
+		namespace = effectiveKubePrometheusStackNamespace(app.Runtime())
+	}
+	if err := validateK8sAddonNamespace(namespace); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace 无效: " + err.Error()})
+		return
+	}
+	releaseName := strings.TrimSpace(body.ReleaseName)
+	if releaseName == "" {
+		releaseName = effectiveKubePrometheusStackReleaseName(app.Runtime())
+	}
+	if err := validateK8sAddonReleaseName(releaseName); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "releaseName 无效: " + err.Error()})
+		return
+	}
 	mirror := resolveManifestMirror(body.ManifestMirror, cfg)
 	autoSwitch := true
 	if body.AutoSwitchPrometheusURL != nil {
@@ -474,9 +594,25 @@ func handleK8sAddonsKubePrometheusStackInstall(c *gin.Context, app *ServerApp) {
 	if body.KubeEtcdTargetPort != nil && *body.KubeEtcdTargetPort > 0 && *body.KubeEtcdTargetPort <= 65535 {
 		etcdTgt = *body.KubeEtcdTargetPort
 	}
+	nodeExporter := true
+	if body.NodeExporterEnabled != nil {
+		nodeExporter = *body.NodeExporterEnabled
+	}
+	kubeStateMetrics := true
+	if body.KubeStateMetricsEnabled != nil {
+		kubeStateMetrics = *body.KubeStateMetricsEnabled
+	}
 	opts := KubePromStackInstallOpts{
+		Namespace:               namespace,
+		ReleaseName:             releaseName,
+		Retention:               strings.TrimSpace(body.Retention),
+		ScrapeInterval:          strings.TrimSpace(body.ScrapeInterval),
+		StorageClassName:        strings.TrimSpace(body.StorageClassName),
+		StorageSize:             strings.TrimSpace(body.StorageSize),
 		GrafanaEnabled:          body.GrafanaEnabled,
 		AlertmanagerEnabled:     body.AlertmanagerEnabled,
+		NodeExporterEnabled:     nodeExporter,
+		KubeStateMetricsEnabled: kubeStateMetrics,
 		AutoSwitchPrometheusURL: autoSwitch,
 		ClearVMSelect:           clearVM,
 		KubeEtcdEnabled:         etcdEnabled,
@@ -495,7 +631,7 @@ func handleK8sAddonsKubePrometheusStackInstall(c *gin.Context, app *ServerApp) {
 	}
 	verifyCtx, verifyCancel := context.WithTimeout(c.Request.Context(), 16*time.Minute)
 	defer verifyCancel()
-	verification := WaitKubePrometheusStackRollout(verifyCtx, app.K8s(), 15*time.Minute)
+	verification := WaitKubePrometheusStackRollout(verifyCtx, app.K8s(), namespace, releaseName, 15*time.Minute)
 
 	patched := ""
 	var patchErr error
@@ -505,7 +641,7 @@ func handleK8sAddonsKubePrometheusStackInstall(c *gin.Context, app *ServerApp) {
 			patched = strings.TrimSpace(res.PrometheusBaseURL)
 		}
 	}
-	msg := "kube-prometheus-stack 已应用至命名空间 " + kubePromStackNamespace + "（含 Prometheus Operator、Prometheus、kube-state-metrics、node-exporter，并默认抓取 apiserver / kube-controller-manager / kube-scheduler 等 ServiceMonitor）。"
+	msg := "kube-prometheus-stack 已应用至命名空间 " + namespace + "（release " + releaseName + "，含 Prometheus Operator、Prometheus、kube-state-metrics、node-exporter，并默认抓取 apiserver / kube-controller-manager / kube-scheduler 等 ServiceMonitor）。"
 	if etcdEnabled && len(etcdEps) > 0 {
 		msg += " 已按表单启用 kubeEtcd（chart 将在 kube-system 生成 Service/Endpoints 与 ServiceMonitor，抓取 metrics 端口）；请到 Prometheus Targets 确认 etcd 为 UP，侧栏「etcd」页可查看 WAL / Leader 等指标。"
 	}
@@ -522,7 +658,7 @@ func handleK8sAddonsKubePrometheusStackInstall(c *gin.Context, app *ServerApp) {
 	if !verification.OK {
 		msg += " 组件自检未全部通过，请查看 verification。"
 	}
-	SetAuditDetail(c, fmt.Sprintf("一键安装 kube-prometheus-stack verify_ok=%v auto_prometheus_url=%v kube_etcd=%v", verification.OK, patched != "", etcdEnabled && len(etcdEps) > 0))
+	SetAuditDetail(c, fmt.Sprintf("一键安装 kube-prometheus-stack namespace=%s release=%s verify_ok=%v auto_prometheus_url=%v kube_etcd=%v", namespace, releaseName, verification.OK, patched != "", etcdEnabled && len(etcdEps) > 0))
 	c.JSON(http.StatusOK, gin.H{
 		"ok":                       true,
 		"message":                  msg,
@@ -530,6 +666,7 @@ func handleK8sAddonsKubePrometheusStackInstall(c *gin.Context, app *ServerApp) {
 		"prometheusBaseURL":        res.PrometheusBaseURL,
 		"prometheusService":        res.ServiceName,
 		"namespace":                res.Namespace,
+		"releaseName":              res.ReleaseName,
 		"runtimePrometheusPatched": patched != "",
 		"patchedPrometheusUrlK8s":  patched,
 		"patchError":               errStringPtr(patchErr),
@@ -557,6 +694,22 @@ func handleK8sAddonsKubePrometheusStackVerify(c *gin.Context, app *ServerApp) {
 	if !GuardK8s(c, app.K8s()) {
 		return
 	}
+	namespace := strings.TrimSpace(c.Query("namespace"))
+	if namespace == "" {
+		namespace = effectiveKubePrometheusStackNamespace(app.Runtime())
+	}
+	if err := validateK8sAddonNamespace(namespace); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace 无效: " + err.Error()})
+		return
+	}
+	releaseName := strings.TrimSpace(c.Query("releaseName"))
+	if releaseName == "" {
+		releaseName = effectiveKubePrometheusStackReleaseName(app.Runtime())
+	}
+	if err := validateK8sAddonReleaseName(releaseName); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "releaseName 无效: " + err.Error()})
+		return
+	}
 	maxSec, _ := strconv.Atoi(c.DefaultQuery("maxWaitSec", "300"))
 	if maxSec < 1 {
 		maxSec = 1
@@ -567,6 +720,140 @@ func handleK8sAddonsKubePrometheusStackVerify(c *gin.Context, app *ServerApp) {
 	wait := time.Duration(maxSec) * time.Second
 	vctx, cancel := context.WithTimeout(c.Request.Context(), wait)
 	defer cancel()
-	verification := WaitKubePrometheusStackRollout(vctx, app.K8s(), wait)
+	verification := WaitKubePrometheusStackRollout(vctx, app.K8s(), namespace, releaseName, wait)
+	c.JSON(http.StatusOK, gin.H{"verification": verification})
+}
+
+type k8sAddonsVictoriaLogsBody struct {
+	Namespace        string `json:"namespace"`
+	ReleaseName      string `json:"releaseName"`
+	RetentionDays    int    `json:"retentionDays"`
+	StorageClassName string `json:"storageClassName"`
+	StorageSize      string `json:"storageSize"`
+	CollectorEnabled *bool  `json:"collectorEnabled"`
+	AutoWriteRuntime *bool  `json:"autoWriteRuntime"`
+	ManifestMirror   string `json:"manifestMirror"`
+}
+
+func victoriaLogsAddonTargetFromBody(body k8sAddonsVictoriaLogsBody, rs *RuntimeSettings) (string, string, error) {
+	ns := strings.TrimSpace(body.Namespace)
+	if ns == "" {
+		ns = effectiveVictoriaLogsNamespace(rs)
+	}
+	if err := validateK8sAddonNamespace(ns); err != nil {
+		return "", "", fmt.Errorf("namespace 无效: %w", err)
+	}
+	releaseName := strings.TrimSpace(body.ReleaseName)
+	if releaseName == "" {
+		releaseName = effectiveVictoriaLogsReleaseName(rs)
+	}
+	if err := validateK8sAddonReleaseName(releaseName); err != nil {
+		return "", "", fmt.Errorf("releaseName 无效: %w", err)
+	}
+	return ns, releaseName, nil
+}
+
+func victoriaLogsAddonTargetFromQuery(c *gin.Context, rs *RuntimeSettings) (string, string, error) {
+	return victoriaLogsAddonTargetFromBody(k8sAddonsVictoriaLogsBody{
+		Namespace:   c.Query("namespace"),
+		ReleaseName: c.Query("releaseName"),
+	}, rs)
+}
+
+func handleK8sAddonsVictoriaLogsInstall(c *gin.Context, app *ServerApp) {
+	if !GuardK8sREST(c, app.K8s(), app.K8sREST()) {
+		return
+	}
+	var body k8sAddonsVictoriaLogsBody
+	_ = c.ShouldBindJSON(&body)
+	namespace, releaseName, err := victoriaLogsAddonTargetFromBody(body, app.Runtime())
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	collector := true
+	if body.CollectorEnabled != nil {
+		collector = *body.CollectorEnabled
+	}
+	autoWrite := true
+	if body.AutoWriteRuntime != nil {
+		autoWrite = *body.AutoWriteRuntime
+	}
+	opts := VictoriaLogsInstallOpts{
+		Namespace:          namespace,
+		ReleaseName:        releaseName,
+		RetentionDays:      body.RetentionDays,
+		StorageClassName:   strings.TrimSpace(body.StorageClassName),
+		StorageSize:        strings.TrimSpace(body.StorageSize),
+		CollectorEnabled:   collector,
+		AutoWriteRuntime:   autoWrite,
+		ManifestMirrorMode: resolveManifestMirror(body.ManifestMirror, app.Cfg()),
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 22*time.Minute)
+	defer cancel()
+	res, err := InstallVictoriaLogsAddon(ctx, app, app.Cfg(), opts)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	verifyCtx, verifyCancel := context.WithTimeout(c.Request.Context(), 8*time.Minute)
+	defer verifyCancel()
+	verification := WaitVerifyVictoriaLogsAddon(verifyCtx, app.K8s(), namespace, releaseName, 7*time.Minute)
+	msg := fmt.Sprintf("VictoriaLogs 已应用到命名空间 %s（release %s，Service %s）", namespace, releaseName, res.ServiceName)
+	if collector {
+		msg += "，collector 已启用并会采集 Kubernetes 容器日志"
+	}
+	if autoWrite {
+		if res.RuntimePatched {
+			msg += "，已写入运行时 victoriaLogsUrl"
+		} else if res.PatchError != "" {
+			msg += "，但写入运行时失败：" + res.PatchError
+		}
+	}
+	if !verification.OK {
+		msg += "；自检未完全通过，请查看 verification"
+	}
+	SetAuditDetail(c, fmt.Sprintf("安装 VictoriaLogs namespace=%s release=%s collector=%v runtime_patched=%v verify_ok=%v", namespace, releaseName, collector, res.RuntimePatched, verification.OK))
+	c.JSON(http.StatusOK, gin.H{
+		"ok":                   true,
+		"message":              msg,
+		"namespace":            namespace,
+		"releaseName":          releaseName,
+		"serviceName":          res.ServiceName,
+		"victoriaLogsUrl":      res.VictoriaLogsBaseURL,
+		"runtimePatched":       res.RuntimePatched,
+		"patchError":           res.PatchError,
+		"collectorEnabled":     collector,
+		"retentionDays":        victoriaLogsRetentionDaysOrDefault(body.RetentionDays),
+		"verification":         verification,
+		"victoriaLogsValues":   buildVictoriaLogsSingleValuesYAML(opts),
+		"collectorValuesHint":  buildVictoriaLogsCollectorValuesYAML("http://" + victoriaLogsServerServiceName(releaseName) + ":9428"),
+		"datasourceBoundary":   "VictoriaLogs 是日志查询入口；Prometheus / VictoriaMetrics vmselect 是指标查询入口。",
+		"helmRepository":       victoriaMetricsHelmRepoURL,
+		"officialChartNames":   []string{victoriaLogsSingleChartName, victoriaLogsCollectorChartName},
+		"internalReachableUrl": res.VictoriaLogsBaseURL,
+	})
+}
+
+func handleK8sAddonsVictoriaLogsVerify(c *gin.Context, app *ServerApp) {
+	if !GuardK8s(c, app.K8s()) {
+		return
+	}
+	namespace, releaseName, err := victoriaLogsAddonTargetFromQuery(c, app.Runtime())
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	maxSec, _ := strconv.Atoi(c.DefaultQuery("maxWaitSec", "180"))
+	if maxSec < 1 {
+		maxSec = 1
+	}
+	if maxSec > 600 {
+		maxSec = 600
+	}
+	wait := time.Duration(maxSec) * time.Second
+	vctx, cancel := context.WithTimeout(c.Request.Context(), wait)
+	defer cancel()
+	verification := WaitVerifyVictoriaLogsAddon(vctx, app.K8s(), namespace, releaseName, wait)
 	c.JSON(http.StatusOK, gin.H{"verification": verification})
 }

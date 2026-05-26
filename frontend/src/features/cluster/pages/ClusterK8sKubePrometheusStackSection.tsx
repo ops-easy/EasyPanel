@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { Checkbox } from "@/shared/ui/checkbox";
+import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { Progress } from "@/shared/ui/progress";
@@ -101,8 +102,16 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
     if (m && isMirrorMode(m)) setManifestMirror(m);
   }, [cfg?.k8sAddonsManifestMirror]);
 
+  const [namespace, setNamespace] = useState("easypanel-monitoring");
+  const [releaseName, setReleaseName] = useState("kbt-prom");
+  const [retention, setRetention] = useState("15d");
+  const [scrapeInterval, setScrapeInterval] = useState("30s");
+  const [storageClassName, setStorageClassName] = useState("");
+  const [storageSize, setStorageSize] = useState("");
   const [grafana, setGrafana] = useState(false);
   const [alertmanager, setAlertmanager] = useState(false);
+  const [nodeExporter, setNodeExporter] = useState(true);
+  const [kubeStateMetrics, setKubeStateMetrics] = useState(true);
   const [autoSwitchProm, setAutoSwitchProm] = useState(true);
   const [clearVm, setClearVm] = useState(true);
   /** 与 kube-prometheus-stack chart 中 kubeEtcd 段对应，等价于手写 values.yaml */
@@ -140,6 +149,13 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
 
   const kp = st?.kubePrometheusStack;
   const installIncomplete = Boolean(kp?.namespaceExists && !kp?.installed);
+
+  useEffect(() => {
+    const ns = String(kp?.namespace || cfg?.kubePrometheusStackNamespace || "").trim();
+    if (ns) setNamespace(ns);
+    const rel = String(kp?.releaseName || cfg?.kubePrometheusStackReleaseName || "").trim();
+    if (rel) setReleaseName(rel);
+  }, [cfg?.kubePrometheusStackNamespace, cfg?.kubePrometheusStackReleaseName, kp?.namespace, kp?.releaseName]);
 
   useEffect(() => {
     if (kp?.installed) setAckHelmRetry(false);
@@ -180,9 +196,17 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
         reachableHint?: string;
         kubePromStackValuesYaml?: string;
       }>("/api/k8s/addons/kube-prometheus-stack/install", {
+        namespace,
+        releaseName,
+        retention,
+        scrapeInterval,
+        storageClassName,
+        storageSize,
         manifestMirror,
         grafanaEnabled: grafana,
         alertmanagerEnabled: alertmanager,
+        nodeExporterEnabled: nodeExporter,
+        kubeStateMetricsEnabled: kubeStateMetrics,
         autoSwitchPrometheusUrl: autoSwitchProm,
         clearVmSelect: clearVm,
         kubeEtcdEnabled,
@@ -220,13 +244,21 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
     autoSwitchProm,
     clearVm,
     grafana,
+    kubeStateMetrics,
     kubeEtcdEnabled,
     kubeEtcdEndpointsText,
     kubeEtcdPort,
     kubeEtcdService,
     kubeEtcdTargetPort,
     manifestMirror,
+    namespace,
+    nodeExporter,
     qc,
+    releaseName,
+    retention,
+    scrapeInterval,
+    storageClassName,
+    storageSize,
   ]);
 
   const runVerify = useCallback(async () => {
@@ -241,7 +273,9 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
           `正在检查 Operator / Prometheus（第 ${round + 1}/${maxRounds} 轮，每轮最多 ${perRoundSec}s，避免网关 504）…`,
         );
         const res = await apiGetJson<{ verification: IngressAddonVerification }>(
-          `/api/k8s/addons/kube-prometheus-stack/verify?maxWaitSec=${perRoundSec}`,
+          `/api/k8s/addons/kube-prometheus-stack/verify?maxWaitSec=${perRoundSec}&namespace=${encodeURIComponent(
+            namespace,
+          )}&releaseName=${encodeURIComponent(releaseName)}`,
         );
         last = res.verification;
         setVerification(res.verification);
@@ -266,7 +300,7 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
       setVerifyBusy(false);
       setPhase("");
     }
-  }, [qc]);
+  }, [namespace, qc, releaseName]);
 
   return (
     <Card className="border-amber-100 bg-gradient-to-b from-amber-50/50 to-white shadow-sm">
@@ -447,6 +481,36 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
 
         {isAdmin ? (
           <div className="space-y-3 rounded-xl border-2 border-amber-200/90 bg-white/90 p-4 shadow-sm">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">目标命名空间</Label>
+                <Input className="h-9 font-mono text-xs" value={namespace} onChange={(e) => setNamespace(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Helm release</Label>
+                <Input className="h-9 font-mono text-xs" value={releaseName} onChange={(e) => setReleaseName(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prometheus retention</Label>
+                <Input className="h-9 font-mono text-xs" value={retention} onChange={(e) => setRetention(e.target.value)} placeholder="15d" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">scrapeInterval</Label>
+                <Input className="h-9 font-mono text-xs" value={scrapeInterval} onChange={(e) => setScrapeInterval(e.target.value)} placeholder="30s" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">StorageClass（可选）</Label>
+                <Input className="h-9 font-mono text-xs" value={storageClassName} onChange={(e) => setStorageClassName(e.target.value)} placeholder="留空使用集群默认" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prometheus PVC 大小（可选）</Label>
+                <Input className="h-9 font-mono text-xs" value={storageSize} onChange={(e) => setStorageSize(e.target.value)} placeholder="20Gi" />
+              </div>
+            </div>
+            <p className="text-[11px] leading-relaxed text-slate-600">
+              这里部署的是监控栈本身；下面“监控数据源”保存的是平台查询 PromQL 的地址。安装成功后可自动把发现到的
+              Prometheus Service 写入 <code className="rounded bg-slate-100 px-0.5">prometheusUrlK8s</code>。
+            </p>
             <div className="rounded-lg border border-sky-200/80 bg-sky-50/50 p-3 dark:border-sky-900/50 dark:bg-sky-950/20">
               <p className="mb-2 text-xs font-medium text-sky-950 dark:text-sky-100">etcd 抓取（kubeEtcd）</p>
               <p className="mb-3 text-[11px] leading-relaxed text-sky-900/90 dark:text-sky-200/90">
@@ -525,6 +589,14 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
                   </Link>
                   ）
                 </span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-2 text-sm">
+                <Checkbox checked={nodeExporter} onCheckedChange={(v) => setNodeExporter(v === true)} />
+                <span>安装 node-exporter（节点 CPU/内存/磁盘/网络指标）</span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-2 text-sm">
+                <Checkbox checked={kubeStateMetrics} onCheckedChange={(v) => setKubeStateMetrics(v === true)} />
+                <span>安装 kube-state-metrics（Deployment/Pod/PVC 等 Kubernetes 对象指标）</span>
               </label>
               <label className="flex cursor-pointer items-start gap-2 text-sm">
                 <Checkbox checked={autoSwitchProm} onCheckedChange={(v) => setAutoSwitchProm(v === true)} />

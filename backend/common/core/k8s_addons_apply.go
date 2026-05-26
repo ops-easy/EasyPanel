@@ -31,6 +31,11 @@ const (
 	ingressNginxControllerDeployName  = "ingress-nginx-controller"
 )
 
+type IngressNginxManifestTransformOpts struct {
+	Namespace        string
+	IngressClassName string
+}
+
 // IngressControllerTemplateMetricsPort 从控制器容器模板解析 metrics 容器端口声明（上游默认 10254；v1.10 不支持 --metrics-port）。
 func IngressControllerTemplateMetricsPort(cont corev1.Container) int32 {
 	for _, p := range cont.Ports {
@@ -261,20 +266,120 @@ func findIngressControllerContainerIndex(containers []corev1.Container) int {
 	return -1
 }
 
+func ingressNamespacedManifestKind(kind string) bool {
+	switch kind {
+	case "ConfigMap", "Deployment", "Job", "Role", "RoleBinding", "Secret", "Service", "ServiceAccount":
+		return true
+	default:
+		return false
+	}
+}
+
+func rewriteIngressAdmissionWebhookNamespace(obj *unstructured.Unstructured, namespace string) {
+	webhooks, ok, _ := unstructured.NestedSlice(obj.Object, "webhooks")
+	if !ok {
+		return
+	}
+	changed := false
+	for i := range webhooks {
+		hook, ok := webhooks[i].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if _, ok, _ := unstructured.NestedString(hook, "clientConfig", "service", "namespace"); ok {
+			if err := unstructured.SetNestedField(hook, namespace, "clientConfig", "service", "namespace"); err == nil {
+				webhooks[i] = hook
+				changed = true
+			}
+		}
+	}
+	if changed {
+		_ = unstructured.SetNestedSlice(obj.Object, webhooks, "webhooks")
+	}
+}
+
+func rewriteIngressClusterRoleBindingSubjects(obj *unstructured.Unstructured, namespace string) {
+	subjects, ok, _ := unstructured.NestedSlice(obj.Object, "subjects")
+	if !ok {
+		return
+	}
+	changed := false
+	for i := range subjects {
+		sub, ok := subjects[i].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		kind, _, _ := unstructured.NestedString(sub, "kind")
+		if kind != "ServiceAccount" {
+			continue
+		}
+		if _, ok := sub["namespace"]; ok {
+			sub["namespace"] = namespace
+			subjects[i] = sub
+			changed = true
+		}
+	}
+	if changed {
+		_ = unstructured.SetNestedSlice(obj.Object, subjects, "subjects")
+	}
+}
+
+// RewriteIngressNginxManifestForTarget rewrites the official ingress-nginx manifest so the
+// namespaced resources and webhook/service-account references land in the selected namespace.
+func RewriteIngressNginxManifestForTarget(raw []byte, opts IngressNginxManifestTransformOpts) ([]byte, error) {
+	namespace := firstValidAddonNamespace(opts.Namespace, ingressNginxControllerNamespace)
+	var out []string
+	for _, doc := range splitYAMLDocuments(string(raw)) {
+		jsonData, err := sigyaml.YAMLToJSON([]byte(doc))
+		if err != nil {
+			return nil, fmt.Errorf("YAML 转 JSON: %w", err)
+		}
+		js := strings.TrimSpace(string(jsonData))
+		if js == "" || js == "null" || js == "{}" {
+			continue
+		}
+		obj := &unstructured.Unstructured{}
+		if err := obj.UnmarshalJSON(jsonData); err != nil {
+			return nil, fmt.Errorf("解析对象: %w", err)
+		}
+		kind := obj.GetKind()
+		switch {
+		case kind == "Namespace" && obj.GetName() == ingressNginxControllerNamespace:
+			obj.SetName(namespace)
+		case ingressNamespacedManifestKind(kind):
+			obj.SetNamespace(namespace)
+		case kind == "ClusterRoleBinding":
+			rewriteIngressClusterRoleBindingSubjects(obj, namespace)
+		case kind == "ValidatingWebhookConfiguration" || kind == "MutatingWebhookConfiguration":
+			rewriteIngressAdmissionWebhookNamespace(obj, namespace)
+		}
+		if kind == "IngressClass" && strings.TrimSpace(opts.IngressClassName) != "" {
+			obj.SetName(strings.TrimSpace(opts.IngressClassName))
+		}
+		y, err := sigyaml.Marshal(obj.Object)
+		if err != nil {
+			return nil, fmt.Errorf("对象转 YAML: %w", err)
+		}
+		out = append(out, strings.TrimSpace(string(y)))
+	}
+	return []byte(strings.Join(out, "\n---\n") + "\n"), nil
+}
+
 // FinishIngressNginxHostNetwork 将 ingress-nginx 控制器 Deployment 设为 hostNetwork，并调整容器端口与参数；控制器 Service 改为 ClusterIP（不再使用 NodePort/LoadBalancer）。
 // nodePin 为 nil 时不改节点固定策略；非 nil 时按字符串设置或清除（空字符串表示删除 kubernetes.io/hostname 选择器）。
-func FinishIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clientset, httpPort, httpsPort int32, nodePin *string) error {
+func FinishIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clientset, namespace string, httpPort, httpsPort int32, nodePin *string) error {
 	if k8s == nil {
 		return fmt.Errorf("Kubernetes 客户端未初始化")
 	}
 	if httpPort < 1 || httpPort > 65535 || httpsPort < 1 || httpsPort > 65535 {
 		return fmt.Errorf("主机端口须在 1–65535")
 	}
+	ns := firstValidAddonNamespace(namespace, ingressNginxControllerNamespace)
 	waitCtx, cancel := context.WithTimeout(ctx, 4*time.Minute)
 	defer cancel()
 	var lastDepErr error
 	for {
-		dep, err := k8s.AppsV1().Deployments(ingressNginxControllerNamespace).Get(waitCtx, ingressNginxControllerDeployName, metav1.GetOptions{})
+		dep, err := k8s.AppsV1().Deployments(ns).Get(waitCtx, ingressNginxControllerDeployName, metav1.GetOptions{})
 		lastDepErr = err
 		if err == nil && dep != nil {
 			dep.Spec.Template.Spec.HostNetwork = true
@@ -287,7 +392,7 @@ func FinishIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clientse
 			if nodePin != nil {
 				applyIngressHostnameNodePin(dep, *nodePin)
 			}
-			_, err = k8s.AppsV1().Deployments(ingressNginxControllerNamespace).Update(waitCtx, dep, metav1.UpdateOptions{})
+			_, err = k8s.AppsV1().Deployments(ns).Update(waitCtx, dep, metav1.UpdateOptions{})
 			if err == nil {
 				break
 			}
@@ -307,7 +412,7 @@ func FinishIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clientse
 		select {
 		case <-waitCtx.Done():
 			if apierrors.IsNotFound(lastDepErr) {
-				return fmt.Errorf("超时：未找到 %s/%s Deployment", ingressNginxControllerNamespace, ingressNginxControllerDeployName)
+				return fmt.Errorf("超时：未找到 %s/%s Deployment", ns, ingressNginxControllerDeployName)
 			}
 			return fmt.Errorf("等待 ingress Deployment: %w", waitCtx.Err())
 		case <-time.After(2 * time.Second):
@@ -317,7 +422,7 @@ func FinishIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clientse
 	svcCtx, svcCancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer svcCancel()
 	for {
-		svc, err := k8s.CoreV1().Services(ingressNginxControllerNamespace).Get(svcCtx, ingressNginxControllerServiceName, metav1.GetOptions{})
+		svc, err := k8s.CoreV1().Services(ns).Get(svcCtx, ingressNginxControllerServiceName, metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil
@@ -337,7 +442,7 @@ func FinishIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clientse
 			newPorts = append(newPorts, np)
 		}
 		svc.Spec.Ports = newPorts
-		_, err = k8s.CoreV1().Services(ingressNginxControllerNamespace).Update(svcCtx, svc, metav1.UpdateOptions{})
+		_, err = k8s.CoreV1().Services(ns).Update(svcCtx, svc, metav1.UpdateOptions{})
 		if err == nil {
 			return nil
 		}
@@ -354,7 +459,7 @@ func FinishIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clientse
 
 // InstallIngressNginxHostNetwork 安装官方 bare metal 清单，并强制控制器使用 hostNetwork + 指定 HTTP/HTTPS 监听端口（metrics 沿用清单默认 10254，v1.10 不支持 --metrics-port）。
 // nodePin 非 nil 时同步写入节点固定（与 Finish 语义一致）；安装完成后执行一次 Finish 时已包含该策略。
-func InstallIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clientset, restCfg *rest.Config, platformCfg Config, manifestURL string, mirror ManifestMirrorMode, httpPort, httpsPort int32, nodePin *string) error {
+func InstallIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clientset, restCfg *rest.Config, platformCfg Config, manifestURL string, mirror ManifestMirrorMode, namespace string, httpPort, httpsPort int32, nodePin *string) error {
 	u := strings.TrimSpace(manifestURL)
 	if u == "" {
 		u = defaultIngressNginxBaremetalURL
@@ -364,22 +469,28 @@ func InstallIngressNginxHostNetwork(ctx context.Context, k8s *kubernetes.Clients
 		return fmt.Errorf("下载 ingress-nginx 清单: %w", err)
 	}
 	raw = RewriteIngressManifestK8sRegistryImages(raw, platformCfg)
+	rewritten, err := RewriteIngressNginxManifestForTarget(raw, IngressNginxManifestTransformOpts{Namespace: namespace})
+	if err != nil {
+		return err
+	}
+	raw = rewritten
 	if err := applyYAMLManifestDynamic(ctx, restCfg, raw); err != nil {
 		return err
 	}
-	return FinishIngressNginxHostNetwork(ctx, k8s, httpPort, httpsPort, nodePin)
+	return FinishIngressNginxHostNetwork(ctx, k8s, namespace, httpPort, httpsPort, nodePin)
 }
 
 // PatchIngressNginxHostPorts 集群已安装 ingress-nginx 时仅应用 hostNetwork 与端口调整。
-func PatchIngressNginxHostPorts(ctx context.Context, k8s *kubernetes.Clientset, httpPort, httpsPort int32) error {
-	return FinishIngressNginxHostNetwork(ctx, k8s, httpPort, httpsPort, nil)
+func PatchIngressNginxHostPorts(ctx context.Context, k8s *kubernetes.Clientset, namespace string, httpPort, httpsPort int32) error {
+	return FinishIngressNginxHostNetwork(ctx, k8s, namespace, httpPort, httpsPort, nil)
 }
 
 // PatchIngressNginxControllerNode 仅更新控制器调度节点（nodeSelector kubernetes.io/hostname）；nodeName 空表示取消固定。
-func PatchIngressNginxControllerNode(ctx context.Context, k8s *kubernetes.Clientset, nodeName string) error {
+func PatchIngressNginxControllerNode(ctx context.Context, k8s *kubernetes.Clientset, namespace, nodeName string) error {
 	if k8s == nil {
 		return fmt.Errorf("Kubernetes 客户端未初始化")
 	}
+	ns := firstValidAddonNamespace(namespace, ingressNginxControllerNamespace)
 	n := strings.TrimSpace(nodeName)
 	if n != "" {
 		_, err := k8s.CoreV1().Nodes().Get(ctx, n, metav1.GetOptions{})
@@ -393,15 +504,15 @@ func PatchIngressNginxControllerNode(ctx context.Context, k8s *kubernetes.Client
 	waitCtx, cancel := context.WithTimeout(ctx, 4*time.Minute)
 	defer cancel()
 	for {
-		dep, err := k8s.AppsV1().Deployments(ingressNginxControllerNamespace).Get(waitCtx, ingressNginxControllerDeployName, metav1.GetOptions{})
+		dep, err := k8s.AppsV1().Deployments(ns).Get(waitCtx, ingressNginxControllerDeployName, metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
-				return fmt.Errorf("未找到 Deployment %s/%s", ingressNginxControllerNamespace, ingressNginxControllerDeployName)
+				return fmt.Errorf("未找到 Deployment %s/%s", ns, ingressNginxControllerDeployName)
 			}
 			return fmt.Errorf("读取 ingress Deployment: %w", err)
 		}
 		applyIngressHostnameNodePin(dep, n)
-		_, err = k8s.AppsV1().Deployments(ingressNginxControllerNamespace).Update(waitCtx, dep, metav1.UpdateOptions{})
+		_, err = k8s.AppsV1().Deployments(ns).Update(waitCtx, dep, metav1.UpdateOptions{})
 		if err == nil {
 			return nil
 		}

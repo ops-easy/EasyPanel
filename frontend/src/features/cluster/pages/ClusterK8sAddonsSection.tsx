@@ -115,6 +115,7 @@ function CodeBlock({ text, className }: { text: string; className?: string }) {
 }
 
 const CHECK_CMD = `kubectl get pods -n ingress-nginx 2>/dev/null || echo "未检测到 ingress-nginx"`;
+const DEFAULT_INGRESS_NAMESPACE = "ingress-nginx";
 
 const INGRESS_WAIT = `kubectl wait --namespace ingress-nginx \\
   --for=condition=ready pod \\
@@ -189,6 +190,8 @@ const ClusterK8sAddonsSection: React.FC = () => {
   const [ingressBusy, setIngressBusy] = useState(false);
   const [portsBusy, setPortsBusy] = useState(false);
   const [uninstallBusy, setUninstallBusy] = useState(false);
+  const [ingressNamespace, setIngressNamespace] = useState(DEFAULT_INGRESS_NAMESPACE);
+  const [ingressNamespaceTouched, setIngressNamespaceTouched] = useState(false);
   const [hostHttpPort, setHostHttpPort] = useState("80");
   const [hostHttpsPort, setHostHttpsPort] = useState("443");
   const [addonPhase, setAddonPhase] = useState("");
@@ -206,6 +209,12 @@ const ClusterK8sAddonsSection: React.FC = () => {
     staleTime: 60_000,
   });
   const nodeRows = nodesRes?.nodes ?? [];
+
+  useEffect(() => {
+    if (ingressNamespaceTouched) return;
+    const ns = String(st?.ingressNginx?.namespace || cfg?.ingressNginxNamespace || "").trim();
+    if (ns) setIngressNamespace(ns);
+  }, [cfg?.ingressNginxNamespace, ingressNamespaceTouched, st?.ingressNginx?.namespace]);
 
   useEffect(() => {
     const dep = st?.ingressNginx?.deploymentControllerNodeName;
@@ -256,7 +265,10 @@ const ClusterK8sAddonsSection: React.FC = () => {
     return () => clearInterval(id);
   }, [ingressBusy, nodePinBusy, portsBusy, uninstallBusy, verifyBusy]);
 
-  const installPayload = useCallback(() => ({ manifestMirror }), [manifestMirror]);
+  const installPayload = useCallback(
+    () => ({ manifestMirror, namespace: ingressNamespace.trim() || DEFAULT_INGRESS_NAMESPACE }),
+    [ingressNamespace, manifestMirror],
+  );
 
   const parsePorts = useCallback((): { http: number; https: number } | null => {
     const http = Number(String(hostHttpPort).trim());
@@ -310,6 +322,7 @@ const ClusterK8sAddonsSection: React.FC = () => {
     setAddonPhase("正在更新控制器调度节点…");
     try {
       const res = await apiPostJson<{ message?: string }>("/api/k8s/addons/ingress-nginx/controller-node", {
+        namespace: ingressNamespace.trim() || DEFAULT_INGRESS_NAMESPACE,
         controllerNodeName: controllerNodeSel === NO_FIXED_NODE ? "" : controllerNodeSel,
       });
       toast.success(String(res.message || "").trim() || "已更新调度节点");
@@ -321,7 +334,7 @@ const ClusterK8sAddonsSection: React.FC = () => {
       setNodePinBusy(false);
       setAddonPhase("");
     }
-  }, [controllerNodeSel, qc]);
+  }, [controllerNodeSel, ingressNamespace, qc]);
 
   const applyHostPorts = useCallback(async () => {
     const p = parsePorts();
@@ -332,6 +345,7 @@ const ClusterK8sAddonsSection: React.FC = () => {
       const hpRes = await apiPostJson<{ verification?: IngressAddonVerification }>(
         "/api/k8s/addons/ingress-nginx/host-ports",
         {
+          namespace: ingressNamespace.trim() || DEFAULT_INGRESS_NAMESPACE,
           hostHttpPort: p.http,
           hostHttpsPort: p.https,
         },
@@ -351,7 +365,7 @@ const ClusterK8sAddonsSection: React.FC = () => {
       setPortsBusy(false);
       setAddonPhase("");
     }
-  }, [parsePorts, qc]);
+  }, [ingressNamespace, parsePorts, qc]);
 
   const deepVerify = useCallback(async () => {
     const p = parsePorts();
@@ -362,6 +376,7 @@ const ClusterK8sAddonsSection: React.FC = () => {
       const q = new URLSearchParams({
         maxWaitSec: "120",
         remediate: "1",
+        namespace: ingressNamespace.trim() || DEFAULT_INGRESS_NAMESPACE,
         hostHttpPort: String(p.http),
         hostHttpsPort: String(p.https),
       });
@@ -381,13 +396,15 @@ const ClusterK8sAddonsSection: React.FC = () => {
       setVerifyBusy(false);
       setAddonPhase("");
     }
-  }, [parsePorts, qc]);
+  }, [ingressNamespace, parsePorts, qc]);
 
   const uninstallIngress = useCallback(async () => {
     setUninstallBusy(true);
     setAddonPhase("正在卸载 ingress-nginx…");
     try {
-      const res = await apiPostJson<{ message?: string }>("/api/k8s/addons/ingress-nginx/uninstall", {});
+      const res = await apiPostJson<{ message?: string }>("/api/k8s/addons/ingress-nginx/uninstall", {
+        namespace: ingressNamespace.trim() || DEFAULT_INGRESS_NAMESPACE,
+      });
       toast.success(String(res.message || "").trim() || "已卸载");
       void qc.invalidateQueries({ queryKey: ["k8s-addons-status"] });
     } catch (e) {
@@ -396,7 +413,7 @@ const ClusterK8sAddonsSection: React.FC = () => {
       setUninstallBusy(false);
       setAddonPhase("");
     }
-  }, [qc]);
+  }, [ingressNamespace, qc]);
 
   const ingInstalled = st?.ingressNginx.installed ?? st?.ingressNginx.likelyInstalled;
 
@@ -610,6 +627,25 @@ const ClusterK8sAddonsSection: React.FC = () => {
         {isAdmin ? (
           <div className="space-y-3 rounded-xl border-2 border-sky-200/90 bg-white/90 p-4 shadow-sm">
             <p className="text-xs font-medium text-slate-800">一键安装（hostNetwork + 端口）</p>
+            <div className="space-y-1.5">
+              <Label className="text-xs">目标命名空间</Label>
+              <Input
+                className="h-9 max-w-md font-mono text-xs"
+                value={ingressNamespace}
+                placeholder={DEFAULT_INGRESS_NAMESPACE}
+                onChange={(e) => {
+                  setIngressNamespaceTouched(true);
+                  setIngressNamespace(e.target.value);
+                }}
+              />
+              <p className="max-w-3xl text-[11px] leading-relaxed text-slate-600">
+                安装/升级、端口补丁、固定节点、卸载和自检都会使用这个 namespace。IngressClass 仍使用官方清单默认
+                <code className="mx-1 rounded bg-slate-100 px-0.5">nginx</code>
+                入口类；需要多入口控制器共存时，先用 namespace 隔离控制器，再把业务 Ingress 的
+                <code className="mx-1 rounded bg-slate-100 px-0.5">ingressClassName</code>
+                指向对应入口类。
+              </p>
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label className="text-xs">HTTP 端口（节点）</Label>
@@ -750,6 +786,7 @@ const ClusterK8sAddonsSection: React.FC = () => {
                 {confirmAction === "install" ? (
                   <span>
                     将从网络拉取清单并应用到集群，设置控制器 <strong>hostNetwork</strong> 与当前填写的端口
+                    ，目标命名空间为 <span className="font-mono">{ingressNamespace.trim() || DEFAULT_INGRESS_NAMESPACE}</span>
                     {controllerNodeSel !== NO_FIXED_NODE ? (
                       <>
                         ，并固定到节点 <span className="font-mono">{controllerNodeSel}</span>
@@ -766,7 +803,8 @@ const ClusterK8sAddonsSection: React.FC = () => {
                 ) : null}
                 {confirmAction === "uninstall" ? (
                   <span>
-                    将<strong>删除整个命名空间</strong> <span className="font-mono">ingress-nginx</span>
+                    将<strong>删除整个命名空间</strong>{" "}
+                    <span className="font-mono">{ingressNamespace.trim() || DEFAULT_INGRESS_NAMESPACE}</span>
                     （含控制器、Admission Webhook 等），不可撤销。
                   </span>
                 ) : null}

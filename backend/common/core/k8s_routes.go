@@ -81,6 +81,8 @@ func RegisterK8sRoutes(api *gin.RouterGroup, app *ServerApp) {
 	api.POST("/k8s/addons/dashboard-monitoring/install", AdminOnlyMiddleware(app), func(c *gin.Context) { handleK8sAddonsDashboardMonitoringInstall(c, app) })
 	api.GET("/k8s/addons/kube-prometheus-stack/verify", func(c *gin.Context) { handleK8sAddonsKubePrometheusStackVerify(c, app) })
 	api.POST("/k8s/addons/kube-prometheus-stack/install", AdminOnlyMiddleware(app), func(c *gin.Context) { handleK8sAddonsKubePrometheusStackInstall(c, app) })
+	api.GET("/k8s/addons/victoria-logs/verify", func(c *gin.Context) { handleK8sAddonsVictoriaLogsVerify(c, app) })
+	api.POST("/k8s/addons/victoria-logs/install", AdminOnlyMiddleware(app), func(c *gin.Context) { handleK8sAddonsVictoriaLogsInstall(c, app) })
 	api.GET("/k8s/resource-relations", func(c *gin.Context) { handleK8sResourceRelations(c, app.K8s()) })
 	api.GET("/k8s/deployments", func(c *gin.Context) { handleK8sDeployments(c, app.K8s()) })
 	api.POST("/k8s/deployments/:namespace/:name/restart", func(c *gin.Context) { handleK8sDeploymentRolloutRestart(c, app.K8s()) })

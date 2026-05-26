@@ -9,13 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	sigyaml "sigs.k8s.io/yaml"
 )
 
 // 上游固定版本，便于国内镜像改写与复现；Dashboard 2.7 为 aio 单文件 recommended 的最后一档常用发行。
 const (
-	k8sMetricsServerComponentsURL        = "https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml"
+	k8sMetricsServerComponentsURL        = "https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml"
 	k8sKubernetesDashboardRecommendedURL = "https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml"
 
 	k8sMetricsServerDeployment   = "metrics-server"
@@ -42,6 +44,11 @@ subjects:
 `
 )
 
+func k8sDashboardAdminBindingYAMLForNamespace(namespace string) []byte {
+	namespace = firstValidAddonNamespace(namespace, k8sKubernetesDashboardNS)
+	return []byte(strings.ReplaceAll(k8sDashboardAdminBindingYAML, "namespace: kubernetes-dashboard", "namespace: "+namespace))
+}
+
 // RewriteK8sDashboardMonitoringAddonImages 将 metrics-server（registry.k8s.io）与 Dashboard（kubernetesui/*）改写为国内可拉取前缀。
 // 与 ingress 一致：若 IngressNginxSkipK8sRegistryMirror 则不改写。
 func RewriteK8sDashboardMonitoringAddonImages(raw []byte, cfg Config) []byte {
@@ -67,14 +74,85 @@ func rewriteKubernetesUIImageToMirror(manifest []byte, dockerMirrorPrefix string
 	return []byte(s)
 }
 
-func patchMetricsServerKubeletInsecureTLS(ctx context.Context, k8s *kubernetes.Clientset) error {
+func dashboardMonitoringNamespacedKind(kind string) bool {
+	switch kind {
+	case "ConfigMap", "Deployment", "Role", "RoleBinding", "Secret", "Service", "ServiceAccount":
+		return true
+	default:
+		return false
+	}
+}
+
+func byteSlicesToStrings(parts [][]byte) []string {
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		out = append(out, string(p))
+	}
+	return out
+}
+
+func rewriteDashboardMonitoringManifestNamespace(raw []byte, fromNamespace, toNamespace string) ([]byte, error) {
+	toNamespace = strings.TrimSpace(toNamespace)
+	if toNamespace == "" || toNamespace == fromNamespace {
+		return raw, nil
+	}
+	var out [][]byte
+	for _, doc := range splitYAMLDocuments(string(raw)) {
+		if len(strings.TrimSpace(string(doc))) == 0 {
+			continue
+		}
+		jsonDoc, err := sigyaml.YAMLToJSON([]byte(doc))
+		if err != nil {
+			return nil, fmt.Errorf("解析 YAML: %w", err)
+		}
+		obj := &unstructured.Unstructured{}
+		if err := obj.UnmarshalJSON(jsonDoc); err != nil {
+			return nil, fmt.Errorf("解析 Kubernetes 对象: %w", err)
+		}
+		switch obj.GetKind() {
+		case "Namespace":
+			if obj.GetName() == fromNamespace {
+				obj.SetName(toNamespace)
+			}
+		case "ClusterRoleBinding":
+			subjects, ok, _ := unstructured.NestedSlice(obj.Object, "subjects")
+			if ok {
+				for i := range subjects {
+					m, _ := subjects[i].(map[string]any)
+					if m == nil || m["kind"] != "ServiceAccount" {
+						continue
+					}
+					if ns, _ := m["namespace"].(string); ns == fromNamespace || ns == "" {
+						m["namespace"] = toNamespace
+					}
+				}
+				_ = unstructured.SetNestedSlice(obj.Object, subjects, "subjects")
+			}
+		default:
+			if dashboardMonitoringNamespacedKind(obj.GetKind()) {
+				if obj.GetNamespace() == "" || obj.GetNamespace() == fromNamespace {
+					obj.SetNamespace(toNamespace)
+				}
+			}
+		}
+		b, err := sigyaml.Marshal(obj.Object)
+		if err != nil {
+			return nil, fmt.Errorf("渲染 YAML: %w", err)
+		}
+		out = append(out, b)
+	}
+	return []byte(strings.Join(byteSlicesToStrings(out), "\n---\n")), nil
+}
+
+func patchMetricsServerKubeletInsecureTLS(ctx context.Context, k8s *kubernetes.Clientset, namespace string) error {
 	if k8s == nil {
 		return fmt.Errorf("Kubernetes 客户端未初始化")
 	}
+	namespace = firstValidAddonNamespace(namespace, k8sMetricsServerNamespace)
 	waitCtx, cancel := context.WithTimeout(ctx, 4*time.Minute)
 	defer cancel()
 	for {
-		dep, err := k8s.AppsV1().Deployments(k8sMetricsServerNamespace).Get(waitCtx, k8sMetricsServerDeployment, metav1.GetOptions{})
+		dep, err := k8s.AppsV1().Deployments(namespace).Get(waitCtx, k8sMetricsServerDeployment, metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				select {
@@ -107,7 +185,7 @@ func patchMetricsServerKubeletInsecureTLS(ctx context.Context, k8s *kubernetes.C
 		if !changed {
 			return nil
 		}
-		_, err = k8s.AppsV1().Deployments(k8sMetricsServerNamespace).Update(waitCtx, dep, metav1.UpdateOptions{})
+		_, err = k8s.AppsV1().Deployments(namespace).Update(waitCtx, dep, metav1.UpdateOptions{})
 		if err == nil {
 			return nil
 		}
@@ -123,20 +201,26 @@ func patchMetricsServerKubeletInsecureTLS(ctx context.Context, k8s *kubernetes.C
 }
 
 // InstallK8sDashboardMonitoringStack 安装 metrics-server + Kubernetes Dashboard 2.7（recommended）+ 平台创建的 cluster-admin ServiceAccount（登录用 Token）。
-func InstallK8sDashboardMonitoringStack(ctx context.Context, k8s *kubernetes.Clientset, restCfg *rest.Config, platformCfg Config, mirror ManifestMirrorMode, kubeletInsecureTLS bool) error {
+func InstallK8sDashboardMonitoringStack(ctx context.Context, k8s *kubernetes.Clientset, restCfg *rest.Config, platformCfg Config, mirror ManifestMirrorMode, metricsServerNamespace, dashboardNamespace string, kubeletInsecureTLS bool) error {
 	if k8s == nil || restCfg == nil {
 		return fmt.Errorf("Kubernetes 未连接")
 	}
+	metricsServerNamespace = firstValidAddonNamespace(metricsServerNamespace, k8sMetricsServerNamespace)
+	dashboardNamespace = firstValidAddonNamespace(dashboardNamespace, k8sKubernetesDashboardNS)
 	msRaw, err := httpGetManifestBytes(ctx, k8sMetricsServerComponentsURL, mirror)
 	if err != nil {
 		return fmt.Errorf("下载 metrics-server 清单: %w", err)
 	}
 	msRaw = RewriteK8sDashboardMonitoringAddonImages(msRaw, platformCfg)
+	msRaw, err = rewriteDashboardMonitoringManifestNamespace(msRaw, k8sMetricsServerNamespace, metricsServerNamespace)
+	if err != nil {
+		return fmt.Errorf("改写 metrics-server namespace: %w", err)
+	}
 	if err := applyYAMLManifestDynamic(ctx, restCfg, msRaw); err != nil {
 		return fmt.Errorf("应用 metrics-server: %w", err)
 	}
 	if kubeletInsecureTLS {
-		if err := patchMetricsServerKubeletInsecureTLS(ctx, k8s); err != nil {
+		if err := patchMetricsServerKubeletInsecureTLS(ctx, k8s, metricsServerNamespace); err != nil {
 			return err
 		}
 	}
@@ -145,10 +229,14 @@ func InstallK8sDashboardMonitoringStack(ctx context.Context, k8s *kubernetes.Cli
 		return fmt.Errorf("下载 kubernetes-dashboard 清单: %w", err)
 	}
 	dashRaw = RewriteK8sDashboardMonitoringAddonImages(dashRaw, platformCfg)
+	dashRaw, err = rewriteDashboardMonitoringManifestNamespace(dashRaw, k8sKubernetesDashboardNS, dashboardNamespace)
+	if err != nil {
+		return fmt.Errorf("改写 kubernetes-dashboard namespace: %w", err)
+	}
 	if err := applyYAMLManifestDynamic(ctx, restCfg, dashRaw); err != nil {
 		return fmt.Errorf("应用 kubernetes-dashboard: %w", err)
 	}
-	if err := applyYAMLManifestDynamic(ctx, restCfg, []byte(k8sDashboardAdminBindingYAML)); err != nil {
+	if err := applyYAMLManifestDynamic(ctx, restCfg, k8sDashboardAdminBindingYAMLForNamespace(dashboardNamespace)); err != nil {
 		return fmt.Errorf("应用 Dashboard 管理员 ServiceAccount: %w", err)
 	}
 	return nil
@@ -185,37 +273,41 @@ func deploymentStatusBrief(ctx context.Context, k8s *kubernetes.Clientset, ns, n
 }
 
 // K8sDashboardMonitoringStackStatus 供 /api/k8s/addons/status 合并展示。
-func K8sDashboardMonitoringStackStatus(ctx context.Context, k8s *kubernetes.Clientset) gin.H {
+func K8sDashboardMonitoringStackStatus(ctx context.Context, k8s *kubernetes.Clientset, rs *RuntimeSettings) gin.H {
+	metricsNS := effectiveMetricsServerNamespace(rs)
+	dashboardNS := effectiveKubernetesDashboardNamespace(rs)
+	dashboardRelease := effectiveKubernetesDashboardReleaseName(rs)
 	if k8s == nil {
 		return gin.H{
 			"metricsServer": gin.H{
-				"namespace": k8sMetricsServerNamespace,
+				"namespace": metricsNS,
 				"installed": false,
 			},
 			"kubernetesDashboard": gin.H{
-				"namespace": k8sKubernetesDashboardNS,
-				"installed": false,
+				"namespace":   dashboardNS,
+				"releaseName": dashboardRelease,
+				"installed":   false,
 			},
 		}
 	}
-	msDep := deploymentStatusBrief(ctx, k8s, k8sMetricsServerNamespace, k8sMetricsServerDeployment)
+	msDep := deploymentStatusBrief(ctx, k8s, metricsNS, k8sMetricsServerDeployment)
 	msInstalled, _ := msDep["found"].(bool)
 	msRollout, _ := msDep["rolloutReady"].(bool)
 
-	dashMain := deploymentStatusBrief(ctx, k8s, k8sKubernetesDashboardNS, "kubernetes-dashboard")
-	dashScraper := deploymentStatusBrief(ctx, k8s, k8sKubernetesDashboardNS, "dashboard-metrics-scraper")
+	dashMain := deploymentStatusBrief(ctx, k8s, dashboardNS, "kubernetes-dashboard")
+	dashScraper := deploymentStatusBrief(ctx, k8s, dashboardNS, "dashboard-metrics-scraper")
 	dmFound, _ := dashMain["found"].(bool)
 	dsFound, _ := dashScraper["found"].(bool)
 	dmOk, _ := dashMain["rolloutReady"].(bool)
 	dsOk, _ := dashScraper["rolloutReady"].(bool)
 
 	nsExists := false
-	if _, err := k8s.CoreV1().Namespaces().Get(ctx, k8sKubernetesDashboardNS, metav1.GetOptions{}); err == nil {
+	if _, err := k8s.CoreV1().Namespaces().Get(ctx, dashboardNS, metav1.GetOptions{}); err == nil {
 		nsExists = true
 	}
 
 	saExists := false
-	if _, err := k8s.CoreV1().ServiceAccounts(k8sKubernetesDashboardNS).Get(ctx, "easypanel-dashboard-admin", metav1.GetOptions{}); err == nil {
+	if _, err := k8s.CoreV1().ServiceAccounts(dashboardNS).Get(ctx, "easypanel-dashboard-admin", metav1.GetOptions{}); err == nil {
 		saExists = true
 	}
 
@@ -224,14 +316,15 @@ func K8sDashboardMonitoringStackStatus(ctx context.Context, k8s *kubernetes.Clie
 
 	return gin.H{
 		"metricsServer": gin.H{
-			"namespace":              k8sMetricsServerNamespace,
+			"namespace":              metricsNS,
 			"deployment":             msDep,
 			"installed":              msInstalled,
 			"rolloutReady":           msRollout,
 			"kubeletInsecureTlsHint": "多数国内/自签 kubelet 证书环境需为 metrics-server 增加参数 --kubelet-insecure-tls；一键安装默认可勾选注入。",
 		},
 		"kubernetesDashboard": gin.H{
-			"namespace":             k8sKubernetesDashboardNS,
+			"namespace":             dashboardNS,
+			"releaseName":           dashboardRelease,
 			"namespaceExists":       nsExists,
 			"dashboardDeployment":   dashMain,
 			"scraperDeployment":     dashScraper,
@@ -239,14 +332,14 @@ func K8sDashboardMonitoringStackStatus(ctx context.Context, k8s *kubernetes.Clie
 			"uiPodsLikelyReady":     dmOk && (!dsFound || dsOk),
 			"adminServiceAccount":   "easypanel-dashboard-admin",
 			"adminBindingInstalled": saExists,
-			"accessHint":            "kubectl proxy 后访问 /api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/ ；登录用 kubectl create token easypanel-dashboard-admin -n kubernetes-dashboard --duration=24h",
+			"accessHint":            "kubectl proxy 后访问 /api/v1/namespaces/" + dashboardNS + "/services/https:kubernetes-dashboard:/proxy/ ；登录用 kubectl create token easypanel-dashboard-admin -n " + dashboardNS + " --duration=24h",
 			"allComponentsReady":    allReady,
 		},
 	}
 }
 
 // WaitVerifyK8sDashboardMonitoringStack 安装后轮询 Deployment / Pod 就绪。
-func WaitVerifyK8sDashboardMonitoringStack(ctx context.Context, k8s *kubernetes.Clientset, pollEvery time.Duration, maxWait time.Duration) IngressAddonVerification {
+func WaitVerifyK8sDashboardMonitoringStack(ctx context.Context, k8s *kubernetes.Clientset, metricsServerNamespace, dashboardNamespace string, pollEvery time.Duration, maxWait time.Duration) IngressAddonVerification {
 	started := time.Now()
 	if k8s == nil {
 		return IngressAddonVerification{
@@ -256,6 +349,8 @@ func WaitVerifyK8sDashboardMonitoringStack(ctx context.Context, k8s *kubernetes.
 			Remedies:  []string{"确认集群已连接并具有 apps deployments 读权限"},
 		}
 	}
+	metricsServerNamespace = firstValidAddonNamespace(metricsServerNamespace, k8sMetricsServerNamespace)
+	dashboardNamespace = firstValidAddonNamespace(dashboardNamespace, k8sKubernetesDashboardNS)
 	deadline := time.Now().Add(maxWait)
 	var lastChecks []IngressAddonCheck
 	for time.Now().Before(deadline) {
@@ -263,7 +358,7 @@ func WaitVerifyK8sDashboardMonitoringStack(ctx context.Context, k8s *kubernetes.
 			break
 		}
 		var checks []IngressAddonCheck
-		msDep, err := k8s.AppsV1().Deployments(k8sMetricsServerNamespace).Get(ctx, k8sMetricsServerDeployment, metav1.GetOptions{})
+		msDep, err := k8s.AppsV1().Deployments(metricsServerNamespace).Get(ctx, k8sMetricsServerDeployment, metav1.GetOptions{})
 		if err != nil || msDep == nil {
 			checks = append(checks, IngressAddonCheck{Name: "metrics-server Deployment", OK: false, Detail: manifestErrSnippet(err, 120)})
 		} else {
@@ -272,7 +367,7 @@ func WaitVerifyK8sDashboardMonitoringStack(ctx context.Context, k8s *kubernetes.
 			checks = append(checks, IngressAddonCheck{Name: "metrics-server Deployment", OK: ok, Detail: detail})
 		}
 
-		dashDep, err := k8s.AppsV1().Deployments(k8sKubernetesDashboardNS).Get(ctx, "kubernetes-dashboard", metav1.GetOptions{})
+		dashDep, err := k8s.AppsV1().Deployments(dashboardNamespace).Get(ctx, "kubernetes-dashboard", metav1.GetOptions{})
 		if err != nil || dashDep == nil {
 			checks = append(checks, IngressAddonCheck{Name: "kubernetes-dashboard Deployment", OK: false, Detail: manifestErrSnippet(err, 120)})
 		} else {
@@ -281,7 +376,7 @@ func WaitVerifyK8sDashboardMonitoringStack(ctx context.Context, k8s *kubernetes.
 			checks = append(checks, IngressAddonCheck{Name: "kubernetes-dashboard Deployment", OK: ok, Detail: detail})
 		}
 
-		scraperDep, err := k8s.AppsV1().Deployments(k8sKubernetesDashboardNS).Get(ctx, "dashboard-metrics-scraper", metav1.GetOptions{})
+		scraperDep, err := k8s.AppsV1().Deployments(dashboardNamespace).Get(ctx, "dashboard-metrics-scraper", metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
 			checks = append(checks, IngressAddonCheck{Name: "dashboard-metrics-scraper", OK: true, Detail: "未安装（可忽略）"})
 		} else if err != nil || scraperDep == nil {
@@ -292,7 +387,7 @@ func WaitVerifyK8sDashboardMonitoringStack(ctx context.Context, k8s *kubernetes.
 			checks = append(checks, IngressAddonCheck{Name: "dashboard-metrics-scraper Deployment", OK: ok, Detail: detail})
 		}
 
-		_, err = k8s.CoreV1().ServiceAccounts(k8sKubernetesDashboardNS).Get(ctx, "easypanel-dashboard-admin", metav1.GetOptions{})
+		_, err = k8s.CoreV1().ServiceAccounts(dashboardNamespace).Get(ctx, "easypanel-dashboard-admin", metav1.GetOptions{})
 		saOk := err == nil
 		checks = append(checks, IngressAddonCheck{Name: "SA easypanel-dashboard-admin", OK: saOk, Detail: func() string {
 			if saOk {
@@ -326,7 +421,7 @@ func WaitVerifyK8sDashboardMonitoringStack(ctx context.Context, k8s *kubernetes.
 
 	issues := []string{"等待超时：部分组件未就绪"}
 	remedies := []string{
-		"查看 Pod 事件：kubectl describe pod -n kube-system -l k8s-app=metrics-server ；kubectl describe pod -n kubernetes-dashboard",
+		"查看 Pod 事件：kubectl describe pod -n " + metricsServerNamespace + " -l k8s-app=metrics-server ；kubectl describe pod -n " + dashboardNamespace,
 		"若 metrics-server 因 kubelet 证书报错，编辑 Deployment 增加参数 --kubelet-insecure-tls 后重试",
 		"确认节点可拉取 m.daocloud.io 前缀镜像；若禁用镜像改写，请在运行时设置 INGRESS_NGINX_SKIP_K8S_REGISTRY_MIRROR 并改用自建镜像仓库",
 	}

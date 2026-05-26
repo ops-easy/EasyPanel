@@ -242,7 +242,9 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
       <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-5">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-base font-bold text-gray-900">
-            {en ? "Kubernetes monitoring (Prometheus · VM)" : "Kubernetes 监控（Prometheus · VM）"}
+            {en
+              ? "Monitoring datasource (Prometheus / VictoriaMetrics vmselect)"
+              : "监控数据源（Prometheus / VictoriaMetrics vmselect）"}
           </h2>
           <span
             className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-800"
@@ -274,7 +276,8 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
           「VM」表示 VictoriaMetrics 的 <strong>vmselect</strong> 根地址（与 Prometheus 一样走{" "}
           <code className="rounded bg-slate-100 px-0.5">/api/v1/query</code>）。在「监控数据源」对话框或运行时字段{" "}
           <code className="rounded bg-slate-100 px-0.5">vmSelectUrlK8s</code> 中填写后，K8s 侧监控查询会<strong>优先</strong>走
-          vmselect；留空则仍使用上方 Prometheus 地址。
+          vmselect；留空则仍使用上方 Prometheus 地址。VictoriaLogs 是日志系统，负责 LogsQL / VMLog 查询，与
+          VictoriaMetrics vmselect 不是同一个入口。
         </p>
       </div>
       <div className="space-y-6 p-6">

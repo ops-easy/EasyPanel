@@ -31,8 +31,16 @@ var kubePrometheusStackChartURLs = []string{
 
 // KubePromStackInstallOpts 一键安装参数。
 type KubePromStackInstallOpts struct {
+	Namespace               string
+	ReleaseName             string
+	Retention               string
+	ScrapeInterval          string
+	StorageClassName        string
+	StorageSize             string
 	GrafanaEnabled          bool
 	AlertmanagerEnabled     bool
+	NodeExporterEnabled     bool
+	KubeStateMetricsEnabled bool
 	AutoSwitchPrometheusURL bool
 	ClearVMSelect           bool
 	// kubeEtcd：与 kube-prometheus-stack chart 中 kubeEtcd 段一致；启用时需填写 control-plane IP（或可达主机名）。
@@ -48,6 +56,7 @@ type KubePromStackInstallResult struct {
 	PrometheusBaseURL string
 	ServiceName       string
 	Namespace         string
+	ReleaseName       string
 }
 
 // RewriteKubePrometheusRenderedImages 将 helm template 输出中的常见公网镜像前缀改写为 DaoCloud 加速（与 ingress 清单改写思路一致）。
@@ -72,6 +81,14 @@ func RewriteKubePrometheusRenderedImages(raw []byte) []byte {
 }
 
 func buildKubePromStackValuesYAML(opts KubePromStackInstallOpts) string {
+	retention := strings.TrimSpace(opts.Retention)
+	if retention == "" {
+		retention = "15d"
+	}
+	scrapeInterval := strings.TrimSpace(opts.ScrapeInterval)
+	if scrapeInterval == "" {
+		scrapeInterval = "30s"
+	}
 	var b strings.Builder
 	fmt.Fprintf(&b, `grafana:
   enabled: %v
@@ -108,22 +125,37 @@ kubeScheduler:
 		b.WriteString("kubeEtcd:\n  enabled: false\n")
 	}
 
-	b.WriteString(`kubeStateMetrics:
-  enabled: true
+	fmt.Fprintf(&b, `kubeStateMetrics:
+  enabled: %v
 nodeExporter:
-  enabled: true
+  enabled: %v
 defaultRules:
   create: true
 prometheus:
   prometheusSpec:
-    retention: 15d
-    scrapeInterval: 30s
+    retention: %s
+    scrapeInterval: %s
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
     serviceMonitorNamespaceSelector: {}
     podMonitorNamespaceSelector: {}
+`, opts.KubeStateMetricsEnabled, opts.NodeExporterEnabled, retention, scrapeInterval)
+	storageSize := strings.TrimSpace(opts.StorageSize)
+	if storageSize != "" {
+		b.WriteString(`    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
 `)
+		fmt.Fprintf(&b, "              storage: %q\n", storageSize)
+		if sc := strings.TrimSpace(opts.StorageClassName); sc != "" {
+			fmt.Fprintf(&b, "          storageClassName: %q\n", sc)
+		}
+	}
 	return b.String()
 }
 
@@ -139,11 +171,11 @@ func resolveHelmBinary() (string, error) {
 	return exec.LookPath("helm")
 }
 
-func findPrometheusOperatorDeployment(ctx context.Context, k8s *kubernetes.Clientset, ns string) (*appsv1.Deployment, error) {
+func findPrometheusOperatorDeployment(ctx context.Context, k8s *kubernetes.Clientset, ns, releaseName string) (*appsv1.Deployment, error) {
 	if k8s == nil {
 		return nil, fmt.Errorf("k8s 为空")
 	}
-	release := kubePromStackReleaseName
+	release := firstValidAddonReleaseName(releaseName, kubePromStackReleaseName)
 	pickBest := func(items []appsv1.Deployment) *appsv1.Deployment {
 		if len(items) == 0 {
 			return nil
@@ -222,6 +254,8 @@ func InstallKubePrometheusStack(ctx context.Context, app *ServerApp, mirror Mani
 	if err != nil {
 		return nil, fmt.Errorf("未找到 helm 可执行文件：请在镜像内放置 /app/helm，或设置 HELM_BIN，或将 helm 加入 PATH: %w", err)
 	}
+	namespace := firstValidAddonNamespace(opts.Namespace, kubePromStackNamespace)
+	releaseName := firstValidAddonReleaseName(opts.ReleaseName, kubePromStackReleaseName)
 
 	workDir, err := os.MkdirTemp("", "easypanel-kps-*")
 	if err != nil {
@@ -243,8 +277,8 @@ func InstallKubePrometheusStack(ctx context.Context, app *ServerApp, mirror Mani
 	}
 
 	// helm template 仅本地渲染，无需 kubeconfig；应用清单走 applyYAMLManifestDynamic。
-	cmd := exec.CommandContext(ctx, helmBin, "template", kubePromStackReleaseName, chartPath,
-		"--namespace", kubePromStackNamespace,
+	cmd := exec.CommandContext(ctx, helmBin, "template", releaseName, chartPath,
+		"--namespace", namespace,
 		"--include-crds",
 		"-f", valuesPath,
 	)
@@ -262,14 +296,14 @@ func InstallKubePrometheusStack(ctx context.Context, app *ServerApp, mirror Mani
 		rendered = RewriteKubePrometheusRenderedImages(rendered)
 	}
 	// 清单中文档顺序不定，ServiceAccount 等可能早于 Namespace；chart 也可能不渲染 Namespace
-	if err := ensureNamespace(ctx, app.K8s(), kubePromStackNamespace); err != nil {
-		return nil, fmt.Errorf("创建或确认命名空间 %s: %w", kubePromStackNamespace, err)
+	if err := ensureNamespace(ctx, app.K8s(), namespace); err != nil {
+		return nil, fmt.Errorf("创建或确认命名空间 %s: %w", namespace, err)
 	}
 	if err := applyYAMLManifestDynamic(ctx, app.K8sREST(), rendered); err != nil {
 		return nil, fmt.Errorf("应用 kube-prometheus-stack 渲染清单: %w", err)
 	}
 
-	svc, err := discoverPrometheusService(ctx, app.K8s(), kubePromStackNamespace)
+	svc, err := discoverPrometheusService(ctx, app.K8s(), namespace, releaseName)
 	if err != nil {
 		return nil, fmt.Errorf("安装已提交但未找到 Prometheus Service: %w", err)
 	}
@@ -278,6 +312,7 @@ func InstallKubePrometheusStack(ctx context.Context, app *ServerApp, mirror Mani
 		PrometheusBaseURL: base,
 		ServiceName:       svc.Name,
 		Namespace:         svc.Namespace,
+		ReleaseName:       releaseName,
 	}, nil
 }
 
@@ -294,7 +329,7 @@ func helmHelmEnv(tmpRoot string) []string {
 	)
 }
 
-func discoverPrometheusService(ctx context.Context, k8s *kubernetes.Clientset, ns string) (*corev1.Service, error) {
+func discoverPrometheusService(ctx context.Context, k8s *kubernetes.Clientset, ns, releaseName string) (*corev1.Service, error) {
 	if k8s == nil {
 		return nil, fmt.Errorf("k8s 为空")
 	}
@@ -309,7 +344,7 @@ func discoverPrometheusService(ctx context.Context, k8s *kubernetes.Clientset, n
 			}
 		}
 	}
-	name := kubePromStackReleaseName + "-kube-prometheus-prometheus"
+	name := firstValidAddonReleaseName(releaseName, kubePromStackReleaseName) + "-kube-prometheus-prometheus"
 	return k8s.CoreV1().Services(ns).Get(ctx, name, metav1.GetOptions{})
 }
 
@@ -434,7 +469,7 @@ func kubePromRolloutRemediesForIssues(issues []string) []string {
 }
 
 // WaitKubePrometheusStackRollout 等待 operator Deployment 与 Prometheus StatefulSet 就绪（尽力而为）。
-func WaitKubePrometheusStackRollout(ctx context.Context, k8s *kubernetes.Clientset, maxWait time.Duration) IngressAddonVerification {
+func WaitKubePrometheusStackRollout(ctx context.Context, k8s *kubernetes.Clientset, namespace, releaseName string, maxWait time.Duration) IngressAddonVerification {
 	started := time.Now()
 	deadline := time.Now().Add(maxWait)
 	var last []IngressAddonCheck
@@ -444,7 +479,8 @@ func WaitKubePrometheusStackRollout(ctx context.Context, k8s *kubernetes.Clients
 			Issues: []string{"Kubernetes 客户端不可用"}, Remedies: []string{"确认集群已连接"},
 		}
 	}
-	ns := kubePromStackNamespace
+	ns := firstValidAddonNamespace(namespace, kubePromStackNamespace)
+	release := firstValidAddonReleaseName(releaseName, kubePromStackReleaseName)
 
 	for time.Now().Before(deadline) {
 		if ctx.Err() != nil {
@@ -452,7 +488,7 @@ func WaitKubePrometheusStackRollout(ctx context.Context, k8s *kubernetes.Clients
 		}
 		var checks []IngressAddonCheck
 
-		opDep, opErr := findPrometheusOperatorDeployment(ctx, k8s, ns)
+		opDep, opErr := findPrometheusOperatorDeployment(ctx, k8s, ns, release)
 		if opErr != nil || opDep == nil {
 			checks = append(checks, IngressAddonCheck{Name: "prometheus-operator Deployment", OK: false, Detail: manifestErrSnippet(opErr, 140)})
 		} else {
@@ -488,7 +524,7 @@ func WaitKubePrometheusStackRollout(ctx context.Context, k8s *kubernetes.Clients
 		}
 		checks = append(checks, IngressAddonCheck{Name: "Prometheus StatefulSet", OK: promOK, Detail: promDetail})
 
-		svc, err := discoverPrometheusService(ctx, k8s, ns)
+		svc, err := discoverPrometheusService(ctx, k8s, ns, release)
 		svcOK := err == nil && svc != nil
 		sd := "已发现 Service"
 		if err != nil {
@@ -576,11 +612,12 @@ func WaitKubePrometheusStackRollout(ctx context.Context, k8s *kubernetes.Clients
 }
 
 // KubePrometheusStackAddonStatus 供 /api/k8s/addons/status。
-func KubePrometheusStackAddonStatus(ctx context.Context, k8s *kubernetes.Clientset, cfg Config) gin.H {
-	ns := kubePromStackNamespace
+func KubePrometheusStackAddonStatus(ctx context.Context, k8s *kubernetes.Clientset, cfg Config, rs *RuntimeSettings) gin.H {
+	ns := effectiveKubePrometheusStackNamespace(rs)
+	release := effectiveKubePrometheusStackReleaseName(rs)
 	out := gin.H{
 		"namespace":   ns,
-		"releaseName": kubePromStackReleaseName,
+		"releaseName": release,
 		"installed":   false,
 		"hint":        "一键安装后默认抓取 apiserver、kube-controller-manager、kube-scheduler、kube-state-metrics、node-exporter、kubelet/cAdvisor（全命名空间 ServiceMonitor）；etcd 仍关闭（自建 kubeadm 可在 values 中启用 kubeEtcd）。托管云若控制面不可达可将对应 kube*.enabled 改为 false。平台进程在集群外时 prometheusUrlK8s 勿用 *.svc，请填 Ingress/NodePort 可达地址。启用 etcd 抓取后，侧栏「etcd」可查看 WAL P99、Leader 切换与库大小等指标。",
 	}
@@ -594,7 +631,7 @@ func KubePrometheusStackAddonStatus(ctx context.Context, k8s *kubernetes.Clients
 		return out
 	}
 	out["namespaceExists"] = true
-	opDep, opErr := findPrometheusOperatorDeployment(ctx, k8s, ns)
+	opDep, opErr := findPrometheusOperatorDeployment(ctx, k8s, ns, release)
 	opReady := opErr == nil && opDep != nil && deploymentRolloutLooksReadyRelaxed(opDep)
 	if opDep != nil {
 		out["operatorDeploymentName"] = opDep.Name
@@ -632,7 +669,7 @@ func KubePrometheusStackAddonStatus(ctx context.Context, k8s *kubernetes.Clients
 	out["alertmanagerReady"] = amReady
 	out["podWarnings"] = kubePromMonitoringPodIssueSummaries(ctx, k8s, ns)
 
-	if svc, err := discoverPrometheusService(ctx, k8s, ns); err == nil && svc != nil {
+	if svc, err := discoverPrometheusService(ctx, k8s, ns, release); err == nil && svc != nil {
 		out["discoveredPrometheusURL"] = prometheusHTTPBaseFromService(svc)
 	}
 	amMust := strings.TrimSpace(amSTS) != ""

@@ -315,12 +315,24 @@ export type AppConfig = {
   k8sAddonsManifestMirror?: string;
   /** 安装 ingress 时是否将 registry.k8s.io 改写到国内可拉取前缀（默认 true，可由环境变量关闭） */
   ingressNginxK8sRegistryMirror?: boolean;
+  /** ingress-nginx addon 默认目标命名空间 */
+  ingressNginxNamespace?: string;
   /** ingress-nginx hostNetwork HTTP 端口（默认 80） */
   ingressNginxHostHttpPort?: number;
   /** ingress-nginx hostNetwork HTTPS 端口（默认 443） */
   ingressNginxHostHttpsPort?: number;
   /** 安装 ingress 时默认固定控制器的 Node 名称（kubectl get nodes 的 NAME）；空表示不默认固定 */
   ingressNginxControllerNodeName?: string;
+  /** kube-prometheus-stack 默认命名空间 / release */
+  kubePrometheusStackNamespace?: string;
+  kubePrometheusStackReleaseName?: string;
+  /** VictoriaLogs addon 默认命名空间 / release */
+  victoriaLogsNamespace?: string;
+  victoriaLogsReleaseName?: string;
+  /** metrics-server 与 Kubernetes Dashboard 默认部署目标 */
+  metricsServerNamespace?: string;
+  kubernetesDashboardNamespace?: string;
+  kubernetesDashboardReleaseName?: string;
   vcenterCacheTtlSec?: number;
   k8sConfigured?: boolean;
   /** Harbor API（运行时 harborBaseUrl + 凭据） */
