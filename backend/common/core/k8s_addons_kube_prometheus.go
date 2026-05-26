@@ -411,7 +411,7 @@ func InstallKubePrometheusStack(ctx context.Context, app *ServerApp, mirror Mani
 		return nil, fmt.Errorf("应用 kube-prometheus-stack 渲染清单: %w", err)
 	}
 
-	svc, err := discoverPrometheusService(ctx, app.K8s(), namespace, releaseName)
+	svc, err := waitForPrometheusService(ctx, app.K8s(), namespace, releaseName, 2*time.Minute)
 	if err != nil {
 		return nil, fmt.Errorf("安装已提交但未找到 Prometheus Service: %w", err)
 	}
@@ -441,19 +441,73 @@ func discoverPrometheusService(ctx context.Context, k8s *kubernetes.Clientset, n
 	if k8s == nil {
 		return nil, fmt.Errorf("k8s 为空")
 	}
-	list, err := k8s.CoreV1().Services(ns).List(ctx, metav1.ListOptions{LabelSelector: "operated-prometheus=true"})
-	if err == nil && list != nil {
-		for i := range list.Items {
-			s := &list.Items[i]
-			for _, p := range s.Spec.Ports {
-				if p.Port == 9090 || p.Name == "http-web" || p.Name == "web" {
-					return s, nil
-				}
-			}
+	release := firstValidAddonReleaseName(releaseName, kubePromStackReleaseName)
+	if list, err := k8s.CoreV1().Services(ns).List(ctx, metav1.ListOptions{}); err == nil && list != nil {
+		if svc := pickPrometheusService(list.Items, release); svc != nil {
+			return svc, nil
 		}
 	}
-	name := firstValidAddonReleaseName(releaseName, kubePromStackReleaseName) + "-kube-prometheus-prometheus"
-	return k8s.CoreV1().Services(ns).Get(ctx, name, metav1.GetOptions{})
+
+	var last error
+	for _, selector := range []string{
+		"operated-prometheus=true",
+		"app.kubernetes.io/instance=" + release + ",app.kubernetes.io/name=kube-prometheus-stack-prometheus",
+		"release=" + release + ",app=kube-prometheus-stack-prometheus",
+	} {
+		list, err := k8s.CoreV1().Services(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
+		if err == nil && list != nil {
+			if svc := pickPrometheusService(list.Items, release); svc != nil {
+				return svc, nil
+			}
+		} else if err != nil {
+			last = err
+		}
+	}
+
+	candidates := prometheusServiceNameCandidates(release)
+	for _, name := range candidates {
+		svc, err := k8s.CoreV1().Services(ns).Get(ctx, name, metav1.GetOptions{})
+		if err == nil && svc != nil && prometheusServiceHasHTTPPort(svc) {
+			return svc, nil
+		}
+		if err != nil {
+			last = err
+		}
+	}
+	if last == nil {
+		last = fmt.Errorf("no matching Service for release %s", release)
+	}
+	return nil, fmt.Errorf("未找到 Prometheus Service，已尝试 %s: %w", strings.Join(candidates, ", "), last)
+}
+
+func waitForPrometheusService(ctx context.Context, k8s *kubernetes.Clientset, ns, releaseName string, timeout time.Duration) (*corev1.Service, error) {
+	if timeout <= 0 {
+		return discoverPrometheusService(ctx, k8s, ns, releaseName)
+	}
+	deadline := time.Now().Add(timeout)
+	var last error
+	for {
+		svc, err := discoverPrometheusService(ctx, k8s, ns, releaseName)
+		if err == nil && svc != nil {
+			return svc, nil
+		}
+		last = err
+		if time.Now().After(deadline) {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			if last != nil {
+				return nil, last
+			}
+			return nil, ctx.Err()
+		case <-time.After(5 * time.Second):
+		}
+	}
+	if last == nil {
+		last = fmt.Errorf("等待超时")
+	}
+	return nil, last
 }
 
 func prometheusHTTPBaseFromService(svc *corev1.Service) string {
@@ -472,6 +526,96 @@ func prometheusHTTPBaseFromService(svc *corev1.Service) string {
 		ns = kubePromStackNamespace
 	}
 	return fmt.Sprintf("http://%s.%s.svc:%d", svc.Name, ns, port)
+}
+
+func prometheusServiceNameCandidates(releaseName string) []string {
+	release := firstValidAddonReleaseName(releaseName, kubePromStackReleaseName)
+	names := []string{
+		release + "-kube-prometheus-stack-prometheus",
+		release + "-kube-prometheus-s-prometheus",
+		release + "-kube-prometheus-prometheus",
+		release + "-prometheus",
+		"prometheus-" + release + "-kube-prometheus-stack-prometheus",
+		"prometheus-" + release + "-kube-prometheus-s-prometheus",
+		"prometheus-" + release + "-kube-prometheus-prometheus",
+		"prometheus-" + release + "-prometheus",
+		"prometheus-operated",
+	}
+	out := make([]string, 0, len(names))
+	seen := map[string]struct{}{}
+	for _, name := range names {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		out = append(out, name)
+	}
+	return out
+}
+
+func pickPrometheusService(items []corev1.Service, releaseName string) *corev1.Service {
+	candidates := map[string]struct{}{}
+	for _, name := range prometheusServiceNameCandidates(releaseName) {
+		candidates[name] = struct{}{}
+	}
+	for i := range items {
+		svc := &items[i]
+		if _, ok := candidates[svc.Name]; ok && prometheusServiceHasHTTPPort(svc) {
+			return svc
+		}
+	}
+	for i := range items {
+		svc := &items[i]
+		if prometheusServiceLooksLike(svc, releaseName) {
+			return svc
+		}
+	}
+	return nil
+}
+
+func prometheusServiceLooksLike(svc *corev1.Service, releaseName string) bool {
+	if svc == nil || !prometheusServiceHasHTTPPort(svc) {
+		return false
+	}
+	release := firstValidAddonReleaseName(releaseName, kubePromStackReleaseName)
+	labels := svc.Labels
+	if labels["operated-prometheus"] == "true" {
+		return true
+	}
+	if labels["app.kubernetes.io/instance"] == release &&
+		(strings.Contains(labels["app.kubernetes.io/name"], "prometheus") || strings.Contains(labels["app"], "prometheus")) {
+		return true
+	}
+	name := strings.ToLower(svc.Name)
+	releasePrefix := strings.ToLower(release)
+	if !(strings.HasPrefix(name, releasePrefix+"-") || strings.HasPrefix(name, "prometheus-"+releasePrefix+"-")) {
+		return false
+	}
+	if !strings.Contains(name, "prometheus") {
+		return false
+	}
+	for _, excluded := range []string{"alertmanager", "grafana", "kube-state", "node-exporter", "operator"} {
+		if strings.Contains(name, excluded) {
+			return false
+		}
+	}
+	return true
+}
+
+func prometheusServiceHasHTTPPort(svc *corev1.Service) bool {
+	if svc == nil {
+		return false
+	}
+	for _, p := range svc.Spec.Ports {
+		if p.Port == 9090 || p.Name == "http-web" || p.Name == "web" {
+			return true
+		}
+	}
+	return false
 }
 
 func kubePromBenignWaitingReason(reason string) bool {
