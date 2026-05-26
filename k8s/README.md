@@ -1,6 +1,6 @@
 # Kubernetes 部署说明
 
-本目录提供 Kube-BT-Sync 的 Kubernetes 原生清单和 Helm Chart。
+本目录提供 EasyPanel 的 Kubernetes 原生清单和 Helm Chart。
 
 ## 目录结构
 
@@ -18,7 +18,7 @@ k8s/
 
 ```bash
 kubectl apply -k k8s
-kubectl -n kube-bt-sync get pod,svc,pvc
+kubectl -n easy get pod,svc,pvc
 ```
 
 访问：
@@ -46,7 +46,7 @@ kubectl apply -f k8s/frontend/ingress.yaml
 
 ```bash
 helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
-  --namespace kube-bt-sync \
+  --namespace easy \
   --create-namespace \
   --set backend.image.repository=ghcr.io/ops-easy/kube-bt-sync \
   --set backend.image.tag=latest \
@@ -113,22 +113,22 @@ SMOKE_BASE_URL=https://your-staging.example.com SMOKE_D_PATH=/d/ npm run smoke:d
 
 ```bash
 # 查看资源
-kubectl -n kube-bt-sync get all,pvc
+kubectl -n easy get all,pvc
 
 # 查看后端日志
-kubectl -n kube-bt-sync logs deploy/kube-bt-sync -f
+kubectl -n easy logs deploy/kube-bt-sync -f
 
 # 查看前端日志
-kubectl -n kube-bt-sync logs deploy/kube-bt-sync-frontend -f
+kubectl -n easy logs deploy/kube-bt-sync-frontend -f
 
 # 进入后端 Pod
-kubectl -n kube-bt-sync exec -it deploy/kube-bt-sync -- /busybox/sh
+kubectl -n easy exec -it deploy/kube-bt-sync -- /busybox/sh
 
 # 删除 Kustomize 部署
 kubectl delete -k k8s
 
 # 删除 Helm 部署
-helm uninstall kube-bt-sync -n kube-bt-sync
+helm uninstall kube-bt-sync -n easy
 ```
 
 后端最终镜像基于 distroless，通常不包含 shell；如需调试，请使用临时调试容器或 Kubernetes 原生排障方式。

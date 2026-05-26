@@ -10,7 +10,7 @@
 - 应用启动、Provider、路由组合和守卫放在 `web/src/app`。
 - `web/src/pages` 只保留 `HomeHub`、`Login`、`Setup`、`NotFound` 等顶层入口。
 
-感谢你对 Kube-BT-Sync 的关注。这个项目覆盖 Kubernetes、宝塔面板、vCenter、监控日志、应用中心和文档中心等多个运维场景，欢迎通过 Issue、Pull Request 或文档改进参与。
+感谢你对 EasyPanel 的关注。这个项目覆盖 Kubernetes、宝塔面板、vCenter、监控日志、应用中心和文档中心等多个运维场景，欢迎通过 Issue、Pull Request 或文档改进参与。
 
 ## 提交 Issue
 
@@ -51,8 +51,8 @@ cd web && npm run lint
 ## 本地开发
 
 ```bash
-git clone https://github.com/ops-easy/kube-bt-sync.git
-cd kube-bt-sync
+git clone https://github.com/ops-easy/EasyPanel.git
+cd EasyPanel
 
 make start-backend
 make start-frontend

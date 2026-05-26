@@ -3,7 +3,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: kube-bt-sync-frontend
-  namespace: kube-bt-sync
+  namespace: easy
   labels:
     app.kubernetes.io/name: kube-bt-sync-frontend
     app.kubernetes.io/part-of: kube-bt-sync
@@ -16,7 +16,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: kube-bt-sync.example.com
+    - host: easypanel.example.com
       http:
         paths:
           - path: /

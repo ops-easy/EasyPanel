@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kube-bt-sync-frontend
-  namespace: kube-bt-sync
+  namespace: easy
   labels:
     app.kubernetes.io/name: kube-bt-sync-frontend
     app.kubernetes.io/part-of: kube-bt-sync

@@ -23,7 +23,7 @@
 
 ## 项目背景
 
-Kube-BT-Sync 是一个自建基础设施运维控制台，主要服务以下场景：
+EasyPanel 是一个自建基础设施运维控制台，主要服务以下场景：
 
 - Kubernetes 集群资源查看、编辑和诊断。
 - 将带注解的 Ingress 同步到宝塔 Nginx。
@@ -64,7 +64,7 @@ make start-frontend
 
 # Kubernetes
 kubectl apply -k k8s
-helm install kube-bt-sync ./k8s/charts/kube-bt-sync --namespace kube-bt-sync --create-namespace
+helm install kube-bt-sync ./k8s/charts/kube-bt-sync --namespace easy --create-namespace
 ```
 
 ## 架构要点

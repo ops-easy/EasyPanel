@@ -2,7 +2,7 @@
 
 EasyPanel 是面向自建 Kubernetes、Homelab 与小型私有云环境的运维控制台。它以 Go 后端和 React 前端组成，提供 Kubernetes 资源管理、Ingress 到宝塔面板的同步、应用中心、vCenter/云主机纳管、监控日志查询、文档中心与账号权限管理等能力。
 
-当前仓库计划作为新项目发布到 `https://github.com/ops-easy/kube-bt-sync.git`。文档、部署清单和镜像发布流程均以这个新仓库作为默认上下文。
+当前仓库计划作为新项目发布到 `https://github.com/ops-easy/EasyPanel.git`。文档、部署清单和镜像发布流程均以这个新仓库作为默认上下文。
 
 ## 核心能力
 
@@ -43,7 +43,7 @@ EasyPanel 是面向自建 Kubernetes、Homelab 与小型私有云环境的运维
 ## 项目结构
 
 ```text
-kube-bt-sync/
+EasyPanel/
 ├── api/                         # Go 后端，入口为 api/main.go
 ├── web/                         # React + Vite 前端
 ├── k8s/backend/                 # 后端 Kubernetes 清单
@@ -104,11 +104,11 @@ SMOKE_BASE_URL=https://your-staging.example.com SMOKE_D_PATH=/d/ npm run smoke:d
 
 ### Kustomize 部署
 
-默认清单会创建 `kube-bt-sync` 命名空间、RBAC、PVC、后端 Deployment/Service、前端 Deployment/NodePort Service。
+默认清单会创建 `easy` 命名空间、RBAC、PVC、后端 Deployment/Service、前端 Deployment/NodePort Service。
 
 ```bash
 kubectl apply -k k8s
-kubectl -n kube-bt-sync get pod,svc,pvc
+kubectl -n easy get pod,svc,pvc
 ```
 
 前端 Service 默认暴露 NodePort `32080`：
@@ -127,7 +127,7 @@ kubectl apply -f k8s/frontend/ingress.yaml
 
 ```bash
 helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
-  --namespace kube-bt-sync \
+  --namespace easy \
   --create-namespace \
   --set backend.image.repository=ghcr.io/ops-easy/kube-bt-sync \
   --set backend.image.tag=latest \

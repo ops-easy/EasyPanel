@@ -15,7 +15,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kube-bt-sync
-  namespace: kube-bt-sync
+  namespace: easy
   labels:
     app.kubernetes.io/name: kube-bt-sync
 spec:
