@@ -50,6 +50,9 @@ spec:
               value: "/data"
             - name: EASYPANEL_CONFIG_FILE
               value: "/app/config.yaml"
+          envFrom:
+            - secretRef:
+                name: easypanel-secrets
             # 与 limits.cpu 对齐，避免 P 线程数大于 cgroup 配额
             # - name: EASYPANEL_GOMAXPROCS
             #   value: "2"
@@ -98,6 +101,8 @@ spec:
             limits:
               cpu: "1"
               memory: "512Mi"
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       volumes:
         - name: config
           configMap:
