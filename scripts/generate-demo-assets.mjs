@@ -10,6 +10,8 @@ const demoDir = resolve(rootDir, "docs", "demo");
 const assetDir = resolve(demoDir, "assets");
 const tempDir = resolve(rootDir, ".vite");
 const host = "127.0.0.1";
+const screenshotWidth = 1920;
+const screenshotHeight = 1080;
 
 const data = {
   product: "EasyPanel",
@@ -146,6 +148,71 @@ const ingressRows = data.ingresses.map((ingress, index) => ({
   baotaTargetId: index === 1 ? "bt-edge" : "bt-main",
 }));
 
+const computeProviders = [
+  {
+    provider: "vcenter",
+    name: "vCenter Shanghai Lab",
+    configured: true,
+    healthy: true,
+    hint: "vSphere 8.0 / 4 hosts",
+    baseUrl: "https://vcenter.easypanel.dev/sdk",
+  },
+  {
+    provider: "pve",
+    targetId: "pve-lab",
+    name: "PVE GPU Lab",
+    configured: true,
+    healthy: true,
+    hint: "Proxmox VE / 2 nodes",
+    baseUrl: "https://pve.easypanel.dev:8006",
+  },
+];
+
+const computeSummary = {
+  providers: computeProviders,
+  counts: { guests: 27, hosts: 6, storage: 12, activity: 41, warnings: 2 },
+  health: { ok: 31, idle: 8, warning: 2, critical: 0, unknown: 1 },
+  hotspots: [
+    { kind: "storage", provider: "vcenter", resourceId: "datastore-fast-01", name: "datastore-fast-01", health: "warning", status: "capacity", statusLabel: "82% used" },
+    { kind: "guest", provider: "pve", resourceId: "vm-104", name: "gpu-trainer-104", health: "warning", status: "cpu", statusLabel: "CPU pressure" },
+  ],
+  recentFailures: [
+    { kind: "task", provider: "pve", resourceId: "UPID:pve-lab:1001", name: "nightly backup retry", health: "warning", status: "failed", statusLabel: "retry queued" },
+  ],
+  warningCount: 2,
+  warnings: ["PVE GPU Lab backup queue is above demo threshold"],
+};
+
+const networkDevices = [
+  {
+    id: "ikuai-core",
+    kind: "ikuai",
+    name: "iKuai Core Router",
+    prometheusScope: "router",
+    instanceLabel: "ikuai-core",
+    jobLabel: "network-exporter",
+    updatedAt: "2026-05-26T09:20:00+08:00",
+  },
+  {
+    id: "openwrt-edge",
+    kind: "openwrt",
+    name: "OpenWrt Edge Gateway",
+    prometheusScope: "edge",
+    instanceLabel: "openwrt-edge",
+    jobLabel: "openwrt-exporter",
+    host: "10.0.8.1",
+    passwordSet: true,
+    updatedAt: "2026-05-26T09:24:00+08:00",
+  },
+];
+
+const openWrtExporterStatus = {
+  prometheusConfigured: true,
+  families: { system: true, interfaces: true, dhcp: true, wifi: true, netstat: true },
+  missingHints: [],
+  metricNames: ["node_load1", "openwrt_interface_rx_bytes", "openwrt_wifi_clients", "openwrt_conntrack_entries"],
+};
+
 function mockApiResponse(url, method = "GET") {
   const { pathname, searchParams } = new URL(url);
   if (method === "OPTIONS") return { status: 204, body: "" };
@@ -280,7 +347,10 @@ function mockApiResponse(url, method = "GET") {
     return { hosts: Array.from({ length: 4 }, (_, index) => ({ name: `esxi-${index + 1}`, memoryTotalMB: 131072, memoryUsageMB: 78643 })) };
   }
   if (pathname === "/api/pve/targets") return { targets: [{ id: "pve-lab" }, { id: "pve-edge" }] };
-  if (pathname === "/api/network/devices") return { devices: [{ id: "ikuai-core", kind: "ikuai" }, { id: "openwrt-edge", kind: "openwrt" }] };
+  if (pathname === "/api/compute/providers") return { providers: computeProviders };
+  if (pathname === "/api/compute/summary") return computeSummary;
+  if (pathname === "/api/network/devices") return { devices: networkDevices };
+  if (/^\/api\/network\/devices\/[^/]+\/exporter-status$/.test(pathname)) return openWrtExporterStatus;
   if (pathname === "/api/bastion/vms") return { vms: [{ name: "jumpbox-01", powerState: "poweredOn" }], extraHosts: [{ name: "edge-shell" }] };
   if (pathname === "/api/aiops/alerts") return { rules: [{ enabled: true }, { enabled: true }, { enabled: false }], channels: [{ id: "wechat" }] };
   if (pathname === "/api/aiops/reports") return { reports: [{ id: "weekly" }, { id: "gpu" }] };
@@ -506,7 +576,11 @@ async function waitForFrontend(cdp, path) {
     "/": "Kubernetes",
     "/cluster/ns/easy/pods": "easypanel-api",
     "/cluster/apps/dashboard": "Dashboard",
+    "/cluster/baota": "API",
     "/cluster/baota/ingress": "Ingress Rules",
+    "/cluster/baota/sync": "Baota Sync",
+    "/cluster/compute/dashboard": "Dashboard",
+    "/cluster/network/dashboard": "NETWORK CENTER",
   }[path];
   const appReadyExpression = `
     (() => {
@@ -550,8 +624,8 @@ async function waitForFrontend(cdp, path) {
 
 async function captureScreenshot(cdp, url, output, path) {
   await cdp.send("Emulation.setDeviceMetricsOverride", {
-    width: 1440,
-    height: 900,
+    width: screenshotWidth,
+    height: screenshotHeight,
     deviceScaleFactor: 1,
     mobile: false,
   });
@@ -577,7 +651,7 @@ function writeDemoDocs() {
 本目录保存 README 使用的演示数据和前端截图。截图不是手绘图，也不是静态 HTML 预览，而是由 \`scripts/generate-demo-assets.mjs\` 启动真实 Vite 前端，在浏览器测试上下文中 mock \`/api/*\` 响应后截取现有页面得到。
 
 - 数据源：\`demo-data.json\`
-- 截图目录：\`assets/\`
+- 截图目录：\`assets/\`，统一使用 1920x1080 浏览器视口
 - 重新生成：\`node scripts/generate-demo-assets.mjs\`
 
 脚本会打开这些现有前端路径：
@@ -585,7 +659,11 @@ function writeDemoDocs() {
 - \`/\`
 - \`/cluster/ns/easy/pods\`
 - \`/cluster/apps/dashboard\`
+- \`/cluster/baota\`
 - \`/cluster/baota/ingress\`
+- \`/cluster/baota/sync\`
+- \`/cluster/compute/dashboard\`
+- \`/cluster/network/dashboard\`
 `
   );
 }
@@ -619,7 +697,11 @@ async function main() {
       { path: "/", filename: "easypanel-dashboard.png" },
       { path: "/cluster/ns/easy/pods", filename: "easypanel-kubernetes.png" },
       { path: "/cluster/apps/dashboard", filename: "easypanel-app-center.png" },
+      { path: "/cluster/baota", filename: "easypanel-baota-dashboard.png" },
       { path: "/cluster/baota/ingress", filename: "easypanel-ingress.png" },
+      { path: "/cluster/baota/sync", filename: "easypanel-baota-sync.png" },
+      { path: "/cluster/compute/dashboard", filename: "easypanel-compute.png" },
+      { path: "/cluster/network/dashboard", filename: "easypanel-network.png" },
     ];
 
     for (const item of screenshots) {

@@ -8,15 +8,23 @@ EasyPanel 是面向自建 Kubernetes、Homelab 与小型私有云环境的运维
 
 ## 界面预览
 
-以下截图由脚本启动真实 Vite 前端、在浏览器测试上下文中 mock `/api/*` 演示数据后截取，不包含真实基础设施、账号或业务信息。
+以下截图由脚本启动真实 Vite 前端、在浏览器测试上下文中 mock `/api/*` 演示数据后截取，统一使用 1920x1080 视口，不包含真实基础设施、账号或业务信息。
 
 | Kubernetes 资源中心 | 应用中心 |
 | --- | --- |
 | ![EasyPanel Kubernetes 资源演示](./docs/demo/assets/easypanel-kubernetes.png) | ![EasyPanel 应用中心演示](./docs/demo/assets/easypanel-app-center.png) |
 
-| Ingress 同步 |
+| 宝塔工作台 | Ingress Rules |
+| --- | --- |
+| ![EasyPanel 宝塔工作台演示](./docs/demo/assets/easypanel-baota-dashboard.png) | ![EasyPanel Ingress Rules 演示](./docs/demo/assets/easypanel-ingress.png) |
+
+| Ingress 同步详情 | 虚拟化资源 |
+| --- | --- |
+| ![EasyPanel Ingress 同步详情演示](./docs/demo/assets/easypanel-baota-sync.png) | ![EasyPanel 虚拟化资源演示](./docs/demo/assets/easypanel-compute.png) |
+
+| 网络资源中心 |
 | --- |
-| ![EasyPanel Ingress 同步演示](./docs/demo/assets/easypanel-ingress.png) |
+| ![EasyPanel 网络资源演示](./docs/demo/assets/easypanel-network.png) |
 
 ## 演示数据
 

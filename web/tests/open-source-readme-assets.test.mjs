@@ -6,6 +6,10 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const read = (path) => readFileSync(resolve(root, path), "utf8");
+const pngDimensions = (png) => ({
+  width: png.readUInt32BE(16),
+  height: png.readUInt32BE(20),
+});
 
 test("README presents EasyPanel like an open source project with generated visuals", () => {
   const readme = read("README.md");
@@ -13,7 +17,11 @@ test("README presents EasyPanel like an open source project with generated visua
     "docs/demo/assets/easypanel-dashboard.png",
     "docs/demo/assets/easypanel-kubernetes.png",
     "docs/demo/assets/easypanel-app-center.png",
+    "docs/demo/assets/easypanel-baota-dashboard.png",
     "docs/demo/assets/easypanel-ingress.png",
+    "docs/demo/assets/easypanel-baota-sync.png",
+    "docs/demo/assets/easypanel-compute.png",
+    "docs/demo/assets/easypanel-network.png",
   ];
 
   assert.match(readme, /!\[EasyPanel 工作台演示\]\(\.\/docs\/demo\/assets\/easypanel-dashboard\.png\)/);
@@ -24,10 +32,12 @@ test("README presents EasyPanel like an open source project with generated visua
   assert.doesNotMatch(readme, /preview\.html/);
 
   for (const asset of expectedAssets) {
+    assert.match(readme, new RegExp(asset.replaceAll("/", "\\/").replace(".", "\\.")));
     const absolutePath = resolve(root, asset);
     assert.ok(existsSync(absolutePath), `${asset} should exist`);
     const png = readFileSync(absolutePath);
     assert.equal(png.subarray(0, 8).toString("hex"), "89504e470d0a1a0a", `${asset} should be a PNG`);
+    assert.deepEqual(pngDimensions(png), { width: 1920, height: 1080 }, `${asset} should be 1920x1080`);
     assert.ok(png.length > 40_000, `${asset} should contain a real screenshot-sized image`);
   }
 });
@@ -49,7 +59,11 @@ test("demo assets are captured from the real Vite frontend instead of a static p
   assert.match(script, /mockApiResponse/);
   assert.match(script, /\/cluster\/ns\/easy\/pods/);
   assert.match(script, /\/cluster\/apps\/dashboard/);
+  assert.match(script, /\/cluster\/baota/);
   assert.match(script, /\/cluster\/baota\/ingress/);
+  assert.match(script, /\/cluster\/baota\/sync/);
+  assert.match(script, /\/cluster\/compute\/dashboard/);
+  assert.match(script, /\/cluster\/network\/dashboard/);
   assert.match(script, /npm/);
   assert.match(script, /dev/);
   assert.doesNotMatch(script, /\/demo\/screenshots\//);
