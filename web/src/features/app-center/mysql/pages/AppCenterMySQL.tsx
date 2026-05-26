@@ -21,6 +21,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
+import { useSearchParams } from "react-router-dom";
 import { ApiHttpError, apiDeleteJson, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import { mysqlAppCenterCanWrite, mysqlShowK8sDeployWizard } from "@/lib/platform-permissions";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
@@ -228,12 +229,18 @@ function formatDate(v?: string): string {
 export default function AppCenterMySQL() {
   const qc = useQueryClient();
   const auth = useAuth();
+  const [searchParams] = useSearchParams();
   const canWrite = mysqlAppCenterCanWrite(auth.status?.role, auth.status?.permissions);
   const canDeploy = mysqlShowK8sDeployWizard(auth.status?.role, auth.status?.permissions);
 
   const [mainTab, setMainTab] = useState<"mysql" | "install" | "templates">("mysql");
   const [managePanelOpen, setManagePanelOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
+  const requestedInstanceId = useMemo(() => {
+    const raw = searchParams.get("instance");
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [searchParams]);
   const [instanceSourceFilter, setInstanceSourceFilter] = useState<"all" | "platform" | "managed">("all");
 
   const statusQ = useQuery({
@@ -257,13 +264,22 @@ export default function AppCenterMySQL() {
       ),
   });
 
-  const instances = instancesQ.data?.instances ?? [];
+  const instances = useMemo(() => instancesQ.data?.instances ?? [], [instancesQ.data?.instances]);
   const templates = templatesQ.data?.templates ?? [];
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selected = useMemo(
     () => instances.find((i) => i.id === selectedId) ?? null,
     [instances, selectedId]
   );
+
+  useEffect(() => {
+    if (requestedInstanceId == null) return;
+    if (!instances.some((i) => i.id === requestedInstanceId)) return;
+    setMainTab("mysql");
+    setSearchQ("");
+    setInstanceSourceFilter("all");
+    setSelectedId(requestedInstanceId);
+  }, [instances, requestedInstanceId]);
 
   const filteredInstances = useMemo(() => {
     let list = instances;

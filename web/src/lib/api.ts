@@ -189,6 +189,7 @@ export type SetupStatus = {
   initialized: boolean;
   dataDir: string;
   version: number;
+  configMode: string;
 };
 
 /** GET /api/config 中宝塔多实例摘要（无 apiKey 明文） */

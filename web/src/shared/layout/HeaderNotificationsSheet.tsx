@@ -233,14 +233,14 @@ const HeaderNotificationsSheet: React.FC = () => {
           ) : null}
         </button>
       </SheetTrigger>
-      <SheetContent side="right" className="flex w-full flex-col sm:max-w-md">
+      <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-hidden px-0 sm:max-w-md">
         <SheetHeader>
           <SheetTitle>通知</SheetTitle>
           <p className="text-left text-xs text-muted-foreground">
             安全与登录摘要、应用中心 SSH 异常；出口 IP 摘要见下方（若已启用探测）。完整记录见「平台审计」。
           </p>
         </SheetHeader>
-        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4">
           {sshEvents.length > 0 ? (
             <div className="shrink-0 rounded-xl border border-amber-200 bg-amber-50/90 px-3 py-3 text-sm">
               <p className="font-medium text-amber-950">应用中心 · 容器主机 SSH 密码失败</p>
@@ -477,7 +477,7 @@ const HeaderNotificationsSheet: React.FC = () => {
           ) : null}
 
           {showPlatformUsers ? (
-            <div className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm shadow-sm">
+            <div className="flex max-h-[calc(100vh-13rem)] min-h-0 shrink-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm shadow-sm">
               <p className="font-medium text-slate-900">平台审计</p>
               <p className="mt-1 text-xs leading-relaxed text-slate-600">
                 最近几条操作与下方「打开平台审计」全量联动（同一数据源）。
@@ -487,7 +487,7 @@ const HeaderNotificationsSheet: React.FC = () => {
               ) : auditBellQ.isError ? (
                 <p className="mt-2 text-xs text-red-600">{extractErrorMessage(auditBellQ.error)}</p>
               ) : auditBellQ.data && auditBellQ.data.logs.length > 0 ? (
-                <ul className="mt-2 max-h-[200px] space-y-2 overflow-y-auto text-[11px] leading-snug">
+                <ul className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1 text-[11px] leading-snug">
                   {[...auditBellQ.data.logs].reverse().map((row, i) => (
                     <li key={`${row.ts}-${i}`} className="rounded-lg border border-slate-100 bg-slate-50/80 px-2 py-1.5">
                       <span className="font-medium text-slate-900">{formatAuditTitle(row)}</span>
@@ -503,7 +503,7 @@ const HeaderNotificationsSheet: React.FC = () => {
               ) : (
                 <p className="mt-2 text-xs text-slate-500">暂无审计记录</p>
               )}
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 flex shrink-0 flex-wrap gap-2 border-t border-slate-100 pt-2">
                 <Button
                   type="button"
                   variant="default"

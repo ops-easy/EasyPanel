@@ -2,7 +2,8 @@
  * 站点统计「访问最多路径」旁的中文说明（按路径匹配，先长后短）。
  */
 export function describeSitePath(raw: string): string {
-  const path = (raw.split("?")[0] || raw).trim() || "/";
+  const normalizedRaw = raw.trim();
+  const path = normalizeSitePath(normalizedRaw);
 
   const exact: Record<string, string> = {
     "/": "前端首页（SPA）",
@@ -51,6 +52,9 @@ export function describeSitePath(raw: string): string {
   }
 
   if (!path.startsWith("/api/")) {
+    const appCenterDesc = describeAppCenterSpaPath(path, normalizedRaw);
+    if (appCenterDesc) return appCenterDesc;
+
     const spa: { test: RegExp; desc: string }[] = [
       { test: /^\/account\/site-stats/, desc: "前端：站点统计页" },
       { test: /^\/account\/audit/, desc: "前端：平台审计" },
@@ -59,7 +63,6 @@ export function describeSitePath(raw: string): string {
       { test: /^\/ai-inspect/, desc: "前端：AI 巡检（监控/告警）" },
       { test: /^\/cluster\/compute/, desc: "前端：虚拟化与主机" },
       { test: /^\/cluster\/network/, desc: "前端：网络设备" },
-      { test: /^\/app-center/, desc: "前端：应用中心" },
       { test: /^\/cluster\//, desc: "前端：Kubernetes 集群" },
       { test: /^\/vcenter\//, desc: "前端：vCenter / 云主机" },
       { test: /^\/login/, desc: "前端：登录页" },
@@ -72,4 +75,88 @@ export function describeSitePath(raw: string): string {
   }
 
   return "HTTP 请求路径";
+}
+
+function normalizeSitePath(raw: string): string {
+  const withoutQueryOrHash = (raw.split(/[?#]/)[0] || raw || "/").trim();
+  return withoutQueryOrHash.replace(/\/+$/, "") || "/";
+}
+
+function safeDecodePathSegment(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function queryValue(raw: string, ...keys: string[]): string {
+  const queryStart = raw.indexOf("?");
+  if (queryStart < 0) return "";
+  const hashStart = raw.indexOf("#", queryStart);
+  const query = raw.slice(queryStart + 1, hashStart >= 0 ? hashStart : undefined);
+  const params = new URLSearchParams(query);
+  for (const key of keys) {
+    const value = params.get(key)?.trim();
+    if (value) return value;
+  }
+  return "";
+}
+
+function describeAppCenterSpaPath(path: string, raw: string): string | null {
+  const match = path.match(/^\/(?:cluster\/apps|app-center)(?:\/(.*))?$/);
+  if (!match) return null;
+
+  const parts = (match[1] ?? "").split("/").filter(Boolean);
+  const [module, second, third, fourth] = parts;
+  const queryInstance = queryValue(raw, "instance", "instanceId", "id");
+  if (!module || module === "dashboard") {
+    return "前端：应用中心总览（Redis、MySQL、Kafka、OpenClaw、Hermes 等实例概览）";
+  }
+
+  if (module === "redis") {
+    if (queryInstance) return `前端：应用中心 · Redis 实例 ${queryInstance} 详情`;
+    if (second) return `前端：应用中心 · Redis 实例 ${safeDecodePathSegment(second)} 详情`;
+    return "前端：应用中心 · Redis 实例列表、部署向导与模板中心";
+  }
+
+  if (module === "mysql") {
+    if (queryInstance) return `前端：应用中心 · MySQL 实例 ${queryInstance} 详情（SQL、用户与备份）`;
+    if (second) return `前端：应用中心 · MySQL 实例 ${safeDecodePathSegment(second)} 详情（SQL、用户与备份）`;
+    return "前端：应用中心 · MySQL 实例列表、部署向导、SQL、用户与备份";
+  }
+
+  if (module === "kafka") {
+    if (second === "instance" && third) {
+      const id = safeDecodePathSegment(third);
+      if (fourth === "throttle") return `前端：应用中心 · Kafka 实例 ${id} 限速与配额管理`;
+      return `前端：应用中心 · Kafka 实例 ${id} 管理（集群、Topic、消费者组、ACL、SCRAM、压测）`;
+    }
+    return "前端：应用中心 · Kafka 实例列表、部署向导与模板中心";
+  }
+
+  if (module === "hermes") {
+    if (second === "create") return "前端：应用中心 · Hermes 新建实例";
+    if (second === "bootstrap") return "前端：应用中心 · Hermes 部署初始化";
+    if (second) return `前端：应用中心 · Hermes 实例 ${safeDecodePathSegment(second)} 详情`;
+    return "前端：应用中心 · Hermes 实例列表";
+  }
+
+  if (module === "openclaw") {
+    if (second === "create") return "前端：应用中心 · OpenClaw 新建实例";
+    if (second === "bootstrap") return "前端：应用中心 · OpenClaw 部署初始化";
+    if (second) return `前端：应用中心 · OpenClaw 实例 ${safeDecodePathSegment(second)} 详情与对话`;
+    return "前端：应用中心 · OpenClaw 实例列表";
+  }
+
+  if (module === "opensearch") return "前端：应用中心 · OpenSearch 实例列表与部署";
+  if (module === "dns") return "前端：应用中心 · DNS 解析、健康监测与 SSL 证书";
+  if (module === "cloud-vm") {
+    if (second === "create") return "前端：应用中心 · 容器主机新建实例";
+    if (second === "bootstrap") return "前端：应用中心 · 容器主机部署初始化";
+    if (second) return `前端：应用中心 · 容器主机实例 ${safeDecodePathSegment(second)} 详情`;
+    return "前端：应用中心 · 容器主机实例列表";
+  }
+
+  return "前端：应用中心";
 }

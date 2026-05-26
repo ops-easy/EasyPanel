@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "backend-routes",
-  "routeCount": 539,
+  "routeCount": 537,
   "routes": [
     {
       "method": "GET",
@@ -2484,12 +2484,6 @@
     {
       "method": "POST",
       "pathPattern": "/api/ops/ai-chat/stream",
-      "sourceFile": "api/common/core/ops_ai_chat_test.go",
-      "sourceLine": 159
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/ops/ai-chat/stream",
       "sourceFile": "api/common/core/ops_center_handlers.go",
       "sourceLine": 17
     },
@@ -2720,12 +2714,6 @@
       "pathPattern": "/api/prometheus/query",
       "sourceFile": "api/common/core/web_exports.go",
       "sourceLine": 18
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/prometheus/query",
-      "sourceFile": "api/common/core/dashboard_permissions_test.go",
-      "sourceLine": 324
     },
     {
       "method": "POST",

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppConfig, APP_CONFIG_QUERY_KEY } from "@/hooks/use-app-config";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Cloud,
@@ -402,6 +403,7 @@ function fmtUptimeSeconds(sec: string | undefined): string {
 export default function AppCenterRedis() {
   const { status: auth } = useAuth();
   const configQ = useAppConfig();
+  const [searchParams] = useSearchParams();
   const perm = auth?.permissions ?? configQ.data?.permissions;
   const canWriteRedis = redisAppCenterCanWrite(auth?.role, perm);
   const showK8sDeployWizard = redisShowK8sDeployWizard(auth?.role, perm);
@@ -411,6 +413,11 @@ export default function AppCenterRedis() {
   const [mainTab, setMainTab] = useState<"redis" | "install" | "templates">("redis");
   const [managePanelOpen, setManagePanelOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
+  const requestedInstanceId = useMemo(() => {
+    const raw = searchParams.get("instance");
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [searchParams]);
   /** 实例列表来源筛选（在页面内操作，不占用全局左侧菜单） */
   const [instanceSourceFilter, setInstanceSourceFilter] = useState<"all" | "platform" | "managed">("all");
 
@@ -468,6 +475,15 @@ export default function AppCenterRedis() {
     () => (listQ.data?.instances ?? []).find((x) => x.id === selectedId) ?? null,
     [listQ.data, selectedId]
   );
+
+  useEffect(() => {
+    if (requestedInstanceId == null) return;
+    if (!(listQ.data?.instances ?? []).some((x) => x.id === requestedInstanceId)) return;
+    setMainTab("redis");
+    setSearchQ("");
+    if (!managedOnlyScope) setInstanceSourceFilter("all");
+    setSelectedId(requestedInstanceId);
+  }, [listQ.data?.instances, managedOnlyScope, requestedInstanceId]);
 
   /** 默认不展开实例详情；仅当当前选中行被筛选掉时清空选中 */
   useEffect(() => {

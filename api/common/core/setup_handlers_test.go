@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -57,6 +58,51 @@ func TestHandleSetupSaveValidatesPayloadInsteadOfReturningDisabled(t *testing.T)
 	}
 	if strings.Contains(w.Body.String(), "初始化向导已停用") {
 		t.Fatalf("setup handler still returns the disabled response: %s", w.Body.String())
+	}
+}
+
+func TestRegisterSystemPublicRoutesExposesSetupInitializationContract(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	app := &ServerApp{dataDir: t.TempDir()}
+	r := gin.New()
+	RegisterSystemPublicRoutes(r, app)
+
+	wStatus := httptest.NewRecorder()
+	r.ServeHTTP(wStatus, httptest.NewRequest(http.MethodGet, "/api/setup/status", nil))
+	if wStatus.Code != http.StatusOK {
+		t.Fatalf("GET /api/setup/status status = %d, body=%s", wStatus.Code, wStatus.Body.String())
+	}
+	var status struct {
+		Initialized bool   `json:"initialized"`
+		DataDir     string `json:"dataDir"`
+		Version     int    `json:"version"`
+		ConfigMode  string `json:"configMode"`
+	}
+	if err := json.Unmarshal(wStatus.Body.Bytes(), &status); err != nil {
+		t.Fatalf("decode setup status: %v", err)
+	}
+	if status.Initialized {
+		t.Fatalf("new app should report uninitialized")
+	}
+	if status.DataDir != app.DataDir() {
+		t.Fatalf("dataDir = %q, want %q", status.DataDir, app.DataDir())
+	}
+	if status.Version != 1 {
+		t.Fatalf("version = %d, want 1", status.Version)
+	}
+	if !strings.Contains(status.ConfigMode, "setup-config.yaml") {
+		t.Fatalf("configMode should mention setup-config.yaml, got %q", status.ConfigMode)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/setup", strings.NewReader(`{}`))
+	req.Header.Set("Content-Type", "application/json")
+	wPost := httptest.NewRecorder()
+	r.ServeHTTP(wPost, req)
+	if wPost.Code != http.StatusBadRequest {
+		t.Fatalf("POST /api/setup status = %d, want 400; body=%s", wPost.Code, wPost.Body.String())
+	}
+	if strings.Contains(wPost.Body.String(), "初始化向导已停用") {
+		t.Fatalf("setup route regressed to disabled response: %s", wPost.Body.String())
 	}
 }
 
