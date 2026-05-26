@@ -69,6 +69,13 @@ func TestPickPrometheusServiceAcceptsHelmTruncatedStackName(t *testing.T) {
 	}
 }
 
+func TestKubePromMonitoringWorkloadIgnoresGrafanaHelmTestPod(t *testing.T) {
+	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "kbt-prom-grafana-test"}}
+	if kubePromMonitoringWorkloadPod(pod) {
+		t.Fatal("grafana Helm test pod should not be treated as a monitoring workload")
+	}
+}
+
 func TestKubePrometheusRuntimeURLStatusFlagsStaleNamespace(t *testing.T) {
 	st := kubePrometheusRuntimeURLStatus(Config{
 		PrometheusURLK8s: "http://kbt-prom-kube-prometheus-s-prometheus.monitoring.svc:9090/",

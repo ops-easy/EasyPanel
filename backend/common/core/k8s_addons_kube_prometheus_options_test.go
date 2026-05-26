@@ -28,3 +28,17 @@ func TestKubePromValuesExposeCommonInstallOptions(t *testing.T) {
 		}
 	}
 }
+
+func TestKubePromValuesDisableGrafanaHelmTestPod(t *testing.T) {
+	values := buildKubePromStackValuesYAML(KubePromStackInstallOpts{
+		GrafanaEnabled: true,
+	})
+	for _, want := range []string{
+		"grafana:\n  enabled: true",
+		"  testFramework:\n    enabled: false",
+	} {
+		if !strings.Contains(values, want) {
+			t.Fatalf("values YAML missing %q:\n%s", want, values)
+		}
+	}
+}

@@ -209,6 +209,8 @@ func buildKubePromStackValuesYAML(opts KubePromStackInstallOpts) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, `grafana:
   enabled: %v
+  testFramework:
+    enabled: false
 alertmanager:
   enabled: %v
 kubeApiServer:
@@ -419,9 +421,11 @@ func InstallKubePrometheusStack(ctx context.Context, app *ServerApp, mirror Mani
 	if err := ensureNamespace(ctx, app.K8s(), namespace); err != nil {
 		return nil, fmt.Errorf("创建或确认命名空间 %s: %w", namespace, err)
 	}
+	cleanupKubePrometheusGrafanaTestPods(ctx, app.K8s(), namespace)
 	if err := applyYAMLManifestDynamic(ctx, app.K8sREST(), rendered); err != nil {
 		return nil, fmt.Errorf("应用 kube-prometheus-stack 渲染清单: %w", err)
 	}
+	cleanupKubePrometheusGrafanaTestPods(ctx, app.K8s(), namespace)
 
 	svc, err := waitForPrometheusService(ctx, app.K8s(), namespace, releaseName, 2*time.Minute)
 	if err != nil {
@@ -681,12 +685,37 @@ func kubePromMonitoringWorkloadPod(p *corev1.Pod) bool {
 		return false
 	}
 	n := strings.ToLower(p.Name)
+	if kubePromGrafanaTestPodName(n) {
+		return false
+	}
 	return strings.Contains(n, "prometheus") ||
 		strings.Contains(n, "alertmanager") ||
 		strings.Contains(n, "operator") ||
 		strings.Contains(n, "kube-state") ||
 		strings.Contains(n, "node-exporter") ||
 		strings.Contains(n, "grafana")
+}
+
+func kubePromGrafanaTestPodName(name string) bool {
+	n := strings.ToLower(strings.TrimSpace(name))
+	return n == "grafana-test" || strings.HasSuffix(n, "-grafana-test")
+}
+
+func cleanupKubePrometheusGrafanaTestPods(ctx context.Context, k8s *kubernetes.Clientset, ns string) {
+	if k8s == nil || strings.TrimSpace(ns) == "" {
+		return
+	}
+	list, err := k8s.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{})
+	if err != nil || list == nil {
+		return
+	}
+	for i := range list.Items {
+		pod := &list.Items[i]
+		if !kubePromGrafanaTestPodName(pod.Name) {
+			continue
+		}
+		_ = k8s.CoreV1().Pods(ns).Delete(ctx, pod.Name, metav1.DeleteOptions{})
+	}
 }
 
 func appendContainerIssueLines(out []string, podName, cname string, cs corev1.ContainerStatus) []string {
