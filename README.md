@@ -174,7 +174,7 @@ helm install easypanel ./k8s/charts/easypanel \
 - `ghcr.io/ops-easy/easypanel-web:latest`
 - `ghcr.io/ops-easy/easypanel-web:<commit-sha>`
 
-后端镜像使用多阶段构建，最终运行镜像基于 `distroless/static-debian12:nonroot`，只包含后端二进制；前端镜像基于 Nginx，并将 `/api/`、`/r/` 与公开媒体 `/d/` 反向代理到后端 Service。
+后端镜像使用多阶段构建，最终运行镜像基于 `distroless/static-debian12:nonroot`，包含后端二进制与 `/app/helm`（用于容器内渲染 kube-prometheus-stack）；前端镜像基于 Nginx，并将 `/api/`、`/r/` 与公开媒体 `/d/` 反向代理到后端 Service。
 
 ## 关键配置
 

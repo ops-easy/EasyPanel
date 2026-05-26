@@ -58,3 +58,10 @@ test("Kubernetes config defaults resolve in the easy namespace", () => {
   assert.match(configs, /mysql\.easy\.svc\.cluster\.local/);
   assert.match(configs, /redis\.easy\.svc\.cluster\.local:6379/);
 });
+
+test("backend container image includes helm for kube-prometheus-stack installs", () => {
+  const dockerfile = read("../../backend/Dockerfile");
+
+  assert.match(dockerfile, /COPY --from=helm\s+\/helm\s+\/app\/helm/);
+  assert.match(dockerfile, /ENV [^\n]*HELM_BIN=\/app\/helm/);
+});
