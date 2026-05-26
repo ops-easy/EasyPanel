@@ -379,9 +379,9 @@ const AppCenterOpenClawDetail: React.FC = () => {
     enabled: Boolean(instanceId) && topTab === "manage",
   });
   const rbacPresetRows = rbacPresetsQ.data?.presets ?? [
-    { id: "readonly", label: "只读", description: "", clusterRoleName: "kube-bt-openclaw-readonly" },
-    { id: "edit", label: "编辑", description: "", clusterRoleName: "kube-bt-openclaw-edit" },
-    { id: "admin", label: "管理员", description: "", clusterRoleName: "kube-bt-openclaw-admin" },
+    { id: "readonly", label: "只读", description: "", clusterRoleName: "easypanel-openclaw-readonly" },
+    { id: "edit", label: "编辑", description: "", clusterRoleName: "easypanel-openclaw-edit" },
+    { id: "admin", label: "管理员", description: "", clusterRoleName: "easypanel-openclaw-admin" },
   ];
 
   const toolchainOptsQ = useQuery({
@@ -826,7 +826,7 @@ const AppCenterOpenClawDetail: React.FC = () => {
                 : gwChatIs5xx
                   ? " 路由已通；5xx 多为网关调用上游大模型失败（密钥、模型名、网络/代理）。仅改 openclaw.json 里的跨域或 chat 开关通常无法消除此类 500。"
                   : gwChatIsTimeout
-                    ? ` 在约 ${gwHealthQ.data?.healthChatTimeoutSec ?? 90}s 内未收到完整响应（网关或上游过慢、无响应）。请核对 Deployment Secret 的 OPENAI_API_KEY、OPENAI_BASE_URL、HTTP 代理与集群出站；可在 EasyPanel 服务中提高环境变量 KUBEBT_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC。与 openclaw.json 是否开启 chat 无直接关系。`
+                    ? ` 在约 ${gwHealthQ.data?.healthChatTimeoutSec ?? 90}s 内未收到完整响应（网关或上游过慢、无响应）。请核对 Deployment Secret 的 OPENAI_API_KEY、OPENAI_BASE_URL、HTTP 代理与集群出站；可在 EasyPanel 服务中提高环境变量 EASYPANEL_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC。与 openclaw.json 是否开启 chat 无直接关系。`
                     : gwChatIsTransportLayer
                       ? " 与「未开 chat 路由→404」或「上游大模型→5xx」不同，请优先看下方一句概要并排错网关 Pod。"
                       : " 对话与 AI 巡检可能返回同类错误。"}

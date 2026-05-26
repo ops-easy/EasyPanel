@@ -3,8 +3,8 @@ package scheduler
 import (
 	"context"
 
-	"kube-bt-sync/common/appctx"
-	core "kube-bt-sync/common/core"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	core "github.com/ops-easy/EasyPanel/api/common/core"
 )
 
 func StartSyncer(ctx context.Context, app *appctx.ServerApp) {

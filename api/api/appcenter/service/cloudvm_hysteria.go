@@ -171,8 +171,8 @@ func buildCloudVMHysteria2ClusterIPService(ns, svcName, depName string, port int
 			Name:      svcName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"kube-bt-sync.io/cloud-vm-hy2": "true",
-				"app.kubernetes.io/name":       "kube-bt-cloud-vm-hy2",
+				"easypanel.io/cloud-vm-hy2": "true",
+				"app.kubernetes.io/name":    "easypanel-cloud-vm-hy2",
 			},
 		},
 		Spec: corev1.ServiceSpec{

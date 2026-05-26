@@ -1,9 +1,9 @@
 package provider
 
 import (
-	"kube-bt-sync/api/appcenter/model"
-	"kube-bt-sync/common/appctx"
-	core "kube-bt-sync/common/core"
+	"github.com/ops-easy/EasyPanel/api/api/appcenter/model"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	core "github.com/ops-easy/EasyPanel/api/common/core"
 )
 
 func OpsEncryptionKey(cfg appctx.Config) ([]byte, error) {

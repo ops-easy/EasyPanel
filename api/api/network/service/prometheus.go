@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	appcenterprovider "kube-bt-sync/api/appcenter/provider"
+	appcenterprovider "github.com/ops-easy/EasyPanel/api/api/appcenter/provider"
 )
 
 type promSample struct {

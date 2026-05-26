@@ -257,7 +257,7 @@ const AccountPlatformSettingsBody: React.FC<Props> = ({
               <Label>键前缀（redisKeyPrefix）</Label>
               <Input
                 className="font-mono text-xs"
-                placeholder="kubebt"
+                placeholder="easypanel"
                 value={String(form.redisKeyPrefix ?? "")}
                 onChange={(e) => setField("redisKeyPrefix", e.target.value)}
               />
@@ -409,7 +409,7 @@ const AccountPlatformSettingsBody: React.FC<Props> = ({
               <Input
                 value={String(form.oidcIssuerUrl ?? "")}
                 onChange={(e) => setField("oidcIssuerUrl", e.target.value)}
-                placeholder="https://idp.example.com/application/o/easy-panel/"
+                placeholder="https://idp.example.com/application/o/easypanel/"
               />
             </div>
             <div className="space-y-2">

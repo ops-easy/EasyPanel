@@ -435,7 +435,7 @@ export type HarborAdminDashboardResponse = {
     cacheHits?: number;
     cacheMisses?: number;
     cacheTtlSec?: number;
-    /** 单条响应写入 Redis 的最大体积（MB），环境变量 KUBEBT_HARBOR_LIST_CACHE_MAX_BODY_MB */
+    /** 单条响应写入 Redis 的最大体积（MB），环境变量 EASYPANEL_HARBOR_LIST_CACHE_MAX_BODY_MB */
     cacheMaxBodyMB?: number;
     /** Redis 已连接且 TTL>0 时 Harbor 列表/统计会写入 Redis */
     harborListCacheEnabled?: boolean;

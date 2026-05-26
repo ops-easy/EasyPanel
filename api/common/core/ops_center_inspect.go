@@ -314,7 +314,7 @@ func RunPlatformInspection(app *ServerApp, cfg Config, bundle OpsAIProviderBundl
 			ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 			defer cancel()
 			var n int
-			err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM kubebt_app_redis_instances`).Scan(&n)
+			err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM easypanel_app_redis_instances`).Scan(&n)
 			if err != nil {
 				add("应用中心 Redis", "warn", err.Error())
 			} else {
@@ -340,7 +340,7 @@ func RunPlatformInspection(app *ServerApp, cfg Config, bundle OpsAIProviderBundl
 			ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 			defer cancel()
 			var n int
-			err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM kubebt_app_cloud_vm_instances`).Scan(&n)
+			err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM easypanel_app_cloud_vm_instances`).Scan(&n)
 			if err != nil {
 				add("云主机", "warn", err.Error())
 			} else {
@@ -688,7 +688,7 @@ func opsAIProviderChatMessagesAPI(cfg Config, app *ServerApp, oc OpsAIProviderEn
 	resp, err := cli.Do(req)
 	latencyMs = time.Since(t0).Milliseconds()
 	if err != nil {
-		gwNet := fmt.Errorf("[OpenClaw 网关] 请求失败（kube-bt-sync 无法连上集群内网关 Base URL，多为网络/DNS/TLS/超时）: %w", err)
+		gwNet := fmt.Errorf("[OpenClaw 网关] 请求失败（easypanel 无法连上集群内网关 Base URL，多为网络/DNS/TLS/超时）: %w", err)
 		if directErr != nil {
 			return "", latencyMs, fmt.Errorf("%v；随后经 OpenClaw 网关重试时：%v", directErr, gwNet)
 		}

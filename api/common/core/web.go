@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"kube-bt-sync/common/transport/authz"
+	"github.com/ops-easy/EasyPanel/api/common/transport/authz"
 
 	"github.com/gin-gonic/gin"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -55,7 +55,7 @@ func attachLegacyRoutesForCoreRouter(r *gin.Engine, app *ServerApp) *gin.RouterG
 	cfg := app.Cfg()
 	if cfg.PerformanceMode {
 		gin.SetMode(gin.ReleaseMode)
-		log.Printf("config: KUBEBT_PERFORMANCE_MODE 已启用（Gin release；Redis 可用时 /api/namespaces 缓存约 %d 秒）", cfg.NamespacesCacheTTLSec)
+		log.Printf("config: EASYPANEL_PERFORMANCE_MODE 已启用（Gin release；Redis 可用时 /api/namespaces 缓存约 %d 秒）", cfg.NamespacesCacheTTLSec)
 	}
 	configureGinTrustedProxies(r, cfg)
 	r.Use(auditAccessLogMiddleware(app))
@@ -456,41 +456,41 @@ func buildConfigMapResponse(app *ServerApp, role string, eff *EffectiveDashboard
 			}
 			return rows
 		}(),
-		"baotaSkipTlsVerify":          cfg.BaotaSkipTLSVerify,
-		"baotaSslCertName":            cfg.BaotaSSLCertName,
-		"hasBaotaSSLMaterial":         baotaSSLMaterialConfigured(app),
-		"dashboardAuthEnabled":        cfg.DashboardAuthEnabled(),
-		"passwordLoginEnabled":        cfg.PasswordLoginEnabled(),
-		"oidcConfigured":              cfg.OIDCConfigured(),
-		"dashboardUser":               dashUser,
-		"dashboardSessionDays":        dashDays,
-		"dashboardListenAddr":         strings.TrimSpace(cfg.DashboardListenAddr),
-		"prometheusConfigured":        GetEffectivePrometheusURL(cfg) != "",
-		"prometheusUrlHint":           maskPrometheusURL(GetEffectivePrometheusURL(cfg)),
-		"prometheusK8sConfigured":     GetPrometheusURLForScope(cfg, "k8s") != "",
-		"prometheusUrlK8sHint":        maskPrometheusURL(GetPrometheusURLForScope(cfg, "k8s")),
-		"prometheusVcenterConfigured": GetPrometheusURLForScope(cfg, "vcenter") != "",
-		"prometheusUrlVcenterHint":    maskPrometheusURL(GetPrometheusURLForScope(cfg, "vcenter")),
-		"prometheusPveConfigured":     GetPrometheusURLForScope(cfg, "pve") != "",
-		"prometheusUrlPveHint":        maskPrometheusURL(GetPrometheusURLForScope(cfg, "pve")),
-		"prometheusCloudConfigured":   GetPrometheusURLForScope(cfg, "cloud") != "",
-		"prometheusUrlCloudHint":      maskPrometheusURL(GetPrometheusURLForScope(cfg, "cloud")),
-		"vmSelectUrlK8sHint":          maskPrometheusURL(cfg.VMSelectURLK8s),
-		"vmSelectUrlVcenterHint":      maskPrometheusURL(cfg.VMSelectURLVCenter),
-		"vmSelectUrlPveHint":          maskPrometheusURL(cfg.VMSelectURLPVE),
-		"vmSelectUrlCloudHint":        maskPrometheusURL(cfg.VMSelectURLCloud),
-		"victoriaLogsConfigured":      strings.TrimSpace(cfg.VictoriaLogsURL) != "",
-		"victoriaLogsUrlHint":         maskPrometheusURL(cfg.VictoriaLogsURL),
-		"prometheusTimeoutSec":        int(cfg.PrometheusTimeout.Seconds()),
-		"kubebtMetricsPath":           "/metrics",
-		"kubebtPrometheusScrapeHint":  "Prometheus 增加 static_configs：targets 为本服务可达地址，metrics_path=/metrics，scheme=http/https 与监听一致；建议仅内网抓取。",
-		"prometheusSkipTls":           cfg.PrometheusSkipTLS,
-		"prometheusHasBearer":         strings.TrimSpace(cfg.PrometheusBearerToken) != "",
-		"vcenterConfigured":           cfg.vCenterConfigured(),
-		"vcenterUrlHint":              maskVCenterURL(cfg.VCenterURL),
-		"vcenterUiOrigin":             vcenterUIOriginFromURL(cfg.VCenterURL),
-		"vcenterUiBaseUrl":            EffectiveVCenterUIBaseURL(cfg),
-		"vcenterUiLoginUrl":           vcenterUiLoginURL(cfg),
+		"baotaSkipTlsVerify":            cfg.BaotaSkipTLSVerify,
+		"baotaSslCertName":              cfg.BaotaSSLCertName,
+		"hasBaotaSSLMaterial":           baotaSSLMaterialConfigured(app),
+		"dashboardAuthEnabled":          cfg.DashboardAuthEnabled(),
+		"passwordLoginEnabled":          cfg.PasswordLoginEnabled(),
+		"oidcConfigured":                cfg.OIDCConfigured(),
+		"dashboardUser":                 dashUser,
+		"dashboardSessionDays":          dashDays,
+		"dashboardListenAddr":           strings.TrimSpace(cfg.DashboardListenAddr),
+		"prometheusConfigured":          GetEffectivePrometheusURL(cfg) != "",
+		"prometheusUrlHint":             maskPrometheusURL(GetEffectivePrometheusURL(cfg)),
+		"prometheusK8sConfigured":       GetPrometheusURLForScope(cfg, "k8s") != "",
+		"prometheusUrlK8sHint":          maskPrometheusURL(GetPrometheusURLForScope(cfg, "k8s")),
+		"prometheusVcenterConfigured":   GetPrometheusURLForScope(cfg, "vcenter") != "",
+		"prometheusUrlVcenterHint":      maskPrometheusURL(GetPrometheusURLForScope(cfg, "vcenter")),
+		"prometheusPveConfigured":       GetPrometheusURLForScope(cfg, "pve") != "",
+		"prometheusUrlPveHint":          maskPrometheusURL(GetPrometheusURLForScope(cfg, "pve")),
+		"prometheusCloudConfigured":     GetPrometheusURLForScope(cfg, "cloud") != "",
+		"prometheusUrlCloudHint":        maskPrometheusURL(GetPrometheusURLForScope(cfg, "cloud")),
+		"vmSelectUrlK8sHint":            maskPrometheusURL(cfg.VMSelectURLK8s),
+		"vmSelectUrlVcenterHint":        maskPrometheusURL(cfg.VMSelectURLVCenter),
+		"vmSelectUrlPveHint":            maskPrometheusURL(cfg.VMSelectURLPVE),
+		"vmSelectUrlCloudHint":          maskPrometheusURL(cfg.VMSelectURLCloud),
+		"victoriaLogsConfigured":        strings.TrimSpace(cfg.VictoriaLogsURL) != "",
+		"victoriaLogsUrlHint":           maskPrometheusURL(cfg.VictoriaLogsURL),
+		"prometheusTimeoutSec":          int(cfg.PrometheusTimeout.Seconds()),
+		"easypanelMetricsPath":          "/metrics",
+		"easypanelPrometheusScrapeHint": "Prometheus 增加 static_configs：targets 为本服务可达地址，metrics_path=/metrics，scheme=http/https 与监听一致；建议仅内网抓取。",
+		"prometheusSkipTls":             cfg.PrometheusSkipTLS,
+		"prometheusHasBearer":           strings.TrimSpace(cfg.PrometheusBearerToken) != "",
+		"vcenterConfigured":             cfg.vCenterConfigured(),
+		"vcenterUrlHint":                maskVCenterURL(cfg.VCenterURL),
+		"vcenterUiOrigin":               vcenterUIOriginFromURL(cfg.VCenterURL),
+		"vcenterUiBaseUrl":              EffectiveVCenterUIBaseURL(cfg),
+		"vcenterUiLoginUrl":             vcenterUiLoginURL(cfg),
 		// 未设置 WMKS 环境变量时，由 VCENTER_URL 推导常见路径；前端可按 candidates 依次尝试。
 		"vcenterWmksScriptUrl":           EffectiveVCenterWmksScriptURL(cfg),
 		"vcenterWmksCssUrl":              EffectiveVCenterWmksCssURL(cfg),

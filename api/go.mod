@@ -1,4 +1,4 @@
-module kube-bt-sync
+module github.com/ops-easy/EasyPanel/api
 
 go 1.25.6
 

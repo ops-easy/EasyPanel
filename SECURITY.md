@@ -1,6 +1,6 @@
 # 安全策略
 
-Kube-BT-Sync 会连接 Kubernetes、宝塔面板、vCenter、MySQL、Redis、Harbor、Prometheus、VictoriaLogs、COS 等系统，部署时必须把它视为高权限运维组件。
+EasyPanel 会连接 Kubernetes、宝塔面板、vCenter、MySQL、Redis、Harbor、Prometheus、VictoriaLogs、COS 等系统，部署时必须把它视为高权限运维组件。
 
 ## 支持范围
 
@@ -46,7 +46,7 @@ Kube-BT-Sync 会连接 Kubernetes、宝塔面板、vCenter、MySQL、Redis、Har
 - `MYSQL_DSN` / `MYSQL_PASSWORD`
 - `REDIS_PASSWORD`
 - `DASHBOARD_SESSION_SECRET`
-- `KUBEBT_ENCRYPTION_KEY`
+- `EASYPANEL_ENCRYPTION_KEY`
 - OIDC Client Secret
 - COS Secret
 - SSH 私钥和密码
@@ -66,14 +66,14 @@ DASHBOARD_COOKIE_SECURE=true
 多副本时必须固定：
 
 - `DASHBOARD_SESSION_SECRET`
-- `KUBEBT_ENCRYPTION_KEY`
+- `EASYPANEL_ENCRYPTION_KEY`
 - 统一的 MySQL / Redis / PVC 状态存储
 
 后台任务只能由一个副本执行：
 
 ```text
-KUBEBT_ENABLE_BACKGROUND_JOBS=true   # 仅一个 Pod
-KUBEBT_ENABLE_BACKGROUND_JOBS=false  # 其他 Pod
+EASYPANEL_ENABLE_BACKGROUND_JOBS=true   # 仅一个 Pod
+EASYPANEL_ENABLE_BACKGROUND_JOBS=false  # 其他 Pod
 ```
 
 否则可能重复执行宝塔同步、巡检、告警、审计裁剪和出站通知。
@@ -101,7 +101,7 @@ securityContext:
   runAsGroup: 65532
 ```
 
-SSH 凭据目录建议权限为 `0700`，并配合 `KUBEBT_ENCRYPTION_KEY` 加密保存。
+SSH 凭据目录建议权限为 `0700`，并配合 `EASYPANEL_ENCRYPTION_KEY` 加密保存。
 
 ### 文档公开页
 
@@ -113,7 +113,7 @@ SSH 凭据目录建议权限为 `0700`，并配合 `KUBEBT_ENCRYPTION_KEY` 加�
 
 ## 已知风险提示
 
-- MySQL 表 `kubebt_platform_kv` 会保存动态配置和部分敏感配置，必须限制数据库访问权限并做好备份加密。
+- MySQL 表 `easypanel_platform_kv` 会保存动态配置和部分敏感配置，必须限制数据库访问权限并做好备份加密。
 - 宝塔、vCenter、Harbor 等管理员凭据只应由可信管理员维护。
 - Pod Exec、Web SSH、SFTP 具有较高运维权限，应开启审计并限制访问角色。
 - 生产环境不建议长期暴露 `/setup` 给公网。

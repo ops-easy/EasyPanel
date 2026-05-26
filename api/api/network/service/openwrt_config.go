@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	networkmodel "kube-bt-sync/api/network/model"
+	networkmodel "github.com/ops-easy/EasyPanel/api/api/network/model"
 )
 
 func (c *openWrtClient) ConfigSnapshot(ctx context.Context, dev networkmodel.Device, domain string) (map[string]any, error) {

@@ -7,7 +7,7 @@ export const OPENCLAW_IMAGE_FULL = OPENCLAW_IMAGE_DEFAULT_FULL;
 /** 兼容旧引用：等同默认 Slim */
 export const OPENCLAW_IMAGE_SLIM = OPENCLAW_IMAGE_DEFAULT_SLIM;
 
-const STORAGE_KEY = "kubebt-openclaw-image-presets:v1";
+const STORAGE_KEY = "easypanel-openclaw-image-presets:v1";
 
 export type OpenClawImagePresets = { full: string; slim: string };
 

@@ -1,6 +1,6 @@
 package core
 
-import "kube-bt-sync/pkg/platformkv"
+import "github.com/ops-easy/EasyPanel/api/pkg/platformkv"
 
 type PlatformKVFile = platformkv.File
 

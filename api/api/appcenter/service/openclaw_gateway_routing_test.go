@@ -6,10 +6,10 @@ import (
 )
 
 func TestShouldUseOpenClawGatewayHTTPContract(t *testing.T) {
-	if !shouldUseOpenClawGatewayHTTPContract("http://openclaw-gateway.kube-bt.svc.cluster.local:18789/v1") {
+	if !shouldUseOpenClawGatewayHTTPContract("http://openclaw-gateway.easypanel.svc.cluster.local:18789/v1") {
 		t.Fatal("expected true for cluster svc + 18789")
 	}
-	if !shouldUseOpenClawGatewayHTTPContract("http://openclaw-gateway.kube-bt.svc.cluster.local/v1") {
+	if !shouldUseOpenClawGatewayHTTPContract("http://openclaw-gateway.easypanel.svc.cluster.local/v1") {
 		t.Fatal("expected true for openclaw hostname on default port")
 	}
 	if shouldUseOpenClawGatewayHTTPContract("https://api.openai.com/v1") {
@@ -62,7 +62,7 @@ func TestOpenClawGatewayRoutingCandidates(t *testing.T) {
 }
 
 func TestOpenClawChatCompletionsURLCandidates(t *testing.T) {
-	gw := "http://openclaw-gateway.kube-bt.svc.cluster.local:18789"
+	gw := "http://openclaw-gateway.easypanel.svc.cluster.local:18789"
 	got := openClawChatCompletionsURLCandidates(gw)
 	want := []string{
 		gw + "/v1/chat/completions",

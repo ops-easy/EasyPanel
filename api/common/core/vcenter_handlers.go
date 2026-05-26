@@ -974,7 +974,7 @@ func handleVCenterVMWebmks(c *gin.Context, vc *vCenterClient, app *ServerApp) {
 		"cfgFile":       ticket.CfgFile,
 		"wssUrl":        wss,
 		"proxyPath":     fmt.Sprintf("/api/vcenter/vms/%s/console-ws", url.PathEscape(moref)),
-		"hint":          "浏览器通过同源 WebSocket 代理连接 ESXi WebMKS；需运行 kube-bt-sync 的机器能访问 ESXi 主机。",
+		"hint":          "浏览器通过同源 WebSocket 代理连接 ESXi WebMKS；需运行 easypanel 的机器能访问 ESXi 主机。",
 	})
 }
 

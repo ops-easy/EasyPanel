@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"strings"
 
-	pvemodel "kube-bt-sync/api/pve/model"
-	pveprovider "kube-bt-sync/api/pve/provider"
-	"kube-bt-sync/common/appctx"
-	"kube-bt-sync/common/authz"
-	sharedcrypto "kube-bt-sync/common/crypto"
-	"kube-bt-sync/common/result"
+	pvemodel "github.com/ops-easy/EasyPanel/api/api/pve/model"
+	pveprovider "github.com/ops-easy/EasyPanel/api/api/pve/provider"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/common/authz"
+	sharedcrypto "github.com/ops-easy/EasyPanel/api/common/crypto"
+	"github.com/ops-easy/EasyPanel/api/common/result"
 
 	"github.com/gin-gonic/gin"
 )

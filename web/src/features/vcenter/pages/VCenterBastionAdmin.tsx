@@ -596,7 +596,7 @@ const VCenterBastionAdmin: React.FC = () => {
               凭据。
             </p>
             <p className="text-[11px] text-amber-600/90">
-              多副本时仅在「后台任务」副本（<code className="font-mono">KUBEBT_ENABLE_BACKGROUND_JOBS=true</code>
+              多副本时仅在「后台任务」副本（<code className="font-mono">EASYPANEL_ENABLE_BACKGROUND_JOBS=true</code>
               ）上绑定该端口。请将 Service / Ingress 或 <code className="font-mono">hostPort</code> 暴露到期望的公网或专线 IP，并在防火墙放行对应 TCP。
             </p>
             <div className="flex flex-wrap items-center gap-4">

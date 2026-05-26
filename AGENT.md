@@ -39,7 +39,7 @@ api/                         Go 后端
 web/                         React + TypeScript + Vite 前端
 k8s/backend/                 后端 Kubernetes 清单
 k8s/frontend/                前端 Kubernetes 清单
-k8s/charts/kube-bt-sync/     Helm Chart
+k8s/charts/easypanel/          Helm Chart
 docs/                        运维文档
 .github/workflows/           镜像发布工作流
 ```
@@ -50,7 +50,7 @@ docs/                        运维文档
 # 后端
 cd api && go run .
 cd api && go test ./...
-cd api && go build -o kube-bt-sync .
+cd api && go build -o easypanel .
 
 # 前端
 cd web && npm ci
@@ -64,19 +64,19 @@ make start-frontend
 
 # Kubernetes
 kubectl apply -k k8s
-helm install kube-bt-sync ./k8s/charts/kube-bt-sync --namespace easy --create-namespace
+helm install easypanel ./k8s/charts/easypanel --namespace easy --create-namespace
 ```
 
 ## 架构要点
 
-后端入口为 `api/main.go`，核心代码位于 `api/internal/`。`ServerApp` 负责持有运行时配置、Kubernetes client、MySQL、Redis、vCenter、SSH 凭据存储等共享状态。静态配置来自环境变量和 `api/config.yaml`，页面保存的动态配置写入 MySQL 的 `kubebt_platform_kv`，不再读取 `runtime-config.json` 或 PVC 上的动态覆盖文件。
+后端入口为 `api/main.go`，核心代码位于 `api/internal/`。`ServerApp` 负责持有运行时配置、Kubernetes client、MySQL、Redis、vCenter、SSH 凭据存储等共享状态。静态配置来自环境变量和 `api/config.yaml`，页面保存的动态配置写入 MySQL 的 `easypanel_platform_kv`，不再读取 `runtime-config.json` 或 PVC 上的动态覆盖文件。
 
 前端入口为 `web/src/main.tsx` 与 `web/src/App.tsx`。路由覆盖工作台、集群、宝塔、应用中心、AI 巡检、vCenter、堡垒机、文档中心、账号设置等页面。前端通过 `/api/` 调用后端，通过 WebSocket 提供终端、日志和实时交互能力。
 
 容器发布分为后端镜像和前端镜像：
 
-- 后端镜像：`ghcr.io/ops-easy/kube-bt-sync`
-- 前端镜像：`ghcr.io/ops-easy/kube-bt-sync-web`
+- 后端镜像：`ghcr.io/ops-easy/easypanel-api`
+- 前端镜像：`ghcr.io/ops-easy/easypanel-web`
 
 推送到 `main` 后 GitHub Actions 会发布 `latest` 和 commit SHA 标签。
 
@@ -86,10 +86,10 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync --namespace easy --create-na
 
 | 注解 | 说明 |
 | --- | --- |
-| `kube-bt-sync.io/baota-sync: "true"` | 启用同步 |
-| `kube-bt-sync.io/baota-https: "true"` | 在宝塔侧启用 HTTPS |
-| `kube-bt-sync.io/baota-ssl-cert-name: "<cert>"` | 指定宝塔证书 |
-| `kube-bt-sync.io/ddns-port: "<port>"` | 覆盖默认上游端口 |
+| `easypanel.io/baota-sync: "true"` | 启用同步 |
+| `easypanel.io/baota-https: "true"` | 在宝塔侧启用 HTTPS |
+| `easypanel.io/baota-ssl-cert-name: "<cert>"` | 指定宝塔证书 |
+| `easypanel.io/ddns-port: "<port>"` | 覆盖默认上游端口 |
 | `i4t.com/baota-sync: "true"` | 旧版兼容注解 |
 
 改动相关代码时需要同时关注：
@@ -104,7 +104,7 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync --namespace easy --create-na
 
 - 默认 RBAC 权限较高，生产部署时可按需要裁剪。
 - 多副本部署时只允许一个副本启用后台任务。
-- `DASHBOARD_SESSION_SECRET` 与 `KUBEBT_ENCRYPTION_KEY` 多副本必须固定。
+- `DASHBOARD_SESSION_SECRET` 与 `EASYPANEL_ENCRYPTION_KEY` 多副本必须固定。
 - MySQL 动态配置、SSH 凭据、宝塔 API Key、vCenter 密码等都属于敏感数据。
 - Web SSH、Pod Exec、SFTP 和 YAML 编辑相关功能应重点关注权限与审计。
 

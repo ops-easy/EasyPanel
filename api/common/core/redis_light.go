@@ -1,7 +1,7 @@
 package core
 
 import (
-	redislight "kube-bt-sync/pkg/redis"
+	redislight "github.com/ops-easy/EasyPanel/api/pkg/redis"
 )
 
 type RedisLight = redislight.Client

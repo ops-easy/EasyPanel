@@ -3,19 +3,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "kube-bt-sync.frontendFullname" . }}
+  name: {{ include "easypanel.frontendFullname" . }}
   labels:
-    {{- include "kube-bt-sync.frontendLabels" . | nindent 4 }}
+    {{- include "easypanel.frontendLabels" . | nindent 4 }}
 spec:
   replicas: {{ $frontend.replicaCount | default 1 }}
   selector:
     matchLabels:
-      {{- include "kube-bt-sync.frontendSelectorLabels" . | nindent 6 }}
+      {{- include "easypanel.frontendSelectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "kube-bt-sync.frontendSelectorLabels" . | nindent 8 }}
-        app.kubernetes.io/part-of: {{ include "kube-bt-sync.name" . }}
+        {{- include "easypanel.frontendSelectorLabels" . | nindent 8 }}
+        app.kubernetes.io/part-of: {{ include "easypanel.name" . }}
     spec:
       {{- with $frontend.podSecurityContext }}
       securityContext:
@@ -57,7 +57,7 @@ spec:
       volumes:
         - name: nginx-config
           configMap:
-            name: {{ include "kube-bt-sync.frontendFullname" . }}-nginx
+            name: {{ include "easypanel.frontendFullname" . }}-nginx
       {{- with $frontend.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

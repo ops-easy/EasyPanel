@@ -1,6 +1,6 @@
 package core
 
-import idracint "kube-bt-sync/api/ops/provider"
+import idracint "github.com/ops-easy/EasyPanel/api/api/ops/provider"
 
 // IdracHostConfig iDRAC Redfish 连接参数（BaseURL 为 https:// 根地址）。
 type IdracHostConfig = idracint.IdracHostConfig

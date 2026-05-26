@@ -178,14 +178,14 @@ const HeaderNotificationsSheet: React.FC = () => {
     (Boolean(openclawGwHealthQ.data?.bellUnread) && !openclawGwHealthAllProbedOk);
 
   useEffect(() => {
-    setSshEventsReadTs(localStorage.getItem("kubebt-ssh-events-read-ts") || "");
+    setSshEventsReadTs(localStorage.getItem("easypanel-ssh-events-read-ts") || "");
   }, []);
 
   useEffect(() => {
     if (!notifyOpen) return;
     const first = sshSecQ.data?.events?.[0]?.ts;
     if (first) {
-      localStorage.setItem("kubebt-ssh-events-read-ts", first);
+      localStorage.setItem("easypanel-ssh-events-read-ts", first);
       setSshEventsReadTs(first);
     }
   }, [notifyOpen, sshSecQ.data?.events]);
@@ -271,12 +271,12 @@ const HeaderNotificationsSheet: React.FC = () => {
                 极简补全探活（与「对话」、AI 巡检同源）。列表里<strong>下一行即原因概括</strong>：
                 <span className="font-mono">404</span>
                 →路由；<span className="font-mono">5xx</span>→上游；无 HTTP→连接层；超时→可调{" "}
-                <span className="font-mono">KUBEBT_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC</span>（约{" "}
+                <span className="font-mono">EASYPANEL_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC</span>（约{" "}
                 {openclawGwHealthQ.data?.healthChatTimeoutSec ?? 90}s）。
               </p>
               {openclawGwHealthQ.data?.workerDisabled ? (
                 <p className="mt-2 text-xs text-amber-900">
-                  当前已设置 <span className="font-mono">KUBEBT_OPENCLAW_GATEWAY_HEALTH_DISABLED</span>
+                  当前已设置 <span className="font-mono">EASYPANEL_OPENCLAW_GATEWAY_HEALTH_DISABLED</span>
                   ，后台巡检已关闭；以下为进程内最后一次快照（若有）。
                 </p>
               ) : null}

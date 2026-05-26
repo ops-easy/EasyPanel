@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const kvKeyAppHermesInstances = "kubebt_app_hermes_instances_v1"
+const kvKeyAppHermesInstances = "easypanel_app_hermes_instances_v1"
 
 type AppHermesInstance struct {
 	ID             string `json:"id"`

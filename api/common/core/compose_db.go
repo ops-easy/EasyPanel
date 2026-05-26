@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	mysqlconn "kube-bt-sync/pkg/mysql"
+	mysqlconn "github.com/ops-easy/EasyPanel/api/pkg/mysql"
 )
 
 // ComposeMySQLDSN 由主机、端口、库、用户、密码生成 go-sql-driver 兼容 DSN。

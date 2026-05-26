@@ -18,7 +18,7 @@ web/dist
 
 # 本地数据与日志（切勿打入镜像）
 data
-api/kube-bt-sync
+api/easypanel
 *.log
 .DS_Store
 dist

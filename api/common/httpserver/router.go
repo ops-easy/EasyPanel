@@ -3,8 +3,8 @@ package httpserver
 import (
 	"log"
 
-	"kube-bt-sync/common/appctx"
-	core "kube-bt-sync/common/core"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	core "github.com/ops-easy/EasyPanel/api/common/core"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,7 +14,7 @@ func RegisterBaseRoutes(r *gin.Engine, app *appctx.ServerApp) *gin.RouterGroup {
 	cfg := app.Cfg()
 	if cfg.PerformanceMode {
 		gin.SetMode(gin.ReleaseMode)
-		log.Printf("config: KUBEBT_PERFORMANCE_MODE enabled; namespace cache TTL=%d seconds", cfg.NamespacesCacheTTLSec)
+		log.Printf("config: EASYPANEL_PERFORMANCE_MODE enabled; namespace cache TTL=%d seconds", cfg.NamespacesCacheTTLSec)
 	}
 	core.ConfigureGinTrustedProxies(r, cfg)
 	r.Use(core.AuditAccessLogMiddleware(app))

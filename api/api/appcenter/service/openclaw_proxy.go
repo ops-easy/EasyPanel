@@ -37,7 +37,7 @@ func OpenClawEffectiveHTTPProxyURL(ctx context.Context, app *ServerApp, inst *Ap
 
 func hysteriaHTTPProxyURLFromCloudVMID(ctx context.Context, db *sql.DB, vmIDStr string) (string, error) {
 	var cfgj, ns string
-	err := db.QueryRowContext(ctx, `SELECT namespace, config_json FROM kubebt_app_cloud_vm_instances WHERE id=?`, strings.TrimSpace(vmIDStr)).Scan(&ns, &cfgj)
+	err := db.QueryRowContext(ctx, `SELECT namespace, config_json FROM easypanel_app_cloud_vm_instances WHERE id=?`, strings.TrimSpace(vmIDStr)).Scan(&ns, &cfgj)
 	if err != nil {
 		return "", err
 	}

@@ -24,12 +24,15 @@ test("raw Kubernetes manifests deploy EasyPanel into the easy namespace", () => 
   ];
 
   for (const file of files) {
-    assert.doesNotMatch(read(file), /^  namespace: kube-bt-sync$/m, file);
+    assert.doesNotMatch(read(file), /^  namespace: easypanel$/m, file);
+    assert.doesNotMatch(read(file), /github\.com\/ops-easy\/EasyPanel\/api/, file);
   }
 
   assert.match(read("../../k8s/backend/namespace.yaml"), /^  name: easy$/m);
   assert.match(read("../../k8s/backend/kustomization.yaml"), /^namespace: easy$/m);
   assert.match(read("../../k8s/frontend/kustomization.yaml"), /^namespace: easy$/m);
+  assert.match(read("../../k8s/backend/deployment.yaml"), /ghcr\.io\/ops-easy\/easypanel-api:latest/);
+  assert.match(read("../../k8s/frontend/frontend-deployment.yaml"), /ghcr\.io\/ops-easy\/easypanel-web:latest/);
 });
 
 test("Kubernetes deployment docs use the easy namespace", () => {
@@ -39,8 +42,8 @@ test("Kubernetes deployment docs use the easy namespace", () => {
     "../../AGENT.md",
   ].map(read).join("\n");
 
-  assert.doesNotMatch(docs, /--namespace kube-bt-sync\b/);
-  assert.doesNotMatch(docs, /-n kube-bt-sync\b/);
+  assert.doesNotMatch(docs, /--namespace easypanel\b/);
+  assert.doesNotMatch(docs, /-n easypanel\b/);
   assert.match(docs, /--namespace easy\b/);
   assert.match(docs, /-n easy\b/);
 });
@@ -48,10 +51,10 @@ test("Kubernetes deployment docs use the easy namespace", () => {
 test("Kubernetes config defaults resolve in the easy namespace", () => {
   const configs = [
     "../../k8s/backend/configmap.yaml",
-    "../../k8s/charts/kube-bt-sync/values.yaml",
+    "../../k8s/charts/easypanel/values.yaml",
   ].map(read).join("\n");
 
-  assert.doesNotMatch(configs, /\.kube-bt-sync\.svc\.cluster\.local/);
+  assert.doesNotMatch(configs, /\.easypanel\.svc\.cluster\.local/);
   assert.match(configs, /mysql\.easy\.svc\.cluster\.local/);
   assert.match(configs, /redis\.easy\.svc\.cluster\.local:6379/);
 });

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// mysqlApplyBootstrapDDLs 启动时对 kubebt_* 逐张 CREATE TABLE IF NOT EXISTS。
+// mysqlApplyBootstrapDDLs 启动时对 easypanel_* 逐张 CREATE TABLE IF NOT EXISTS。
 // 单表失败时仍会继续检查后续表，最后统一返回错误，避免服务带着缺表状态假启动成功。
 func mysqlApplyBootstrapDDLs(db *sql.DB) error {
 	var failed []mysqlBootstrapFailure
@@ -21,11 +21,11 @@ func mysqlApplyBootstrapDDLs(db *sql.DB) error {
 		log.Printf("MySQL 启动核对: %d 张表 ensure 未成功: %s", len(failed), mysqlBootstrapFailureLabels(failed))
 		return mysqlBootstrapFailuresError("MySQL 启动核对-建表", failed)
 	}
-	log.Printf("MySQL 启动核对: 已校验/创建 %d 张 kubebt 业务表", len(mysqlBootstrapTableDDLs))
+	log.Printf("MySQL 启动核对: 已校验/创建 %d 张 easypanel 业务表", len(mysqlBootstrapTableDDLs))
 	return nil
 }
 
-// mysqlBootstrapMissingTablesOnly 在 migrate 修正索引等问题后调用：仅为当前库中不存在的 kubebt 表执行 CREATE。
+// mysqlBootstrapMissingTablesOnly 在 migrate 修正索引等问题后调用：仅为当前库中不存在的 easypanel 表执行 CREATE。
 func mysqlBootstrapMissingTablesOnly(db *sql.DB) error {
 	var failed []mysqlBootstrapFailure
 	for _, d := range mysqlBootstrapTableDDLs {
@@ -82,13 +82,13 @@ var mysqlBootstrapTableDDLs = []struct {
 	Label string
 	SQL   string
 }{
-	{"kubebt_platform_kv", `
-CREATE TABLE IF NOT EXISTS kubebt_platform_kv (
+	{"easypanel_platform_kv", `
+CREATE TABLE IF NOT EXISTS easypanel_platform_kv (
   k VARCHAR(512) NOT NULL PRIMARY KEY,
   v MEDIUMTEXT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_dashboard_users", `
-CREATE TABLE IF NOT EXISTS kubebt_dashboard_users (
+	{"easypanel_dashboard_users", `
+CREATE TABLE IF NOT EXISTS easypanel_dashboard_users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(64) NOT NULL UNIQUE,
   email VARCHAR(255) NOT NULL DEFAULT '',
@@ -98,8 +98,8 @@ CREATE TABLE IF NOT EXISTS kubebt_dashboard_users (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_app_redis_instances", `
-CREATE TABLE IF NOT EXISTS kubebt_app_redis_instances (
+	{"easypanel_app_redis_instances", `
+CREATE TABLE IF NOT EXISTS easypanel_app_redis_instances (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(128) NOT NULL,
   mode VARCHAR(32) NOT NULL,
@@ -109,8 +109,8 @@ CREATE TABLE IF NOT EXISTS kubebt_app_redis_instances (
   created_by VARCHAR(64) NOT NULL DEFAULT '',
   UNIQUE KEY uniq_app_redis_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_app_redis_templates", `
-CREATE TABLE IF NOT EXISTS kubebt_app_redis_templates (
+	{"easypanel_app_redis_templates", `
+CREATE TABLE IF NOT EXISTS easypanel_app_redis_templates (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(128) NOT NULL,
   description VARCHAR(512) NULL,
@@ -120,8 +120,8 @@ CREATE TABLE IF NOT EXISTS kubebt_app_redis_templates (
   created_by VARCHAR(64) NOT NULL DEFAULT '',
   UNIQUE KEY uniq_app_redis_tpl_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_app_mysql_instances", `
-CREATE TABLE IF NOT EXISTS kubebt_app_mysql_instances (
+	{"easypanel_app_mysql_instances", `
+CREATE TABLE IF NOT EXISTS easypanel_app_mysql_instances (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(160) NOT NULL,
   mode VARCHAR(32) NOT NULL,
@@ -131,8 +131,8 @@ CREATE TABLE IF NOT EXISTS kubebt_app_mysql_instances (
   created_by VARCHAR(64) NOT NULL DEFAULT '',
   UNIQUE KEY uniq_app_mysql_inst_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_app_mysql_templates", `
-CREATE TABLE IF NOT EXISTS kubebt_app_mysql_templates (
+	{"easypanel_app_mysql_templates", `
+CREATE TABLE IF NOT EXISTS easypanel_app_mysql_templates (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(128) NOT NULL,
   description VARCHAR(512) NULL,
@@ -142,8 +142,8 @@ CREATE TABLE IF NOT EXISTS kubebt_app_mysql_templates (
   created_by VARCHAR(64) NOT NULL DEFAULT '',
   UNIQUE KEY uniq_app_mysql_tpl_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_app_mysql_backups", `
-CREATE TABLE IF NOT EXISTS kubebt_app_mysql_backups (
+	{"easypanel_app_mysql_backups", `
+CREATE TABLE IF NOT EXISTS easypanel_app_mysql_backups (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   instance_id BIGINT UNSIGNED NOT NULL,
   backup_name VARCHAR(160) NOT NULL,
@@ -158,8 +158,8 @@ CREATE TABLE IF NOT EXISTS kubebt_app_mysql_backups (
   INDEX idx_app_mysql_backup_inst (instance_id, id),
   UNIQUE KEY uniq_app_mysql_backup_name (instance_id, backup_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_app_opensearch_templates", `
-CREATE TABLE IF NOT EXISTS kubebt_app_opensearch_templates (
+	{"easypanel_app_opensearch_templates", `
+CREATE TABLE IF NOT EXISTS easypanel_app_opensearch_templates (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(128) NOT NULL,
   description VARCHAR(512) NULL,
@@ -169,8 +169,8 @@ CREATE TABLE IF NOT EXISTS kubebt_app_opensearch_templates (
   created_by VARCHAR(64) NOT NULL DEFAULT '',
   UNIQUE KEY uniq_app_opensearch_tpl_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_app_opensearch_instances", `
-CREATE TABLE IF NOT EXISTS kubebt_app_opensearch_instances (
+	{"easypanel_app_opensearch_instances", `
+CREATE TABLE IF NOT EXISTS easypanel_app_opensearch_instances (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(160) NOT NULL,
   config_json MEDIUMTEXT NOT NULL,
@@ -179,8 +179,8 @@ CREATE TABLE IF NOT EXISTS kubebt_app_opensearch_instances (
   created_by VARCHAR(64) NOT NULL DEFAULT '',
   UNIQUE KEY uniq_app_opensearch_inst_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_app_kafka_templates", `
-CREATE TABLE IF NOT EXISTS kubebt_app_kafka_templates (
+	{"easypanel_app_kafka_templates", `
+CREATE TABLE IF NOT EXISTS easypanel_app_kafka_templates (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(128) NOT NULL,
   description VARCHAR(512) NULL,
@@ -190,8 +190,8 @@ CREATE TABLE IF NOT EXISTS kubebt_app_kafka_templates (
   created_by VARCHAR(64) NOT NULL DEFAULT '',
   UNIQUE KEY uniq_app_kafka_tpl_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_app_kafka_instances", `
-CREATE TABLE IF NOT EXISTS kubebt_app_kafka_instances (
+	{"easypanel_app_kafka_instances", `
+CREATE TABLE IF NOT EXISTS easypanel_app_kafka_instances (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(160) NOT NULL,
   config_json MEDIUMTEXT NOT NULL,
@@ -200,8 +200,8 @@ CREATE TABLE IF NOT EXISTS kubebt_app_kafka_instances (
   created_by VARCHAR(64) NOT NULL DEFAULT '',
   UNIQUE KEY uniq_app_kafka_inst_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_app_cloud_vm_instances", `
-CREATE TABLE IF NOT EXISTS kubebt_app_cloud_vm_instances (
+	{"easypanel_app_cloud_vm_instances", `
+CREATE TABLE IF NOT EXISTS easypanel_app_cloud_vm_instances (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(128) NOT NULL,
   namespace VARCHAR(253) NOT NULL,
@@ -211,8 +211,8 @@ CREATE TABLE IF NOT EXISTS kubebt_app_cloud_vm_instances (
   created_by VARCHAR(64) NOT NULL DEFAULT '',
   UNIQUE KEY uniq_cloud_vm_ns_name (namespace, name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_k8s_object_revisions", `
-CREATE TABLE IF NOT EXISTS kubebt_k8s_object_revisions (
+	{"easypanel_k8s_object_revisions", `
+CREATE TABLE IF NOT EXISTS easypanel_k8s_object_revisions (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   namespace VARCHAR(253) NOT NULL,
   kind VARCHAR(128) NOT NULL,
@@ -223,8 +223,8 @@ CREATE TABLE IF NOT EXISTS kubebt_k8s_object_revisions (
   yaml MEDIUMTEXT NOT NULL,
   INDEX idx_k8s_obj_rev_resource (namespace(128), kind(64), res_name(128), id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_openclaw_instance_secrets", `
-CREATE TABLE IF NOT EXISTS kubebt_openclaw_instance_secrets (
+	{"easypanel_openclaw_instance_secrets", `
+CREATE TABLE IF NOT EXISTS easypanel_openclaw_instance_secrets (
   openclaw_instance_id VARCHAR(64) NOT NULL PRIMARY KEY,
   telegram_bot_token_enc MEDIUMTEXT NULL,
   telegram_enabled TINYINT(1) NOT NULL DEFAULT 0,
@@ -232,8 +232,8 @@ CREATE TABLE IF NOT EXISTS kubebt_openclaw_instance_secrets (
   google_checked_at VARCHAR(64) NOT NULL DEFAULT '',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_audit_log", `
-CREATE TABLE IF NOT EXISTS kubebt_audit_log (
+	{"easypanel_audit_log", `
+CREATE TABLE IF NOT EXISTS easypanel_audit_log (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   ts VARCHAR(64) NOT NULL,
@@ -248,8 +248,8 @@ CREATE TABLE IF NOT EXISTS kubebt_audit_log (
   INDEX idx_audit_created (created_at),
   INDEX idx_audit_action (action)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_doc_categories", `
-CREATE TABLE IF NOT EXISTS kubebt_doc_categories (
+	{"easypanel_doc_categories", `
+CREATE TABLE IF NOT EXISTS easypanel_doc_categories (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(128) NOT NULL,
   parent_id BIGINT UNSIGNED NULL,
@@ -257,15 +257,15 @@ CREATE TABLE IF NOT EXISTS kubebt_doc_categories (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_doc_cat_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_doc_tags", `
-CREATE TABLE IF NOT EXISTS kubebt_doc_tags (
+	{"easypanel_doc_tags", `
+CREATE TABLE IF NOT EXISTS easypanel_doc_tags (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(64) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_doc_tag_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_docs", `
-CREATE TABLE IF NOT EXISTS kubebt_docs (
+	{"easypanel_docs", `
+CREATE TABLE IF NOT EXISTS easypanel_docs (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(512) NOT NULL DEFAULT '',
   body_markdown MEDIUMTEXT NOT NULL,
@@ -279,15 +279,15 @@ CREATE TABLE IF NOT EXISTS kubebt_docs (
   INDEX idx_docs_cat (category_id),
   INDEX idx_docs_updated (updated_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_doc_tag_map", `
-CREATE TABLE IF NOT EXISTS kubebt_doc_tag_map (
+	{"easypanel_doc_tag_map", `
+CREATE TABLE IF NOT EXISTS easypanel_doc_tag_map (
   doc_id BIGINT UNSIGNED NOT NULL,
   tag_id BIGINT UNSIGNED NOT NULL,
   PRIMARY KEY (doc_id, tag_id),
   INDEX idx_doc_tag_tag (tag_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_doc_versions", `
-CREATE TABLE IF NOT EXISTS kubebt_doc_versions (
+	{"easypanel_doc_versions", `
+CREATE TABLE IF NOT EXISTS easypanel_doc_versions (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   doc_id BIGINT UNSIGNED NOT NULL,
   version_no INT NOT NULL,
@@ -299,8 +299,8 @@ CREATE TABLE IF NOT EXISTS kubebt_doc_versions (
   UNIQUE KEY uq_doc_ver (doc_id, version_no),
   INDEX idx_doc_versions_doc (doc_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_doc_guides", `
-CREATE TABLE IF NOT EXISTS kubebt_doc_guides (
+	{"easypanel_doc_guides", `
+CREATE TABLE IF NOT EXISTS easypanel_doc_guides (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   guide_key VARCHAR(128) NOT NULL,
   route_pattern VARCHAR(255) NOT NULL,
@@ -315,8 +315,8 @@ CREATE TABLE IF NOT EXISTS kubebt_doc_guides (
   INDEX idx_doc_guides_doc (doc_id),
   INDEX idx_doc_guides_enabled (enabled, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`},
-	{"kubebt_doc_media", `
-CREATE TABLE IF NOT EXISTS kubebt_doc_media (
+	{"easypanel_doc_media", `
+CREATE TABLE IF NOT EXISTS easypanel_doc_media (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   doc_id BIGINT UNSIGNED NULL,
   kind VARCHAR(16) NOT NULL DEFAULT 'image',
@@ -452,8 +452,8 @@ CREATE TABLE IF NOT EXISTS dns_cert_orders (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`},
 
-	{"kubebt_k8s_restart_ai_reports", `
-CREATE TABLE IF NOT EXISTS kubebt_k8s_restart_ai_reports (
+	{"easypanel_k8s_restart_ai_reports", `
+CREATE TABLE IF NOT EXISTS easypanel_k8s_restart_ai_reports (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   kind VARCHAR(48) NOT NULL,
   subject VARCHAR(512) NOT NULL DEFAULT '',

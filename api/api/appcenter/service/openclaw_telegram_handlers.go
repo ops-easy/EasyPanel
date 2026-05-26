@@ -21,7 +21,7 @@ func openClawTelegramSummary(db *sql.DB, instanceID string) (enabled, googleOK b
 	}
 	var tok sql.NullString
 	var enI, gokI int
-	err = db.QueryRow(`SELECT telegram_enabled, google_ok, google_checked_at, telegram_bot_token_enc FROM kubebt_openclaw_instance_secrets WHERE openclaw_instance_id=?`,
+	err = db.QueryRow(`SELECT telegram_enabled, google_ok, google_checked_at, telegram_bot_token_enc FROM easypanel_openclaw_instance_secrets WHERE openclaw_instance_id=?`,
 		strings.TrimSpace(instanceID)).Scan(&enI, &gokI, &googleAt, &tok)
 	if err == sql.ErrNoRows {
 		return false, false, "", false, nil
@@ -40,7 +40,7 @@ func upsertOpenClawTelegramGoogle(db *sql.DB, instanceID string, googleOK bool, 
 	if googleOK {
 		gi = 1
 	}
-	_, err := db.Exec(`INSERT INTO kubebt_openclaw_instance_secrets (openclaw_instance_id, google_ok, google_checked_at) VALUES (?,?,?)
+	_, err := db.Exec(`INSERT INTO easypanel_openclaw_instance_secrets (openclaw_instance_id, google_ok, google_checked_at) VALUES (?,?,?)
 ON DUPLICATE KEY UPDATE google_ok=VALUES(google_ok), google_checked_at=VALUES(google_checked_at)`,
 		strings.TrimSpace(instanceID), gi, strings.TrimSpace(checkedAt))
 	return err
@@ -64,12 +64,12 @@ func upsertOpenClawTelegramSettings(db *sql.DB, instanceID string, enabled bool,
 		enc = &s
 	}
 	if enc != nil {
-		_, err := db.Exec(`INSERT INTO kubebt_openclaw_instance_secrets (openclaw_instance_id, telegram_enabled, telegram_bot_token_enc) VALUES (?,?,?)
+		_, err := db.Exec(`INSERT INTO easypanel_openclaw_instance_secrets (openclaw_instance_id, telegram_enabled, telegram_bot_token_enc) VALUES (?,?,?)
 ON DUPLICATE KEY UPDATE telegram_enabled=VALUES(telegram_enabled), telegram_bot_token_enc=VALUES(telegram_bot_token_enc)`,
 			id, e, *enc)
 		return err
 	}
-	_, err := db.Exec(`INSERT INTO kubebt_openclaw_instance_secrets (openclaw_instance_id, telegram_enabled) VALUES (?,?)
+	_, err := db.Exec(`INSERT INTO easypanel_openclaw_instance_secrets (openclaw_instance_id, telegram_enabled) VALUES (?,?)
 ON DUPLICATE KEY UPDATE telegram_enabled=VALUES(telegram_enabled)`, id, e)
 	return err
 }
@@ -79,7 +79,7 @@ func loadOpenClawTelegramTokenPlain(db *sql.DB, instanceID string, key []byte) (
 		return "", fmt.Errorf("需要 MySQL")
 	}
 	var enc sql.NullString
-	err := db.QueryRow(`SELECT telegram_bot_token_enc FROM kubebt_openclaw_instance_secrets WHERE openclaw_instance_id=?`, strings.TrimSpace(instanceID)).Scan(&enc)
+	err := db.QueryRow(`SELECT telegram_bot_token_enc FROM easypanel_openclaw_instance_secrets WHERE openclaw_instance_id=?`, strings.TrimSpace(instanceID)).Scan(&enc)
 	if err == sql.ErrNoRows || !enc.Valid {
 		return "", fmt.Errorf("未保存 Telegram Token")
 	}
@@ -198,7 +198,7 @@ func handleOpenClawGoogleReachabilityCheck(c *gin.Context, app *ServerApp) {
 		return
 	}
 	var cfgj, ns string
-	err = db.QueryRow(`SELECT namespace, config_json FROM kubebt_app_cloud_vm_instances WHERE id=?`, vmID).Scan(&ns, &cfgj)
+	err = db.QueryRow(`SELECT namespace, config_json FROM easypanel_app_cloud_vm_instances WHERE id=?`, vmID).Scan(&ns, &cfgj)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "云主机不存在"})
 		return

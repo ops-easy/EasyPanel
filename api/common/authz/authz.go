@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	core "kube-bt-sync/common/core"
+	core "github.com/ops-easy/EasyPanel/api/common/core"
 
 	"github.com/gin-gonic/gin"
 )

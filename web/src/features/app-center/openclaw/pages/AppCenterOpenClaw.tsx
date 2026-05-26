@@ -117,7 +117,7 @@ type OpenClawBootstrapResp = {
   defaultRbacPreset?: string;
 };
 
-const OPENCLAW_CHAT_STORAGE_PREFIX = "kubebt-openclaw-chat:v1";
+const OPENCLAW_CHAT_STORAGE_PREFIX = "easypanel-openclaw-chat:v1";
 const OPENCLAW_CHAT_MAX_MSGS = 80;
 
 function loadOpenClawChatMessages(instanceId: string): { role: string; content: string }[] {
@@ -545,7 +545,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
   const [ingressName, setIngressName] = useState("");
   const [ingressHost, setIngressHost] = useState("");
   const [ingressTlsScheme, setIngressTlsScheme] = useState<"https" | "http">("https");
-  const [baotaSyncAnnotation, setBaotaSyncAnnotation] = useState<"i4t" | "kube-bt">("kube-bt");
+  const [baotaSyncAnnotation, setBaotaSyncAnnotation] = useState<"i4t" | "easypanel">("easypanel");
   const [preset, setPreset] = useState<string>("minimax-m2.7");
   const [chatModel, setChatModel] = useState<string>(() => defaultChatModelForPreset("minimax-m2.7"));
   const [openaiKey, setOpenaiKey] = useState("");
@@ -1066,7 +1066,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                   <span className="font-mono">5xx</span>→上游大模型/密钥/出站；<strong>无 HTTP 状态</strong>→连接层（如{" "}
                   <span className="font-mono">EOF</span>、重置）；含「超时」可调{" "}
                   <code className="rounded bg-white/80 px-0.5 font-mono text-[10px]">
-                    KUBEBT_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC
+                    EASYPANEL_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC
                   </code>
                   （默认 {gwHealthQ.data.healthChatTimeoutSec ?? 90}s）。
                 </p>
@@ -1093,7 +1093,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                   <p className="text-xs text-red-900/85">
                     最近巡检：{formatDateTimeShanghai(gwHealthQ.data.lastCheckAt)}（UTC：{gwHealthQ.data.lastCheckAt}）
                     {gwHealthQ.data.workerDisabled
-                      ? " · 后台探活已禁用（KUBEBT_OPENCLAW_GATEWAY_HEALTH_DISABLED）"
+                      ? " · 后台探活已禁用（EASYPANEL_OPENCLAW_GATEWAY_HEALTH_DISABLED）"
                       : ` · 约每 ${gwHealthQ.data.intervalSec ?? OPENCLAW_GATEWAY_HEALTH_INTERVAL_SEC_DEFAULT}s 自动执行 · 单次 chat 探活超时 ${gwHealthQ.data.healthChatTimeoutSec ?? 90}s`}
                   </p>
                 ) : null}
@@ -1564,13 +1564,13 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                           <Label>宝塔同步注解（与「发布 Ingress」一致）</Label>
                           <Select
                             value={baotaSyncAnnotation}
-                            onValueChange={(v) => setBaotaSyncAnnotation(v as "i4t" | "kube-bt")}
+                            onValueChange={(v) => setBaotaSyncAnnotation(v as "i4t" | "easypanel")}
                           >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="kube-bt">kube-bt-sync.io/baota-sync</SelectItem>
+                              <SelectItem value="easypanel">easypanel.io/baota-sync</SelectItem>
                             </SelectContent>
                           </Select>
                           <p className="text-[11px] text-slate-500">

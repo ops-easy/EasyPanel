@@ -1,7 +1,7 @@
 {
   "product": "EasyPanel",
   "generatedBy": "scripts/generate-demo-assets.mjs",
-  "seed": "easy-panel-open-source-demo-v2",
+  "seed": "easypanel-open-source-demo-v2",
   "generatedAt": "2026-05-26T00:00:00+08:00",
   "clusters": [
     {

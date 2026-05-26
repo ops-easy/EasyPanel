@@ -37,7 +37,7 @@ type HermesK8sDeployOpts struct {
 func hermesLabels(name string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":       "hermes-agent",
-		"app.kubernetes.io/managed-by": "kube-bt-sync",
+		"app.kubernetes.io/managed-by": "easypanel",
 		"app.kubernetes.io/instance":   name,
 	}
 }
@@ -218,7 +218,7 @@ func buildHermesConfigMap(opts HermesK8sDeployOpts, provider, model string) *cor
 	if strings.TrimSpace(model) != "" {
 		data["HERMES_MODEL_NAME"] = strings.TrimSpace(model)
 	}
-	data["KUBEBT_HERMES_MODE"] = strings.TrimSpace(opts.Mode)
+	data["EASYPANEL_HERMES_MODE"] = strings.TrimSpace(opts.Mode)
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: opts.Namespace, Labels: hermesLabels(opts.DeploymentName)},
 		Data:       data,

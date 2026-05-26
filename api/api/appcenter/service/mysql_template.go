@@ -54,7 +54,7 @@ func appMySQLTemplateListFromMySQL(ctx context.Context, db *sql.DB) ([]appMySQLT
 	if db == nil {
 		return nil, nil
 	}
-	rows, err := db.QueryContext(ctx, `SELECT id, name, description, config_json, created_at, updated_at, created_by FROM kubebt_app_mysql_templates ORDER BY id DESC`)
+	rows, err := db.QueryContext(ctx, `SELECT id, name, description, config_json, created_at, updated_at, created_by FROM easypanel_app_mysql_templates ORDER BY id DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func appMySQLTemplateGetByID(ctx context.Context, db *sql.DB, id int64) (*appMyS
 	var r appMySQLTemplateRow
 	var desc sql.NullString
 	var created, updated sql.NullTime
-	err := db.QueryRowContext(ctx, `SELECT id, name, description, config_json, created_at, updated_at, created_by FROM kubebt_app_mysql_templates WHERE id=?`, id).
+	err := db.QueryRowContext(ctx, `SELECT id, name, description, config_json, created_at, updated_at, created_by FROM easypanel_app_mysql_templates WHERE id=?`, id).
 		Scan(&r.ID, &r.Name, &desc, &r.ConfigJSON, &created, &updated, &r.CreatedBy)
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func appMySQLTemplateGetByID(ctx context.Context, db *sql.DB, id int64) (*appMyS
 
 func appMySQLTemplateInsert(ctx context.Context, db *sql.DB, name, description, configJSON, createdBy string) (int64, error) {
 	res, err := db.ExecContext(ctx,
-		`INSERT INTO kubebt_app_mysql_templates (name, description, config_json, created_by) VALUES (?,?,?,?)`,
+		`INSERT INTO easypanel_app_mysql_templates (name, description, config_json, created_by) VALUES (?,?,?,?)`,
 		name, nullIfEmpty(description), configJSON, createdBy)
 	if err != nil {
 		return 0, err
@@ -114,13 +114,13 @@ func appMySQLTemplateInsert(ctx context.Context, db *sql.DB, name, description, 
 
 func appMySQLTemplateUpdate(ctx context.Context, db *sql.DB, id int64, name, description, configJSON string) error {
 	_, err := db.ExecContext(ctx,
-		`UPDATE kubebt_app_mysql_templates SET name=?, description=?, config_json=? WHERE id=?`,
+		`UPDATE easypanel_app_mysql_templates SET name=?, description=?, config_json=? WHERE id=?`,
 		name, nullIfEmpty(description), configJSON, id)
 	return err
 }
 
 func appMySQLTemplateDelete(ctx context.Context, db *sql.DB, id int64) error {
-	_, err := db.ExecContext(ctx, `DELETE FROM kubebt_app_mysql_templates WHERE id=?`, id)
+	_, err := db.ExecContext(ctx, `DELETE FROM easypanel_app_mysql_templates WHERE id=?`, id)
 	return err
 }
 

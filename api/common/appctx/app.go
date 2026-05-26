@@ -1,6 +1,6 @@
 package appctx
 
-import core "kube-bt-sync/common/core"
+import core "github.com/ops-easy/EasyPanel/api/common/core"
 
 type ServerApp = core.ServerApp
 type Config = core.Config

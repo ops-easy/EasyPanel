@@ -2,7 +2,7 @@ package core
 
 import "strings"
 
-// BuildVersion 由 go build -ldflags "-X kube-bt-sync/common/core.BuildVersion=..." 注入；会话令牌含此段，发版后旧 Cookie 失效，用户需重新登录。
+// BuildVersion 由 go build -ldflags "-X github.com/ops-easy/EasyPanel/api/common/core.BuildVersion=..." 注入；会话令牌含此段，发版后旧 Cookie 失效，用户需重新登录。
 var BuildVersion = "dev"
 
 func sessionBuildVersionSegment() string {

@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	pvemodel "kube-bt-sync/api/pve/model"
-	pveprovider "kube-bt-sync/api/pve/provider"
-	sharedcrypto "kube-bt-sync/common/crypto"
+	pvemodel "github.com/ops-easy/EasyPanel/api/api/pve/model"
+	pveprovider "github.com/ops-easy/EasyPanel/api/api/pve/provider"
+	sharedcrypto "github.com/ops-easy/EasyPanel/api/common/crypto"
 
 	"github.com/gin-gonic/gin"
 	"github.com/vmware/govmomi"

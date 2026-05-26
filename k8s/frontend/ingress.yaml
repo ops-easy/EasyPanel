@@ -2,11 +2,11 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: kube-bt-sync-frontend
+  name: easypanel-frontend
   namespace: easy
   labels:
-    app.kubernetes.io/name: kube-bt-sync-frontend
-    app.kubernetes.io/part-of: kube-bt-sync
+    app.kubernetes.io/name: easypanel-frontend
+    app.kubernetes.io/part-of: easypanel
     app.kubernetes.io/component: frontend
   annotations:
     # 应用中心 OpenClaw 对话等长请求；默认 60s 易 504，且勿小于后端 WriteTimeout。
@@ -23,6 +23,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: kube-bt-sync-frontend
+                name: easypanel-frontend
                 port:
                   number: 80

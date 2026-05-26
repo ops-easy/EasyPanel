@@ -65,7 +65,7 @@ func appMySQLListFromMySQL(ctx context.Context, db *sql.DB) ([]appMySQLRow, erro
 		return nil, nil
 	}
 	rows, err := db.QueryContext(ctx,
-		`SELECT id, name, mode, config_json, created_at, updated_at, created_by FROM kubebt_app_mysql_instances ORDER BY id DESC`)
+		`SELECT id, name, mode, config_json, created_at, updated_at, created_by FROM easypanel_app_mysql_instances ORDER BY id DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func appMySQLGetByID(ctx context.Context, db *sql.DB, id int64) (*appMySQLRow, e
 	var r appMySQLRow
 	var created, updated sql.NullTime
 	err := db.QueryRowContext(ctx,
-		`SELECT id, name, mode, config_json, created_at, updated_at, created_by FROM kubebt_app_mysql_instances WHERE id=?`,
+		`SELECT id, name, mode, config_json, created_at, updated_at, created_by FROM easypanel_app_mysql_instances WHERE id=?`,
 		id,
 	).Scan(&r.ID, &r.Name, &r.Mode, &r.ConfigJSON, &created, &updated, &r.CreatedBy)
 	if err != nil {
@@ -109,7 +109,7 @@ func appMySQLGetByID(ctx context.Context, db *sql.DB, id int64) (*appMySQLRow, e
 
 func appMySQLInsert(ctx context.Context, db *sql.DB, name, mode, configJSON, createdBy string) (int64, error) {
 	res, err := db.ExecContext(ctx,
-		`INSERT INTO kubebt_app_mysql_instances (name, mode, config_json, created_by) VALUES (?,?,?,?)`,
+		`INSERT INTO easypanel_app_mysql_instances (name, mode, config_json, created_by) VALUES (?,?,?,?)`,
 		name, mode, configJSON, createdBy)
 	if err != nil {
 		return 0, err
@@ -119,13 +119,13 @@ func appMySQLInsert(ctx context.Context, db *sql.DB, name, mode, configJSON, cre
 
 func appMySQLUpdate(ctx context.Context, db *sql.DB, id int64, name, mode, configJSON string) error {
 	_, err := db.ExecContext(ctx,
-		`UPDATE kubebt_app_mysql_instances SET name=?, mode=?, config_json=? WHERE id=?`,
+		`UPDATE easypanel_app_mysql_instances SET name=?, mode=?, config_json=? WHERE id=?`,
 		name, mode, configJSON, id)
 	return err
 }
 
 func appMySQLDelete(ctx context.Context, db *sql.DB, id int64) error {
-	_, err := db.ExecContext(ctx, `DELETE FROM kubebt_app_mysql_instances WHERE id=?`, id)
+	_, err := db.ExecContext(ctx, `DELETE FROM easypanel_app_mysql_instances WHERE id=?`, id)
 	return err
 }
 
@@ -337,7 +337,7 @@ func appMySQLDriverTLSParam(cfg Config, st *appMySQLStoredConfig) (string, error
 		if !pool.AppendCertsFromPEM([]byte(caPEM)) {
 			return "", errors.New("invalid TLS CA PEM")
 		}
-		name := fmt.Sprintf("kubebt-app-mysql-%x", sha1.Sum([]byte(st.Host+"|"+caPEM)))
+		name := fmt.Sprintf("easypanel-app-mysql-%x", sha1.Sum([]byte(st.Host+"|"+caPEM)))
 		_ = mysqlDriver.RegisterTLSConfig(name, &tls.Config{
 			RootCAs:    pool,
 			ServerName: strings.TrimSpace(st.Host),

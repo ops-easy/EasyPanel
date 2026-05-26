@@ -136,7 +136,7 @@ func handlePutBastionTargetSSHSettings(c *gin.Context, app *ServerApp) {
 		}
 		encKey, err := sshEncryptionKey(app.Cfg())
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "KUBEBT_ENCRYPTION_KEY: " + err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "EASYPANEL_ENCRYPTION_KEY: " + err.Error()})
 			return
 		}
 		if strings.TrimSpace(body.User) == "" {

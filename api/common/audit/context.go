@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const GinDetailKey = "kubebt_audit_detail"
+const GinDetailKey = "easypanel_audit_detail"
 
 func SetDetail(c *gin.Context, detail string) {
 	if c == nil {

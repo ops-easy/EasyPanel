@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	pveprovider "kube-bt-sync/api/pve/provider"
+	pveprovider "github.com/ops-easy/EasyPanel/api/api/pve/provider"
 
 	"github.com/gin-gonic/gin"
 )
@@ -85,7 +85,7 @@ func handleHealth(app *ServerApp) gin.HandlerFunc {
 		defer cancel()
 		out := gin.H{
 			"ok":                         true,
-			"service":                    "kube-bt-sync",
+			"service":                    "easypanel",
 			"buildVersion":               sessionBuildVersionSegment(),
 			"mysqlSchemaVersionExpected": AppMySQLSchemaVersion,
 			"mysql":                      GinHMySQLSchemaStatus(ctx, app),

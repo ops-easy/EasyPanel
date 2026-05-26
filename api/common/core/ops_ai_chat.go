@@ -125,7 +125,7 @@ func opsAIChatContextLine(label, value string) string {
 
 func opsAIChatSystemPrompt(ep OpsAIProviderEndpoint, req opsAIChatRequest) string {
 	var b strings.Builder
-	b.WriteString("你是 Kube-BT-Sync 平台的全局运维助手。请优先围绕 Kubernetes、虚拟化、网络、应用中心、堡垒机、AI 巡检和文档中心等平台运维场景回答。")
+	b.WriteString("你是 EasyPanel 平台的全局运维助手。请优先围绕 Kubernetes、虚拟化、网络、应用中心、堡垒机、AI 巡检和文档中心等平台运维场景回答。")
 	b.WriteString("回答保持准确、简洁、可执行；涉及命令或配置时说明风险，不编造平台中不存在的实时数据。\n")
 	if custom := strings.TrimSpace(ep.SystemPrompt); custom != "" {
 		b.WriteString("\n已配置的系统提示：\n")

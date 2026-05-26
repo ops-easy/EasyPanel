@@ -10,7 +10,7 @@ import (
 
 const (
 	kvKeyHermesBootstrap = "appcenter_hermes_bootstrap_v1"
-	kvKeyHermesInstances = "kubebt_app_hermes_instances_v1"
+	kvKeyHermesInstances = "easypanel_app_hermes_instances_v1"
 )
 
 type HermesModePreset struct {

@@ -2,7 +2,7 @@ backend:
   replicaCount: 1
 
   image:
-    repository: ghcr.io/ops-easy/kube-bt-sync
+    repository: ghcr.io/ops-easy/easypanel-api
     pullPolicy: IfNotPresent
     tag: "latest"
 
@@ -28,10 +28,11 @@ backend:
       memory: 128Mi
 
   env:
-    KUBEBT_DATA_DIR: "/data"
-    KUBEBT_CONFIG_FILE: "/app/config.yaml"
+    EASYPANEL_DATA_DIR: "/data"
+    EASYPANEL_CONFIG_FILE: "/app/config.yaml"
 
   # 这里只放启动必需配置；页面可修改的业务配置保存到 MySQL 动态配置。
+  config:
   config:
     server:
       address: "0.0.0.0:8080"
@@ -48,8 +49,8 @@ backend:
     db:
       host: mysql.easy.svc.cluster.local
       port: 3306
-      db: kube_bt_sync
-      username: kube_bt_sync
+      db: easypanel
+      username: easypanel
       password: change-me
     redis:
       address: redis.easy.svc.cluster.local:6379
@@ -66,13 +67,13 @@ backend:
   #  - name: DASHBOARD_SESSION_SECRET
   #    valueFrom:
   #      secretKeyRef:
-  #        name: kube-bt-sync-secrets
+  #        name: easypanel-secrets
   #        key: dashboard-session-secret
 
   # 敏感信息建议用 extraEnvFrom
   extraEnvFrom: []
   #  - secretRef:
-  #      name: kube-bt-sync-secrets
+  #      name: easypanel-secrets
 
   nodeSelector: {}
   tolerations: []
@@ -82,7 +83,7 @@ frontend:
   replicaCount: 1
 
   image:
-    repository: ghcr.io/ops-easy/kube-bt-sync-web
+    repository: ghcr.io/ops-easy/easypanel-web
     pullPolicy: IfNotPresent
     tag: "latest"
 

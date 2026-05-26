@@ -10,7 +10,7 @@ func IsManagedIngress(annotations map[string]string) bool {
 	if annotations == nil {
 		return false
 	}
-	return annotations["i4t.com/baota-sync"] == "true" || annotations["kube-bt-sync.io/baota-sync"] == "true"
+	return annotations["i4t.com/baota-sync"] == "true" || annotations["easypanel.io/baota-sync"] == "true"
 }
 
 type BaotaHTTPSConfig struct {
@@ -37,10 +37,10 @@ func BaotaHTTPSFromAnnotations(annotations map[string]string) BaotaHTTPSConfig {
 	if annotations == nil {
 		return cfg
 	}
-	cfg.Enable = annotations["i4t.com/baota-https"] == "true" || annotations["kube-bt-sync.io/baota-https"] == "true"
-	cfg.CertName = baotaAnnotationValue(annotations, "i4t.com/baota-ssl-cert-name", "kube-bt-sync.io/baota-ssl-cert-name")
-	cfg.PemPath = baotaAnnotationValue(annotations, "i4t.com/baota-ssl-pem-path", "kube-bt-sync.io/baota-ssl-pem-path")
-	cfg.KeyPath = baotaAnnotationValue(annotations, "i4t.com/baota-ssl-key-path", "kube-bt-sync.io/baota-ssl-key-path")
+	cfg.Enable = annotations["i4t.com/baota-https"] == "true" || annotations["easypanel.io/baota-https"] == "true"
+	cfg.CertName = baotaAnnotationValue(annotations, "i4t.com/baota-ssl-cert-name", "easypanel.io/baota-ssl-cert-name")
+	cfg.PemPath = baotaAnnotationValue(annotations, "i4t.com/baota-ssl-pem-path", "easypanel.io/baota-ssl-pem-path")
+	cfg.KeyPath = baotaAnnotationValue(annotations, "i4t.com/baota-ssl-key-path", "easypanel.io/baota-ssl-key-path")
 	return cfg
 }
 
@@ -82,7 +82,7 @@ func BaotaOriginTarget(cfg Config, annotations map[string]string) (host string, 
 	}
 	overrideScheme := strings.ToLower(strings.TrimSpace(annotations["i4t.com/ddns-scheme"]))
 	if overrideScheme == "" {
-		overrideScheme = strings.ToLower(strings.TrimSpace(annotations["kube-bt-sync.io/ddns-scheme"]))
+		overrideScheme = strings.ToLower(strings.TrimSpace(annotations["easypanel.io/ddns-scheme"]))
 	}
 	if overrideScheme == "http" || overrideScheme == "https" {
 		scheme = overrideScheme
@@ -93,7 +93,7 @@ func BaotaOriginTarget(cfg Config, annotations map[string]string) (host string, 
 	}
 	overridePort := strings.TrimSpace(annotations["i4t.com/ddns-port"])
 	if overridePort == "" {
-		overridePort = strings.TrimSpace(annotations["kube-bt-sync.io/ddns-port"])
+		overridePort = strings.TrimSpace(annotations["easypanel.io/ddns-port"])
 	}
 	if overridePort != "" {
 		port = overridePort
@@ -114,7 +114,7 @@ func BaotaDDNSTargetFromAnnotations(annotations map[string]string, defaultHTTPPo
 	}
 	rawScheme := strings.ToLower(strings.TrimSpace(annotations["i4t.com/ddns-scheme"]))
 	if rawScheme == "" {
-		rawScheme = strings.ToLower(strings.TrimSpace(annotations["kube-bt-sync.io/ddns-scheme"]))
+		rawScheme = strings.ToLower(strings.TrimSpace(annotations["easypanel.io/ddns-scheme"]))
 	}
 	if rawScheme == "https" {
 		scheme = "https"
@@ -122,7 +122,7 @@ func BaotaDDNSTargetFromAnnotations(annotations map[string]string, defaultHTTPPo
 	}
 	customPort := strings.TrimSpace(annotations["i4t.com/ddns-port"])
 	if customPort == "" {
-		customPort = strings.TrimSpace(annotations["kube-bt-sync.io/ddns-port"])
+		customPort = strings.TrimSpace(annotations["easypanel.io/ddns-port"])
 	}
 	if customPort != "" {
 		port = customPort

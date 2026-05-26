@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	configFileEnv = "KUBEBT_CONFIG_FILE"
+	configFileEnv = "EASYPANEL_CONFIG_FILE"
 )
 
 type yamlConfig struct {
@@ -199,7 +199,7 @@ func (yc yamlConfig) apply(cfg *Config) {
 	if envUnset("DASHBOARD_TRUSTED_PROXIES") && strings.TrimSpace(yc.Server.TrustedProxies) != "" {
 		cfg.DashboardTrustedProxies = strings.TrimSpace(yc.Server.TrustedProxies)
 	}
-	if envUnset("KUBEBT_TOTP_ISSUER") && strings.TrimSpace(yc.Server.TotpIssuer) != "" {
+	if envUnset("EASYPANEL_TOTP_ISSUER") && strings.TrimSpace(yc.Server.TotpIssuer) != "" {
 		cfg.TotpIssuer = strings.TrimSpace(yc.Server.TotpIssuer)
 	}
 	if envUnset("PLATFORM_DISPLAY_NAME") && strings.TrimSpace(yc.Server.DisplayName) != "" {
@@ -211,7 +211,7 @@ func (yc yamlConfig) apply(cfg *Config) {
 	if envUnset("PLATFORM_FAVICON_URL") && strings.TrimSpace(yc.Server.FaviconURL) != "" {
 		cfg.PlatformFaviconURL = strings.TrimSpace(yc.Server.FaviconURL)
 	}
-	if envUnset("KUBEBT_PERFORMANCE_MODE") {
+	if envUnset("EASYPANEL_PERFORMANCE_MODE") {
 		model := strings.ToLower(strings.TrimSpace(firstConfigValue(yc.Performance.Mode, yc.Server.Model)))
 		if model == "release" || model == "true" || model == "on" {
 			cfg.PerformanceMode = true
@@ -219,7 +219,7 @@ func (yc yamlConfig) apply(cfg *Config) {
 			cfg.PerformanceMode = false
 		}
 	}
-	if envUnset("KUBEBT_NAMESPACES_CACHE_TTL_SEC") && yc.Performance.NamespacesCacheTTL > 0 {
+	if envUnset("EASYPANEL_NAMESPACES_CACHE_TTL_SEC") && yc.Performance.NamespacesCacheTTL > 0 {
 		cfg.NamespacesCacheTTLSec = yc.Performance.NamespacesCacheTTL
 	}
 	if envUnset("MYSQL_DSN") && strings.TrimSpace(yc.DB.DSN) != "" {
@@ -268,7 +268,7 @@ func (yc yamlConfig) apply(cfg *Config) {
 	if envUnset("REDIS_SENTINEL_MASTER") && strings.TrimSpace(yc.Redis.SentinelMaster) != "" {
 		cfg.RedisSentinelMaster = strings.TrimSpace(yc.Redis.SentinelMaster)
 	}
-	if envUnset("KUBEBT_ENABLE_BACKGROUND_JOBS") && yc.Startup.Schedulers.Enabled != nil {
+	if envUnset("EASYPANEL_ENABLE_BACKGROUND_JOBS") && yc.Startup.Schedulers.Enabled != nil {
 		cfg.EnableBackgroundJobs = *yc.Startup.Schedulers.Enabled
 	}
 	if envUnset("VICTORIA_LOGS_SKIP_TLS_VERIFY") && yc.VictoriaLogs.SkipTLS != nil {
@@ -289,22 +289,22 @@ func (yc yamlConfig) apply(cfg *Config) {
 	if envUnset("NODE_EXPORTER_VERSION") && strings.TrimSpace(yc.NodeExporter.Version) != "" {
 		cfg.NodeExporterVersion = strings.TrimSpace(yc.NodeExporter.Version)
 	}
-	if envUnset("KUBEBT_COS_SECRET_ID") && strings.TrimSpace(yc.COS.SecretID) != "" {
+	if envUnset("EASYPANEL_COS_SECRET_ID") && strings.TrimSpace(yc.COS.SecretID) != "" {
 		cfg.CosSecretID = strings.TrimSpace(yc.COS.SecretID)
 	}
-	if envUnset("KUBEBT_COS_SECRET_KEY") && yc.COS.SecretKey != "" {
+	if envUnset("EASYPANEL_COS_SECRET_KEY") && yc.COS.SecretKey != "" {
 		cfg.CosSecretKey = yc.COS.SecretKey
 	}
-	if envUnset("KUBEBT_COS_BUCKET") && strings.TrimSpace(yc.COS.Bucket) != "" {
+	if envUnset("EASYPANEL_COS_BUCKET") && strings.TrimSpace(yc.COS.Bucket) != "" {
 		cfg.CosBucket = strings.TrimSpace(yc.COS.Bucket)
 	}
-	if envUnset("KUBEBT_COS_REGION") && strings.TrimSpace(yc.COS.Region) != "" {
+	if envUnset("EASYPANEL_COS_REGION") && strings.TrimSpace(yc.COS.Region) != "" {
 		cfg.CosRegion = strings.TrimSpace(yc.COS.Region)
 	}
-	if envUnset("KUBEBT_COS_PREFIX") && strings.TrimSpace(yc.COS.Prefix) != "" {
+	if envUnset("EASYPANEL_COS_PREFIX") && strings.TrimSpace(yc.COS.Prefix) != "" {
 		cfg.CosPrefix = strings.Trim(strings.TrimSpace(yc.COS.Prefix), "/")
 	}
-	if envUnset("KUBEBT_COS_PUBLIC_BASE") && strings.TrimSpace(yc.COS.PublicBase) != "" {
+	if envUnset("EASYPANEL_COS_PUBLIC_BASE") && strings.TrimSpace(yc.COS.PublicBase) != "" {
 		cfg.CosPublicBase = strings.TrimRight(strings.TrimSpace(yc.COS.PublicBase), "/")
 	}
 }
@@ -516,8 +516,8 @@ func runtimeFieldEnvSet(key string) bool {
 		"vmSelectUrlPve":                 {"VM_SELECT_URL_PVE"},
 		"vmSelectUrlCloud":               {"VM_SELECT_URL_CLOUD"},
 		"victoriaLogsUrl":                {"VICTORIA_LOGS_URL"},
-		"vmLogVectorDownloadBaseUrl":     {"KUBEBT_VMLOG_VECTOR_DOWNLOAD_BASE_URL"},
-		"geoLite2CountryMmdb":            {"KUBEBT_GEOLITE2_COUNTRY_MMDB"},
+		"vmLogVectorDownloadBaseUrl":     {"EASYPANEL_VMLOG_VECTOR_DOWNLOAD_BASE_URL"},
+		"geoLite2CountryMmdb":            {"EASYPANEL_GEOLITE2_COUNTRY_MMDB"},
 		"harborBaseUrl":                  {"HARBOR_BASE_URL"},
 		"harborUsername":                 {"HARBOR_USERNAME"},
 		"harborPassword":                 {"HARBOR_PASSWORD"},
@@ -538,7 +538,7 @@ func runtimeFieldEnvSet(key string) bool {
 		"vcenterVmSshPort":               {"VCENTER_VM_SSH_PORT"},
 		"vcenterVmSshInsecureHostKey":    {"VCENTER_VM_SSH_INSECURE_HOST_KEY"},
 		"sshSettingsBackend":             {"SSH_SETTINGS_BACKEND"},
-		"encryptionKey":                  {"KUBEBT_ENCRYPTION_KEY"},
+		"encryptionKey":                  {"EASYPANEL_ENCRYPTION_KEY"},
 		"redisAddr":                      {"REDIS_ADDR"},
 		"redisPassword":                  {"REDIS_PASSWORD"},
 		"redisDb":                        {"REDIS_DB"},
@@ -566,15 +566,15 @@ func runtimeFieldEnvSet(key string) bool {
 		"platformDisplayName":            {"PLATFORM_DISPLAY_NAME"},
 		"platformLogoUrl":                {"PLATFORM_LOGO_URL"},
 		"platformFaviconUrl":             {"PLATFORM_FAVICON_URL"},
-		"assetsCdnBaseUrl":               {"KUBEBT_ASSETS_CDN_BASE"},
-		"sshTerminalFontFamily":          {"KUBEBT_SSH_TERMINAL_FONT_FAMILY"},
-		"sshTerminalFontSize":            {"KUBEBT_SSH_TERMINAL_FONT_SIZE"},
+		"assetsCdnBaseUrl":               {"EASYPANEL_ASSETS_CDN_BASE"},
+		"sshTerminalFontFamily":          {"EASYPANEL_SSH_TERMINAL_FONT_FAMILY"},
+		"sshTerminalFontSize":            {"EASYPANEL_SSH_TERMINAL_FONT_SIZE"},
 		"ingressBaotaSyncEnabled":        {"INGRESS_BAOTA_SYNC_ENABLED"},
 		"ingressNginxManifestUrl":        {"INGRESS_NGINX_MANIFEST_URL"},
 		"ingressNginxHostHttpPort":       {"INGRESS_NGINX_HOST_HTTP_PORT"},
 		"ingressNginxHostHttpsPort":      {"INGRESS_NGINX_HOST_HTTPS_PORT"},
 		"ingressNginxControllerNodeName": {"INGRESS_NGINX_CONTROLLER_NODE"},
-		"k8sAddonsManifestMirror":        {"KUBEBT_K8S_ADDONS_MANIFEST_MIRROR"},
+		"k8sAddonsManifestMirror":        {"EASYPANEL_K8S_ADDONS_MANIFEST_MIRROR"},
 		"vcenterCacheTtlSec":             {"VCENTER_CACHE_TTL_SEC"},
 		"idracHost":                      {"IDRAC_HOST"},
 		"idracUser":                      {"IDRAC_USER"},

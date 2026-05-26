@@ -1,8 +1,8 @@
 package dns
 
 import (
-	"kube-bt-sync/api/dns/controller"
-	"kube-bt-sync/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/api/dns/controller"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )

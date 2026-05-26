@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-const appMySQLBackupDir = "/var/lib/mysql/.kubebt-backups"
+const appMySQLBackupDir = "/var/lib/mysql/.easypanel-backups"
 
 type appMySQLBackupRow struct {
 	ID           int64
@@ -31,7 +31,7 @@ type appMySQLBackupRow struct {
 }
 
 func appMySQLBackupList(ctx context.Context, db *sql.DB, instanceID int64) ([]appMySQLBackupRow, error) {
-	rows, err := db.QueryContext(ctx, `SELECT id, instance_id, backup_name, status, storage_ref, size_bytes, started_at, finished_at, error_summary, created_by, created_at FROM kubebt_app_mysql_backups WHERE instance_id=? ORDER BY id DESC`, instanceID)
+	rows, err := db.QueryContext(ctx, `SELECT id, instance_id, backup_name, status, storage_ref, size_bytes, started_at, finished_at, error_summary, created_by, created_at FROM easypanel_app_mysql_backups WHERE instance_id=? ORDER BY id DESC`, instanceID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func appMySQLBackupGet(ctx context.Context, db *sql.DB, instanceID, backupID int
 }
 
 func appMySQLBackupInsert(ctx context.Context, db *sql.DB, instanceID int64, name, storageRef, createdBy string) (int64, error) {
-	res, err := db.ExecContext(ctx, `INSERT INTO kubebt_app_mysql_backups (instance_id, backup_name, status, storage_ref, started_at, created_by) VALUES (?,?,'running',?,NOW(),?)`, instanceID, name, storageRef, createdBy)
+	res, err := db.ExecContext(ctx, `INSERT INTO easypanel_app_mysql_backups (instance_id, backup_name, status, storage_ref, started_at, created_by) VALUES (?,?,'running',?,NOW(),?)`, instanceID, name, storageRef, createdBy)
 	if err != nil {
 		return 0, err
 	}
@@ -79,12 +79,12 @@ func appMySQLBackupInsert(ctx context.Context, db *sql.DB, instanceID int64, nam
 }
 
 func appMySQLBackupMarkFinished(ctx context.Context, db *sql.DB, backupID int64, status string, sizeBytes int64, errSummary string) error {
-	_, err := db.ExecContext(ctx, `UPDATE kubebt_app_mysql_backups SET status=?, size_bytes=?, error_summary=?, finished_at=NOW() WHERE id=?`, status, sizeBytes, truncateErrMessage(errSummary, 512), backupID)
+	_, err := db.ExecContext(ctx, `UPDATE easypanel_app_mysql_backups SET status=?, size_bytes=?, error_summary=?, finished_at=NOW() WHERE id=?`, status, sizeBytes, truncateErrMessage(errSummary, 512), backupID)
 	return err
 }
 
 func appMySQLBackupDelete(ctx context.Context, db *sql.DB, instanceID, backupID int64) error {
-	_, err := db.ExecContext(ctx, `DELETE FROM kubebt_app_mysql_backups WHERE instance_id=? AND id=?`, instanceID, backupID)
+	_, err := db.ExecContext(ctx, `DELETE FROM easypanel_app_mysql_backups WHERE instance_id=? AND id=?`, instanceID, backupID)
 	return err
 }
 

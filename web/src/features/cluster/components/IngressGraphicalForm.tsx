@@ -59,7 +59,7 @@ const IngressGraphicalForm: React.FC<IngressGraphicalFormProps> = ({
   const [serviceName, setServiceName] = useState("");
   const [port, setPort] = useState<number>(80);
   const [domain, setDomain] = useState("");
-  const [syncAnnotation, setSyncAnnotation] = useState<"i4t" | "kube-bt">("kube-bt");
+  const [syncAnnotation, setSyncAnnotation] = useState<"i4t" | "easypanel">("easypanel");
   const [baotaSyncEnabled, setBaotaSyncEnabled] = useState(defaultBaotaSyncEnabled);
   const [baotaHttpsEnabled, setBaotaHttpsEnabled] = useState(false);
   const [baotaSslCertName, setBaotaSslCertName] = useState("");
@@ -268,9 +268,9 @@ const IngressGraphicalForm: React.FC<IngressGraphicalFormProps> = ({
             <select
               className="rounded-lg border border-gray-200 px-3 py-2 text-gray-900"
               value={syncAnnotation}
-              onChange={(e) => setSyncAnnotation(e.target.value === "kube-bt" ? "kube-bt" : "i4t")}
+              onChange={(e) => setSyncAnnotation(e.target.value === "easypanel" ? "easypanel" : "i4t")}
             >
-              <option value="kube-bt">kube-bt-sync.io/baota-sync</option>
+              <option value="easypanel">easypanel.io/baota-sync</option>
             </select>
           </label>
           {multiBaota.length > 1 ? (

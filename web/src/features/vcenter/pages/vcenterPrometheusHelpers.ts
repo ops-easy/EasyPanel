@@ -139,7 +139,7 @@ function mergePrometheusScopedResults(
     resultType ||= d.data.resultType ?? "";
     const source = gpuScopeLabel[item.value.scope];
     for (const row of d.data.result) {
-      const metric = { ...(row.metric ?? {}), kubebt_scope: item.value.scope, kubebt_source: source };
+      const metric = { ...(row.metric ?? {}), easypanel_scope: item.value.scope, easypanel_source: source };
       results.push({ ...row, metric });
     }
   }
@@ -248,10 +248,10 @@ export function matrixToChartRowsBySourceLabel(
       (m[labelKey] && String(m[labelKey])) ||
       m["__name__"] ||
       Object.entries(m)
-        .filter(([k]) => !k.startsWith("__") && !k.startsWith("kubebt_"))
+        .filter(([k]) => !k.startsWith("__") && !k.startsWith("easypanel_"))
         .map(([a, b]) => `${a}=${b}`)
         .join(",");
-    const source = m.kubebt_source ? `${m.kubebt_source} / ` : "";
+    const source = m.easypanel_source ? `${m.easypanel_source} / ` : "";
     const label = `${source}${rawLabel}`;
     for (const pair of r.values ?? []) {
       const [tsStr, valStr] = pair;

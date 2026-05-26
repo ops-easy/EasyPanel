@@ -13,8 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	toolmodel "kube-bt-sync/api/tool/model"
-	"kube-bt-sync/common/appctx"
+	toolmodel "github.com/ops-easy/EasyPanel/api/api/tool/model"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
 
 	"github.com/google/uuid"
 )

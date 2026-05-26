@@ -22,8 +22,8 @@ RUN go mod download
 COPY api/ ./
 ARG BUILD_VERSION=dev
 RUN GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -trimpath \
-    -ldflags="-s -w -X kube-bt-sync/common/core.BuildVersion=${BUILD_VERSION}" \
-    -o kube-bt-sync .
+    -ldflags="-s -w -X github.com/ops-easy/EasyPanel/api/common/core.BuildVersion=${BUILD_VERSION}" \
+    -o easypanel .
 
 # ------------------------------------------------------------------------------
 # 阶段 2：最小运行时镜像（无 shell、无包管理器，攻击面小）
@@ -33,7 +33,7 @@ WORKDIR /app
 ENV TZ=Asia/Shanghai
 # 供 Go time.LoadLocation 使用（日志/展示本地时区）
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=builder /build/api/kube-bt-sync /app/kube-bt-sync
+COPY --from=builder /build/api/easypanel /app/easypanel
 EXPOSE 8080
 USER nonroot:nonroot
-ENTRYPOINT ["/app/kube-bt-sync"]
+ENTRYPOINT ["/app/easypanel"]

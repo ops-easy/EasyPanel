@@ -109,7 +109,7 @@ func patchHermesDeploymentImage(ctx context.Context, app *ServerApp, inst Hermes
 	if dep.Spec.Template.Annotations == nil {
 		dep.Spec.Template.Annotations = map[string]string{}
 	}
-	dep.Spec.Template.Annotations["kubebt/hermes-rollout-restarted-at"] = time.Now().UTC().Format(time.RFC3339)
+	dep.Spec.Template.Annotations["easypanel/hermes-rollout-restarted-at"] = time.Now().UTC().Format(time.RFC3339)
 	_, err = app.K8s().AppsV1().Deployments(inst.Namespace).Update(ctx, dep, metav1.UpdateOptions{})
 	return err
 }

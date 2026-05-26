@@ -1,6 +1,6 @@
 package process
 
-import core "kube-bt-sync/common/core"
+import core "github.com/ops-easy/EasyPanel/api/common/core"
 
 func ApplyGOMAXProcsFromEnv() {
 	core.ApplyGOMAXProcsFromEnv()

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const kvKeyOpenClawImageCatalog = "kubebt_openclaw_image_catalog_v1"
+const kvKeyOpenClawImageCatalog = "easypanel_openclaw_image_catalog_v1"
 
 // OpenClawImageCatalogDoc 平台 OpenClaw 网关镜像目录（存 platform_kv）。
 // 二选一生效：① entries 非空时为「显式列表」；② 否则用 registryBase + repository + presets 拼成 {base}/{repo}:{tag}。

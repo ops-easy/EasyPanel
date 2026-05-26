@@ -80,7 +80,7 @@ api/                         Go 后端
 web/                         React + Vite 前端
 k8s/backend/                 后端 Kubernetes 清单
 k8s/frontend/                前端 Kubernetes 清单
-k8s/charts/kube-bt-sync/     Helm Chart
+k8s/charts/easypanel/          Helm Chart
 docs/                        运维和部署文档
 .github/workflows/           GitHub Actions
 ```

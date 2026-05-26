@@ -416,7 +416,7 @@ const BaotaSettingsWizard: React.FC<BaotaSettingsWizardProps> = ({
               <div>
                 <p className="text-sm font-semibold text-amber-950">多宝塔实例（企业版 / 多节点）</p>
                 <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
-                  非空时以本列表为准；Ingress 可用 <code className="rounded bg-white px-0.5 font-mono text-[10px]">kube-bt-sync.io/baota-target</code> 指定实例 id。未注解则同步到默认实例。
+                  非空时以本列表为准；Ingress 可用 <code className="rounded bg-white px-0.5 font-mono text-[10px]">easypanel.io/baota-target</code> 指定实例 id。未注解则同步到默认实例。
                 </p>
               </div>
               {btTargets.map((row, idx) => (

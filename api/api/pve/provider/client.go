@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	pvemodel "kube-bt-sync/api/pve/model"
+	pvemodel "github.com/ops-easy/EasyPanel/api/api/pve/model"
 )
 
 type Client struct {

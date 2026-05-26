@@ -26,7 +26,7 @@ const (
 	openClawDefaultImage = "ghcr.io/openclaw/openclaw:main"
 	// OpenClawPlatformInitRevision 递增表示平台对第二个 init（PVC 默认项补丁）或模板有行为变更；与 Pod 模板注解对照。
 	OpenClawPlatformInitRevision      = 2
-	openClawInitRevisionAnnotationKey = "kube-bt-sync.io/openclaw-init-revision"
+	openClawInitRevisionAnnotationKey = "easypanel.io/openclaw-init-revision"
 )
 
 // OpenClawK8sDeployOpts 一键部署 OpenClaw 网关（NodePort 或 ClusterIP+Ingress + 预置 ClusterRole 绑定）。
@@ -40,7 +40,7 @@ type OpenClawK8sDeployOpts struct {
 	IngressName         string
 	IngressHost         string
 	IngressTLSScheme    string // https | http，用于登记对外 Base URL
-	BaotaSyncAnnotation string // i4t | kube-bt
+	BaotaSyncAnnotation string // i4t | easypanel
 	Image               string
 	// InitContainerImage init 容器镜像（拷贝 ConfigMap 到 PVC）；空则 busybox:1.36，可改为内网镜像仓库
 	InitContainerImage string
@@ -271,14 +271,14 @@ func openClawConfigMapData(opts OpenClawK8sDeployOpts) map[string]string {
 	// "origin not allowed"。NodePort 下来源为「任意节点 IP:端口」，Ingress 下为「https://域名」等，故默认放开 *；
 	// 生产环境可在「详情」中改为仅列出可信来源（如 ["https://claw.example.com"]）。
 	// 与官方文档一致：gateway.http.endpoints.chatCompletions.enabled 须为 true，否则 POST /v1/chat/completions 为 404。
-	// tools.profile full + agents.defaults.sandbox off：集群 Pod 内无 Docker 沙箱；网关内 OpenClaw 通过 client-go 使用 Pod SA，与平台「管理员」RBAC（kube-bt-openclaw-admin）配合使用集群工具。
-	bootMd := "# OpenClaw 使用说明（kube-bt-sync 预置）\n\n" +
+	// tools.profile full + agents.defaults.sandbox off：集群 Pod 内无 Docker 沙箱；网关内 OpenClaw 通过 client-go 使用 Pod SA，与平台「管理员」RBAC（easypanel-openclaw-admin）配合使用集群工具。
+	bootMd := "# OpenClaw 使用说明（easypanel 预置）\n\n" +
 		"## Control UI 提示 origin not allowed\n\n" +
 		"在 **gateway.controlUi** 中设置 **allowedOrigins**（例如 [\"*\"] 或你的 https 域名）。\n" +
 		"新部署的 ConfigMap 已默认写入；Pod 第二个 init 会在 PVC 上 **allowedOrigins 为空时** 自动补 `[\"*\"]`。修改后若仍报错请**滚动重启** Deployment。\n\n" +
 		"## 巡检 / 代连返回 404（POST /v1/chat/completions）\n\n" +
 		"OpenClaw 默认**关闭** OpenAI 兼容 HTTP 接口，须在 **gateway.http.endpoints.chatCompletions.enabled** 设为 **true**。\n" +
-		"kube-bt-sync **新部署**的 ConfigMap 已默认开启；**Pod 启动时**第二个 init 会在 PVC 上自动补齐空的 `allowedOrigins` 与 `chatCompletions.enabled`。若仍 404，请在**应用中心 → 详情 → 配置文件**编辑 `openclaw.json` 后**滚动重启** Deployment。\n\n" +
+		"easypanel **新部署**的 ConfigMap 已默认开启；**Pod 启动时**第二个 init 会在 PVC 上自动补齐空的 `allowedOrigins` 与 `chatCompletions.enabled`。若仍 404，请在**应用中心 → 详情 → 配置文件**编辑 `openclaw.json` 后**滚动重启** Deployment。\n\n" +
 		"## Ollama 模型 contextWindow 与「context too small / min 16000」\n\n" +
 		"若网关日志提示 **Model context window too small**（例如登记为 8192 但嵌入式 agent 要求 ≥16000），请在 **models.providers.ollama.models** 里把对应条目的 **contextWindow** 调到 **16384** 或以上（与 `ollama ps` 的 CONTEXT 对齐）。平台**新部署**的 Ollama 预设已默认 16384；第二个 init 也会把已有 PVC 上 **api=ollama** 且 **contextWindow 小于 16000** 的条目自动抬到 16384。\n" +
 		"若仍要放宽其它策略，请查阅你使用的 OpenClaw 版本文档（部分版本可在配置中调整 embedded 相关下限）。**换模型**：在 **agents.defaults.model.fallbacks** 中加入已在 `models.providers` 登记的其它 model id。\n\n" +
@@ -310,12 +310,12 @@ func openClawConfigMapData(opts OpenClawK8sDeployOpts) map[string]string {
 		"```\n\n" +
 		"WhatsApp 需 Web 配对与 channels.whatsapp 等配置，见官方文档：https://docs.openclaw.ai/gateway/configuration-reference\n\n" +
 		"配置写入 PVC 上的 openclaw.json 后，若网关未热加载，请对该 Deployment **滚动重启**。\n\n" +
-		"## 多套网关数据隔离（kube-bt-sync）\n\n" +
+		"## 多套网关数据隔离（easypanel）\n\n" +
 		"平台按 Deployment 名创建独立 PVC（openclaw-home-<Deployment>）及同名前缀的 Secret/ConfigMap/ServiceAccount；同命名空间内多套 OpenClaw 的 SOUL.md、openclaw.json 等互不共用。旧环境若曾共用 openclaw-home-pvc，请删除后按当前版本重建以彻底分开。\n\n" +
 		"## Control UI / webchat 下 exec 报 elevated unavailable\n\n" +
 		"若日志含 **elevated is not available** 与 **runtime=direct**，须在 **openclaw.json** 根级 **tools.elevated.enabled: true**，并配置 **tools.elevated.allowFrom.webchat**（平台预置为 `[\"*\"]`，与 **agents.list[].tools.elevated** 同步）。修改后**滚动重启**网关 Deployment。\n\n" +
 		"## 集群 API 权限（RBAC）与「Full + 管理员」\n\n" +
-		"应用中心 **Full** 部署模式对应本预置 **openclaw.json**（`tools.profile: full`、默认 agent 关闭沙箱）。**管理员**档将网关 SA 绑定到平台 ClusterRole **`kube-bt-openclaw-admin`**（verbs `*` 于全部资源）；OpenClaw 在 Pod 内用 **client-go** 走 Kubernetes API，**未授权即由 API Server 拒绝**，与是否安装 kubectl 无关。该 ClusterRole 不是内置名 `cluster-admin`，但能力同级，请仅在可信环境使用。\n\n" +
+		"应用中心 **Full** 部署模式对应本预置 **openclaw.json**（`tools.profile: full`、默认 agent 关闭沙箱）。**管理员**档将网关 SA 绑定到平台 ClusterRole **`easypanel-openclaw-admin`**（verbs `*` 于全部资源）；OpenClaw 在 Pod 内用 **client-go** 走 Kubernetes API，**未授权即由 API Server 拒绝**，与是否安装 kubectl 无关。该 ClusterRole 不是内置名 `cluster-admin`，但能力同级，请仅在可信环境使用。\n\n" +
 		"网关 Pod 必须使用专用 ServiceAccount（名称规则：openclaw- 加上 Deployment 名），并由 ClusterRoleBinding 绑定到上述预置 ClusterRole。在**详情 → 管理配置**中调整权限档时，平台会更新绑定并**自动滚动重启** Deployment。若集群内 Deployment 仍为 default 等其它 ServiceAccount，仅更新绑定不会生效，需由平台对齐 Pod 身份或你在 YAML 中改 spec.template.spec.serviceAccountName。\n\n" +
 		"## 对话里提示「没有权限」查集群 / 改资源\n\n" +
 		"这与 **Kubernetes RBAC** 是两层事：ServiceAccount 经 ClusterRoleBinding 获得的权限决定 **client-go** 调用是否被 API Server 放行；OpenClaw 还要在 **openclaw.json** 里允许智能体使用工具。\n\n" +
@@ -384,7 +384,7 @@ func ApplyOpenClawToCluster(ctx context.Context, k8s *kubernetes.Clientset, node
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pvcClaim,
 			Namespace: ns,
-			Labels:    map[string]string{"app": depName, "kube-bt-sync.io/openclaw": "true"},
+			Labels:    map[string]string{"app": depName, "easypanel.io/openclaw": "true"},
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -527,9 +527,9 @@ func ApplyOpenClawToCluster(ctx context.Context, k8s *kubernetes.Clientset, node
 			ingName = depName + "-ingress"
 		}
 		ingResName = ingName
-		syncKey := "kube-bt-sync.io/baota-sync"
+		syncKey := "easypanel.io/baota-sync"
 		if strings.TrimSpace(opts.BaotaSyncAnnotation) == "i4t" {
-			// 仅兼容旧版用户手动选择；新建资源默认写入 kube-bt-sync.io 前缀。
+			// 仅兼容旧版用户手动选择；新建资源默认写入 easypanel.io 前缀。
 			syncKey = "i4t.com/baota-sync"
 		}
 		ic := "nginx"
@@ -538,7 +538,7 @@ func ApplyOpenClawToCluster(ctx context.Context, k8s *kubernetes.Clientset, node
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      ingName,
 				Namespace: ns,
-				Labels:    map[string]string{"app": depName, "kube-bt-sync.io/openclaw": "true"},
+				Labels:    map[string]string{"app": depName, "easypanel.io/openclaw": "true"},
 				Annotations: map[string]string{
 					"kubernetes.io/ingress.class": "nginx",
 					syncKey:                       "true",

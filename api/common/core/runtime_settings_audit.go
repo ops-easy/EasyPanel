@@ -116,7 +116,7 @@ func runtimeSettingsAuditSummary(cur, next *RuntimeSettings) string {
 	addB("VM SSH 跳过主机密钥校验", cur.VCenterVMSshInsecureHostKey, next.VCenterVMSshInsecureHostKey)
 	add("SSH 存储后端", cur.SSHSettingsBackend, next.SSHSettingsBackend)
 	if cur.EncryptionKey != next.EncryptionKey {
-		parts = append(parts, "加密密钥 KUBEBT_ENCRYPTION_KEY")
+		parts = append(parts, "加密密钥 EASYPANEL_ENCRYPTION_KEY")
 	}
 	add("Redis 地址", cur.RedisAddr, next.RedisAddr)
 	if cur.RedisPassword != next.RedisPassword {

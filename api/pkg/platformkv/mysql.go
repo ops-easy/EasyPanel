@@ -20,7 +20,7 @@ func NewMySQL(db *sql.DB) (*MySQLStore, error) {
 
 func UpsertMySQL(db *sql.DB, k, v string) error {
 	_, err := db.Exec(
-		`INSERT INTO kubebt_platform_kv (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)`,
+		`INSERT INTO easypanel_platform_kv (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)`,
 		k, v,
 	)
 	return err
@@ -30,7 +30,7 @@ func (p *MySQLStore) Get(k string) (string, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	var v sql.NullString
-	err := p.db.QueryRow(`SELECT v FROM kubebt_platform_kv WHERE k=?`, k).Scan(&v)
+	err := p.db.QueryRow(`SELECT v FROM easypanel_platform_kv WHERE k=?`, k).Scan(&v)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", false
@@ -52,7 +52,7 @@ func (p *MySQLStore) Set(k, v string) error {
 func (p *MySQLStore) Snapshot() map[string]string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	rows, err := p.db.Query(`SELECT k,v FROM kubebt_platform_kv`)
+	rows, err := p.db.Query(`SELECT k,v FROM easypanel_platform_kv`)
 	if err != nil {
 		return map[string]string{}
 	}

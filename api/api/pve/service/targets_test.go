@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	pvemodel "kube-bt-sync/api/pve/model"
-	core "kube-bt-sync/common/core"
-	transportauthz "kube-bt-sync/common/transport/authz"
+	pvemodel "github.com/ops-easy/EasyPanel/api/api/pve/model"
+	core "github.com/ops-easy/EasyPanel/api/common/core"
+	transportauthz "github.com/ops-easy/EasyPanel/api/common/transport/authz"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,8 +37,8 @@ func TestPVENormalizeBaseURL(t *testing.T) {
 }
 
 func TestPVEBuildAuthHeader(t *testing.T) {
-	got := buildPVEAuthHeader("root@pam!kubebt", "secret")
-	want := "PVEAPIToken=root@pam!kubebt=secret"
+	got := buildPVEAuthHeader("root@pam!easypanel", "secret")
+	want := "PVEAPIToken=root@pam!easypanel=secret"
 	if got != want {
 		t.Fatalf("buildPVEAuthHeader()=%q, want %q", got, want)
 	}

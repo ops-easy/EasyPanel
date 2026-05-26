@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"kube-bt-sync/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"kube-bt-sync/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,7 +29,7 @@ performance:
 `), 0600); err != nil {
 		t.Fatalf("write config: %v", err)
 	}
-	t.Setenv("KUBEBT_CONFIG_FILE", configPath)
+	t.Setenv("EASYPANEL_CONFIG_FILE", configPath)
 
 	app, err := appctx.NewServerApp(t.TempDir())
 	if err != nil {

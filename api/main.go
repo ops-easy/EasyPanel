@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"kube-bt-sync/common/appctx"
-	"kube-bt-sync/common/process"
-	"kube-bt-sync/common/server"
-	"kube-bt-sync/scheduler"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/common/process"
+	"github.com/ops-easy/EasyPanel/api/common/server"
+	"github.com/ops-easy/EasyPanel/api/scheduler"
 	"log"
 	"os"
 	"os/signal"
@@ -17,7 +17,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	log.Println(">>> 初始化 kube-bt-sync 环境...")
+	log.Println(">>> 初始化 easypanel 环境...")
 	app, err := appctx.NewServerApp(appctx.DataDirFromEnv())
 	if err != nil {
 		log.Fatalf("加载应用状态失败: %v", err)
@@ -44,7 +44,7 @@ func main() {
 
 	bg := app.Cfg().EnableBackgroundJobs
 	if !bg {
-		log.Println(">>> KUBEBT_ENABLE_BACKGROUND_JOBS=false：本进程仅作 API/Web 副本，不启动宝塔同步、告警巡检、Pod 重启关联/报告清理、出站监视、vCenter Prom 缓存刷新、审计裁剪定时器（多副本时请保证至少一个 Pod 为 true）")
+		log.Println(">>> EASYPANEL_ENABLE_BACKGROUND_JOBS=false：本进程仅作 API/Web 副本，不启动宝塔同步、告警巡检、Pod 重启关联/报告清理、出站监视、vCenter Prom 缓存刷新、审计裁剪定时器（多副本时请保证至少一个 Pod 为 true）")
 	}
 	if bg {
 		go scheduler.StartSyncer(ctx, app)

@@ -1,6 +1,6 @@
 # 编译产物
-/kube-bt-sync
-/api/kube-bt-sync
+/easypanel
+/api/easypanel
 *.exe
 *.dll
 *.so

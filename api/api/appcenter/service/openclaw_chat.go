@@ -345,10 +345,10 @@ func openClawPostChatCompletions(ctx context.Context, baseURL, bearer, model str
 	return "", 0, fmt.Errorf("无法完成网关补全")
 }
 
-// openClawGatewayHealthChatTimeoutDuration 后台探活与一键修复验证用；须覆盖网关→上游一轮极简补全。默认 90s；可通过 KUBEBT_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC 调整（30–300）。
+// openClawGatewayHealthChatTimeoutDuration 后台探活与一键修复验证用；须覆盖网关→上游一轮极简补全。默认 90s；可通过 EASYPANEL_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC 调整（30–300）。
 func openClawGatewayHealthChatTimeoutDuration() time.Duration {
 	sec := 90
-	if s := strings.TrimSpace(os.Getenv("KUBEBT_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC")); s != "" {
+	if s := strings.TrimSpace(os.Getenv("EASYPANEL_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC")); s != "" {
 		if n, err := strconv.Atoi(s); err == nil {
 			if n < 30 {
 				n = 30
@@ -399,7 +399,7 @@ func openClawExplainHealthChatProbeError(err error, timeout time.Duration) strin
 	low := strings.ToLower(msg)
 	deadline := errors.Is(err, context.DeadlineExceeded) || strings.Contains(low, "deadline exceeded") || strings.Contains(low, "context deadline exceeded")
 	if deadline {
-		return fmt.Sprintf("【超时】约 %ds 内未收到完整响应（网关或上游过慢、无响应）。请查 Secret 的 OPENAI_API_KEY、OPENAI_BASE_URL、代理与出站；可调环境变量 KUBEBT_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC。详情：%s",
+		return fmt.Sprintf("【超时】约 %ds 内未收到完整响应（网关或上游过慢、无响应）。请查 Secret 的 OPENAI_API_KEY、OPENAI_BASE_URL、代理与出站；可调环境变量 EASYPANEL_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC。详情：%s",
 			sec, truncateErrMessage(msg, 260))
 	}
 	if strings.Contains(low, "connection refused") || strings.Contains(low, "no such host") {
@@ -465,7 +465,7 @@ func openClawGatewayHealthChatPing(ctx context.Context, baseURL, bearer, model s
 		for ri, route := range routing {
 			payload := map[string]interface{}{
 				"model":       route.bodyModel,
-				"messages":    []map[string]string{{"role": "user", "content": "kube-bt-sync health ping, reply OK"}},
+				"messages":    []map[string]string{{"role": "user", "content": "easypanel health ping, reply OK"}},
 				"max_tokens":  1,
 				"temperature": 0,
 			}

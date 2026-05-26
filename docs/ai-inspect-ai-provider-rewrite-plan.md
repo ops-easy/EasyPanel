@@ -12,8 +12,8 @@
    - 巡检开关与调度：`ai`
 
 2. KV 只写新键。
-   - 新键：`kubebt_ops_ai_provider_v1`
-   - 旧键：`kubebt_ops_openclaw_v1` 不再读取、写入或迁移
+   - 新键：`easypanel_ops_ai_provider_v1`
+   - 旧键：`easypanel_ops_openclaw_v1` 不再读取、写入或迁移
 
 3. API 只保留新入口。
    - `GET /api/ops/ai-provider`

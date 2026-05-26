@@ -226,7 +226,7 @@ const Setup: React.FC = () => {
                   value={platformPublicUrl}
                   onChange={(e) => setPlatformPublicUrl(e.target.value)}
                   required
-                  placeholder="https://kube-bt.example.com"
+                  placeholder="https://easypanel.example.com"
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">

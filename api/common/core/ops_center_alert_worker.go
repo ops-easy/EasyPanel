@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const kvKeyOpsAlertLog = "kubebt_ops_alert_log_v1"
+const kvKeyOpsAlertLog = "easypanel_ops_alert_log_v1"
 
 type alertLogEntry struct {
 	Ts      string `json:"ts"`

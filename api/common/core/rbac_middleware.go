@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"kube-bt-sync/common/transport/authz"
+	"github.com/ops-easy/EasyPanel/api/common/transport/authz"
 
 	"github.com/gin-gonic/gin"
 )

@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kube-bt-sync-frontend
+  name: easypanel-frontend
   namespace: easy
   labels:
-    app.kubernetes.io/name: kube-bt-sync-frontend
-    app.kubernetes.io/part-of: kube-bt-sync
+    app.kubernetes.io/name: easypanel-frontend
+    app.kubernetes.io/part-of: easypanel
     app.kubernetes.io/component: frontend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: kube-bt-sync-frontend
+      app.kubernetes.io/name: easypanel-frontend
       app.kubernetes.io/component: frontend
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: kube-bt-sync-frontend
-        app.kubernetes.io/part-of: kube-bt-sync
+        app.kubernetes.io/name: easypanel-frontend
+        app.kubernetes.io/part-of: easypanel
         app.kubernetes.io/component: frontend
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/ops-easy/kube-bt-sync-web:latest
+          image: ghcr.io/ops-easy/easypanel-web:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

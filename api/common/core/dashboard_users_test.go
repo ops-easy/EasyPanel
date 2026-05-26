@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-const dashboardUserSeedTestDriverName = "kubebt_dashboard_user_seed_test"
+const dashboardUserSeedTestDriverName = "easypanel_dashboard_user_seed_test"
 
 var dashboardUserSeedState = struct {
 	sync.Mutex
@@ -47,7 +47,7 @@ func (dashboardUserSeedTestConn) Begin() (driver.Tx, error) {
 }
 
 func (dashboardUserSeedTestConn) QueryContext(_ context.Context, query string, _ []driver.NamedValue) (driver.Rows, error) {
-	if strings.Contains(query, "SELECT COUNT(*) FROM kubebt_dashboard_users") {
+	if strings.Contains(query, "SELECT COUNT(*) FROM easypanel_dashboard_users") {
 		dashboardUserSeedState.Lock()
 		n := dashboardUserSeedState.userCount
 		dashboardUserSeedState.Unlock()
@@ -57,7 +57,7 @@ func (dashboardUserSeedTestConn) QueryContext(_ context.Context, query string, _
 }
 
 func (dashboardUserSeedTestConn) ExecContext(_ context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
-	if !strings.Contains(query, "INSERT INTO kubebt_dashboard_users") {
+	if !strings.Contains(query, "INSERT INTO easypanel_dashboard_users") {
 		return nil, errors.New("测试驱动未匹配写入")
 	}
 	dashboardUserSeedState.Lock()

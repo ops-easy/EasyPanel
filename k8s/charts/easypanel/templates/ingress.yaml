@@ -4,9 +4,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "kube-bt-sync.fullname" . }}
+  name: {{ include "easypanel.fullname" . }}
   labels:
-    {{- include "kube-bt-sync.labels" . | nindent 4 }}
+    {{- include "easypanel.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -35,7 +35,7 @@ spec:
             pathType: {{ .pathType }}
             backend:
               service:
-                name: {{ include "kube-bt-sync.frontendFullname" $ }}
+                name: {{ include "easypanel.frontendFullname" $ }}
                 port:
                   number: {{ $frontendService.port | default 80 }}
           {{- end }}

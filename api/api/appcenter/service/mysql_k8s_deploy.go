@@ -115,8 +115,8 @@ func appMySQLDataPVCName(baseName string) string {
 
 func appMySQLLabels(baseName string) map[string]string {
 	return map[string]string{
-		"app":                   strings.TrimSpace(baseName),
-		"kube-bt-sync.io/mysql": "true",
+		"app":                strings.TrimSpace(baseName),
+		"easypanel.io/mysql": "true",
 	}
 }
 
@@ -153,7 +153,7 @@ func buildAppMySQLDataPVC(opts AppMySQLK8sDeployOpts, storageClassName string) (
 		appMySQLDataPVCName(opts.BaseName),
 		storageClassName,
 		size,
-		map[string]string{"app": strings.TrimSpace(opts.BaseName), "kube-bt-sync.io/mysql-data": "true"},
+		map[string]string{"app": strings.TrimSpace(opts.BaseName), "easypanel.io/mysql-data": "true"},
 	)
 }
 

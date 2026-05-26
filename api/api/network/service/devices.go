@@ -7,11 +7,11 @@ import (
 	"net/url"
 	"strings"
 
-	networkmodel "kube-bt-sync/api/network/model"
-	"kube-bt-sync/common/appctx"
-	"kube-bt-sync/common/authz"
-	sharedcrypto "kube-bt-sync/common/crypto"
-	"kube-bt-sync/common/result"
+	networkmodel "github.com/ops-easy/EasyPanel/api/api/network/model"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/common/authz"
+	sharedcrypto "github.com/ops-easy/EasyPanel/api/common/crypto"
+	"github.com/ops-easy/EasyPanel/api/common/result"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -21,7 +21,7 @@ type ServerApp = appctx.ServerApp
 type PlatformKV = appctx.PlatformKV
 type Config = appctx.Config
 
-const kvKeyNetworkDevices = "kubebt_network_devices_v1"
+const kvKeyNetworkDevices = "easypanel_network_devices_v1"
 
 const (
 	networkDeviceKindIkuai       = "ikuai"

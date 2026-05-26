@@ -1,8 +1,8 @@
 package network
 
 import (
-	"kube-bt-sync/api/network/controller"
-	"kube-bt-sync/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/api/network/controller"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )

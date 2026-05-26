@@ -1,8 +1,8 @@
 package appcenter
 
 import (
-	"kube-bt-sync/api/appcenter/controller"
-	"kube-bt-sync/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/api/appcenter/controller"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )

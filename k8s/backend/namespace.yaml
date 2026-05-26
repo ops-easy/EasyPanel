@@ -3,4 +3,4 @@ kind: Namespace
 metadata:
   name: easy
   labels:
-    app.kubernetes.io/name: kube-bt-sync
+    app.kubernetes.io/name: easypanel

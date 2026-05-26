@@ -43,10 +43,10 @@ var (
 	openClawLastAllHealthy bool = true
 )
 
-// 默认 600s（10m）：降低对上游（如 MiniMax）的调用频率；可用 KUBEBT_OPENCLAW_GATEWAY_HEALTH_INTERVAL_SEC 覆盖，最小 60。
+// 默认 600s（10m）：降低对上游（如 MiniMax）的调用频率；可用 EASYPANEL_OPENCLAW_GATEWAY_HEALTH_INTERVAL_SEC 覆盖，最小 60。
 func openClawGatewayHealthInterval() time.Duration {
 	sec := 600
-	if s := strings.TrimSpace(os.Getenv("KUBEBT_OPENCLAW_GATEWAY_HEALTH_INTERVAL_SEC")); s != "" {
+	if s := strings.TrimSpace(os.Getenv("EASYPANEL_OPENCLAW_GATEWAY_HEALTH_INTERVAL_SEC")); s != "" {
 		if n, err := strconv.Atoi(s); err == nil && n >= 60 {
 			sec = n
 		}
@@ -55,7 +55,7 @@ func openClawGatewayHealthInterval() time.Duration {
 }
 
 func openClawGatewayHealthDisabled() bool {
-	v := strings.TrimSpace(os.Getenv("KUBEBT_OPENCLAW_GATEWAY_HEALTH_DISABLED"))
+	v := strings.TrimSpace(os.Getenv("EASYPANEL_OPENCLAW_GATEWAY_HEALTH_DISABLED"))
 	return v == "1" || strings.EqualFold(v, "true")
 }
 
@@ -259,7 +259,7 @@ func StartOpenClawGatewayHealthWatcher(app *ServerApp) {
 		return
 	}
 	iv := openClawGatewayHealthInterval()
-	log.Printf("openclaw gateway health: 已启动集群内 chat 探活，间隔 %v（KUBEBT_OPENCLAW_GATEWAY_HEALTH_INTERVAL_SEC 可覆盖，最小 60s）", iv)
+	log.Printf("openclaw gateway health: 已启动集群内 chat 探活，间隔 %v（EASYPANEL_OPENCLAW_GATEWAY_HEALTH_INTERVAL_SEC 可覆盖，最小 60s）", iv)
 	go func() {
 		time.Sleep(20 * time.Second)
 		runOpenClawGatewayHealthCheckOnce(app)

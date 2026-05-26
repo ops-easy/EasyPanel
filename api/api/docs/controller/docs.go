@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"kube-bt-sync/api/docs/service"
-	"kube-bt-sync/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/api/docs/service"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )

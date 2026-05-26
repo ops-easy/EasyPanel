@@ -1,8 +1,8 @@
 package vcenter
 
 import (
-	"kube-bt-sync/api/vcenter/controller"
-	"kube-bt-sync/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/api/vcenter/controller"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )

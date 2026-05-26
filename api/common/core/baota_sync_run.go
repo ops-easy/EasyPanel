@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const baotaIngressSyncKVKey = "kubebt_baota_ingress_sync_report_v1"
+const baotaIngressSyncKVKey = "easypanel_baota_ingress_sync_report_v1"
 
 // BaotaSyncStepResult 单次同步中某一步（站点 / 反代 / HTTPS）的结果。
 type BaotaSyncStepResult struct {
@@ -101,7 +101,7 @@ func ensureBaotaSiteAndProxyWithReport(app *ServerApp, cfg Config, target ProxyT
 		"webname": string(webnameJSON),
 		"path":    "/www/wwwroot/" + target.Domain,
 		"type_id": "0", "type": "PHP", "version": "00", "port": "80",
-		"ps": "[kube-bt-sync]",
+		"ps": "[easypanel]",
 	}, "AddSite:"+target.Domain)
 	step := BaotaSyncStepResult{Name: "site", OK: ok, Attempts: n, Error: errMsg}
 	rep.Steps = append(rep.Steps, step)

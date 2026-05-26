@@ -1,8 +1,8 @@
 package pve
 
 import (
-	"kube-bt-sync/api/pve/controller"
-	"kube-bt-sync/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/api/pve/controller"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )

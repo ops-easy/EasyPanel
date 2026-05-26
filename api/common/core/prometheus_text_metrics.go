@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	prometheusint "kube-bt-sync/api/k8s/provider"
+	prometheusint "github.com/ops-easy/EasyPanel/api/api/k8s/provider"
 )
 
 var clusterAdvisoryRatingGauge int64 // 0 ok 1 warn 2 critical

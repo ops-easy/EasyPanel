@@ -15,7 +15,7 @@ import (
 func DeriveAESKey(raw string) ([]byte, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return nil, errors.New("KUBEBT_ENCRYPTION_KEY 未设置")
+		return nil, errors.New("EASYPANEL_ENCRYPTION_KEY 未设置")
 	}
 	if len(raw) == 64 {
 		b, err := hex.DecodeString(raw)

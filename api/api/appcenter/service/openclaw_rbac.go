@@ -17,9 +17,9 @@ import (
 
 // 平台预置 ClusterRole 名称（与实例 ClusterRoleBinding 的 roleRef 对应）。
 const (
-	OpenClawClusterRoleReadonly = "kube-bt-openclaw-readonly"
-	OpenClawClusterRoleEdit     = "kube-bt-openclaw-edit"
-	OpenClawClusterRoleAdmin    = "kube-bt-openclaw-admin"
+	OpenClawClusterRoleReadonly = "easypanel-openclaw-readonly"
+	OpenClawClusterRoleEdit     = "easypanel-openclaw-edit"
+	OpenClawClusterRoleAdmin    = "easypanel-openclaw-admin"
 )
 
 // OpenClawRBACPresetMeta 供前端与 bootstrap 展示（GET /rbac-presets）。
@@ -48,7 +48,7 @@ func OpenClawRBACPresets() []OpenClawRBACPresetMeta {
 		{
 			ID:              "admin",
 			Label:           "管理员",
-			Description:     "同上 client-go 身份；绑定 kube-bt-openclaw-admin（verbs * 于全部资源，与 cluster-admin 同级能力）。未授予则 API Server 直接拒绝，无 kubectl 也无法绕过",
+			Description:     "同上 client-go 身份；绑定 easypanel-openclaw-admin（verbs * 于全部资源，与 cluster-admin 同级能力）。未授予则 API Server 直接拒绝，无 kubectl 也无法绕过",
 			ClusterRoleName: OpenClawClusterRoleAdmin,
 		},
 	}
@@ -103,7 +103,7 @@ func ensureOpenClawClusterRoleRules(ctx context.Context, k8s *kubernetes.Clients
 	cr := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
-			Labels: map[string]string{"kube-bt-sync.io/openclaw": "true"},
+			Labels: map[string]string{"easypanel.io/openclaw": "true"},
 		},
 		Rules: rules,
 	}
@@ -168,7 +168,7 @@ func ReconcileOpenClawRBACBinding(ctx context.Context, k8s *kubernetes.Clientset
 	crb := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   bindingName,
-			Labels: map[string]string{"kube-bt-sync.io/openclaw": "true"},
+			Labels: map[string]string{"easypanel.io/openclaw": "true"},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",

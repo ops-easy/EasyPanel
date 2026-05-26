@@ -29,7 +29,7 @@ func mysqlMigrateSchema(db *sql.DB) error {
 	} else {
 		alters = append(alters, a...)
 	}
-	if a, err := mysqlMigrateKubebtDocs(db); err != nil {
+	if a, err := mysqlMigrateEasyPanelDocs(db); err != nil {
 		return err
 	} else {
 		alters = append(alters, a...)
@@ -59,14 +59,14 @@ func mysqlMigrateSchema(db *sql.DB) error {
 		log.Printf("MySQL 启动核对-迁移: 列/索引已与 schema_version=%d 对齐（无新增 ALTER）", AppMySQLSchemaVersion)
 	}
 	if err := mysqlUpsertSchemaMeta(db, "app_schema_version", fmt.Sprintf("%d", AppMySQLSchemaVersion)); err != nil {
-		log.Printf("MySQL: 写入 kubebt_schema_meta app_schema_version=%d 失败: %v", AppMySQLSchemaVersion, err)
+		log.Printf("MySQL: 写入 easypanel_schema_meta app_schema_version=%d 失败: %v", AppMySQLSchemaVersion, err)
 	}
 	return nil
 }
 
 func mysqlEnsureMetaTable(db *sql.DB) error {
 	_, err := db.Exec(`
-CREATE TABLE IF NOT EXISTS kubebt_schema_meta (
+CREATE TABLE IF NOT EXISTS easypanel_schema_meta (
   k VARCHAR(64) NOT NULL PRIMARY KEY,
   v VARCHAR(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`)
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS kubebt_schema_meta (
 
 func mysqlUpsertSchemaMeta(db *sql.DB, k, v string) error {
 	_, err := db.Exec(
-		`INSERT INTO kubebt_schema_meta (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)`,
+		`INSERT INTO easypanel_schema_meta (k,v) VALUES (?,?) ON DUPLICATE KEY UPDATE v=VALUES(v)`,
 		k, v,
 	)
 	return err
@@ -102,7 +102,7 @@ func mysqlTableColumns(db *sql.DB, table string) (map[string]struct{}, error) {
 }
 
 func mysqlMigrateDashboardUsers(db *sql.DB) ([]string, error) {
-	cols, err := mysqlTableColumns(db, "kubebt_dashboard_users")
+	cols, err := mysqlTableColumns(db, "easypanel_dashboard_users")
 	if err != nil {
 		return nil, err
 	}
@@ -135,11 +135,11 @@ func mysqlMigrateDashboardUsers(db *sql.DB) ([]string, error) {
 		if _, ok := cols[a.name]; ok {
 			continue
 		}
-		q := "ALTER TABLE kubebt_dashboard_users " + a.ddl
+		q := "ALTER TABLE easypanel_dashboard_users " + a.ddl
 		if _, err := db.Exec(q); err != nil {
-			return done, fmt.Errorf("kubebt_dashboard_users %s: %w", a.name, err)
+			return done, fmt.Errorf("easypanel_dashboard_users %s: %w", a.name, err)
 		}
-		done = append(done, "kubebt_dashboard_users."+a.name)
+		done = append(done, "easypanel_dashboard_users."+a.name)
 	}
 	return done, nil
 }
@@ -149,14 +149,14 @@ func mysqlEnsureDashboardUsersOidcUniqueIndex(db *sql.DB) error {
 	var name sql.NullString
 	err := db.QueryRow(`
 		SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
-		WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kubebt_dashboard_users' AND INDEX_NAME = 'uniq_oidc_issuer_sub' LIMIT 1`).Scan(&name)
+		WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'easypanel_dashboard_users' AND INDEX_NAME = 'uniq_oidc_issuer_sub' LIMIT 1`).Scan(&name)
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
 	if name.Valid && name.String != "" {
 		return nil
 	}
-	_, err = db.Exec(`CREATE UNIQUE INDEX uniq_oidc_issuer_sub ON kubebt_dashboard_users (oidc_issuer(255), oidc_sub(255))`)
+	_, err = db.Exec(`CREATE UNIQUE INDEX uniq_oidc_issuer_sub ON easypanel_dashboard_users (oidc_issuer(255), oidc_sub(255))`)
 	if err == nil {
 		return nil
 	}
@@ -166,7 +166,7 @@ func mysqlEnsureDashboardUsersOidcUniqueIndex(db *sql.DB) error {
 		return nil
 	}
 	if strings.Contains(es, "duplicate entry") {
-		log.Printf("MySQL: OIDC 唯一索引未创建（kubebt_dashboard_users 存在重复 oidc_issuer+oidc_sub），请清理后手工建索引 uniq_oidc_issuer_sub: %v", err)
+		log.Printf("MySQL: OIDC 唯一索引未创建（easypanel_dashboard_users 存在重复 oidc_issuer+oidc_sub），请清理后手工建索引 uniq_oidc_issuer_sub: %v", err)
 		return nil
 	}
 	return err
@@ -185,7 +185,7 @@ func mysqlIndexExists(db *sql.DB, table, indexName string) (bool, error) {
 }
 
 func mysqlReconcileOpenclawSecretsColumns(db *sql.DB) ([]string, error) {
-	cols, err := mysqlTableColumns(db, "kubebt_openclaw_instance_secrets")
+	cols, err := mysqlTableColumns(db, "easypanel_openclaw_instance_secrets")
 	if err != nil {
 		return nil, err
 	}
@@ -208,11 +208,11 @@ func mysqlReconcileOpenclawSecretsColumns(db *sql.DB) ([]string, error) {
 		if _, ok := cols[a.name]; ok {
 			continue
 		}
-		q := "ALTER TABLE kubebt_openclaw_instance_secrets " + a.ddl
+		q := "ALTER TABLE easypanel_openclaw_instance_secrets " + a.ddl
 		if _, err := db.Exec(q); err != nil {
-			return done, fmt.Errorf("kubebt_openclaw_instance_secrets %s: %w", a.name, err)
+			return done, fmt.Errorf("easypanel_openclaw_instance_secrets %s: %w", a.name, err)
 		}
-		done = append(done, "kubebt_openclaw_instance_secrets."+a.name)
+		done = append(done, "easypanel_openclaw_instance_secrets."+a.name)
 		cols[a.name] = struct{}{}
 	}
 	return done, nil
@@ -222,14 +222,14 @@ func mysqlEnsureK8sObjectRevisionsIndex(db *sql.DB) error {
 	var tn int
 	if err := db.QueryRow(`
 		SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES
-		WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kubebt_k8s_object_revisions'`).Scan(&tn); err != nil || tn == 0 {
+		WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'easypanel_k8s_object_revisions'`).Scan(&tn); err != nil || tn == 0 {
 		return err
 	}
-	ok, err := mysqlIndexExists(db, "kubebt_k8s_object_revisions", "idx_k8s_obj_rev_resource")
+	ok, err := mysqlIndexExists(db, "easypanel_k8s_object_revisions", "idx_k8s_obj_rev_resource")
 	if err != nil || ok {
 		return err
 	}
-	_, err = db.Exec(`CREATE INDEX idx_k8s_obj_rev_resource ON kubebt_k8s_object_revisions (namespace(128), kind(64), res_name(128), id)`)
+	_, err = db.Exec(`CREATE INDEX idx_k8s_obj_rev_resource ON easypanel_k8s_object_revisions (namespace(128), kind(64), res_name(128), id)`)
 	if err != nil {
 		es := strings.ToLower(err.Error())
 		if strings.Contains(es, "duplicate") {
@@ -237,7 +237,7 @@ func mysqlEnsureK8sObjectRevisionsIndex(db *sql.DB) error {
 		}
 		return err
 	}
-	log.Printf("MySQL: 已补建索引 kubebt_k8s_object_revisions.idx_k8s_obj_rev_resource")
+	log.Printf("MySQL: 已补建索引 easypanel_k8s_object_revisions.idx_k8s_obj_rev_resource")
 	return nil
 }
 
@@ -245,15 +245,15 @@ func mysqlEnsureAuditLogIndexes(db *sql.DB) error {
 	var tn int
 	if err := db.QueryRow(`
 		SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES
-		WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kubebt_audit_log'`).Scan(&tn); err != nil || tn == 0 {
+		WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'easypanel_audit_log'`).Scan(&tn); err != nil || tn == 0 {
 		return err
 	}
-	if err := mysqlEnsureNamedIndex(db, "kubebt_audit_log", "idx_audit_created",
-		`CREATE INDEX idx_audit_created ON kubebt_audit_log (created_at)`); err != nil {
+	if err := mysqlEnsureNamedIndex(db, "easypanel_audit_log", "idx_audit_created",
+		`CREATE INDEX idx_audit_created ON easypanel_audit_log (created_at)`); err != nil {
 		return err
 	}
-	return mysqlEnsureNamedIndex(db, "kubebt_audit_log", "idx_audit_action",
-		`CREATE INDEX idx_audit_action ON kubebt_audit_log (action)`)
+	return mysqlEnsureNamedIndex(db, "easypanel_audit_log", "idx_audit_action",
+		`CREATE INDEX idx_audit_action ON easypanel_audit_log (action)`)
 }
 
 func mysqlEnsureNamedIndex(db *sql.DB, table, indexName, createSQL string) error {
@@ -274,7 +274,7 @@ func mysqlEnsureNamedIndex(db *sql.DB, table, indexName, createSQL string) error
 }
 
 func mysqlMigratePlatformKV(db *sql.DB) ([]string, error) {
-	cols, err := mysqlTableColumns(db, "kubebt_platform_kv")
+	cols, err := mysqlTableColumns(db, "easypanel_platform_kv")
 	if err != nil {
 		return nil, err
 	}
@@ -283,16 +283,16 @@ func mysqlMigratePlatformKV(db *sql.DB) ([]string, error) {
 	}
 	var done []string
 	if _, ok := cols["v"]; !ok {
-		if _, err := db.Exec(`ALTER TABLE kubebt_platform_kv ADD COLUMN v MEDIUMTEXT`); err != nil {
-			return done, fmt.Errorf("kubebt_platform_kv.v: %w", err)
+		if _, err := db.Exec(`ALTER TABLE easypanel_platform_kv ADD COLUMN v MEDIUMTEXT`); err != nil {
+			return done, fmt.Errorf("easypanel_platform_kv.v: %w", err)
 		}
-		done = append(done, "kubebt_platform_kv.v")
+		done = append(done, "easypanel_platform_kv.v")
 	}
 	// 将过小的文本列升级为 MEDIUMTEXT，避免长 JSON 被截断
 	var dataType, colType string
 	err = db.QueryRow(`
 SELECT DATA_TYPE, COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kubebt_platform_kv' AND COLUMN_NAME = 'v'`).Scan(&dataType, &colType)
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'easypanel_platform_kv' AND COLUMN_NAME = 'v'`).Scan(&dataType, &colType)
 	if err != nil {
 		return done, err
 	}
@@ -300,15 +300,15 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kubebt_platform_kv' AND COLUMN
 	if dt == "mediumtext" || dt == "longtext" {
 		return done, nil
 	}
-	if _, err := db.Exec(`ALTER TABLE kubebt_platform_kv MODIFY COLUMN v MEDIUMTEXT`); err != nil {
-		return done, fmt.Errorf("kubebt_platform_kv MODIFY v: %w", err)
+	if _, err := db.Exec(`ALTER TABLE easypanel_platform_kv MODIFY COLUMN v MEDIUMTEXT`); err != nil {
+		return done, fmt.Errorf("easypanel_platform_kv MODIFY v: %w", err)
 	}
-	done = append(done, "kubebt_platform_kv.v→MEDIUMTEXT(was "+colType+")")
+	done = append(done, "easypanel_platform_kv.v→MEDIUMTEXT(was "+colType+")")
 	return done, nil
 }
 
-func mysqlMigrateKubebtDocs(db *sql.DB) ([]string, error) {
-	cols, err := mysqlTableColumns(db, "kubebt_docs")
+func mysqlMigrateEasyPanelDocs(db *sql.DB) ([]string, error) {
+	cols, err := mysqlTableColumns(db, "easypanel_docs")
 	if err != nil {
 		return nil, err
 	}
@@ -317,27 +317,27 @@ func mysqlMigrateKubebtDocs(db *sql.DB) ([]string, error) {
 	}
 	var done []string
 	if _, ok := cols["share_password_hash"]; !ok {
-		if _, err := db.Exec(`ALTER TABLE kubebt_docs ADD COLUMN share_password_hash VARCHAR(255) NULL DEFAULT NULL`); err != nil {
-			return done, fmt.Errorf("kubebt_docs.share_password_hash: %w", err)
+		if _, err := db.Exec(`ALTER TABLE easypanel_docs ADD COLUMN share_password_hash VARCHAR(255) NULL DEFAULT NULL`); err != nil {
+			return done, fmt.Errorf("easypanel_docs.share_password_hash: %w", err)
 		}
-		done = append(done, "kubebt_docs.share_password_hash")
+		done = append(done, "easypanel_docs.share_password_hash")
 	}
 	if _, ok := cols["content_kind"]; !ok {
-		if _, err := db.Exec(`ALTER TABLE kubebt_docs ADD COLUMN content_kind VARCHAR(16) NOT NULL DEFAULT 'markdown'`); err != nil {
-			return done, fmt.Errorf("kubebt_docs.content_kind: %w", err)
+		if _, err := db.Exec(`ALTER TABLE easypanel_docs ADD COLUMN content_kind VARCHAR(16) NOT NULL DEFAULT 'markdown'`); err != nil {
+			return done, fmt.Errorf("easypanel_docs.content_kind: %w", err)
 		}
-		done = append(done, "kubebt_docs.content_kind")
+		done = append(done, "easypanel_docs.content_kind")
 	}
-	verCols, err := mysqlTableColumns(db, "kubebt_doc_versions")
+	verCols, err := mysqlTableColumns(db, "easypanel_doc_versions")
 	if err != nil {
 		return done, err
 	}
 	if len(verCols) > 0 {
 		if _, ok := verCols["content_kind"]; !ok {
-			if _, err := db.Exec(`ALTER TABLE kubebt_doc_versions ADD COLUMN content_kind VARCHAR(16) NOT NULL DEFAULT 'markdown'`); err != nil {
-				return done, fmt.Errorf("kubebt_doc_versions.content_kind: %w", err)
+			if _, err := db.Exec(`ALTER TABLE easypanel_doc_versions ADD COLUMN content_kind VARCHAR(16) NOT NULL DEFAULT 'markdown'`); err != nil {
+				return done, fmt.Errorf("easypanel_doc_versions.content_kind: %w", err)
 			}
-			done = append(done, "kubebt_doc_versions.content_kind")
+			done = append(done, "easypanel_doc_versions.content_kind")
 		}
 	}
 	return done, nil

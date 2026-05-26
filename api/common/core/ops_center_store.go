@@ -8,13 +8,13 @@ import (
 )
 
 const (
-	kvKeyOpsAIProvider       = "kubebt_ops_ai_provider_v1"
-	kvKeyOpsGrafanaMeta      = "kubebt_ops_grafana_meta_v1"
-	kvKeyOpsAlertCenter      = "kubebt_ops_alert_center_v1"
-	kvKeyOpsAlertState       = "kubebt_ops_alert_state_v1"
-	kvKeyOpsInspectReports   = "kubebt_ops_inspect_reports_v1"
-	kvKeyOpsInspectCron      = "kubebt_ops_inspect_cron_v1"
-	kvKeyOpsMonitoringPanels = "kubebt_ops_monitoring_panels_v1"
+	kvKeyOpsAIProvider       = "easypanel_ops_ai_provider_v1"
+	kvKeyOpsGrafanaMeta      = "easypanel_ops_grafana_meta_v1"
+	kvKeyOpsAlertCenter      = "easypanel_ops_alert_center_v1"
+	kvKeyOpsAlertState       = "easypanel_ops_alert_state_v1"
+	kvKeyOpsInspectReports   = "easypanel_ops_inspect_reports_v1"
+	kvKeyOpsInspectCron      = "easypanel_ops_inspect_cron_v1"
+	kvKeyOpsMonitoringPanels = "easypanel_ops_monitoring_panels_v1"
 )
 
 const (

@@ -1,8 +1,8 @@
 package service
 
 import (
-	"kube-bt-sync/common/appctx"
-	legacycore "kube-bt-sync/common/core"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	legacycore "github.com/ops-easy/EasyPanel/api/common/core"
 
 	"github.com/gin-gonic/gin"
 )

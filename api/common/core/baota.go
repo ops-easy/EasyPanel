@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	baotaprovider "kube-bt-sync/api/baota/provider"
+	baotaprovider "github.com/ops-easy/EasyPanel/api/api/baota/provider"
 )
 
 func baotaOptions(cfg Config) baotaprovider.Options {

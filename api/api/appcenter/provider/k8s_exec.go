@@ -5,8 +5,8 @@ import (
 	"context"
 	"io"
 
-	core "kube-bt-sync/common/core"
-	"kube-bt-sync/common/k8sutil"
+	core "github.com/ops-easy/EasyPanel/api/common/core"
+	"github.com/ops-easy/EasyPanel/api/common/k8sutil"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

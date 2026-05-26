@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strings"
 
-	toolmodel "kube-bt-sync/api/tool/model"
-	toolsvc "kube-bt-sync/api/tool/service"
-	"kube-bt-sync/common/appctx"
-	"kube-bt-sync/common/result"
+	toolmodel "github.com/ops-easy/EasyPanel/api/api/tool/model"
+	toolsvc "github.com/ops-easy/EasyPanel/api/api/tool/service"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/common/result"
 
 	"github.com/gin-gonic/gin"
 )

@@ -1,6 +1,6 @@
 # 静态启动配置示例
 # 复制为 api/config.yaml 后按本地环境修改；api/config.yaml 已被 .gitignore 忽略，避免误提交敏感信息。
-# 页面可修改的业务配置会保存到 MySQL 表 kubebt_platform_kv，键为 config_override_yaml_v1。
+# 页面可修改的业务配置会保存到 MySQL 表 easypanel_platform_kv，键为 config_override_yaml_v1。
 
 server:
   # 后端监听地址；本地开发可用 127.0.0.1:8080，容器或 Kubernetes 中使用 0.0.0.0:8080
@@ -30,8 +30,8 @@ db:
   # dsn 留空时使用下方拆分字段生成连接串
   host: 127.0.0.1
   port: 3306
-  db: kube_bt_sync
-  username: kube_bt_sync
+  db: easypanel
+  username: easypanel
   password: change-me
 
 redis:

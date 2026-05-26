@@ -1,17 +1,17 @@
 # MetalLB 与 ingress-nginx 说明
 
-MetalLB 与 ingress-nginx 都不是 Kube-BT-Sync 镜像内置组件。它们属于 Kubernetes 集群入口能力，是否安装取决于你的网络环境。
+MetalLB 与 ingress-nginx 都不是 EasyPanel 镜像内置组件。它们属于 Kubernetes 集群入口能力，是否安装取决于你的网络环境。
 
 适用场景：
 
 - 裸金属或自建集群没有云厂商 LoadBalancer。
 - 需要为 `Service type=LoadBalancer` 分配内网可达 IP。
-- 需要使用 Ingress 暴露 Kube-BT-Sync 或业务应用。
-- 需要让 Kube-BT-Sync 管理和同步集群中的 Ingress。
+- 需要使用 Ingress 暴露 EasyPanel 或业务应用。
+- 需要让 EasyPanel 管理和同步集群中的 Ingress。
 
 如果你的集群已经有云负载均衡、Traefik、APISIX、Nginx Ingress 或其他入口方案，可以按现有方案部署，不必安装本文组件。
 
-## 与 Kube-BT-Sync 的关系
+## 与 EasyPanel 的关系
 
 | 能力 | 是否依赖 MetalLB | 是否依赖 ingress-nginx |
 | --- | --- | --- |
@@ -106,9 +106,9 @@ kubectl get ingressclass
 - `NodePort`：自建集群常见方式，注意 Kubernetes NodePort 默认范围是 `30000-32767`。
 - `hostNetwork`：需要占用节点 80/443，适合明确控制入口节点的场景。
 
-## 在 Kube-BT-Sync 中使用
+## 在 EasyPanel 中使用
 
-1. 确保目标集群可被 Kube-BT-Sync 后端访问。
+1. 确保目标集群可被 EasyPanel 后端访问。
 2. 在初始化向导或集群设置中配置 Kubernetes 连接。
 3. 如需监控面板，配置 Prometheus 或安装 kube-prometheus-stack。
 4. 如需 Ingress 同步宝塔，开启 `INGRESS_BAOTA_SYNC_ENABLED=true`。
@@ -119,8 +119,8 @@ kubectl get ingressclass
 ```yaml
 metadata:
   annotations:
-    kube-bt-sync.io/baota-sync: "true"
-    kube-bt-sync.io/baota-https: "true"
+    easypanel.io/baota-sync: "true"
+    easypanel.io/baota-https: "true"
 ```
 
 ## 排障建议

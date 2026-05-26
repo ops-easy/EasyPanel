@@ -172,8 +172,8 @@ func docsGuideDocJSON(r docGuideResolveRow) gin.H {
 func docsLoadGuideResolveRows(ctx context.Context, db *sql.DB) ([]docGuideResolveRow, error) {
 	rows, err := db.QueryContext(ctx, `SELECT g.id, g.guide_key, g.route_pattern, g.match_type, g.doc_id, g.enabled, g.sort_order,
 		d.title, d.body_markdown, d.content_kind, d.author, d.published, d.created_at, d.updated_at
-		FROM kubebt_doc_guides g
-		JOIN kubebt_docs d ON d.id = g.doc_id
+		FROM easypanel_doc_guides g
+		JOIN easypanel_docs d ON d.id = g.doc_id
 		ORDER BY g.sort_order ASC, g.id ASC`)
 	if err != nil {
 		return nil, err
@@ -309,7 +309,7 @@ func docsGuidesCreate(c *gin.Context, app *ServerApp) {
 	docID := body.DocID
 	who := docsActor(c, app)
 	if docID == 0 {
-		res, err := tx.Exec(`INSERT INTO kubebt_docs (title, body_markdown, content_kind, author, published) VALUES (?,?,?,?,0)`,
+		res, err := tx.Exec(`INSERT INTO easypanel_docs (title, body_markdown, content_kind, author, published) VALUES (?,?,?,?,0)`,
 			title, bodyMarkdown, "markdown", who)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -322,7 +322,7 @@ func docsGuidesCreate(c *gin.Context, app *ServerApp) {
 			return
 		}
 	}
-	if _, err := tx.Exec(`INSERT INTO kubebt_doc_guides (guide_key, route_pattern, match_type, doc_id, enabled, sort_order) VALUES (?,?,?,?,?,?)`,
+	if _, err := tx.Exec(`INSERT INTO easypanel_doc_guides (guide_key, route_pattern, match_type, doc_id, enabled, sort_order) VALUES (?,?,?,?,?,?)`,
 		key, routePattern, matchType, docID, boolInt(enabled), sortOrder); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -355,7 +355,7 @@ func docsGuidesUpdate(c *gin.Context, app *ServerApp) {
 	var curDocID uint64
 	var curRoutePattern, curMatchType string
 	var curEnabled, curSortOrder int
-	if err := db.QueryRow(`SELECT doc_id, route_pattern, match_type, enabled, sort_order FROM kubebt_doc_guides WHERE guide_key=?`, key).Scan(
+	if err := db.QueryRow(`SELECT doc_id, route_pattern, match_type, enabled, sort_order FROM easypanel_doc_guides WHERE guide_key=?`, key).Scan(
 		&curDocID, &curRoutePattern, &curMatchType, &curEnabled, &curSortOrder,
 	); err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "系统指南不存在"})
@@ -384,7 +384,7 @@ func docsGuidesUpdate(c *gin.Context, app *ServerApp) {
 	if body.DocID > 0 {
 		docID = body.DocID
 	}
-	res, err := db.Exec(`UPDATE kubebt_doc_guides SET route_pattern=?, match_type=?, doc_id=?, enabled=?, sort_order=? WHERE guide_key=?`,
+	res, err := db.Exec(`UPDATE easypanel_doc_guides SET route_pattern=?, match_type=?, doc_id=?, enabled=?, sort_order=? WHERE guide_key=?`,
 		routePattern, matchType, docID, boolInt(enabled), sortOrder, key)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -408,14 +408,14 @@ func docsGuidesDelete(c *gin.Context, app *ServerApp) {
 	}
 	key := docsNormalizeGuideKey(c.Param("guideKey"))
 	var docID uint64
-	if err := db.QueryRow(`SELECT doc_id FROM kubebt_doc_guides WHERE guide_key=?`, key).Scan(&docID); err == sql.ErrNoRows {
+	if err := db.QueryRow(`SELECT doc_id FROM easypanel_doc_guides WHERE guide_key=?`, key).Scan(&docID); err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "系统指南不存在"})
 		return
 	} else if err != nil {
 		RespondAPIError500(c, err.Error())
 		return
 	}
-	if _, err := db.Exec(`DELETE FROM kubebt_doc_guides WHERE guide_key=?`, key); err != nil {
+	if _, err := db.Exec(`DELETE FROM easypanel_doc_guides WHERE guide_key=?`, key); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -451,7 +451,7 @@ func ensureDefaultDocGuides(db *sql.DB) error {
 		routePattern := normalizeDocGuidePath(spec.RoutePattern)
 		matchType := docsNormalizeGuideMatchType(spec.MatchType)
 		var n int
-		if err := db.QueryRow(`SELECT COUNT(*) FROM kubebt_doc_guides WHERE guide_key=? OR (route_pattern=? AND match_type=?)`, key, routePattern, matchType).Scan(&n); err != nil {
+		if err := db.QueryRow(`SELECT COUNT(*) FROM easypanel_doc_guides WHERE guide_key=? OR (route_pattern=? AND match_type=?)`, key, routePattern, matchType).Scan(&n); err != nil {
 			return err
 		}
 		if n > 0 {
@@ -467,7 +467,7 @@ func ensureDefaultDocGuides(db *sql.DB) error {
 		}
 		title := strings.TrimSpace(spec.Title)
 		body := docsNormalizeWireNewlines(string(raw))
-		res, err := tx.Exec(`INSERT INTO kubebt_docs (title, body_markdown, content_kind, author, published) VALUES (?,?,?,?,0)`,
+		res, err := tx.Exec(`INSERT INTO easypanel_docs (title, body_markdown, content_kind, author, published) VALUES (?,?,?,?,0)`,
 			title, body, "markdown", "system")
 		if err != nil {
 			_ = tx.Rollback()
@@ -479,7 +479,7 @@ func ensureDefaultDocGuides(db *sql.DB) error {
 			_ = tx.Rollback()
 			return err
 		}
-		if _, err := tx.Exec(`INSERT INTO kubebt_doc_guides (guide_key, route_pattern, match_type, doc_id, enabled, sort_order) VALUES (?,?,?,?,1,?)`,
+		if _, err := tx.Exec(`INSERT INTO easypanel_doc_guides (guide_key, route_pattern, match_type, doc_id, enabled, sort_order) VALUES (?,?,?,?,1,?)`,
 			key, routePattern, matchType, docID, spec.SortOrder); err != nil {
 			_ = tx.Rollback()
 			return err

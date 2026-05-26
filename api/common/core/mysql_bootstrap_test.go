@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-const mysqlBootstrapTestDriverName = "kubebt_mysql_bootstrap_test"
+const mysqlBootstrapTestDriverName = "easypanel_mysql_bootstrap_test"
 
 var (
 	mysqlBootstrapTestFailSubstring atomic.Value
@@ -116,13 +116,13 @@ func TestMySQLBootstrapDDLsDoNotDefaultLargeTextColumns(t *testing.T) {
 func TestMySQLBootstrapIncludesDocumentGuidesTable(t *testing.T) {
 	var ddl string
 	for _, item := range mysqlBootstrapTableDDLs {
-		if item.Label == "kubebt_doc_guides" {
+		if item.Label == "easypanel_doc_guides" {
 			ddl = item.SQL
 			break
 		}
 	}
 	if ddl == "" {
-		t.Fatalf("mysqlBootstrapTableDDLs missing kubebt_doc_guides")
+		t.Fatalf("mysqlBootstrapTableDDLs missing easypanel_doc_guides")
 	}
 	for _, want := range []string{
 		"guide_key VARCHAR(128) NOT NULL",
@@ -133,7 +133,7 @@ func TestMySQLBootstrapIncludesDocumentGuidesTable(t *testing.T) {
 		"UNIQUE KEY uq_doc_guides_route (route_pattern, match_type)",
 	} {
 		if !strings.Contains(ddl, want) {
-			t.Fatalf("kubebt_doc_guides DDL missing %q:\n%s", want, ddl)
+			t.Fatalf("easypanel_doc_guides DDL missing %q:\n%s", want, ddl)
 		}
 	}
 }
@@ -145,9 +145,9 @@ func TestMySQLBootstrapIncludesAppCenterMySQLTables(t *testing.T) {
 	}
 
 	for _, table := range []string{
-		"kubebt_app_mysql_instances",
-		"kubebt_app_mysql_templates",
-		"kubebt_app_mysql_backups",
+		"easypanel_app_mysql_instances",
+		"easypanel_app_mysql_templates",
+		"easypanel_app_mysql_backups",
 	} {
 		if ddls[table] == "" {
 			t.Fatalf("mysqlBootstrapTableDDLs missing %s", table)
@@ -160,8 +160,8 @@ func TestMySQLBootstrapIncludesAppCenterMySQLTables(t *testing.T) {
 		"config_json MEDIUMTEXT NOT NULL",
 		"UNIQUE KEY uniq_app_mysql_inst_name (name)",
 	} {
-		if !strings.Contains(ddls["kubebt_app_mysql_instances"], want) {
-			t.Fatalf("kubebt_app_mysql_instances DDL missing %q:\n%s", want, ddls["kubebt_app_mysql_instances"])
+		if !strings.Contains(ddls["easypanel_app_mysql_instances"], want) {
+			t.Fatalf("easypanel_app_mysql_instances DDL missing %q:\n%s", want, ddls["easypanel_app_mysql_instances"])
 		}
 	}
 
@@ -171,8 +171,8 @@ func TestMySQLBootstrapIncludesAppCenterMySQLTables(t *testing.T) {
 		"config_json MEDIUMTEXT NOT NULL",
 		"UNIQUE KEY uniq_app_mysql_tpl_name (name)",
 	} {
-		if !strings.Contains(ddls["kubebt_app_mysql_templates"], want) {
-			t.Fatalf("kubebt_app_mysql_templates DDL missing %q:\n%s", want, ddls["kubebt_app_mysql_templates"])
+		if !strings.Contains(ddls["easypanel_app_mysql_templates"], want) {
+			t.Fatalf("easypanel_app_mysql_templates DDL missing %q:\n%s", want, ddls["easypanel_app_mysql_templates"])
 		}
 	}
 
@@ -183,8 +183,8 @@ func TestMySQLBootstrapIncludesAppCenterMySQLTables(t *testing.T) {
 		"INDEX idx_app_mysql_backup_inst (instance_id, id)",
 		"UNIQUE KEY uniq_app_mysql_backup_name (instance_id, backup_name)",
 	} {
-		if !strings.Contains(ddls["kubebt_app_mysql_backups"], want) {
-			t.Fatalf("kubebt_app_mysql_backups DDL missing %q:\n%s", want, ddls["kubebt_app_mysql_backups"])
+		if !strings.Contains(ddls["easypanel_app_mysql_backups"], want) {
+			t.Fatalf("easypanel_app_mysql_backups DDL missing %q:\n%s", want, ddls["easypanel_app_mysql_backups"])
 		}
 	}
 }

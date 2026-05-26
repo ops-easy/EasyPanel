@@ -9,7 +9,7 @@ import (
 func redisRuntimeConfigKey(cfg Config) string {
 	p := strings.TrimSpace(cfg.RedisKeyPrefix)
 	if p == "" {
-		p = "kubebt:"
+		p = "easypanel:"
 	} else if !strings.HasSuffix(p, ":") {
 		p += ":"
 	}
@@ -19,7 +19,7 @@ func redisRuntimeConfigKey(cfg Config) string {
 func redisPlatformKVKey(cfg Config) string {
 	p := strings.TrimSpace(cfg.RedisKeyPrefix)
 	if p == "" {
-		p = "kubebt:"
+		p = "easypanel:"
 	} else if !strings.HasSuffix(p, ":") {
 		p += ":"
 	}

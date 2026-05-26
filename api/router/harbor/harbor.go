@@ -1,9 +1,9 @@
 package harbor
 
 import (
-	"kube-bt-sync/api/harbor/controller"
-	"kube-bt-sync/common/appctx"
-	"kube-bt-sync/middleware"
+	"github.com/ops-easy/EasyPanel/api/api/harbor/controller"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/middleware"
 
 	"github.com/gin-gonic/gin"
 )

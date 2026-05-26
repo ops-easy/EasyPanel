@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	baotasvc "kube-bt-sync/api/baota/service"
-	"kube-bt-sync/common/appctx"
-	"kube-bt-sync/common/authz"
-	"kube-bt-sync/common/result"
+	baotasvc "github.com/ops-easy/EasyPanel/api/api/baota/service"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/common/authz"
+	"github.com/ops-easy/EasyPanel/api/common/result"
 
 	"github.com/gin-gonic/gin"
 	mysql "github.com/go-sql-driver/mysql"

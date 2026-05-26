@@ -1,7 +1,7 @@
 package core
 
 import (
-	"kube-bt-sync/common/transport/httpx"
+	"github.com/ops-easy/EasyPanel/api/common/transport/httpx"
 
 	"github.com/gin-gonic/gin"
 )

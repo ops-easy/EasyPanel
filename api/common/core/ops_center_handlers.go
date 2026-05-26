@@ -606,7 +606,7 @@ func handleOpsAlertsTestChannel(app *ServerApp) gin.HandlerFunc {
 			return
 		}
 		pass, _ := decryptSecret(key, ch.SMTPPassEnc)
-		subj := "[Kube-BT-Sync] 告警通道测试"
+		subj := "[EasyPanel] 告警通道测试"
 		msg := "这是一条测试通知。\nlabels: test=1"
 		switch strings.ToLower(strings.TrimSpace(ch.Type)) {
 		case "email":

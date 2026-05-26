@@ -14,7 +14,7 @@ resources:
 
 labels:
   - pairs:
-      app.kubernetes.io/component: kube-bt-sync
+      app.kubernetes.io/component: easypanel
     includeSelectors: false
 
 # 后端只暴露 ClusterIP；外部访问入口在 k8s/frontend。

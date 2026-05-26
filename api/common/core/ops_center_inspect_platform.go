@@ -8,12 +8,12 @@ import (
 	"sort"
 	"strings"
 
-	networkmodel "kube-bt-sync/api/network/model"
+	networkmodel "github.com/ops-easy/EasyPanel/api/api/network/model"
 
 	"github.com/gin-gonic/gin"
 )
 
-const kvKeyInspectNetworkDevices = "kubebt_network_devices_v1"
+const kvKeyInspectNetworkDevices = "easypanel_network_devices_v1"
 
 type inspectPrometheusScopeRow struct {
 	Scope   string

@@ -1,6 +1,6 @@
 package core
 
-import sharedcrypto "kube-bt-sync/common/crypto"
+import sharedcrypto "github.com/ops-easy/EasyPanel/api/common/crypto"
 
 func deriveAESKey(raw string) ([]byte, error) {
 	return sharedcrypto.DeriveAESKey(raw)

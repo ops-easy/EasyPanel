@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"kube-bt-sync/common/appctx"
-	"kube-bt-sync/common/result"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/common/result"
 
 	"github.com/gin-gonic/gin"
 )

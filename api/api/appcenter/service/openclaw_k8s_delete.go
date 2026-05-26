@@ -11,7 +11,7 @@ import (
 )
 
 func openClawClusterRoleBindingName(ns, depName string) string {
-	crb := fmt.Sprintf("kube-bt-openclaw-%s-%s", ns, depName)
+	crb := fmt.Sprintf("easypanel-openclaw-%s-%s", ns, depName)
 	if len(crb) > 200 {
 		crb = crb[:200]
 	}

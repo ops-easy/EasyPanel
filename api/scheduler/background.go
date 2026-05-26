@@ -3,10 +3,10 @@ package scheduler
 import (
 	"context"
 
-	appcentersvc "kube-bt-sync/api/appcenter/service"
-	harborsvc "kube-bt-sync/api/harbor/service"
-	"kube-bt-sync/common/appctx"
-	core "kube-bt-sync/common/core"
+	appcentersvc "github.com/ops-easy/EasyPanel/api/api/appcenter/service"
+	harborsvc "github.com/ops-easy/EasyPanel/api/api/harbor/service"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	core "github.com/ops-easy/EasyPanel/api/common/core"
 )
 
 func StartSettingsCrossPodRuntimeSync(ctx context.Context, getApp func() *appctx.ServerApp) {

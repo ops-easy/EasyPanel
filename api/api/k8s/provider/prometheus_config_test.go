@@ -7,7 +7,7 @@ func TestValidateConfigYAML(t *testing.T) {
 global:
   scrape_interval: 15s
 scrape_configs:
-  - job_name: kubebt
+  - job_name: easypanel
 `); err != nil {
 		t.Fatalf("expected valid YAML: %v", err)
 	}

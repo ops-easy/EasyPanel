@@ -128,7 +128,7 @@ func handleAppOpenClawList(c *gin.Context, app *ServerApp) {
 			"rbacPreset":           strings.TrimSpace(x.RBACPreset),
 			"toolsProfile":         strings.TrimSpace(x.ToolsProfile),
 			"promptPacks":          append([]string(nil), x.PromptPacks...),
-			// 便于运维核对：ClusterRole 名（如 kube-bt-openclaw-admin）与 Binding 名（kube-bt-openclaw-<ns>-<dep>）不同，勿混用
+			// 便于运维核对：ClusterRole 名（如 easypanel-openclaw-admin）与 Binding 名（easypanel-openclaw-<ns>-<dep>）不同，勿混用
 			"rbacClusterRoleName":    OpenClawClusterRoleForPreset(rbacID),
 			"clusterRoleBindingName": openClawClusterRoleBindingName(nsTrim, depTrim),
 		}
@@ -449,7 +449,7 @@ func validateOpenClawCreateUpstream(ctx context.Context, preset, baseURL, apiKey
 			tip = "；MiniMax 常见为密钥门户与 Base URL 不一致：platform.minimaxi.com 创建的 Key 请优先用 https://api.minimaxi.com/v1，旧 minimax.io 密钥再改 https://api.minimax.io/v1"
 		}
 	case "ollama":
-		tip = "；请确认该模型已在 Ollama 侧 pull，并且 kube-bt-sync 进程可访问该 /v1 地址"
+		tip = "；请确认该模型已在 Ollama 侧 pull，并且 easypanel 进程可访问该 /v1 地址"
 	case "glm-4.7":
 		tip = "；智谱 GLM 兼容地址通常应为 https://open.bigmodel.cn/api/paas/v4"
 	case "qwen-compatible":

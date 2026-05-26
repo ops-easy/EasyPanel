@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	networkmodel "kube-bt-sync/api/network/model"
+	networkmodel "github.com/ops-easy/EasyPanel/api/api/network/model"
 
 	"github.com/gin-gonic/gin"
 )

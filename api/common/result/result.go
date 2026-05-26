@@ -1,8 +1,8 @@
 package result
 
 import (
-	core "kube-bt-sync/common/core"
-	"kube-bt-sync/common/transport/httpx"
+	core "github.com/ops-easy/EasyPanel/api/common/core"
+	"github.com/ops-easy/EasyPanel/api/common/transport/httpx"
 
 	"github.com/gin-gonic/gin"
 )

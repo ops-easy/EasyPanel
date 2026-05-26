@@ -836,7 +836,7 @@ func handleAppMySQLK8sDeploy(c *gin.Context, app *ServerApp) {
 			user, _ := c.Get("dashboardUser")
 			createdBy, _ := user.(string)
 			var existing int64
-			qerr := db.QueryRowContext(ctx, `SELECT id FROM kubebt_app_mysql_instances WHERE name=?`, name).Scan(&existing)
+			qerr := db.QueryRowContext(ctx, `SELECT id FROM easypanel_app_mysql_instances WHERE name=?`, name).Scan(&existing)
 			if qerr == sql.ErrNoRows {
 				instanceID, qerr = appMySQLInsert(ctx, db, name, string(st.Mode), raw, createdBy)
 			} else if qerr == nil {

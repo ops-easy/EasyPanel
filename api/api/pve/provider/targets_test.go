@@ -3,8 +3,8 @@ package provider
 import (
 	"testing"
 
-	pvemodel "kube-bt-sync/api/pve/model"
-	sharedcrypto "kube-bt-sync/common/crypto"
+	pvemodel "github.com/ops-easy/EasyPanel/api/api/pve/model"
+	sharedcrypto "github.com/ops-easy/EasyPanel/api/common/crypto"
 )
 
 func TestNormalizeTargetFromBodyUsesPasswordAuthByDefault(t *testing.T) {
@@ -69,7 +69,7 @@ func TestTargetAuthMethodHonorsExplicitToken(t *testing.T) {
 	got := TargetAuthMethod(pvemodel.Target{
 		AuthMethod: AuthMethodToken,
 		Username:   "legacy-user",
-		TokenID:    "root@pam!kubebt",
+		TokenID:    "root@pam!easypanel",
 	})
 	if got != AuthMethodToken {
 		t.Fatalf("TargetAuthMethod=%q, want token", got)

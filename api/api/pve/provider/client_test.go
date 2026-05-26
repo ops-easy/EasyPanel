@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"testing"
 
-	pvemodel "kube-bt-sync/api/pve/model"
+	pvemodel "github.com/ops-easy/EasyPanel/api/api/pve/model"
 )
 
 func TestNormalizeBaseURL(t *testing.T) {
@@ -36,8 +36,8 @@ func TestNormalizeBaseURL(t *testing.T) {
 }
 
 func TestBuildAuthHeader(t *testing.T) {
-	got := BuildAuthHeader("root@pam!kubebt", "secret")
-	want := "PVEAPIToken=root@pam!kubebt=secret"
+	got := BuildAuthHeader("root@pam!easypanel", "secret")
+	want := "PVEAPIToken=root@pam!easypanel=secret"
 	if got != want {
 		t.Fatalf("BuildAuthHeader()=%q, want %q", got, want)
 	}

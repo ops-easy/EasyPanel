@@ -4,14 +4,14 @@ import "testing"
 
 func TestBaotaHTTPSFromAnnotations(t *testing.T) {
 	cfg := BaotaHTTPSFromAnnotations(map[string]string{
-		"i4t.com/baota-https":                 "true",
-		"i4t.com/baota-ssl-cert-name":         "legacy-cert",
-		"i4t.com/baota-ssl-pem-path":          "/legacy/site.pem",
-		"i4t.com/baota-ssl-key-path":          "/legacy/site.key",
-		"kube-bt-sync.io/baota-https":         "true",
-		"kube-bt-sync.io/baota-ssl-cert-name": "modern-cert",
-		"kube-bt-sync.io/baota-ssl-pem-path":  "/modern/site.pem",
-		"kube-bt-sync.io/baota-ssl-key-path":  "/modern/site.key",
+		"i4t.com/baota-https":              "true",
+		"i4t.com/baota-ssl-cert-name":      "legacy-cert",
+		"i4t.com/baota-ssl-pem-path":       "/legacy/site.pem",
+		"i4t.com/baota-ssl-key-path":       "/legacy/site.key",
+		"easypanel.io/baota-https":         "true",
+		"easypanel.io/baota-ssl-cert-name": "modern-cert",
+		"easypanel.io/baota-ssl-pem-path":  "/modern/site.pem",
+		"easypanel.io/baota-ssl-key-path":  "/modern/site.key",
 	})
 	if !cfg.Enable {
 		t.Fatal("expected https enabled")
@@ -29,10 +29,10 @@ func TestBaotaHTTPSFromAnnotations(t *testing.T) {
 
 func TestBaotaHTTPSFromAnnotations_ModernFallback(t *testing.T) {
 	cfg := BaotaHTTPSFromAnnotations(map[string]string{
-		"kube-bt-sync.io/baota-https":         "true",
-		"kube-bt-sync.io/baota-ssl-cert-name": "modern-cert",
-		"kube-bt-sync.io/baota-ssl-pem-path":  "/modern/site.pem",
-		"kube-bt-sync.io/baota-ssl-key-path":  "/modern/site.key",
+		"easypanel.io/baota-https":         "true",
+		"easypanel.io/baota-ssl-cert-name": "modern-cert",
+		"easypanel.io/baota-ssl-pem-path":  "/modern/site.pem",
+		"easypanel.io/baota-ssl-key-path":  "/modern/site.key",
 	})
 	if !cfg.Enable {
 		t.Fatal("expected https enabled")

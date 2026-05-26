@@ -1,6 +1,6 @@
 # 文档公开页静态资源 CDN 配置
 
-Kube-BT-Sync 的文档中心支持公开分享 Markdown 页面。公开页会用到 Markdown 样式、代码高亮、KaTeX、Excalidraw 等静态资源。默认情况下可以使用内置公网地址；如果你的环境无法访问公网，或希望走企业 OSS/CDN，可以配置自定义静态资源根地址。
+EasyPanel 的文档中心支持公开分享 Markdown 页面。公开页会用到 Markdown 样式、代码高亮、KaTeX、Excalidraw 等静态资源。默认情况下可以使用内置公网地址；如果你的环境无法访问公网，或希望走企业 OSS/CDN，可以配置自定义静态资源根地址。
 
 ## 配置方式
 
@@ -13,7 +13,7 @@ assetsCdnBaseUrl=https://cdn.example.com/cmdb
 也可以通过环境变量设置：
 
 ```text
-KUBEBT_ASSETS_CDN_BASE=https://cdn.example.com/cmdb
+EASYPANEL_ASSETS_CDN_BASE=https://cdn.example.com/cmdb
 ```
 
 如果运行时配置和环境变量同时存在，以运行时配置为准。

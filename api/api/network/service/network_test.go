@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	networkmodel "kube-bt-sync/api/network/model"
-	core "kube-bt-sync/common/core"
-	transportauthz "kube-bt-sync/common/transport/authz"
+	networkmodel "github.com/ops-easy/EasyPanel/api/api/network/model"
+	core "github.com/ops-easy/EasyPanel/api/common/core"
+	transportauthz "github.com/ops-easy/EasyPanel/api/common/transport/authz"
 
 	"github.com/gin-gonic/gin"
 )

@@ -30,7 +30,7 @@ performance:
 `), 0600); err != nil {
 		t.Fatalf("write config: %v", err)
 	}
-	t.Setenv("KUBEBT_CONFIG_FILE", configPath)
+	t.Setenv("EASYPANEL_CONFIG_FILE", configPath)
 
 	app, err := NewServerApp(t.TempDir())
 	if err != nil {
@@ -110,11 +110,11 @@ func TestSetupConfigYAMLIncludesBootstrapAndRuntimeFields(t *testing.T) {
 	raw, err := setupConfigYAML(&RuntimeSettings{
 		Version:              1,
 		Initialized:          true,
-		PlatformPublicURL:    "https://kubebt.example.com",
+		PlatformPublicURL:    "https://easypanel.example.com",
 		MySQLHost:            "mysql.example.internal",
 		MySQLPort:            3307,
-		MySQLDatabase:        "kubebt",
-		MySQLUser:            "kubebt_user",
+		MySQLDatabase:        "easypanel",
+		MySQLUser:            "easypanel_user",
 		MySQLPassword:        "mysql-secret",
 		RedisAddr:            "redis.example.internal:6380",
 		RedisPassword:        "redis-secret",
@@ -135,11 +135,11 @@ func TestSetupConfigYAMLIncludesBootstrapAndRuntimeFields(t *testing.T) {
 	applyConfigYAMLBytes(&cfg, raw, "setup")
 	finalizeLoadedConfig(&cfg)
 
-	if cfg.PlatformPublicURL != "https://kubebt.example.com" {
+	if cfg.PlatformPublicURL != "https://easypanel.example.com" {
 		t.Fatalf("PlatformPublicURL = %q", cfg.PlatformPublicURL)
 	}
 	if cfg.MySQLHost != "mysql.example.internal" || cfg.MySQLPort != 3307 ||
-		cfg.MySQLDatabase != "kubebt" || cfg.MySQLUser != "kubebt_user" ||
+		cfg.MySQLDatabase != "easypanel" || cfg.MySQLUser != "easypanel_user" ||
 		cfg.MySQLPassword != "mysql-secret" {
 		t.Fatalf("MySQL bootstrap fields not rendered: %#v", cfg)
 	}

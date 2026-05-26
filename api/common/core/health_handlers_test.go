@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	pveprovider "kube-bt-sync/api/pve/provider"
+	pveprovider "github.com/ops-easy/EasyPanel/api/api/pve/provider"
 
 	"github.com/gin-gonic/gin"
 )

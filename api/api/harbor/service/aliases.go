@@ -1,9 +1,9 @@
 package service
 
 import (
-	"kube-bt-sync/common/appctx"
-	"kube-bt-sync/common/authz"
-	"kube-bt-sync/common/request"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/common/authz"
+	"github.com/ops-easy/EasyPanel/api/common/request"
 
 	"github.com/gin-gonic/gin"
 )

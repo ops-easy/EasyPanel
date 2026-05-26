@@ -1,8 +1,8 @@
 package compute
 
 import (
-	"kube-bt-sync/api/compute/controller"
-	"kube-bt-sync/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/api/compute/controller"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )

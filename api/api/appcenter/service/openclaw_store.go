@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const kvKeyAppOpenClawInstances = "kubebt_app_openclaw_instances_v1"
+const kvKeyAppOpenClawInstances = "easypanel_app_openclaw_instances_v1"
 
 // AppOpenClawInstance 应用中心登记的 OpenClaw 网关（可多台；供页面访问与 AI 巡检选用）。
 type AppOpenClawInstance struct {
@@ -49,7 +49,7 @@ type AppOpenClawInstance struct {
 	EgressCloudVmID string `json:"egressCloudVmId,omitempty"`
 	// HttpProxyURL 注入网关容器的 HTTP_PROXY/HTTPS_PROXY（如 http://云主机上 tinyproxy:3128）；直连 Hysteria 协议请用侧车或系统代理链。
 	HttpProxyURL string `json:"httpProxyUrl,omitempty"`
-	// RBACPreset 网关 SA 绑定的集群权限档：readonly | edit | admin（与 kube-bt-openclaw-* ClusterRole 对应）。
+	// RBACPreset 网关 SA 绑定的集群权限档：readonly | edit | admin（与 easypanel-openclaw-* ClusterRole 对应）。
 	RBACPreset string `json:"rbacPreset,omitempty"`
 	// ToolsProfile 与 openclaw.json 中 tools.profile 一致：minimal | coding | full
 	ToolsProfile string `json:"toolsProfile,omitempty"`

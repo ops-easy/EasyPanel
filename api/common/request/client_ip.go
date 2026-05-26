@@ -1,8 +1,8 @@
 package request
 
 import (
-	"kube-bt-sync/common/appctx"
-	core "kube-bt-sync/common/core"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	core "github.com/ops-easy/EasyPanel/api/common/core"
 
 	"github.com/gin-gonic/gin"
 )

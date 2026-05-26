@@ -86,7 +86,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     define: {
-      __KUBEBT_UI_BUILD_VERSION__: JSON.stringify(uiBuildVersion),
+      __EASYPANEL_UI_BUILD_VERSION__: JSON.stringify(uiBuildVersion),
     },
     server: {
       proxy: {

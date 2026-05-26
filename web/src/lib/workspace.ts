@@ -1,5 +1,5 @@
 /** 与 Sidebar 中 localStorage 键一致，供需要时读取 */
-export const WORKSPACE_STORAGE_KEY = "kube-bt-sidebar-workspace";
+export const WORKSPACE_STORAGE_KEY = "easypanel-sidebar-workspace";
 
 export type WorkspaceId =
   | "hub"

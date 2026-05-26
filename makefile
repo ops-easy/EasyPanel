@@ -11,7 +11,7 @@ build-frontend:
 
 build-backend:
 	@echo "Building backend..."
-	@cd $(BACKEND_DIR) && go build -o kube-bt-sync .
+	@cd $(BACKEND_DIR) && go build -o easypanel .
 
 start-frontend:
 	@echo "Starting frontend dev server..."

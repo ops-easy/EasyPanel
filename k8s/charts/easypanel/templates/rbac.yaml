@@ -2,9 +2,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "kube-bt-sync.fullname" . }}
+  name: {{ include "easypanel.fullname" . }}
   labels:
-    {{- include "kube-bt-sync.labels" . | nindent 4 }}
+    {{- include "easypanel.labels" . | nindent 4 }}
 rules:
   - apiGroups: [""]
     resources: ["namespaces", "nodes", "persistentvolumeclaims", "events"]
@@ -37,24 +37,24 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "kube-bt-sync.fullname" . }}
+  name: {{ include "easypanel.fullname" . }}
   labels:
-    {{- include "kube-bt-sync.labels" . | nindent 4 }}
+    {{- include "easypanel.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "kube-bt-sync.fullname" . }}
+  name: {{ include "easypanel.fullname" . }}
 subjects:
   - kind: ServiceAccount
-    name: {{ include "kube-bt-sync.serviceAccountName" . }}
+    name: {{ include "easypanel.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 {{- else }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "kube-bt-sync.fullname" . }}
+  name: {{ include "easypanel.fullname" . }}
   labels:
-    {{- include "kube-bt-sync.labels" . | nindent 4 }}
+    {{- include "easypanel.labels" . | nindent 4 }}
 rules:
   - apiGroups: ["networking.k8s.io"]
     resources: ["ingresses"]
@@ -63,15 +63,15 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "kube-bt-sync.fullname" . }}
+  name: {{ include "easypanel.fullname" . }}
   labels:
-    {{- include "kube-bt-sync.labels" . | nindent 4 }}
+    {{- include "easypanel.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "kube-bt-sync.fullname" . }}
+  name: {{ include "easypanel.fullname" . }}
 subjects:
   - kind: ServiceAccount
-    name: {{ include "kube-bt-sync.serviceAccountName" . }}
+    name: {{ include "easypanel.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 {{- end }}

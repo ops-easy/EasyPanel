@@ -588,7 +588,7 @@ func handleAppHermesFileGet(c *gin.Context, app *ServerApp) {
 		RespondAPIError500(c, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"content": cm.Data["KUBEBT_HERMES_NOTES"], "config": cm.Data})
+	c.JSON(http.StatusOK, gin.H{"content": cm.Data["EASYPANEL_HERMES_NOTES"], "config": cm.Data})
 }
 
 func handleAppHermesFilePut(c *gin.Context, app *ServerApp) {
@@ -621,7 +621,7 @@ func handleAppHermesFilePut(c *gin.Context, app *ServerApp) {
 	if cm.Data == nil {
 		cm.Data = map[string]string{}
 	}
-	cm.Data["KUBEBT_HERMES_NOTES"] = body.Content
+	cm.Data["EASYPANEL_HERMES_NOTES"] = body.Content
 	if _, err := app.K8s().CoreV1().ConfigMaps(inst.Namespace).Update(ctx, cm, metav1.UpdateOptions{}); err != nil {
 		RespondAPIError500(c, err.Error())
 		return

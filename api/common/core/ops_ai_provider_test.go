@@ -60,7 +60,7 @@ func TestSaveOpsAIProviderBundleWritesNewKVOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("saveOpsAIProviderBundle returned error: %v", err)
 	}
-	if _, ok := kv.Get("kubebt_ops_openclaw_v1"); ok {
+	if _, ok := kv.Get("easypanel_ops_openclaw_v1"); ok {
 		t.Fatalf("old OpenClaw KV key should not be written")
 	}
 	raw, ok := kv.Get(kvKeyOpsAIProvider)

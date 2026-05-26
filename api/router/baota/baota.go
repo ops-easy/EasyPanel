@@ -1,8 +1,8 @@
 package baota
 
 import (
-	"kube-bt-sync/api/baota/controller"
-	"kube-bt-sync/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/api/baota/controller"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )

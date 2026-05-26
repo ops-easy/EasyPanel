@@ -14,8 +14,8 @@ import (
 	"strings"
 	"sync"
 
-	pvemodel "kube-bt-sync/api/pve/model"
-	pveprovider "kube-bt-sync/api/pve/provider"
+	pvemodel "github.com/ops-easy/EasyPanel/api/api/pve/model"
+	pveprovider "github.com/ops-easy/EasyPanel/api/api/pve/provider"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

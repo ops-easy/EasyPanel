@@ -261,7 +261,7 @@ func openClawReadFileFromPod(
 	ns, podName, absPath string,
 ) ([]byte, error) {
 	readScript := fmt.Sprintf(`f=%s
-if [ ! -f "$f" ]; then echo KUBEBT_MISSING; exit 0; fi
+if [ ! -f "$f" ]; then echo EASYPANEL_MISSING; exit 0; fi
 sz=$(stat -c '%%s' "$f" 2>/dev/null || echo 0)
 if [ "$sz" -gt %d ]; then echo TOOBIG; exit 1; fi
 base64 -w0 "$f" 2>/dev/null || base64 "$f" | tr -d '\n'
@@ -269,7 +269,7 @@ base64 -w0 "$f" 2>/dev/null || base64 "$f" | tr -d '\n'
 	cmd := []string{"/bin/sh", "-c", readScript}
 	stdout, stderr, err := k8sPodExecRun(ctx, k8s, rc, ns, podName, "gateway", cmd, nil)
 	out := strings.TrimSpace(stdout.String())
-	if out == "KUBEBT_MISSING" {
+	if out == "EASYPANEL_MISSING" {
 		return nil, errOpenClawFileMissing
 	}
 	if err != nil {

@@ -1,8 +1,8 @@
 package k8s
 
 import (
-	"kube-bt-sync/api/k8s/controller"
-	"kube-bt-sync/common/appctx"
+	"github.com/ops-easy/EasyPanel/api/api/k8s/controller"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
 
 	"github.com/gin-gonic/gin"
 )

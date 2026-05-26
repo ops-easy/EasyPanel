@@ -8,11 +8,11 @@
 k8s/
 ├── backend/                    # 后端 Namespace、RBAC、PVC、Secret 示例、Deployment、Service
 ├── frontend/                   # 前端 Nginx Deployment、NodePort Service、可选 Ingress
-├── charts/kube-bt-sync/        # 单 Chart 部署入口
+├── charts/easypanel/             # 单 Chart 部署入口
 └── kustomization.yaml          # Kustomize 聚合入口
 ```
 
-后端 Service 名称为 `kube-bt-sync`，监听 `8080`。前端 Nginx Service 名称为 `kube-bt-sync-frontend`，默认使用 NodePort `32080`，并把 `/api/`、`/r/` 与公开媒体 `/d/` 代理到后端。
+后端 Service 名称为 `easypanel`，监听 `8080`。前端 Nginx Service 名称为 `easypanel-frontend`，默认使用 NodePort `32080`，并把 `/api/`、`/r/` 与公开媒体 `/d/` 代理到后端。
 
 ## 使用 Kustomize 部署
 
@@ -45,16 +45,16 @@ kubectl apply -f k8s/frontend/ingress.yaml
 ## 使用 Helm 部署
 
 ```bash
-helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
+helm install easypanel ./k8s/charts/easypanel \
   --namespace easy \
   --create-namespace \
-  --set backend.image.repository=ghcr.io/ops-easy/kube-bt-sync \
+  --set backend.image.repository=ghcr.io/ops-easy/easypanel-api \
   --set backend.image.tag=latest \
-  --set frontend.image.repository=ghcr.io/ops-easy/kube-bt-sync-web \
+  --set frontend.image.repository=ghcr.io/ops-easy/easypanel-web \
   --set frontend.image.tag=latest
 ```
 
-常用参数位于 `k8s/charts/kube-bt-sync/values.yaml`：
+常用参数位于 `k8s/charts/easypanel/values.yaml`：
 
 | 参数 | 说明 |
 | --- | --- |
@@ -76,9 +76,9 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
 
 - 多个后端副本共享同一个 MySQL、Redis 和持久卷。
 - 固定 `DASHBOARD_SESSION_SECRET`。
-- 固定 `KUBEBT_ENCRYPTION_KEY`。
-- 仅一个后端副本设置 `KUBEBT_ENABLE_BACKGROUND_JOBS=true`。
-- 其他副本设置 `KUBEBT_ENABLE_BACKGROUND_JOBS=false`。
+- 固定 `EASYPANEL_ENCRYPTION_KEY`。
+- 仅一个后端副本设置 `EASYPANEL_ENABLE_BACKGROUND_JOBS=true`。
+- 其他副本设置 `EASYPANEL_ENABLE_BACKGROUND_JOBS=false`。
 
 后台任务包括：
 
@@ -116,19 +116,19 @@ SMOKE_BASE_URL=https://your-staging.example.com SMOKE_D_PATH=/d/ npm run smoke:d
 kubectl -n easy get all,pvc
 
 # 查看后端日志
-kubectl -n easy logs deploy/kube-bt-sync -f
+kubectl -n easy logs deploy/easypanel -f
 
 # 查看前端日志
-kubectl -n easy logs deploy/kube-bt-sync-frontend -f
+kubectl -n easy logs deploy/easypanel-frontend -f
 
 # 进入后端 Pod
-kubectl -n easy exec -it deploy/kube-bt-sync -- /busybox/sh
+kubectl -n easy exec -it deploy/easypanel -- /busybox/sh
 
 # 删除 Kustomize 部署
 kubectl delete -k k8s
 
 # 删除 Helm 部署
-helm uninstall kube-bt-sync -n easy
+helm uninstall easypanel -n easy
 ```
 
 后端最终镜像基于 distroless，通常不包含 shell；如需调试，请使用临时调试容器或 Kubernetes 原生排障方式。

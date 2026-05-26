@@ -1,6 +1,6 @@
 package service
 
-import baotacore "kube-bt-sync/common/core"
+import baotacore "github.com/ops-easy/EasyPanel/api/common/core"
 
 type TargetEntry = baotacore.BaotaTargetEntry
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	networkmodel "kube-bt-sync/api/network/model"
+	networkmodel "github.com/ops-easy/EasyPanel/api/api/network/model"
 )
 
 type fakeOpenWrtRunner map[string]string

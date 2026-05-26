@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	pveprovider "kube-bt-sync/api/pve/provider"
+	pveprovider "github.com/ops-easy/EasyPanel/api/api/pve/provider"
 )
 
 type bastionTargetListResult struct {

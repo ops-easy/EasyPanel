@@ -12,7 +12,7 @@
 
 新增业务页面时，优先放入 `src/features/<domain>/pages`；不要继续堆到 `src/pages` 根目录。
 
-`web/` 是 Kube-BT-Sync 的前端控制台，基于 React、TypeScript、Vite、Tailwind CSS、Radix UI、TanStack Query 和 React Router。
+`web/` 是 EasyPanel 的前端控制台，基于 React、TypeScript、Vite、Tailwind CSS、Radix UI、TanStack Query 和 React Router。
 
 ## 主要能力
 

@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	kvKeySecurityLoginAlert = "kubebt_security_login_alert"
-	kvKeyLoginThrottle      = "kubebt_login_throttle_v1"
+	kvKeySecurityLoginAlert = "easypanel_security_login_alert"
+	kvKeyLoginThrottle      = "easypanel_login_throttle_v1"
 	loginThrottleFileName   = "login-throttle.json"
 )
 

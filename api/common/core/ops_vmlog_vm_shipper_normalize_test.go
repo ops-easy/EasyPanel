@@ -7,14 +7,14 @@ func TestVmShipperNormalizeVectorDownloadBaseURL(t *testing.T) {
 		in, want string
 	}{
 		{"", ""},
-		{"https://d.example.com/file/kube-bt-sync", "https://d.example.com/file/kube-bt-sync"},
+		{"https://d.example.com/file/easypanel", "https://d.example.com/file/easypanel"},
 		{
-			"https://d.example.com/file/kube-bt-sync/vector-0.36.1-x86_64-unknown-linux-gnu.tar.gz",
-			"https://d.example.com/file/kube-bt-sync",
+			"https://d.example.com/file/easypanel/vector-0.36.1-x86_64-unknown-linux-gnu.tar.gz",
+			"https://d.example.com/file/easypanel",
 		},
 		{
-			"https://d.example.com/file/kube-bt-sync/vector-0.36.1-x86_64-unknown-linux-gnu.tar.gz/",
-			"https://d.example.com/file/kube-bt-sync",
+			"https://d.example.com/file/easypanel/vector-0.36.1-x86_64-unknown-linux-gnu.tar.gz/",
+			"https://d.example.com/file/easypanel",
 		},
 		{"https://example.com/static/other.tar.gz", "https://example.com/static/other.tar.gz"},
 	}

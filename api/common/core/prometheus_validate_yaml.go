@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	prometheusint "kube-bt-sync/api/k8s/provider"
+	prometheusint "github.com/ops-easy/EasyPanel/api/api/k8s/provider"
 
 	"github.com/gin-gonic/gin"
 )

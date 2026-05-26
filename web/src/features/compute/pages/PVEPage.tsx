@@ -168,7 +168,7 @@ const PVEPage: React.FC = () => {
               </div>
               <div className="space-y-1.5">
                 <Label>Token ID</Label>
-                <Input className="font-mono text-sm" placeholder="root@pam!kubebt" value={form.tokenId} onChange={(e) => setForm({ ...form, tokenId: e.target.value })} />
+                <Input className="font-mono text-sm" placeholder="root@pam!easypanel" value={form.tokenId} onChange={(e) => setForm({ ...form, tokenId: e.target.value })} />
               </div>
               <div className="space-y-1.5">
                 <Label>Token Secret</Label>

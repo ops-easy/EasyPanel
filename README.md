@@ -78,7 +78,7 @@ EasyPanel/
 ├── web/                         # React + Vite 前端
 ├── k8s/backend/                 # 后端 Kubernetes 清单
 ├── k8s/frontend/                # 前端 Kubernetes 清单
-├── k8s/charts/kube-bt-sync/     # Helm Chart
+├── k8s/charts/easypanel/          # Helm Chart
 ├── docs/                        # 运维说明文档
 ├── .github/workflows/           # GHCR 镜像发布工作流
 └── makefile                     # 常用本地开发命令
@@ -156,12 +156,12 @@ kubectl apply -f k8s/frontend/ingress.yaml
 ### Helm 部署
 
 ```bash
-helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
+helm install easypanel ./k8s/charts/easypanel \
   --namespace easy \
   --create-namespace \
-  --set backend.image.repository=ghcr.io/ops-easy/kube-bt-sync \
+  --set backend.image.repository=ghcr.io/ops-easy/easypanel-api \
   --set backend.image.tag=latest \
-  --set frontend.image.repository=ghcr.io/ops-easy/kube-bt-sync-web \
+  --set frontend.image.repository=ghcr.io/ops-easy/easypanel-web \
   --set frontend.image.tag=latest
 ```
 
@@ -169,16 +169,16 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
 
 仓库包含 GitHub Actions 工作流 `.github/workflows/publish-images.yml`。推送到 `main` 或手动触发后，会发布：
 
-- `ghcr.io/ops-easy/kube-bt-sync:latest`
-- `ghcr.io/ops-easy/kube-bt-sync:<commit-sha>`
-- `ghcr.io/ops-easy/kube-bt-sync-web:latest`
-- `ghcr.io/ops-easy/kube-bt-sync-web:<commit-sha>`
+- `ghcr.io/ops-easy/easypanel-api:latest`
+- `ghcr.io/ops-easy/easypanel-api:<commit-sha>`
+- `ghcr.io/ops-easy/easypanel-web:latest`
+- `ghcr.io/ops-easy/easypanel-web:<commit-sha>`
 
 后端镜像使用多阶段构建，最终运行镜像基于 `distroless/static-debian12:nonroot`，只包含后端二进制；前端镜像基于 Nginx，并将 `/api/`、`/r/` 与公开媒体 `/d/` 反向代理到后端 Service。
 
 ## 关键配置
 
-后端配置来源为静态配置 + MySQL 动态配置 + 环境变量；不再从磁盘读取 `runtime-config.json`，也不再使用 PVC 上的 `config.override.yaml`。静态配置默认是本地 `api/config.yaml`，可从 `api/config.example.yaml` 复制生成，也可用 `KUBEBT_CONFIG_FILE` 指定其它路径；默认示例只保留 `server`、`db`、`redis`、`startup`、`performance` 这些启动必需配置。页面保存的业务配置写入 MySQL 表 `kubebt_platform_kv`，键为 `config_override_yaml_v1`。加载优先级为：程序默认值 < 静态配置 < MySQL 动态配置 < 环境变量。MySQL 连接属于启动依赖，必须放在静态 `config.yaml` 或环境变量中。常用变量如下：
+后端配置来源为静态配置 + MySQL 动态配置 + 环境变量；不再从磁盘读取 `runtime-config.json`，也不再使用 PVC 上的 `config.override.yaml`。静态配置默认是本地 `api/config.yaml`，可从 `api/config.example.yaml` 复制生成，也可用 `EASYPANEL_CONFIG_FILE` 指定其它路径；默认示例只保留 `server`、`db`、`redis`、`startup`、`performance` 这些启动必需配置。页面保存的业务配置写入 MySQL 表 `easypanel_platform_kv`，键为 `config_override_yaml_v1`。加载优先级为：程序默认值 < 静态配置 < MySQL 动态配置 < 环境变量。MySQL 连接属于启动依赖，必须放在静态 `config.yaml` 或环境变量中。常用变量如下：
 
 | 变量 | 说明 |
 | --- | --- |
@@ -188,9 +188,9 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
 | `DASHBOARD_COOKIE_SECURE` | HTTPS 部署时建议设为 `true` |
 | `DASHBOARD_SERVE_FRONTEND` | 是否由后端托管 React dist，默认 `false`；常规部署使用独立前端服务 |
 | `DASHBOARD_TRUSTED_PROXIES` | 可信代理 CIDR，用于正确解析客户端 IP |
-| `KUBEBT_DATA_DIR` | 运行数据目录，Kubernetes 中默认挂载到 `/data` |
-| `KUBEBT_ENCRYPTION_KEY` | SSH/SFTP 等敏感凭据的加密密钥 |
-| `KUBEBT_ENABLE_BACKGROUND_JOBS` | 是否启用后台同步、巡检和通知任务；多副本时仅保留一个副本为 `true` |
+| `EASYPANEL_DATA_DIR` | 运行数据目录，Kubernetes 中默认挂载到 `/data` |
+| `EASYPANEL_ENCRYPTION_KEY` | SSH/SFTP 等敏感凭据的加密密钥 |
+| `EASYPANEL_ENABLE_BACKGROUND_JOBS` | 是否启用后台同步、巡检和通知任务；多副本时仅保留一个副本为 `true` |
 | `BAOTA_URL` / `BAOTA_API_KEY` | 宝塔面板 API 地址与密钥 |
 | `INGRESS_BAOTA_SYNC_ENABLED` | 是否启用 Ingress 到宝塔的后台同步 |
 | `DDNS_HOST` / `DEFAULT_PORT` | 宝塔反代默认回源到集群入口时使用的地址与 HTTP 端口 |
@@ -202,7 +202,7 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
 | `VCENTER_URL` / `VCENTER_USER` / `VCENTER_PASSWORD` | vCenter 连接配置 |
 | `HARBOR_BASE_URL` / `HARBOR_USERNAME` / `HARBOR_PASSWORD` | Harbor API 配置 |
 | `OIDC_ISSUER_URL` 等 | OIDC 登录配置 |
-| `KUBEBT_ASSETS_CDN_BASE` | 文档公开页静态资源 CDN 根地址 |
+| `EASYPANEL_ASSETS_CDN_BASE` | 文档公开页静态资源 CDN 根地址 |
 
 敏感配置请通过 Kubernetes `Secret`、CI Secret 或外部密钥系统注入，不要写入镜像和公开仓库。
 
@@ -211,7 +211,7 @@ helm install kube-bt-sync ./k8s/charts/kube-bt-sync \
 为需要同步到宝塔的 Ingress 添加注解：
 
 ```bash
-kubectl annotate ingress <name> -n <namespace> kube-bt-sync.io/baota-sync="true"
+kubectl annotate ingress <name> -n <namespace> easypanel.io/baota-sync="true"
 ```
 
 ### DDNS 回源与覆盖规则
@@ -220,7 +220,7 @@ kubectl annotate ingress <name> -n <namespace> kube-bt-sync.io/baota-sync="true"
 
 默认：HTTP + DEFAULT_PORT。也就是宝塔默认回源到 `http://<ddnsHost>:<DEFAULT_PORT>`，这里的 `DEFAULT_PORT` 通常对应 ingress-nginx 在节点上监听的 HTTP 端口。若配置了 `BAOTA_UPSTREAM_HOST`、`BAOTA_UPSTREAM_PORT` 或 `BAOTA_UPSTREAM_SCHEME`，宝塔设置里的固定回源优先。
 
-开启宝塔 HTTPS 后，`kube-bt-sync.io/baota-https: "true"` 会让宝塔侧启用 HTTPS；如果没有额外写 `ddns-scheme`，回源协议会默认切到 HTTPS，并使用 `INGRESS_NGINX_HOST_HTTPS_PORT` / `HTTPS_PORT` 对应的 HTTPS 入口端口。HTTP 对外访问不会因为这个注解自动删除。
+开启宝塔 HTTPS 后，`easypanel.io/baota-https: "true"` 会让宝塔侧启用 HTTPS；如果没有额外写 `ddns-scheme`，回源协议会默认切到 HTTPS，并使用 `INGRESS_NGINX_HOST_HTTPS_PORT` / `HTTPS_PORT` 对应的 HTTPS 入口端口。HTTP 对外访问不会因为这个注解自动删除。
 
 `ddns-port` 和 `ddns-scheme` 是为历史 YAML 与少数特殊服务保留的单条覆盖：它们只影响单条 Ingress 生成的宝塔反代，不会修改全局 `ddnsHost`、`DEFAULT_PORT` 或宝塔设置。常规场景优先在「宝塔设置」里维护全局回源，只有某个 Ingress 必须走不同端口或协议时才写这两个注解。
 
@@ -228,11 +228,11 @@ kubectl annotate ingress <name> -n <namespace> kube-bt-sync.io/baota-sync="true"
 
 | 注解 | 说明 |
 | --- | --- |
-| `kube-bt-sync.io/baota-sync: "true"` | 标记为受管 Ingress |
-| `kube-bt-sync.io/baota-https: "true"` | 在宝塔侧启用 HTTPS |
-| `kube-bt-sync.io/baota-ssl-cert-name: "<cert>"` | 指定宝塔证书名称 |
-| `kube-bt-sync.io/ddns-scheme: "http\|https"` | 覆盖单条 Ingress 的宝塔回源协议 |
-| `kube-bt-sync.io/ddns-port: "<port>"` | 覆盖单条 Ingress 的宝塔回源端口 |
+| `easypanel.io/baota-sync: "true"` | 标记为受管 Ingress |
+| `easypanel.io/baota-https: "true"` | 在宝塔侧启用 HTTPS |
+| `easypanel.io/baota-ssl-cert-name: "<cert>"` | 指定宝塔证书名称 |
+| `easypanel.io/ddns-scheme: "http\|https"` | 覆盖单条 Ingress 的宝塔回源协议 |
+| `easypanel.io/ddns-port: "<port>"` | 覆盖单条 Ingress 的宝塔回源端口 |
 | `i4t.com/baota-sync: "true"` | 旧版兼容注解 |
 
 示例：
@@ -240,12 +240,12 @@ kubectl annotate ingress <name> -n <namespace> kube-bt-sync.io/baota-sync="true"
 ```yaml
 metadata:
   annotations:
-    kube-bt-sync.io/baota-sync: "true"
-    kube-bt-sync.io/baota-https: "true"
-    kube-bt-sync.io/baota-ssl-cert-name: "example-cert"
+    easypanel.io/baota-sync: "true"
+    easypanel.io/baota-https: "true"
+    easypanel.io/baota-ssl-cert-name: "example-cert"
     # 可选：只影响单条 Ingress
-    # kube-bt-sync.io/ddns-scheme: "https"
-    # kube-bt-sync.io/ddns-port: "30443"
+    # easypanel.io/ddns-scheme: "https"
+    # easypanel.io/ddns-port: "30443"
 ```
 
 ## 数据持久化
@@ -253,13 +253,13 @@ metadata:
 | 数据 | 推荐位置 |
 | --- | --- |
 | 静态后端配置 | `api/config.yaml`、Kubernetes ConfigMap 或环境变量 |
-| 页面动态业务配置 | MySQL 表 `kubebt_platform_kv`，键 `config_override_yaml_v1` |
+| 页面动态业务配置 | MySQL 表 `easypanel_platform_kv`，键 `config_override_yaml_v1` |
 | 平台 KV | MySQL；单机调试可回退文件，Redis 仅做热读或兼容镜像 |
 | 用户、审计、应用实例、文档索引 | MySQL |
 | 文档附件 | 本地 `/data/doc-uploads` 或腾讯云 COS |
-| SSH/SFTP 凭据 | `/data/ssh-settings`，配合 `KUBEBT_ENCRYPTION_KEY` 加密 |
+| SSH/SFTP 凭据 | `/data/ssh-settings`，配合 `EASYPANEL_ENCRYPTION_KEY` 加密 |
 
-多副本部署建议使用 MySQL 保存平台核心状态，并固定 `DASHBOARD_SESSION_SECRET` 与 `KUBEBT_ENCRYPTION_KEY`。
+多副本部署建议使用 MySQL 保存平台核心状态，并固定 `DASHBOARD_SESSION_SECRET` 与 `EASYPANEL_ENCRYPTION_KEY`。
 
 ## 文档索引
 

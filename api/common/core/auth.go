@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"kube-bt-sync/common/transport/authz"
+	"github.com/ops-easy/EasyPanel/api/common/transport/authz"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -27,10 +27,10 @@ import (
 const sessionCookieName = "kbts_session"
 
 // dashboardAuthMySQLTimeout 登录后每请求校验账号/IP 策略的 DB 超时。勿绑定 c.Request.Context()，否则客户端断开或上游超时会取消查询导致误报 deadline。
-// 可用 KUBEBT_DASHBOARD_AUTH_DB_TIMEOUT_SEC（3～120，默认 25）。
+// 可用 EASYPANEL_DASHBOARD_AUTH_DB_TIMEOUT_SEC（3～120，默认 25）。
 func dashboardAuthMySQLTimeout() time.Duration {
 	sec := 25
-	if s := strings.TrimSpace(os.Getenv("KUBEBT_DASHBOARD_AUTH_DB_TIMEOUT_SEC")); s != "" {
+	if s := strings.TrimSpace(os.Getenv("EASYPANEL_DASHBOARD_AUTH_DB_TIMEOUT_SEC")); s != "" {
 		if n, err := strconv.Atoi(s); err == nil && n >= 3 && n <= 120 {
 			sec = n
 		}
@@ -43,7 +43,7 @@ const loginResponseMinDelay = 90 * time.Millisecond
 
 // DashboardRole 会话内角色：admin 全量；viewer 只读界面数据，禁止 Pod/虚拟机 SSH/云主机/改配置等。
 const (
-	// DashboardRoleAdmin 为「全量权限」角色标识（存于会话与 kubebt_dashboard_users.role），与登录名 username 无关。
+	// DashboardRoleAdmin 为「全量权限」角色标识（存于会话与 easypanel_dashboard_users.role），与登录名 username 无关。
 	DashboardRoleAdmin  = "admin"
 	DashboardRoleViewer = "viewer"
 )
@@ -72,7 +72,7 @@ func PrepareDashboardAuth(cfg Config) Config {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		log.Printf(">>> 警告: 生成 DASHBOARD_SESSION_SECRET 失败: %v，将使用固定弱密钥（请设置环境变量）", err)
-		cfg.resolvedDashboardSessionKey = []byte("kube-bt-sync-dev-only-change-me")
+		cfg.resolvedDashboardSessionKey = []byte("easypanel-dev-only-change-me")
 		return cfg
 	}
 	cfg.resolvedDashboardSessionKey = []byte(hex.EncodeToString(b))
@@ -336,12 +336,12 @@ func handleAuthStatus(c *gin.Context, app *ServerApp) {
 		if db := app.MySQLDB(); db != nil {
 			ctxOb, cancelOb := context.WithTimeout(context.Background(), 5*time.Second)
 			var n int
-			_ = db.QueryRowContext(ctxOb, `SELECT COUNT(*) FROM kubebt_dashboard_users WHERE username = ? AND TRIM(COALESCE(oidc_sub,'')) <> '' AND TRIM(COALESCE(oidc_issuer,'')) <> ''`, user).Scan(&n)
+			_ = db.QueryRowContext(ctxOb, `SELECT COUNT(*) FROM easypanel_dashboard_users WHERE username = ? AND TRIM(COALESCE(oidc_sub,'')) <> '' AND TRIM(COALESCE(oidc_issuer,'')) <> ''`, user).Scan(&n)
 			cancelOb()
 			out["oidcBound"] = n > 0
 			ctxAv, cancelAv := context.WithTimeout(context.Background(), 5*time.Second)
 			var av sql.NullString
-			_ = db.QueryRowContext(ctxAv, `SELECT avatar_url FROM kubebt_dashboard_users WHERE username = ? LIMIT 1`, user).Scan(&av)
+			_ = db.QueryRowContext(ctxAv, `SELECT avatar_url FROM easypanel_dashboard_users WHERE username = ? LIMIT 1`, user).Scan(&av)
 			cancelAv()
 			if av.Valid && strings.TrimSpace(av.String) != "" {
 				out["avatarUrl"] = strings.TrimSpace(av.String)
@@ -538,7 +538,7 @@ func handleAuthLogin(c *gin.Context, app *ServerApp) {
 				// 区分禁用与口令错误；禁用账号不允许用环境变量口令绕过。
 				ctxD, cd := context.WithTimeout(context.Background(), 8*time.Second)
 				var dis int
-				derr := db.QueryRowContext(ctxD, `SELECT disabled FROM kubebt_dashboard_users WHERE username=? LIMIT 1`, dbUser).Scan(&dis)
+				derr := db.QueryRowContext(ctxD, `SELECT disabled FROM easypanel_dashboard_users WHERE username=? LIMIT 1`, dbUser).Scan(&dis)
 				cd()
 				if derr == nil && dis != 0 {
 					log.Printf("audit login fail user=%s ip=%s reason=disabled", dbUser, ip)

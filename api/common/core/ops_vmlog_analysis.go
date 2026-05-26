@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	kvKeyVmLogAIAnalysis      = "kubebt_ops_vmlog_ai_analysis_v1"
+	kvKeyVmLogAIAnalysis      = "easypanel_ops_vmlog_ai_analysis_v1"
 	vmlogAnalysisMaxIssues    = 160
 	vmlogAnalysisMaxScopes    = 80
 	vmlogAnalysisMaxSample    = 100

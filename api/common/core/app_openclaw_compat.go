@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const kvKeyAppOpenClawInstances = "kubebt_app_openclaw_instances_v1"
+const kvKeyAppOpenClawInstances = "easypanel_app_openclaw_instances_v1"
 
 // AppOpenClawInstance is kept in the root package while Ops remains there.
 type AppOpenClawInstance struct {
@@ -556,7 +556,7 @@ func openClawExplainHealthChatProbeError(err error, timeout time.Duration) strin
 	low := strings.ToLower(msg)
 	deadline := errors.Is(err, context.DeadlineExceeded) || strings.Contains(low, "deadline exceeded") || strings.Contains(low, "context deadline exceeded")
 	if deadline {
-		return fmt.Sprintf("【超时】约 %ds 内未收到完整响应（网关或上游过慢、无响应）。请查 Secret 的 OPENAI_API_KEY、OPENAI_BASE_URL、代理与出站；可调环境变量 KUBEBT_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC。详情：%s",
+		return fmt.Sprintf("【超时】约 %ds 内未收到完整响应（网关或上游过慢、无响应）。请查 Secret 的 OPENAI_API_KEY、OPENAI_BASE_URL、代理与出站；可调环境变量 EASYPANEL_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC。详情：%s",
 			sec, truncateErrMessage(msg, 260))
 	}
 	if strings.Contains(low, "connection refused") || strings.Contains(low, "no such host") {

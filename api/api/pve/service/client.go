@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net/url"
 
-	pvemodel "kube-bt-sync/api/pve/model"
-	pveprovider "kube-bt-sync/api/pve/provider"
+	pvemodel "github.com/ops-easy/EasyPanel/api/api/pve/model"
+	pveprovider "github.com/ops-easy/EasyPanel/api/api/pve/provider"
 )
 
 type pveAPIClient = pveprovider.Client

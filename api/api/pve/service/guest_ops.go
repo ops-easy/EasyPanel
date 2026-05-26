@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	sharedaudit "kube-bt-sync/common/audit"
+	sharedaudit "github.com/ops-easy/EasyPanel/api/common/audit"
 
 	"github.com/gin-gonic/gin"
 )

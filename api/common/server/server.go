@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"kube-bt-sync/common/appctx"
-	apirouter "kube-bt-sync/router"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	apirouter "github.com/ops-easy/EasyPanel/api/router"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,7 +28,7 @@ func Start(ctx context.Context, app *appctx.ServerApp) {
 		WriteTimeout:      5 * time.Minute,
 	}
 
-	log.Printf("kube-bt-sync Dashboard started on %s", addr)
+	log.Printf("easypanel Dashboard started on %s", addr)
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- srv.ListenAndServe()

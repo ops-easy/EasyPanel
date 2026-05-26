@@ -1,5 +1,5 @@
 apiVersion: v2
-name: kube-bt-sync
+name: easypanel
 description: K8s Ingress 与宝塔面板同步，内置 Web 控制台
 type: application
 version: 0.2.0
@@ -9,4 +9,4 @@ keywords:
   - ingress
   - baota
 maintainers:
-  - name: kube-bt-sync
+  - name: easypanel

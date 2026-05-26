@@ -8,20 +8,20 @@ import (
 	"testing"
 )
 
-func TestLoadConfigReadsAutoOpsStyleConfigFile(t *testing.T) {
+func TestLoadConfigReadsStructuredConfigFile(t *testing.T) {
 	clearConfigEnv(t)
 	configPath := filepath.Join(t.TempDir(), "config.yaml")
 	if err := os.WriteFile(configPath, []byte(`
 server:
   address: 0.0.0.0:18080
-  publicUrl: https://kubebt.example.com
+  publicUrl: https://easypanel.example.com
   serveFrontend: true
 db:
   dialects: mysql
   host: db.example.internal
   port: 3307
-  db: kube_bt_sync
-  username: kubebt
+  db: easypanel
+  username: easypanel
   password: db-secret
   charset: utf8mb4
 redis:
@@ -34,25 +34,25 @@ startup:
 `), 0600); err != nil {
 		t.Fatalf("write config file: %v", err)
 	}
-	t.Setenv("KUBEBT_CONFIG_FILE", configPath)
+	t.Setenv("EASYPANEL_CONFIG_FILE", configPath)
 
 	cfg := LoadConfig()
 
 	if cfg.DashboardListenAddr != "0.0.0.0:18080" {
 		t.Fatalf("DashboardListenAddr = %q", cfg.DashboardListenAddr)
 	}
-	if cfg.PlatformPublicURL != "https://kubebt.example.com" {
+	if cfg.PlatformPublicURL != "https://easypanel.example.com" {
 		t.Fatalf("PlatformPublicURL = %q", cfg.PlatformPublicURL)
 	}
 	if !cfg.ServeFrontend {
 		t.Fatalf("ServeFrontend = false, want true")
 	}
 	if cfg.MySQLHost != "db.example.internal" || cfg.MySQLPort != 3307 ||
-		cfg.MySQLDatabase != "kube_bt_sync" || cfg.MySQLUser != "kubebt" ||
+		cfg.MySQLDatabase != "easypanel" || cfg.MySQLUser != "easypanel" ||
 		cfg.MySQLPassword != "db-secret" {
 		t.Fatalf("MySQL fields not loaded: %#v", cfg)
 	}
-	if !strings.Contains(cfg.MySQLDSN, "kubebt:db-secret@tcp(db.example.internal:3307)/kube_bt_sync") {
+	if !strings.Contains(cfg.MySQLDSN, "easypanel:db-secret@tcp(db.example.internal:3307)/easypanel") {
 		t.Fatalf("MySQLDSN = %q", cfg.MySQLDSN)
 	}
 	if cfg.RedisAddr != "redis.example.internal:6380" || cfg.RedisPassword != "redis-secret" || cfg.RedisDB != 2 {
@@ -80,7 +80,7 @@ redis:
 `), 0600); err != nil {
 		t.Fatalf("write config file: %v", err)
 	}
-	t.Setenv("KUBEBT_CONFIG_FILE", configPath)
+	t.Setenv("EASYPANEL_CONFIG_FILE", configPath)
 	t.Setenv("DASHBOARD_HTTP_ADDR", ":19090")
 	t.Setenv("MYSQL_HOST", "db.from.env")
 	t.Setenv("REDIS_ADDR", "redis.from.env:6379")
@@ -132,14 +132,14 @@ sync:
   ddnsHost: ddns.example.com
   defaultPort: "30080"
 platform:
-  publicUrl: https://kubebt.example.com
-  displayName: Kube BT
-  assetsCdnBaseUrl: https://cdn.example.com/kubebt/
+  publicUrl: https://easypanel.example.com
+  displayName: EasyPanel
+  assetsCdnBaseUrl: https://cdn.example.com/easypanel/
 oidc:
   issuerUrl: https://idp.example.com
-  clientId: kubebt
+  clientId: easypanel
   clientSecret: oidc-secret
-  redirectUrl: https://kubebt.example.com/callback
+  redirectUrl: https://easypanel.example.com/callback
   scopes: openid profile email groups
   skipIssuerCheck: true
   skipClientIdCheck: true
@@ -181,8 +181,8 @@ redis:
 db:
   host: mysql.full.example.com
   port: 3307
-  db: kubebt_full
-  username: kubebt_user
+  db: easypanel_full
+  username: easypanel_user
   password: mysql-secret
 ingress:
   baotaSyncEnabled: true
@@ -206,7 +206,7 @@ k8s:
 `), 0600); err != nil {
 		t.Fatalf("write config file: %v", err)
 	}
-	t.Setenv("KUBEBT_CONFIG_FILE", configPath)
+	t.Setenv("EASYPANEL_CONFIG_FILE", configPath)
 
 	cfg := LoadConfig()
 
@@ -216,7 +216,7 @@ k8s:
 	if cfg.DDNSHost != "ddns.example.com" || cfg.DefaultPort != "30080" {
 		t.Fatalf("sync config not loaded: %#v", cfg)
 	}
-	if cfg.PlatformDisplayName != "Kube BT" || cfg.AssetsCDNBaseURL != "https://cdn.example.com/kubebt" {
+	if cfg.PlatformDisplayName != "EasyPanel" || cfg.AssetsCDNBaseURL != "https://cdn.example.com/easypanel" {
 		t.Fatalf("platform config not loaded: %#v", cfg)
 	}
 	if cfg.OIDCIssuerURL != "https://idp.example.com" || cfg.OIDCClockSkewSec != 60 {
@@ -234,7 +234,7 @@ k8s:
 	if cfg.RedisK8sStorageClass != "fast" || cfg.RedisK8sPersistenceEnabled {
 		t.Fatalf("redis k8s config not loaded: %#v", cfg)
 	}
-	if cfg.MySQLHost != "mysql.full.example.com" || cfg.MySQLDatabase != "kubebt_full" {
+	if cfg.MySQLHost != "mysql.full.example.com" || cfg.MySQLDatabase != "easypanel_full" {
 		t.Fatalf("mysql config not loaded: %#v", cfg)
 	}
 	if !cfg.IngressBaotaSyncEnabled || cfg.IngressNginxHostHTTPSPort != 8443 {
@@ -289,9 +289,9 @@ runtime:
   dashboardCookieSecure: true
   dashboardListenAddr: "0.0.0.0:18888"
   oidcIssuerUrl: https://idp.example.com
-  oidcClientId: kubebt
+  oidcClientId: easypanel
   oidcClientSecret: oidc-secret
-  oidcRedirectUrl: https://kubebt.example.com/callback
+  oidcRedirectUrl: https://easypanel.example.com/callback
   oidcScopes: openid profile email groups
   oidcSkipIssuerCheck: true
   oidcSkipClientIdCheck: true
@@ -335,7 +335,7 @@ runtime:
   redisAddr: "redis.full.example.com:6380"
   redisPassword: redis-secret
   redisDb: 3
-  redisKeyPrefix: "kubebt:"
+  redisKeyPrefix: "easypanel:"
   redisMode: sentinel
   redisHost: redis-host.example.com
   redisPort: 6381
@@ -351,15 +351,15 @@ runtime:
   redisK8sStorageClass: fast
   mysqlHost: mysql.full.example.com
   mysqlPort: 3307
-  mysqlDatabase: kubebt_full
-  mysqlUser: kubebt_user
+  mysqlDatabase: easypanel_full
+  mysqlUser: easypanel_user
   mysqlPassword: mysql-secret
   sshSettingsDir: /data/ssh-vm
-  platformPublicUrl: https://kubebt.example.com
-  platformDisplayName: Kube BT
+  platformPublicUrl: https://easypanel.example.com
+  platformDisplayName: EasyPanel
   platformLogoUrl: /logo.png
   platformFaviconUrl: /favicon.ico
-  assetsCdnBaseUrl: https://cdn.example.com/kubebt/
+  assetsCdnBaseUrl: https://cdn.example.com/easypanel/
   sshTerminalFontFamily: JetBrains Mono
   sshTerminalFontSize: 16
   ingressBaotaSyncEnabled: true
@@ -384,7 +384,7 @@ runtime:
 `), 0600); err != nil {
 		t.Fatalf("write config file: %v", err)
 	}
-	t.Setenv("KUBEBT_CONFIG_FILE", configPath)
+	t.Setenv("EASYPANEL_CONFIG_FILE", configPath)
 
 	cfg := LoadConfig()
 
@@ -412,10 +412,10 @@ runtime:
 	if cfg.RedisImageRegistry != "harbor.example.com/redis" || cfg.RedisK8sStorageClass != "fast" || cfg.RedisK8sPersistenceEnabled {
 		t.Fatalf("redis image config not loaded: %#v", cfg)
 	}
-	if cfg.MySQLHost != "mysql.full.example.com" || cfg.MySQLDatabase != "kubebt_full" {
+	if cfg.MySQLHost != "mysql.full.example.com" || cfg.MySQLDatabase != "easypanel_full" {
 		t.Fatalf("mysql config not loaded: %#v", cfg)
 	}
-	if cfg.PlatformDisplayName != "Kube BT" || cfg.AssetsCDNBaseURL != "https://cdn.example.com/kubebt" {
+	if cfg.PlatformDisplayName != "EasyPanel" || cfg.AssetsCDNBaseURL != "https://cdn.example.com/easypanel" {
 		t.Fatalf("platform config not loaded: %#v", cfg)
 	}
 	if !cfg.IngressBaotaSyncEnabled || cfg.IngressNginxHostHTTPSPort != 8443 {
@@ -444,7 +444,7 @@ server:
 `), 0600); err != nil {
 		t.Fatalf("write config file: %v", err)
 	}
-	t.Setenv("KUBEBT_CONFIG_FILE", configPath)
+	t.Setenv("EASYPANEL_CONFIG_FILE", configPath)
 	dataDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dataDir, "runtime-config.json"), []byte(`{
   "version": 1,
@@ -561,7 +561,7 @@ server:
 db:
   host: mysql.static.example.com
   port: 3306
-  db: kubebt_static
+  db: easypanel_static
   username: static_user
   password: static-db-secret
 redis:
@@ -581,7 +581,7 @@ redis:
 		DashboardListenAddr:     "0.0.0.0:18080",
 		MySQLHost:               "mysql.dynamic.example.com",
 		MySQLPort:               3308,
-		MySQLDatabase:           "kubebt_dynamic",
+		MySQLDatabase:           "easypanel_dynamic",
 		MySQLUser:               "dynamic_user",
 		MySQLPassword:           "dynamic-db-secret",
 		RedisAddr:               "redis.dynamic.example.com:6380",
@@ -612,7 +612,7 @@ redis:
 	if err != nil {
 		t.Fatalf("render dynamic config yaml: %v", err)
 	}
-	t.Setenv("KUBEBT_CONFIG_FILE", configPath)
+	t.Setenv("EASYPANEL_CONFIG_FILE", configPath)
 
 	cfg := LoadConfig()
 	applyConfigYAMLBytes(&cfg, dynamicRaw, "MySQL 动态配置")
@@ -621,7 +621,7 @@ redis:
 	if cfg.BaotaURL != "https://bt.dynamic.example.com" || cfg.BaotaAPIKey != "dynamic-baota-secret" {
 		t.Fatalf("baota dynamic config not loaded: %#v", cfg)
 	}
-	if cfg.MySQLHost != "mysql.static.example.com" || cfg.MySQLDatabase != "kubebt_static" {
+	if cfg.MySQLHost != "mysql.static.example.com" || cfg.MySQLDatabase != "easypanel_static" {
 		t.Fatalf("mysql bootstrap config should stay static: %#v", cfg)
 	}
 	if cfg.RedisAddr != "redis.dynamic.example.com:6380" || cfg.RedisDB != 4 {
@@ -642,8 +642,8 @@ func TestMySQLDynamicConfigYAMLSkipsEnvironmentAndBootstrapDBFields(t *testing.T
 		DashboardPassword: "initial-secret",
 		MySQLHost:         "mysql.dynamic.example.com",
 		MySQLPort:         3306,
-		MySQLDatabase:     "kubebt",
-		MySQLUser:         "kubebt",
+		MySQLDatabase:     "easypanel",
+		MySQLUser:         "easypanel",
 		MySQLPassword:     "env-db-secret",
 	}
 
@@ -654,7 +654,7 @@ func TestMySQLDynamicConfigYAMLSkipsEnvironmentAndBootstrapDBFields(t *testing.T
 	if strings.Contains(string(raw), "env-db-secret") {
 		t.Fatalf("dynamic config persisted environment-managed secret:\n%s", string(raw))
 	}
-	if strings.Contains(string(raw), "mysql.dynamic.example.com") || strings.Contains(string(raw), "kubebt") {
+	if strings.Contains(string(raw), "mysql.dynamic.example.com") || strings.Contains(string(raw), "easypanel") {
 		t.Fatalf("dynamic config persisted MySQL bootstrap fields:\n%s", string(raw))
 	}
 	if strings.Contains(string(raw), "initial-secret") || strings.Contains(string(raw), "dashboard") {
@@ -665,7 +665,7 @@ func TestMySQLDynamicConfigYAMLSkipsEnvironmentAndBootstrapDBFields(t *testing.T
 func clearConfigEnv(t *testing.T) {
 	t.Helper()
 	for _, key := range []string{
-		"KUBEBT_CONFIG_FILE",
+		"EASYPANEL_CONFIG_FILE",
 		"DASHBOARD_HTTP_ADDR",
 		"PLATFORM_PUBLIC_URL",
 		"DASHBOARD_SERVE_FRONTEND",
@@ -680,7 +680,7 @@ func clearConfigEnv(t *testing.T) {
 		"REDIS_DB",
 		"REDIS_HOST",
 		"REDIS_PORT",
-		"KUBEBT_ENABLE_BACKGROUND_JOBS",
+		"EASYPANEL_ENABLE_BACKGROUND_JOBS",
 	} {
 		key := key
 		old, had := os.LookupEnv(key)

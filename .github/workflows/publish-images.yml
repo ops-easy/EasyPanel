@@ -23,13 +23,13 @@ jobs:
       matrix:
         include:
           - name: backend
-            image: kube-bt-sync
+            image: easypanel-api
             context: .
             file: ./api/Dockerfile
             build_args: |
               BUILD_VERSION=${{ github.sha }}
           - name: frontend
-            image: kube-bt-sync-web
+            image: easypanel-web
             context: ./web
             file: ./web/Dockerfile
             build_args: ""

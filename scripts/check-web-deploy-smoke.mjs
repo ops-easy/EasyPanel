@@ -16,7 +16,7 @@ const helmNginxConfigPath = path.join(
   repoRoot,
   "k8s",
   "charts",
-  "kube-bt-sync",
+  "easypanel",
   "templates",
   "frontend-configmap.yaml",
 );

@@ -119,7 +119,7 @@ func handlePutVCenterVMSSHSettings(c *gin.Context, cfg Config, store SSHSettings
 	}
 	key, err := sshEncryptionKey(cfg)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "KUBEBT_ENCRYPTION_KEY: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "EASYPANEL_ENCRYPTION_KEY: " + err.Error()})
 		return
 	}
 	moref := strings.TrimSpace(c.Param("moref"))

@@ -1,8 +1,8 @@
 package provider
 
 import (
-	"kube-bt-sync/common/appctx"
-	core "kube-bt-sync/common/core"
+	"github.com/ops-easy/EasyPanel/api/common/appctx"
+	core "github.com/ops-easy/EasyPanel/api/common/core"
 )
 
 func GetPrometheusURLForScope(cfg appctx.Config, scope string) string {

@@ -17,7 +17,7 @@ import {
 } from "@/shared/ui/sheet";
 import { Textarea } from "@/shared/ui/textarea";
 
-const AI_CHAT_STORAGE_KEY = "kubebt-ai-chat:v1";
+const AI_CHAT_STORAGE_KEY = "easypanel-ai-chat:v1";
 
 type AIChatMessage = {
   role: "user" | "assistant";

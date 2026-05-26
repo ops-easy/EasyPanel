@@ -146,7 +146,7 @@ func persistCloudHostSSHIfAny(ctx context.Context, app *ServerApp, host CloudHos
 	}
 	store := app.SSHStore()
 	if store == nil {
-		return fmt.Errorf("未启用 SSH 存储，无法保存密码或私钥（请配置 SSH_SETTINGS_BACKEND 与 KUBEBT_ENCRYPTION_KEY）")
+		return fmt.Errorf("未启用 SSH 存储，无法保存密码或私钥（请配置 SSH_SETTINGS_BACKEND 与 EASYPANEL_ENCRYPTION_KEY）")
 	}
 	key, err := sshEncryptionKey(app.Cfg())
 	if err != nil {
@@ -204,7 +204,7 @@ func handleCloudHostsCreate(c *gin.Context, app *ServerApp) {
 	}
 	cloudKey := cloudHostSSHStorageKey(h.ID)
 	if !cloudHostSSHCanDial(ctx, cfg, store, cloudKey, key, &h, body.SSHPassword, body.SSHPrivateKeyPEM) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无法校验 SSH：新增主机须填写「SSH 密码」或「私钥 PEM」；或在运行时配置中设置全局 VCENTER_VM_SSH_USER 及密码或私钥路径。仅配置 KUBEBT_ENCRYPTION_KEY/SSH 存储不会自动提供登录凭据。"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无法校验 SSH：新增主机须填写「SSH 密码」或「私钥 PEM」；或在运行时配置中设置全局 VCENTER_VM_SSH_USER 及密码或私钥路径。仅配置 EASYPANEL_ENCRYPTION_KEY/SSH 存储不会自动提供登录凭据。"})
 		return
 	}
 	if err := trySSHDialCloudHost(ctx, cfg, store, cloudKey, key, &h, body.SSHPassword, body.SSHPrivateKeyPEM); err != nil {
@@ -213,7 +213,7 @@ func handleCloudHostsCreate(c *gin.Context, app *ServerApp) {
 	}
 	if strings.TrimSpace(body.SSHPassword) != "" || strings.TrimSpace(body.SSHPrivateKeyPEM) != "" {
 		if _, err := sshEncryptionKey(cfg); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "保存 SSH 凭据需要 KUBEBT_ENCRYPTION_KEY: " + err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "保存 SSH 凭据需要 EASYPANEL_ENCRYPTION_KEY: " + err.Error()})
 			return
 		}
 		if store == nil {
@@ -300,7 +300,7 @@ func handleCloudHostsUpdate(c *gin.Context, app *ServerApp) {
 	}
 	if strings.TrimSpace(body.SSHPassword) != "" || strings.TrimSpace(body.SSHPrivateKeyPEM) != "" {
 		if _, err := sshEncryptionKey(cfg); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "保存 SSH 凭据需要 KUBEBT_ENCRYPTION_KEY: " + err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "保存 SSH 凭据需要 EASYPANEL_ENCRYPTION_KEY: " + err.Error()})
 			return
 		}
 		if store == nil {

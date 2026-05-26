@@ -247,7 +247,7 @@ const AppCenterHermesDetail: React.FC = () => {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-sm font-semibold text-slate-950">配置备注</h2>
-            <p className="mt-1 text-xs text-slate-500">写入实例 ConfigMap 的 KUBEBT_HERMES_NOTES 字段。</p>
+            <p className="mt-1 text-xs text-slate-500">写入实例 ConfigMap 的 EASYPANEL_HERMES_NOTES 字段。</p>
           </div>
           <Button size="sm" className="gap-1.5" onClick={() => saveFileMut.mutate()} disabled={!canWrite || saveFileMut.isPending}>
             <Save className="h-4 w-4" />

@@ -9,7 +9,7 @@ export type BuildK8sIngressYamlOpts = {
   enableBaotaSync: boolean;
   enableBaotaHttps: boolean;
   baotaSslCertName: string;
-  syncAnnotation: "i4t" | "kube-bt";
+  syncAnnotation: "i4t" | "easypanel";
   customDdnsPort: string;
   ddnsScheme: "http" | "https";
   /** 多宝塔实例 id */
@@ -43,26 +43,26 @@ spec:
   const syncKey =
     opts.syncAnnotation === "i4t"
       ? "i4t.com/baota-sync"
-      : "kube-bt-sync.io/baota-sync";
+      : "easypanel.io/baota-sync";
   const ddnsKube =
-    opts.syncAnnotation === "kube-bt" && opts.customDdnsPort.trim() !== ""
-      ? `    kube-bt-sync.io/ddns-port: "${opts.customDdnsPort.trim()}"\n`
+    opts.syncAnnotation === "easypanel" && opts.customDdnsPort.trim() !== ""
+      ? `    easypanel.io/ddns-port: "${opts.customDdnsPort.trim()}"\n`
       : "";
   const ddnsLegacy =
     opts.syncAnnotation === "i4t" && opts.customDdnsPort.trim() !== ""
       ? `    i4t.com/ddns-port: "${opts.customDdnsPort.trim()}"\n`
       : "";
   const ddnsSchemeKube =
-    opts.syncAnnotation === "kube-bt" && opts.ddnsScheme === "https"
-      ? '    kube-bt-sync.io/ddns-scheme: "https"\n'
+    opts.syncAnnotation === "easypanel" && opts.ddnsScheme === "https"
+      ? '    easypanel.io/ddns-scheme: "https"\n'
       : "";
   const ddnsSchemeLegacy =
     opts.syncAnnotation === "i4t" && opts.ddnsScheme === "https"
       ? '    i4t.com/ddns-scheme: "https"\n'
       : "";
   const httpsKube =
-    opts.syncAnnotation === "kube-bt" && opts.enableBaotaHttps
-      ? '    kube-bt-sync.io/baota-https: "true"\n'
+    opts.syncAnnotation === "easypanel" && opts.enableBaotaHttps
+      ? '    easypanel.io/baota-https: "true"\n'
       : "";
   const httpsLegacy =
     opts.syncAnnotation === "i4t" && opts.enableBaotaHttps
@@ -71,8 +71,8 @@ spec:
   const certName = opts.baotaSslCertName.trim();
   const useCertName = opts.enableBaotaHttps && certName !== "";
   const certKube =
-    opts.syncAnnotation === "kube-bt" && useCertName
-      ? `    kube-bt-sync.io/baota-ssl-cert-name: "${certName}"\n`
+    opts.syncAnnotation === "easypanel" && useCertName
+      ? `    easypanel.io/baota-ssl-cert-name: "${certName}"\n`
       : "";
   const certLegacy =
     opts.syncAnnotation === "i4t" && useCertName
@@ -80,8 +80,8 @@ spec:
       : "";
   const tid = (opts.baotaTargetId ?? "").trim().replace(/"/g, "");
   const targetKube =
-    tid !== "" && opts.syncAnnotation === "kube-bt"
-      ? `    kube-bt-sync.io/baota-target: "${tid}"\n`
+    tid !== "" && opts.syncAnnotation === "easypanel"
+      ? `    easypanel.io/baota-target: "${tid}"\n`
       : "";
   const targetLegacy =
     tid !== "" && opts.syncAnnotation === "i4t" ? `    i4t.com/baota-target: "${tid}"\n` : "";
@@ -117,10 +117,10 @@ metadata:
   namespace: ${namespace}
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    kube-bt-sync.io/baota-sync: "true"
+    easypanel.io/baota-sync: "true"
     # 可选：只为这一条 Ingress 覆盖宝塔回源协议/端口；不写则使用宝塔设置里的 ddnsHost + defaultPort。
-    # kube-bt-sync.io/ddns-scheme: "https"
-    # kube-bt-sync.io/ddns-port: "30443"
+    # easypanel.io/ddns-scheme: "https"
+    # easypanel.io/ddns-port: "30443"
 spec:
   ingressClassName: nginx
   rules:

@@ -16,7 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const dashboardPermissionTestDriverName = "kubebt_dashboard_permission_test"
+const dashboardPermissionTestDriverName = "easypanel_dashboard_permission_test"
 
 var dashboardPermissionTestState = struct {
 	sync.Mutex
@@ -48,7 +48,7 @@ func (dashboardPermissionTestConn) Begin() (driver.Tx, error) {
 }
 
 func (dashboardPermissionTestConn) QueryContext(_ context.Context, query string, _ []driver.NamedValue) (driver.Rows, error) {
-	if !strings.Contains(query, "SELECT permissions_json FROM kubebt_dashboard_users") {
+	if !strings.Contains(query, "SELECT permissions_json FROM easypanel_dashboard_users") {
 		return nil, errors.New("unexpected query")
 	}
 	dashboardPermissionTestState.Lock()

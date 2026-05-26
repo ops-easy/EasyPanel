@@ -5,14 +5,14 @@ import (
 	"errors"
 	"strings"
 
-	pvemodel "kube-bt-sync/api/pve/model"
-	sharedcrypto "kube-bt-sync/common/crypto"
-	"kube-bt-sync/pkg/platformkv"
+	pvemodel "github.com/ops-easy/EasyPanel/api/api/pve/model"
+	sharedcrypto "github.com/ops-easy/EasyPanel/api/common/crypto"
+	"github.com/ops-easy/EasyPanel/api/pkg/platformkv"
 
 	"github.com/google/uuid"
 )
 
-const KVKeyTargets = "kubebt_pve_targets_v1"
+const KVKeyTargets = "easypanel_pve_targets_v1"
 
 const (
 	AuthMethodPassword = "password"

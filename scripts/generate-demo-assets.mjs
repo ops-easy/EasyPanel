@@ -16,7 +16,7 @@ const screenshotHeight = 1080;
 const data = {
   product: "EasyPanel",
   generatedBy: "scripts/generate-demo-assets.mjs",
-  seed: "easy-panel-open-source-demo-v2",
+  seed: "easypanel-open-source-demo-v2",
   generatedAt: "2026-05-26T00:00:00+08:00",
   clusters: [
     { name: "homelab-prod", provider: "Kubernetes", region: "Shanghai home lab", nodes: 8, pods: 246, cpu: 63, memory: 71, status: "healthy" },

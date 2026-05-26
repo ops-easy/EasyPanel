@@ -35,9 +35,9 @@ type ServerApp struct {
 	runtime         *RuntimeSettings
 }
 
-// DataDirFromEnv 仅数据目录可走环境变量（K8s 挂载 PVC 时常用 KUBEBT_DATA_DIR=/data）。
+// DataDirFromEnv 仅数据目录可走环境变量（K8s 挂载 PVC 时常用 EASYPANEL_DATA_DIR=/data）。
 func DataDirFromEnv() string {
-	d := strings.TrimSpace(os.Getenv("KUBEBT_DATA_DIR"))
+	d := strings.TrimSpace(os.Getenv("EASYPANEL_DATA_DIR"))
 	if d == "" {
 		return "./data"
 	}
@@ -136,7 +136,7 @@ func (s *ServerApp) Reload() error {
 				_ = db.Close()
 				return fmt.Errorf("MySQL 初始化管理员失败: %w", err)
 			} else if created {
-				log.Printf("MySQL: 已创建初始控制台管理员 %q，后续密码以 kubebt_dashboard_users 为准", strings.TrimSpace(cfg.DashboardUser))
+				log.Printf("MySQL: 已创建初始控制台管理员 %q，后续密码以 easypanel_dashboard_users 为准", strings.TrimSpace(cfg.DashboardUser))
 				if strings.TrimSpace(cfg.DashboardPassword) == defaultDashboardPassword {
 					log.Println(">>> 安全提示：已使用默认初始密码 admin 创建管理员；生产或公网暴露前请登录后立即修改密码")
 				}

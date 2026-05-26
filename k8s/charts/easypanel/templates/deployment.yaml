@@ -15,26 +15,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "kube-bt-sync.fullname" . }}
+  name: {{ include "easypanel.fullname" . }}
   labels:
-    {{- include "kube-bt-sync.labels" . | nindent 4 }}
+    {{- include "easypanel.labels" . | nindent 4 }}
 spec:
   replicas: {{ default ($backend.replicaCount | default 1) .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "kube-bt-sync.selectorLabels" . | nindent 6 }}
+      {{- include "easypanel.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "kube-bt-sync.selectorLabels" . | nindent 8 }}
+        {{- include "easypanel.selectorLabels" . | nindent 8 }}
     spec:
       {{- with $podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "kube-bt-sync.serviceAccountName" . }}
+      serviceAccountName: {{ include "easypanel.serviceAccountName" . }}
       containers:
-        - name: kube-bt-sync
+        - name: easypanel
           image: "{{ default $backendImage.repository $legacyImage.repository }}:{{ default ($backendImage.tag | default "latest") $legacyImage.tag }}"
           imagePullPolicy: {{ default ($backendImage.pullPolicy | default "IfNotPresent") $legacyImage.pullPolicy }}
           ports:
@@ -82,14 +82,14 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: {{ include "kube-bt-sync.fullname" . }}-config
+            name: {{ include "easypanel.fullname" . }}-config
             items:
               - key: config.yaml
                 path: config.yaml
         - name: data
           {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
-            claimName: {{ include "kube-bt-sync.fullname" . }}-data
+            claimName: {{ include "easypanel.fullname" . }}-data
           {{- else }}
           emptyDir: {}
           {{- end }}
