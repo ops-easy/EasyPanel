@@ -13,8 +13,10 @@ test("Markdown editor uses the local limited highlight plugin", () => {
   assert.equal(plugin.includes('import hljs from "highlight.js"'), false);
 });
 
-test("built markdown assets do not include the full highlight.js entry", { skip: !existsSync(new URL("../dist", import.meta.url)) }, () => {
-  const assetsDir = new URL("../dist/assets/", import.meta.url);
+const builtAssetsDir = new URL("../dist/assets/", import.meta.url);
+
+test("built markdown assets do not include the full highlight.js entry", { skip: !existsSync(builtAssetsDir) }, () => {
+  const assetsDir = builtAssetsDir;
   const jsAssets = readdirSync(assetsDir).filter((name) => name.endsWith(".js"));
   const combined = jsAssets.map((name) => readFileSync(new URL(name, assetsDir), "utf8")).join("\n");
 

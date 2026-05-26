@@ -10,7 +10,7 @@
     "check:bundle": "node ../scripts/check-web-bundle-budget.mjs",
     "check:deploy": "node ../scripts/check-web-deploy-smoke.mjs",
     "check:text": "node --test tests/compute-network-text-encoding.test.mjs",
-    "check": "npm run lint && npm run check:api && npm run test && npm run build && npm run check:bundle && npm run check:deploy",
+    "check": "npm run lint && npm run check:api && npm run build && npm run test && npm run check:bundle && npm run check:deploy",
     "dev": "vite",
     "lint": "eslint .",
     "preview": "vite preview",

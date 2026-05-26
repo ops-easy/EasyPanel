@@ -4,6 +4,28 @@ EasyPanel 是面向自建 Kubernetes、Homelab 与小型私有云环境的运维
 
 当前仓库计划作为新项目发布到 `https://github.com/ops-easy/EasyPanel.git`。文档、部署清单和镜像发布流程均以这个新仓库作为默认上下文。
 
+![EasyPanel 工作台演示](./docs/demo/assets/easypanel-dashboard.png)
+
+## 界面预览
+
+以下截图由脚本启动真实 Vite 前端、在浏览器测试上下文中 mock `/api/*` 演示数据后截取，不包含真实基础设施、账号或业务信息。
+
+| Kubernetes 资源中心 | 应用中心 |
+| --- | --- |
+| ![EasyPanel Kubernetes 资源演示](./docs/demo/assets/easypanel-kubernetes.png) | ![EasyPanel 应用中心演示](./docs/demo/assets/easypanel-app-center.png) |
+
+| Ingress 同步 |
+| --- |
+| ![EasyPanel Ingress 同步演示](./docs/demo/assets/easypanel-ingress.png) |
+
+## 演示数据
+
+演示截图使用 [自动生成演示数据](./docs/demo/demo-data.json) 生成，覆盖集群、命名空间、应用实例、Ingress、告警和审计记录等典型场景。需要刷新截图时可运行：
+
+```bash
+node scripts/generate-demo-assets.mjs
+```
+
 ## 核心能力
 
 | 模块 | 说明 |
@@ -234,6 +256,7 @@ metadata:
 ## 文档索引
 
 - [Kubernetes 部署说明](./k8s/README.md)
+- [演示数据与截图](./docs/demo/README.md)
 - [MetalLB 与 ingress-nginx 说明](./docs/kubernetes-metallb-ingress-nginx.md)
 - [Kubernetes Dashboard 与 Prometheus 对接](./docs/kubernetes-dashboard-prometheus.md)
 - [全局 AI 对话助手](./docs/ai-chat-assistant.md)

@@ -1,0 +1,197 @@
+{
+  "product": "EasyPanel",
+  "generatedBy": "scripts/generate-demo-assets.mjs",
+  "seed": "easy-panel-open-source-demo-v2",
+  "generatedAt": "2026-05-26T00:00:00+08:00",
+  "clusters": [
+    {
+      "name": "homelab-prod",
+      "provider": "Kubernetes",
+      "region": "Shanghai home lab",
+      "nodes": 8,
+      "pods": 246,
+      "cpu": 63,
+      "memory": 71,
+      "status": "healthy"
+    },
+    {
+      "name": "edge-office",
+      "provider": "K3s",
+      "region": "Office edge",
+      "nodes": 3,
+      "pods": 74,
+      "cpu": 42,
+      "memory": 58,
+      "status": "healthy"
+    },
+    {
+      "name": "lab-gpu",
+      "provider": "PVE + Kubernetes",
+      "region": "GPU lab",
+      "nodes": 5,
+      "pods": 118,
+      "cpu": 77,
+      "memory": 68,
+      "status": "watch"
+    }
+  ],
+  "namespaces": [
+    {
+      "name": "easy",
+      "workloads": 12,
+      "pods": 24,
+      "restarts": 0,
+      "traffic": "1.8 TB",
+      "owner": "platform"
+    },
+    {
+      "name": "app-prod",
+      "workloads": 38,
+      "pods": 132,
+      "restarts": 2,
+      "traffic": "8.4 TB",
+      "owner": "application"
+    },
+    {
+      "name": "observability",
+      "workloads": 16,
+      "pods": 42,
+      "restarts": 1,
+      "traffic": "3.1 TB",
+      "owner": "sre"
+    },
+    {
+      "name": "ingress-nginx",
+      "workloads": 5,
+      "pods": 12,
+      "restarts": 0,
+      "traffic": "12.6 TB",
+      "owner": "network"
+    }
+  ],
+  "applications": [
+    {
+      "name": "Redis",
+      "module": "cache",
+      "instances": 6,
+      "version": "7.2",
+      "health": 99.98,
+      "qps": "18.4k",
+      "namespace": "easy"
+    },
+    {
+      "name": "Kafka",
+      "module": "stream",
+      "instances": 3,
+      "version": "3.8",
+      "health": 99.95,
+      "qps": "42 MB/s",
+      "namespace": "app-prod"
+    },
+    {
+      "name": "OpenSearch",
+      "module": "search",
+      "instances": 4,
+      "version": "2.15",
+      "health": 99.91,
+      "qps": "7.8k",
+      "namespace": "observability"
+    },
+    {
+      "name": "OpenClaw",
+      "module": "ai gateway",
+      "instances": 2,
+      "version": "0.9",
+      "health": 99.7,
+      "qps": "320 req/min",
+      "namespace": "easy"
+    },
+    {
+      "name": "MySQL",
+      "module": "database",
+      "instances": 5,
+      "version": "8.4",
+      "health": 99.99,
+      "qps": "6.2k",
+      "namespace": "app-prod"
+    },
+    {
+      "name": "Cloud VM",
+      "module": "compute",
+      "instances": 9,
+      "version": "mixed",
+      "health": 99.82,
+      "qps": "38 jobs/h",
+      "namespace": "compute"
+    }
+  ],
+  "ingresses": [
+    {
+      "host": "console.easypanel.dev",
+      "tls": true,
+      "upstream": "10.0.8.12:32080",
+      "provider": "Baota",
+      "namespace": "easy"
+    },
+    {
+      "host": "logs.easypanel.dev",
+      "tls": true,
+      "upstream": "10.0.8.21:3100",
+      "provider": "ingress-nginx",
+      "namespace": "observability"
+    },
+    {
+      "host": "search.easypanel.dev",
+      "tls": true,
+      "upstream": "10.0.8.32:9200",
+      "provider": "Baota",
+      "namespace": "app-prod"
+    }
+  ],
+  "alerts": [
+    {
+      "level": "P1",
+      "title": "lab-gpu CPU pressure",
+      "owner": "platform",
+      "status": "triaged"
+    },
+    {
+      "level": "P2",
+      "title": "OpenSearch disk watermark",
+      "owner": "app-center",
+      "status": "watching"
+    },
+    {
+      "level": "P3",
+      "title": "Redis failover rehearsal due",
+      "owner": "sre",
+      "status": "scheduled"
+    }
+  ],
+  "auditTrail": [
+    {
+      "actor": "admin",
+      "action": "updated OIDC provider",
+      "target": "account settings",
+      "at": "10:12"
+    },
+    {
+      "actor": "sre-bot",
+      "action": "rotated SSH credential",
+      "target": "edge-office",
+      "at": "10:18"
+    },
+    {
+      "actor": "ops",
+      "action": "patched Deployment replicas",
+      "target": "app-prod/api",
+      "at": "10:34"
+    },
+    {
+      "actor": "admin",
+      "action": "published Markdown guide",
+      "target": "docs/runbook",
+      "at": "10:48"
+    }
+  ]
+}
