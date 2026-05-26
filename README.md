@@ -274,10 +274,17 @@ metadata:
 - [贡献指南](./CONTRIBUTING.md)
 - [安全策略](./SECURITY.md)
 - [行为准则](./CODE_OF_CONDUCT.md)
+- [项目来源与 NOTICE](./NOTICE)
 
-## 许可证
+## 项目来源与许可证
 
-本项目使用 [MIT License](./LICENSE)。
+EasyPanel 的早期项目来源为 abcdocker 的原始仓库：
+
+https://github.com/abcdocker/kube-bt-sync
+
+当前项目已经以 EasyPanel 的名称继续维护，并围绕 Kubernetes、应用中心、堡垒机、监控日志、文档中心和多模块运维控制台做了持续扩展。项目来源、版权说明和第三方依赖声明见 [NOTICE](./NOTICE)。
+
+EasyPanel 以 [MIT License](./LICENSE) 开源发布。提交贡献即表示相关内容按 MIT License 授权；项目使用的 Go / npm 第三方依赖仍遵循各自的开源协议，依赖清单以 `api/go.mod`、`api/go.sum`、`web/package.json` 和 `web/package-lock.json` 为准。
 
 ## 免责声明
 

@@ -11,8 +11,10 @@ const legacyShortName = ["kube", "bt"].join("-");
 const legacyEnvPrefix = ["KUBE", "BT_"].join("");
 const legacyCompactName = ["kube", "bt"].join("");
 const legacyAncestorName = ["Auto", "Ops"].join("");
+const upstreamRepositoryURL = `https://github.com/abcdocker/${legacyKubeName}`;
 
 const read = (path) => readFileSync(resolve(root, path), "utf8");
+const stripAllowedAttribution = (source) => source.replaceAll(upstreamRepositoryURL, "");
 const trackedFiles = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" })
   .split(/\r?\n/)
   .filter(Boolean);
@@ -24,6 +26,7 @@ const publicTextFiles = [
   "SECURITY.md",
   "CODE_OF_CONDUCT.md",
   "LICENSE",
+  "NOTICE",
   "makefile",
   "api/Dockerfile",
   "api/go.mod",
@@ -40,7 +43,7 @@ const publicTextFiles = [
 
 test("public project naming is consistently EasyPanel", () => {
   for (const file of publicTextFiles) {
-    const source = read(file);
+    const source = stripAllowedAttribution(read(file));
     assert.doesNotMatch(source, new RegExp(`\\b${legacyKubeName}\\b`, "i"), file);
     assert.doesNotMatch(source, new RegExp(`\\b${legacyShortName}\\b`, "i"), file);
     assert.doesNotMatch(source, new RegExp(`\\b${legacyEnvPrefix}`, "i"), file);
@@ -49,11 +52,23 @@ test("public project naming is consistently EasyPanel", () => {
   }
 });
 
+test("README and NOTICE document project origin and licensing", () => {
+  assert.match(read("README.md"), new RegExp(upstreamRepositoryURL.replaceAll("/", "\\/")));
+  assert.match(read("README.md"), /\[MIT License\]\(\.\/LICENSE\)/);
+  assert.match(read("README.md"), /\[NOTICE\]\(\.\/NOTICE\)/);
+  assert.match(read("NOTICE"), new RegExp(upstreamRepositoryURL.replaceAll("/", "\\/")));
+  assert.match(read("NOTICE"), /MIT License/);
+  assert.match(read("NOTICE"), /api\/go\.mod/);
+  assert.match(read("NOTICE"), /web\/package-lock\.json/);
+});
+
 test("repository, package, image, and chart names use canonical EasyPanel names", () => {
   assert.match(read("README.md"), /https:\/\/github\.com\/ops-easy\/EasyPanel\.git/);
   assert.match(read("api/go.mod"), /^module github\.com\/ops-easy\/EasyPanel\/api$/m);
   assert.equal(JSON.parse(read("web/package.json")).name, "easypanel-web");
+  assert.equal(JSON.parse(read("web/package.json")).license, "MIT");
   assert.equal(JSON.parse(read("web/package-lock.json")).name, "easypanel-web");
+  assert.equal(JSON.parse(read("web/package-lock.json")).packages[""].license, "MIT");
   assert.equal(existsSync(resolve(root, "k8s/charts/easypanel/Chart.yaml")), true);
   assert.equal(existsSync(resolve(root, `k8s/charts/${legacyKubeName}/Chart.yaml`)), false);
   assert.match(read("k8s/charts/easypanel/Chart.yaml"), /^name: easypanel$/m);

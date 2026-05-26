@@ -1,0 +1,24 @@
+EasyPanel
+
+Copyright (c) 2026 EasyPanel Contributors.
+
+EasyPanel is released under the MIT License. See LICENSE for the full license
+text.
+
+Project origin:
+
+This project traces its initial lineage to the abcdocker project published at:
+
+https://github.com/abcdocker/kube-bt-sync
+
+EasyPanel is a renamed and substantially extended continuation focused on an
+open-source Kubernetes and operations control panel. Original copyrights,
+trademarks, and third-party dependency licenses remain with their respective
+owners.
+
+Third-party dependencies:
+
+EasyPanel uses Go and npm dependencies. Those dependencies are not relicensed
+by this project and remain governed by their own license terms. Dependency
+manifests are maintained in api/go.mod, api/go.sum, web/package.json, and
+web/package-lock.json.
