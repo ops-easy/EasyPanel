@@ -102,7 +102,7 @@ helm install easypanel ./k8s/charts/easypanel \
 前端镜像内置 Nginx 需要同时代理 `/api/`、Kubernetes 反向代理 `/r/` 和公开媒体 `/d/`。发布前建议先在本地验证构建产物，再对预发地址执行烟测：
 
 ```bash
-cd web
+cd frontend
 npm run build
 npm run smoke:dist
 SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy

@@ -245,7 +245,7 @@ function stripInternalRoute(route) {
 }
 
 function scanBackendRoutes() {
-  const parsed = walkFiles(path.join(repoRoot, "api"), new Set([".go"]))
+  const parsed = walkFiles(path.join(repoRoot, "backend"), new Set([".go"]))
     .filter((file) => !file.endsWith("_test.go"))
     .map(parseGoFile);
   const routes = parsed.flatMap((item) => item.directRoutes);
@@ -288,7 +288,7 @@ function scanBackendRoutes() {
 }
 
 function scanFrontendUses() {
-  const files = walkFiles(path.join(repoRoot, "web", "src"), frontendExtensions);
+  const files = walkFiles(path.join(repoRoot, "frontend", "src"), frontendExtensions);
   const uses = [];
   for (const file of files) {
     const src = readFileSync(file, "utf8");

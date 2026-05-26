@@ -25,13 +25,13 @@ jobs:
           - name: backend
             image: easypanel-api
             context: .
-            file: ./api/Dockerfile
+            file: ./backend/Dockerfile
             build_args: |
               BUILD_VERSION=${{ github.sha }}
           - name: frontend
             image: easypanel-web
-            context: ./web
-            file: ./web/Dockerfile
+            context: ./frontend
+            file: ./frontend/Dockerfile
             build_args: ""
 
     steps:
@@ -42,13 +42,13 @@ jobs:
         if: matrix.name == 'backend'
         uses: actions/setup-go@v5
         with:
-          go-version-file: ./api/go.mod
+          go-version-file: ./backend/go.mod
 
       - name: Test backend
         if: matrix.name == 'backend'
         run: |
-          cp api/config.example.yaml api/config.yaml
-          cd api
+          cp backend/config.example.yaml backend/config.yaml
+          cd backend
           go test ./...
 
       - name: Set up Node.js
@@ -57,11 +57,11 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: ./web/package-lock.json
+          cache-dependency-path: ./frontend/package-lock.json
 
       - name: Check frontend
         if: matrix.name == 'frontend'
-        working-directory: ./web
+        working-directory: ./frontend
         run: |
           npm ci
           npm run check

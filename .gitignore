@@ -1,6 +1,10 @@
 # 编译产物
 /easypanel
-/api/easypanel
+/backend/easypanel
+
+# Legacy local leftovers from the old api/web layout.
+/api/
+/web/
 *.exe
 *.dll
 *.so
@@ -17,8 +21,8 @@ data/
 !data/.gitkeep
 
 # 本地静态启动配置，可能包含数据库、Redis、会话密钥等敏感信息
-/api/config.yaml
-!/api/config.example.yaml
+/backend/config.yaml
+!/backend/config.example.yaml
 
 # 代理/助手生成的内部计划
 docs/superpowers/
@@ -45,8 +49,8 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 .react/
-web/dist/
-!web/dist/.gitkeep
+frontend/dist/
+!frontend/dist/.gitkeep
 *.tsbuildinfo
 
 # Vite / 本地环境

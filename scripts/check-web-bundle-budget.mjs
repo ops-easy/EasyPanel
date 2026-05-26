@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "..");
-const distDir = path.join(repoRoot, "web", "dist");
+const distDir = path.join(repoRoot, "frontend", "dist");
 const htmlPath = path.join(distDir, "index.html");
 
 const maxEntryKiB = 300;
@@ -75,7 +75,7 @@ function assertNoForbiddenInitialChunk(kind, assets) {
 }
 
 if (!existsSync(htmlPath)) {
-  throw new Error("web/dist/index.html not found. Run npm run build before npm run check:bundle.");
+  throw new Error("frontend/dist/index.html not found. Run npm run build before npm run check:bundle.");
 }
 
 const html = readFileSync(htmlPath, "utf8");

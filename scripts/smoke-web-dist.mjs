@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "..");
-const distDir = path.join(repoRoot, "web", "dist");
+const distDir = path.join(repoRoot, "frontend", "dist");
 const indexPath = path.join(distDir, "index.html");
 const fallbackRoutes = ["/docs", "/cluster", "/compute", "/network"];
 
@@ -60,7 +60,7 @@ async function withStaticServer(callback) {
 }
 
 if (!existsSync(indexPath)) {
-  throw new Error("web/dist/index.html not found. Run npm run build before npm run smoke:dist.");
+  throw new Error("frontend/dist/index.html not found. Run npm run build before npm run smoke:dist.");
 }
 
 const indexHtml = read(indexPath);
@@ -88,4 +88,4 @@ await withStaticServer(async (baseUrl) => {
   }
 });
 
-console.log(`web dist smoke ok: entry=${entryAsset}, assets=${assets.length}, fallbacks=${fallbackRoutes.length}`);
+console.log(`frontend dist smoke ok: entry=${entryAsset}, assets=${assets.length}, fallbacks=${fallbackRoutes.length}`);

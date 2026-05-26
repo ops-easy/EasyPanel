@@ -1,5 +1,5 @@
-FRONTEND_DIR = ./web
-BACKEND_DIR = ./api
+FRONTEND_DIR = ./frontend
+BACKEND_DIR = ./backend
 
 .PHONY: all build-frontend build-backend start-frontend start-backend test lint
 

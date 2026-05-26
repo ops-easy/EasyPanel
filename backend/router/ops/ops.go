@@ -1,0 +1,12 @@
+package ops
+
+import (
+	"github.com/ops-easy/EasyPanel/backend/api/ops/controller"
+	"github.com/ops-easy/EasyPanel/backend/common/appctx"
+
+	"github.com/gin-gonic/gin"
+)
+
+func RegisterRoutes(r *gin.Engine, api *gin.RouterGroup, app *appctx.ServerApp) {
+	controller.New(app).RegisterRoutes(r, api)
+}

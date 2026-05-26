@@ -8,10 +8,10 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "..");
-const webRoot = path.join(repoRoot, "web");
-const distDir = path.join(webRoot, "dist");
+const frontendRoot = path.join(repoRoot, "frontend");
+const distDir = path.join(frontendRoot, "dist");
 const indexPath = path.join(distDir, "index.html");
-const nginxConfigPath = path.join(webRoot, "deploy", "nginx.conf");
+const nginxConfigPath = path.join(frontendRoot, "deploy", "nginx.conf");
 const helmNginxConfigPath = path.join(
   repoRoot,
   "k8s",
@@ -83,7 +83,7 @@ async function withStaticServer(callback) {
 }
 
 if (!existsSync(indexPath)) {
-  throw new Error("web/dist/index.html not found. Run npm run build before npm run check:deploy.");
+  throw new Error("frontend/dist/index.html not found. Run npm run build before npm run check:deploy.");
 }
 
 const indexHtml = read(indexPath);
@@ -93,7 +93,7 @@ for (const asset of assets) {
   assert.ok(existsSync(path.join(distDir, "assets", asset)), `dist asset missing: ${asset}`);
 }
 
-assertNginxContract("web/deploy/nginx.conf", read(nginxConfigPath));
+assertNginxContract("frontend/deploy/nginx.conf", read(nginxConfigPath));
 assertNginxContract("Helm frontend ConfigMap", read(helmNginxConfigPath));
 
 await withStaticServer(async (baseUrl) => {
@@ -110,4 +110,4 @@ await withStaticServer(async (baseUrl) => {
   assert.match(jsRes.headers.get("content-type") ?? "", /javascript/);
 });
 
-console.log(`web deploy smoke ok: assets=${assets.length}, spaFallback=${spaSmokeRoutes.length}, nginx=/api,/r,/d`);
+console.log(`frontend deploy smoke ok: assets=${assets.length}, spaFallback=${spaSmokeRoutes.length}, nginx=/api,/r,/d`);

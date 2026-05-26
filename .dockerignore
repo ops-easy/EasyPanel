@@ -6,6 +6,10 @@
 .idea
 .vscode
 
+# Legacy local leftovers from the old api/web layout.
+/api
+/web
+
 # 文档与示例（不参与 Go/Web 构建）
 *.md
 .env*
@@ -13,12 +17,12 @@
 connectivity-check.env.example
 
 # 前端
-web/node_modules
-web/dist
+frontend/node_modules
+frontend/dist
 
 # 本地数据与日志（切勿打入镜像）
 data
-api/easypanel
+backend/easypanel
 *.log
 .DS_Store
 dist
@@ -27,7 +31,7 @@ dist
 k8s
 
 # 独立命令行工具（主程序不依赖）
-api/cmd
+backend/cmd
 
 # 其他
 k8s/**/*.tgz

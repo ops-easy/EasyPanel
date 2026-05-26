@@ -79,11 +79,11 @@
 ## 验证清单
 
 1. `go test ./common/core -run "Test.*AIProvider|TestHermesGatewayBaseURL" -count=1`
-2. `go test ./api/appcenter/service -run TestHermes -count=1`
-3. `node web/tests/ai-inspect-provider-rewrite.test.mjs`
+2. `go test ./backend/appcenter/service -run TestHermes -count=1`
+3. `node frontend/tests/ai-inspect-provider-rewrite.test.mjs`
 4. `npm run build`
 5. `rg` 扫描确认旧巡检 API 路径不再存在
 
 ## 已知非本次问题
 
-宽范围 `go test ./common/core ./api/appcenter/service -count=1` 中，`common/core` 仍会因仓库根配置文件缺失失败：`open ..\..\config.yaml: The system cannot find the file specified.` 这是本次改造前已存在的 baseline 问题，不属于 AI Provider 改造引入。
+宽范围 `go test ./common/core ./backend/appcenter/service -count=1` 中，`common/core` 仍会因仓库根配置文件缺失失败：`open ..\..\config.yaml: The system cannot find the file specified.` 这是本次改造前已存在的 baseline 问题，不属于 AI Provider 改造引入。

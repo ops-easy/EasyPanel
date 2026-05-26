@@ -5,7 +5,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const webDir = resolve(rootDir, "web");
+const webDir = resolve(rootDir, "frontend");
 const demoDir = resolve(rootDir, "docs", "demo");
 const assetDir = resolve(demoDir, "assets");
 const tempDir = resolve(rootDir, ".vite");

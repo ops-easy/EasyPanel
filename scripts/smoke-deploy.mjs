@@ -62,4 +62,4 @@ if (dPath && dPath.toLowerCase() !== "none") {
   await fetchPath(dPath, { rejectServerError: true });
 }
 
-console.log(`web deploy smoke ok: base=${baseUrl.origin}, entry=${entryAsset}, spaRoutes=${spaSmokeRoutes.length}, dPath=${dPath || "skipped"}`);
+console.log(`frontend deploy smoke ok: base=${baseUrl.origin}, entry=${entryAsset}, spaRoutes=${spaSmokeRoutes.length}, dPath=${dPath || "skipped"}`);

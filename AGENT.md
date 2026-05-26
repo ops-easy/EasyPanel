@@ -35,8 +35,8 @@ EasyPanel 是一个自建基础设施运维控制台，主要服务以下场景�
 ## 目录结构
 
 ```text
-api/                         Go 后端
-web/                         React + TypeScript + Vite 前端
+backend/                     Go 后端
+frontend/                    React + TypeScript + Vite 前端
 k8s/backend/                 后端 Kubernetes 清单
 k8s/frontend/                前端 Kubernetes 清单
 k8s/charts/easypanel/          Helm Chart
@@ -48,15 +48,15 @@ docs/                        运维文档
 
 ```bash
 # 后端
-cd api && go run .
-cd api && go test ./...
-cd api && go build -o easypanel .
+cd backend && go run .
+cd backend && go test ./...
+cd backend && go build -o easypanel .
 
 # 前端
-cd web && npm ci
-cd web && npm run dev
-cd web && npm run build
-cd web && npm run lint
+cd frontend && npm ci
+cd frontend && npm run dev
+cd frontend && npm run build
+cd frontend && npm run lint
 
 # 一键入口
 make start-backend
@@ -69,9 +69,9 @@ helm install easypanel ./k8s/charts/easypanel --namespace easy --create-namespac
 
 ## 架构要点
 
-后端入口为 `api/main.go`，核心代码位于 `api/internal/`。`ServerApp` 负责持有运行时配置、Kubernetes client、MySQL、Redis、vCenter、SSH 凭据存储等共享状态。静态配置来自环境变量和 `api/config.yaml`，页面保存的动态配置写入 MySQL 的 `easypanel_platform_kv`，不再读取 `runtime-config.json` 或 PVC 上的动态覆盖文件。
+后端入口为 `backend/main.go`，核心代码位于 `backend/internal/`。`ServerApp` 负责持有运行时配置、Kubernetes client、MySQL、Redis、vCenter、SSH 凭据存储等共享状态。静态配置来自环境变量和 `backend/config.yaml`，页面保存的动态配置写入 MySQL 的 `easypanel_platform_kv`，不再读取 `runtime-config.json` 或 PVC 上的动态覆盖文件。
 
-前端入口为 `web/src/main.tsx` 与 `web/src/App.tsx`。路由覆盖工作台、集群、宝塔、应用中心、AI 巡检、vCenter、堡垒机、文档中心、账号设置等页面。前端通过 `/api/` 调用后端，通过 WebSocket 提供终端、日志和实时交互能力。
+前端入口为 `frontend/src/main.tsx` 与 `frontend/src/App.tsx`。路由覆盖工作台、集群、宝塔、应用中心、AI 巡检、vCenter、堡垒机、文档中心、账号设置等页面。前端通过 `/api/` 调用后端，通过 WebSocket 提供终端、日志和实时交互能力。
 
 容器发布分为后端镜像和前端镜像：
 
@@ -94,10 +94,10 @@ helm install easypanel ./k8s/charts/easypanel --namespace easy --create-namespac
 
 改动相关代码时需要同时关注：
 
-- `api/internal/syncer.go`
-- `api/internal/baota*.go`
-- `api/internal/annotations.go`
-- `api/internal/k8s_*`
+- `backend/internal/syncer.go`
+- `backend/internal/baota*.go`
+- `backend/internal/annotations.go`
+- `backend/internal/k8s_*`
 - 前端宝塔与 Ingress 页面
 
 ## 安全注意事项

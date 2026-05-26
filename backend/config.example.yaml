@@ -1,0 +1,52 @@
+# 静态启动配置示例
+# 复制为 backend/config.yaml 后按本地环境修改；backend/config.yaml 已被 .gitignore 忽略，避免误提交敏感信息。
+# 页面可修改的业务配置会保存到 MySQL 表 easypanel_platform_kv，键为 config_override_yaml_v1。
+
+server:
+  # 后端监听地址；本地开发可用 127.0.0.1:8080，容器或 Kubernetes 中使用 0.0.0.0:8080
+  address: 127.0.0.1:8080
+  # 运行模式，可选 debug 或 release
+  model: debug
+  # 平台对外访问地址，用于登录回调、公开链接和页面跳转
+  publicUrl: http://127.0.0.1:5173
+  # 初始管理员用户名；仅在 MySQL 用户表为空时创建首个管理员
+  user: admin
+  # 初始管理员密码；仅在 MySQL 用户表为空时生效，之后请在页面中改密码
+  password: admin
+  # 会话签名密钥；生产必须改成稳定随机值，多副本保持一致
+  sessionSecret: ""
+  # 登录会话有效天数
+  sessionDays: 7
+  # HTTPS 部署时建议改为 true
+  cookieSecure: false
+  # 是否记录访问日志
+  accessLog: true
+  # 是否让后端直接托管 React dist；默认关闭，页面由独立前端服务或本地 Vite 提供
+  serveFrontend: false
+
+db:
+  # MySQL 是动态配置的启动依赖，必须放在静态配置或环境变量中
+  dsn: ""
+  # dsn 留空时使用下方拆分字段生成连接串
+  host: 127.0.0.1
+  port: 3306
+  db: easypanel
+  username: easypanel
+  password: change-me
+
+redis:
+  # Redis 当前仍用于缓存、部分凭据热读和运行时配置校验
+  address: 127.0.0.1:6379
+  password: change-me
+  db: 0
+
+startup:
+  schedulers:
+    # 后台调度任务总开关；多副本部署时通常只保留一个 Pod 开启
+    enabled: true
+
+performance:
+  # 性能模式，可选 debug 或 release；release 会启用部分短缓存
+  mode: debug
+  # 命名空间列表缓存秒数，仅在性能模式下生效
+  namespacesCacheTtlSec: 30

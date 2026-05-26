@@ -57,7 +57,7 @@ tar -czvf cmdb.tar.gz cmdb
 
 不影响：
 
-- 主控制台 `web/dist` 的资源。
+- 主控制台 `frontend/dist` 的资源。
 - 前端镜像中的 `/assets`。
 - 后端 API。
 - 文档附件本身的存储位置。

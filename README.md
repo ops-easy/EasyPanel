@@ -74,8 +74,8 @@ node scripts/generate-demo-assets.mjs
 
 ```text
 EasyPanel/
-├── api/                         # Go 后端，入口为 api/main.go
-├── web/                         # React + Vite 前端
+├── backend/                         # Go 后端，入口为 backend/main.go
+├── frontend/                         # React + Vite 前端
 ├── k8s/backend/                 # 后端 Kubernetes 清单
 ├── k8s/frontend/                # 前端 Kubernetes 清单
 ├── k8s/charts/easypanel/          # Helm Chart
@@ -94,11 +94,11 @@ EasyPanel/
 - Node.js 20+ 与 npm
 - 可选：kubectl、Helm、Docker
 
-先复制示例配置，再按本地环境修改后端配置。`api/config.yaml` 可能包含数据库密码和会话密钥，默认不会提交到 Git：
+先复制示例配置，再按本地环境修改后端配置。`backend/config.yaml` 可能包含数据库密码和会话密钥，默认不会提交到 Git：
 
 ```bash
-cp api/config.example.yaml api/config.yaml
-vim api/config.yaml
+cp backend/config.example.yaml backend/config.yaml
+vim backend/config.yaml
 ```
 
 启动后端：
@@ -116,8 +116,8 @@ make start-frontend
 常用检查：
 
 ```bash
-cd api && go test ./...
-cd web && npm run check
+cd backend && go test ./...
+cd frontend && npm run check
 ```
 
 CI 会在 PR 以及 `main` / `master` 推送时运行后端测试、前端总检查、bundle 预算、API 契约、文本编码和 dist 烟测；镜像发布工作流复用同一套前端检查后再构建 GHCR 镜像。
@@ -125,7 +125,7 @@ CI 会在 PR 以及 `main` / `master` 推送时运行后端测试、前端总检
 构建产物与已部署环境的烟测：
 
 ```bash
-cd web
+cd frontend
 npm run build
 npm run smoke:dist
 SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy
@@ -178,7 +178,7 @@ helm install easypanel ./k8s/charts/easypanel \
 
 ## 关键配置
 
-后端配置来源为静态配置 + MySQL 动态配置 + 环境变量；不再从磁盘读取 `runtime-config.json`，也不再使用 PVC 上的 `config.override.yaml`。静态配置默认是本地 `api/config.yaml`，可从 `api/config.example.yaml` 复制生成，也可用 `EASYPANEL_CONFIG_FILE` 指定其它路径；默认示例只保留 `server`、`db`、`redis`、`startup`、`performance` 这些启动必需配置。页面保存的业务配置写入 MySQL 表 `easypanel_platform_kv`，键为 `config_override_yaml_v1`。加载优先级为：程序默认值 < 静态配置 < MySQL 动态配置 < 环境变量。MySQL 连接属于启动依赖，必须放在静态 `config.yaml` 或环境变量中。常用变量如下：
+后端配置来源为静态配置 + MySQL 动态配置 + 环境变量；不再从磁盘读取 `runtime-config.json`，也不再使用 PVC 上的 `config.override.yaml`。静态配置默认是本地 `backend/config.yaml`，可从 `backend/config.example.yaml` 复制生成，也可用 `EASYPANEL_CONFIG_FILE` 指定其它路径；默认示例只保留 `server`、`db`、`redis`、`startup`、`performance` 这些启动必需配置。页面保存的业务配置写入 MySQL 表 `easypanel_platform_kv`，键为 `config_override_yaml_v1`。加载优先级为：程序默认值 < 静态配置 < MySQL 动态配置 < 环境变量。MySQL 连接属于启动依赖，必须放在静态 `config.yaml` 或环境变量中。常用变量如下：
 
 | 变量 | 说明 |
 | --- | --- |
@@ -252,7 +252,7 @@ metadata:
 
 | 数据 | 推荐位置 |
 | --- | --- |
-| 静态后端配置 | `api/config.yaml`、Kubernetes ConfigMap 或环境变量 |
+| 静态后端配置 | `backend/config.yaml`、Kubernetes ConfigMap 或环境变量 |
 | 页面动态业务配置 | MySQL 表 `easypanel_platform_kv`，键 `config_override_yaml_v1` |
 | 平台 KV | MySQL；单机调试可回退文件，Redis 仅做热读或兼容镜像 |
 | 用户、审计、应用实例、文档索引 | MySQL |
@@ -269,7 +269,7 @@ metadata:
 - [Kubernetes Dashboard 与 Prometheus 对接](./docs/kubernetes-dashboard-prometheus.md)
 - [全局 AI 对话助手](./docs/ai-chat-assistant.md)
 - [文档公开页静态资源 CDN](./docs/external-assets-for-oss.md)
-- [前端开发说明](./web/README.md)
+- [前端开发说明](./frontend/README.md)
 - [Kafka 限速压测手册](./k8s/backend/kafka-throttle-perf.md)
 - [贡献指南](./CONTRIBUTING.md)
 - [安全策略](./SECURITY.md)
@@ -284,7 +284,7 @@ https://github.com/abcdocker/kube-bt-sync
 
 当前项目已经以 EasyPanel 的名称继续维护，并围绕 Kubernetes、应用中心、堡垒机、监控日志、文档中心和多模块运维控制台做了持续扩展。项目来源、版权说明和第三方依赖声明见 [NOTICE](./NOTICE)。
 
-EasyPanel 以 [MIT License](./LICENSE) 开源发布。提交贡献即表示相关内容按 MIT License 授权；项目使用的 Go / npm 第三方依赖仍遵循各自的开源协议，依赖清单以 `api/go.mod`、`api/go.sum`、`web/package.json` 和 `web/package-lock.json` 为准。
+EasyPanel 以 [MIT License](./LICENSE) 开源发布。提交贡献即表示相关内容按 MIT License 授权；项目使用的 Go / npm 第三方依赖仍遵循各自的开源协议，依赖清单以 `backend/go.mod`、`backend/go.sum`、`frontend/package.json` 和 `frontend/package-lock.json` 为准。
 
 ## 免责声明
 
