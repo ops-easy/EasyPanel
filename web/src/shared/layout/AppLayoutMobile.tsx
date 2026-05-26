@@ -115,13 +115,13 @@ function MobileHeader() {
       <Link to="/" className="flex items-center gap-2">
         <img
           src="/favicon.svg"
-          alt="Kube-BT-Sync"
+          alt="EasyPanel"
           className="h-6 w-6 object-contain"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.display = "none";
           }}
         />
-        <span className="text-sm font-semibold text-slate-800">Kube-BT-Sync</span>
+        <span className="text-sm font-semibold text-slate-800">EasyPanel</span>
       </Link>
 
       {/* Right actions */}

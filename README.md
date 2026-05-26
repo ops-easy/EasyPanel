@@ -1,6 +1,6 @@
-# Kube-BT-Sync
+# EasyPanel
 
-Kube-BT-Sync 是面向自建 Kubernetes、Homelab 与小型私有云环境的运维控制台。它以 Go 后端和 React 前端组成，提供 Kubernetes 资源管理、Ingress 到宝塔面板的同步、应用中心、vCenter/云主机纳管、监控日志查询、文档中心与账号权限管理等能力。
+EasyPanel 是面向自建 Kubernetes、Homelab 与小型私有云环境的运维控制台。它以 Go 后端和 React 前端组成，提供 Kubernetes 资源管理、Ingress 到宝塔面板的同步、应用中心、vCenter/云主机纳管、监控日志查询、文档中心与账号权限管理等能力。
 
 当前仓库计划作为新项目发布到 `https://github.com/ops-easy/kube-bt-sync.git`。文档、部署清单和镜像发布流程均以这个新仓库作为默认上下文。
 
@@ -250,4 +250,4 @@ metadata:
 
 ## 免责声明
 
-Kube-BT-Sync 面向自建基础设施与运维自动化场景。生产环境使用前，请结合你的网络边界、权限模型、密钥管理、审计要求和灾备策略完成安全评估。
+EasyPanel 面向自建基础设施与运维自动化场景。生产环境使用前，请结合你的网络边界、权限模型、密钥管理、审计要求和灾备策略完成安全评估。

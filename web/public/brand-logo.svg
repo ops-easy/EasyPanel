@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 650 176" role="img" aria-labelledby="title desc">
-  <title id="title">Kube-BT-Sync</title>
-  <desc id="desc">Kube-BT-Sync project logo with a blue sync bridge icon and wordmark.</desc>
+  <title id="title">EasyPanel</title>
+  <desc id="desc">EasyPanel project logo with a blue sync bridge icon and wordmark.</desc>
   <defs>
     <linearGradient id="mark-bg" x1="26" y1="28" x2="144" y2="146" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#1A5EC8"/>
@@ -48,8 +48,8 @@
     font-family="Inter, 'Segoe UI', Arial, sans-serif"
     font-size="64"
     font-weight="800"
-    letter-spacing="-1.8"
+    letter-spacing="0"
   >
-    <tspan>Kube-</tspan><tspan fill="#1A5EC8">BT</tspan><tspan>-Sync</tspan>
+    <tspan>Easy</tspan><tspan fill="#1A5EC8">Panel</tspan>
   </text>
 </svg>

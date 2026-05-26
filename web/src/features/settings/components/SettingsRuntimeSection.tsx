@@ -615,7 +615,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                 <Input
                   value={String(form.oidcIssuerUrl ?? "")}
                   onChange={(e) => setField("oidcIssuerUrl", e.target.value)}
-                  placeholder="https://idp.example.com/application/o/kube-bt-sync/"
+                  placeholder="https://idp.example.com/application/o/easy-panel/"
                 />
               </div>
               <div className="space-y-2">

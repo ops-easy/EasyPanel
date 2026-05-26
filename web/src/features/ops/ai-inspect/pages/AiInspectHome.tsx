@@ -473,7 +473,7 @@ const AiInspectHome: React.FC = () => {
               <code className="rounded bg-white/80 px-1">POST /v1/chat/completions</code>，须在 PVC 的{" "}
               <code className="rounded bg-white/80 px-1">openclaw.json</code> 中开启{" "}
               <code className="rounded bg-white/80 px-1">gateway.http.endpoints.chatCompletions.enabled</code>
-              （kube-bt-sync 新部署的 ConfigMap 已默认开启；旧 PVC 需合并后滚动重启 Pod）。
+              （EasyPanel 新部署的 ConfigMap 已默认开启；旧 PVC 需合并后滚动重启 Pod）。
             </li>
             <li>
               <strong>API Key</strong>：上述网关要求的密钥；若显示「已设置」则无需重复填写，留空表示沿用旧密钥。

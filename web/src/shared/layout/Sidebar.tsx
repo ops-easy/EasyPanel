@@ -741,7 +741,7 @@ const Sidebar: React.FC = () => {
                 cfg?.platformDisplayName?.trim() ? "platform-display-name-breathe" : undefined
               )}
             >
-              {cfg?.platformDisplayName?.trim() || "Kube-BT-Sync"}
+              {cfg?.platformDisplayName?.trim() || "EasyPanel"}
             </span>
             <span
               className={cn(

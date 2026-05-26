@@ -831,7 +831,7 @@ const Login: React.FC = () => {
         <div className="order-2 flex min-h-0 w-full flex-col justify-center border-t border-slate-200/80 pt-8 dark:border-slate-800/80 lg:order-none lg:border-t-0 lg:border-r lg:border-b-0 lg:pt-0 lg:pb-0 lg:pr-10 xl:pr-14">
           <div className="mx-auto flex w-full max-w-xl flex-col space-y-5 sm:space-y-6 lg:mx-0 lg:max-w-[min(100%,46rem)] xl:max-w-[50rem]">
             <div className="login-v2-fade-in-up login-v2-d100 mb-5 flex flex-wrap items-center gap-2 sm:mb-8 sm:gap-3">
-              <img src={BRAND_LOGO} alt="Kube-BT-Sync" className="h-10 w-auto max-w-[220px] object-contain sm:h-11" />
+              <img src={BRAND_LOGO} alt="EasyPanel" className="h-10 w-auto max-w-[220px] object-contain sm:h-11" />
               <span
                 className="rounded-full border px-2 py-0.5 text-xs font-semibold"
                 style={{

@@ -655,7 +655,7 @@ const AppCenterOpenSearch: React.FC = () => {
             </AlertTitle>
             <AlertDescription className="text-xs leading-relaxed">
               平台进程使用实例中保存的 <code className="rounded bg-white px-1">internalHttp</code>（集群内 Service）调用 OpenSearch REST API。
-              请确保 <strong>kube-bt-sync 与 OpenSearch 网络互通</strong>（通常控制台部署在集群内或已打通 Service CIDR）。
+              请确保 <strong>EasyPanel 与 OpenSearch 网络互通</strong>（通常控制台部署在集群内或已打通 Service CIDR）。
             </AlertDescription>
           </Alert>
 
