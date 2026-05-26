@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -59,6 +60,17 @@ type KubePromStackInstallResult struct {
 	ServiceName       string
 	Namespace         string
 	ReleaseName       string
+}
+
+type kubePrometheusRuntimeURLState struct {
+	EffectiveURL       string
+	EffectiveURLMasked string
+	QuerySourceNote    string
+	SyncTarget         string
+	SyncTargetMasked   string
+	UsesVMSelect       bool
+	MatchesDiscovered  bool
+	SyncRecommended    bool
 }
 
 type kubePrometheusStackAccessCheck struct {
@@ -528,6 +540,43 @@ func prometheusHTTPBaseFromService(svc *corev1.Service) string {
 	return fmt.Sprintf("http://%s.%s.svc:%d", svc.Name, ns, port)
 }
 
+func kubePrometheusRuntimeURLStatus(cfg Config, discoveredURL string) kubePrometheusRuntimeURLState {
+	effective := strings.TrimSpace(GetPrometheusURLForScope(cfg, "k8s"))
+	discovered := strings.TrimSpace(discoveredURL)
+	usesVMSelect := strings.TrimSpace(cfg.VMSelectURLK8s) != ""
+	matches := false
+	if effective != "" && discovered != "" {
+		matches = normalizePrometheusURLForCompare(effective) == normalizePrometheusURLForCompare(discovered)
+	}
+	return kubePrometheusRuntimeURLState{
+		EffectiveURL:       effective,
+		EffectiveURLMasked: maskPrometheusURL(effective),
+		QuerySourceNote:    K8sPrometheusQuerySourceNote(cfg),
+		SyncTarget:         discovered,
+		SyncTargetMasked:   maskPrometheusURL(discovered),
+		UsesVMSelect:       usesVMSelect,
+		MatchesDiscovered:  matches,
+		SyncRecommended:    discovered != "" && !usesVMSelect && !matches,
+	}
+}
+
+func normalizePrometheusURLForCompare(raw string) string {
+	raw = strings.TrimRight(strings.TrimSpace(raw), "/")
+	if raw == "" {
+		return ""
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return strings.ToLower(raw)
+	}
+	u.Scheme = strings.ToLower(u.Scheme)
+	u.Host = strings.ToLower(u.Host)
+	u.Path = strings.TrimRight(u.Path, "/")
+	u.RawQuery = ""
+	u.Fragment = ""
+	return u.String()
+}
+
 func prometheusServiceNameCandidates(releaseName string) []string {
 	release := firstValidAddonReleaseName(releaseName, kubePromStackReleaseName)
 	names := []string{
@@ -921,18 +970,34 @@ func KubePrometheusStackAddonStatus(ctx context.Context, k8s *kubernetes.Clients
 	out["alertmanagerReady"] = amReady
 	out["podWarnings"] = kubePromMonitoringPodIssueSummaries(ctx, k8s, ns)
 
+	discoveredURL := ""
 	if svc, err := discoverPrometheusService(ctx, k8s, ns, release); err == nil && svc != nil {
-		out["discoveredPrometheusURL"] = prometheusHTTPBaseFromService(svc)
+		discoveredURL = prometheusHTTPBaseFromService(svc)
+		out["discoveredPrometheusURL"] = discoveredURL
 	}
 	amMust := strings.TrimSpace(amSTS) != ""
 	out["installed"] = opReady && promReady && (!amMust || amReady)
+	runtimeURL := kubePrometheusRuntimeURLStatus(cfg, discoveredURL)
+	out["runtimePrometheusURLMasked"] = runtimeURL.EffectiveURLMasked
+	out["runtimePrometheusURLSource"] = runtimeURL.QuerySourceNote
+	out["runtimePrometheusURLMatchesDiscovered"] = runtimeURL.MatchesDiscovered
+	out["runtimePrometheusURLSyncRecommended"] = runtimeURL.SyncRecommended
+	out["runtimePrometheusURLSyncTarget"] = runtimeURL.SyncTarget
+	out["runtimePrometheusUsesVMSelect"] = runtimeURL.UsesVMSelect
 
 	// 与「安装/自检通过」解耦：监控页走运行时 prometheusUrlK8s / vmSelectUrlK8s，此处探测该地址的 TSDB 是否真有 kube-state-metrics 系列
 	if strings.TrimSpace(GetPrometheusURLForScope(cfg, "k8s")) == "" {
-		out["prometheusMetricsProbe"] = gin.H{
+		detail := "未配置 K8s Prometheus/VM 查询地址，集群监控页无法拉取 kube_*"
+		probe := gin.H{
 			"skipped": true,
-			"detail":  "未配置 K8s Prometheus/VM 查询地址，集群监控页无法拉取 kube_*",
+			"detail":  detail,
 		}
+		if runtimeURL.SyncRecommended {
+			probe["syncRecommended"] = true
+			probe["syncTarget"] = runtimeURL.SyncTarget
+			probe["detail"] = detail + "；已发现 Prometheus Service，可同步为 " + runtimeURL.SyncTarget + "。"
+		}
+		out["prometheusMetricsProbe"] = probe
 	} else {
 		c, probeDetail, srcNote, masked := PrometheusKubeNodeInfoCountProbe(cfg)
 		ph := gin.H{
@@ -948,6 +1013,15 @@ func KubePrometheusStackAddonStatus(ctx context.Context, k8s *kubernetes.Clients
 		}
 		if probeDetail != "" {
 			ph["detail"] = probeDetail
+		}
+		if runtimeURL.SyncRecommended {
+			ph["syncRecommended"] = true
+			ph["syncTarget"] = runtimeURL.SyncTarget
+			if probeDetail != "" {
+				ph["detail"] = probeDetail + "；当前查询源与发现到的 Prometheus Service 不一致，可同步为 " + runtimeURL.SyncTarget + "。"
+			} else {
+				ph["detail"] = "当前查询源与发现到的 Prometheus Service 不一致，可同步为 " + runtimeURL.SyncTarget + "。"
+			}
 		}
 		out["prometheusMetricsProbe"] = ph
 	}

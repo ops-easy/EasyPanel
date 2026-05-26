@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { APP_CONFIG_QUERY_KEY } from "@/hooks/use-app-config";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -49,6 +49,8 @@ type KubePromStackMetricsProbe = {
   detail?: string;
   querySourceNote?: string;
   effectiveUrlMasked?: string;
+  syncRecommended?: boolean;
+  syncTarget?: string;
 };
 
 type KubePromStackStatus = {
@@ -67,6 +69,12 @@ type KubePromStackStatus = {
   hint?: string;
   /** 对运行时配置的查询地址执行 count(kube_node_info)，与「安装自检通过」无关 */
   prometheusMetricsProbe?: KubePromStackMetricsProbe;
+  runtimePrometheusURLMasked?: string;
+  runtimePrometheusURLSource?: string;
+  runtimePrometheusURLMatchesDiscovered?: boolean;
+  runtimePrometheusURLSyncRecommended?: boolean;
+  runtimePrometheusURLSyncTarget?: string;
+  runtimePrometheusUsesVMSelect?: boolean;
 };
 
 type KubePromAddonsStatus = AddonsStatusResponse & {
@@ -126,6 +134,7 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [verifyBusy, setVerifyBusy] = useState(false);
+  const [syncBusy, setSyncBusy] = useState(false);
   const [phase, setPhase] = useState("");
   const [progress, setProgress] = useState(0);
   const [verification, setVerification] = useState<IngressAddonVerification | null>(null);
@@ -162,7 +171,7 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
   }, [kp?.installed]);
 
   useEffect(() => {
-    const b = busy || verifyBusy;
+    const b = busy || verifyBusy || syncBusy;
     if (!b) {
       setProgress(0);
       return;
@@ -172,7 +181,7 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
       setProgress((p) => (p >= 90 ? p : p + 2));
     }, 900);
     return () => clearInterval(id);
-  }, [busy, verifyBusy]);
+  }, [busy, syncBusy, verifyBusy]);
 
   const runInstall = useCallback(async () => {
     setConfirmOpen(false);
@@ -302,6 +311,34 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
     }
   }, [namespace, qc, releaseName]);
 
+  const syncRuntimePrometheusURL = useCallback(async () => {
+    setSyncBusy(true);
+    try {
+      const res = await apiPostJson<{
+        patchedPrometheusUrlK8s?: string;
+        prometheusBaseURL?: string;
+        prometheusService?: string;
+      }>("/api/k8s/addons/kube-prometheus-stack/sync-runtime", {
+        namespace,
+        releaseName,
+        clearVmSelect: true,
+      });
+      const patched = String(res.patchedPrometheusUrlK8s || res.prometheusBaseURL || "").trim();
+      if (patched) setLastPatchedUrl(patched);
+      toast.success(patched ? `已同步 prometheusUrlK8s: ${patched}` : "已同步 Prometheus 数据源");
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["k8s-addons-status"] }),
+        qc.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY }),
+        qc.invalidateQueries({ queryKey: ["runtime-status"] }),
+      ]);
+      void refetchStatus();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSyncBusy(false);
+    }
+  }, [namespace, qc, refetchStatus, releaseName]);
+
   return (
     <Card className="border-amber-100 bg-gradient-to-b from-amber-50/50 to-white shadow-sm">
       <CardHeader className="pb-2">
@@ -384,6 +421,32 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
                   发现地址: {kp.discoveredPrometheusURL}
                 </p>
               )}
+              {kp?.runtimePrometheusURLMasked ? (
+                <p className="mt-1 break-all text-[11px] text-slate-600">
+                  当前查询源: <span className="font-mono">{kp.runtimePrometheusURLMasked}</span>
+                </p>
+              ) : null}
+              {kp?.runtimePrometheusURLSyncRecommended && kp.runtimePrometheusURLSyncTarget ? (
+                <div className="mt-2 rounded-md border border-amber-300/80 bg-amber-50 px-2 py-2 text-[11px] text-amber-950">
+                  <p className="break-all">
+                    当前查询源和发现地址不一致，监控页实际还在用旧地址。建议同步为{" "}
+                    <span className="font-mono">{kp.runtimePrometheusURLSyncTarget}</span>
+                  </p>
+                  {isAdmin ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 h-7 text-xs"
+                      disabled={syncBusy}
+                      onClick={() => void syncRuntimePrometheusURL()}
+                    >
+                      {syncBusy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
+                      同步发现地址
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
               {kp?.prometheusMetricsProbe && !kp.prometheusMetricsProbe.skipped && (
                 <div
                   className={cn(

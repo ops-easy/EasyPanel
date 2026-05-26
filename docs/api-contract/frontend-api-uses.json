@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "frontend-api-uses",
-  "routeCount": 877,
+  "routeCount": 878,
   "routes": [
     {
       "method": "UNKNOWN",
@@ -2751,7 +2751,7 @@
       "method": "GET",
       "pathPattern": "/api/config",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
-      "sourceLine": 96,
+      "sourceLine": 104,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2759,7 +2759,7 @@
       "method": "GET",
       "pathPattern": "/api/config",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sSettings.tsx",
-      "sourceLine": 193,
+      "sourceLine": 211,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3639,15 +3639,23 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/k8s/addons/kube-prometheus-stack/install",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
-      "sourceLine": 198,
+      "sourceLine": 207,
       "needsManualReview": false,
       "kind": "literal"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/addons/kube-prometheus-stack/sync-runtime",
+      "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
+      "sourceLine": 321,
+      "needsManualReview": false,
+      "kind": "http"
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/addons/kube-prometheus-stack/verify",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
-      "sourceLine": 276,
+      "sourceLine": 285,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3671,7 +3679,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/addons/status",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
-      "sourceLine": 145,
+      "sourceLine": 154,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3679,7 +3687,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/addons/status",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sSettings.tsx",
-      "sourceLine": 198,
+      "sourceLine": 216,
       "needsManualReview": false,
       "kind": "http"
     },

@@ -36,6 +36,13 @@ type AddonsStatusResponse = {
     installed?: boolean;
     namespaceExists?: boolean;
     prometheusReady?: boolean;
+    runtimePrometheusURLSyncRecommended?: boolean;
+    runtimePrometheusURLSyncTarget?: string;
+    prometheusMetricsProbe?: {
+      ok?: boolean;
+      skipped?: boolean;
+      detail?: string;
+    };
   };
 };
 
@@ -113,6 +120,13 @@ function SettingsStatusStrip({
       config?.vmSelectUrlK8sHint ||
       config?.prometheusConfigured
   );
+  const monitoringNeedsSync = Boolean(prometheusStack?.runtimePrometheusURLSyncRecommended);
+  const monitoringProbeFailed = Boolean(
+    prometheusStack?.prometheusMetricsProbe &&
+      !prometheusStack.prometheusMetricsProbe.skipped &&
+      prometheusStack.prometheusMetricsProbe.ok === false
+  );
+  const monitoringProblem = monitoringNeedsSync || monitoringProbeFailed;
   const vmLogReady = Boolean(config?.victoriaLogsConfigured || config?.victoriaLogsUrlHint);
   const harborReady = Boolean(config?.harborConfigured || config?.harborUrlHint);
 
@@ -144,9 +158,13 @@ function SettingsStatusStrip({
       />
       <StatusTile
         label="监控数据源"
-        value={configLoading ? "读取中" : monitoringReady ? "已配置" : "未配置"}
-        detail={config?.vmSelectUrlK8sHint || config?.prometheusUrlK8sHint || config?.prometheusUrlHint}
-        tone={configLoading ? "loading" : monitoringReady ? "ok" : "warn"}
+        value={configLoading ? "读取中" : monitoringProblem ? "需处理" : monitoringReady ? "已配置" : "未配置"}
+        detail={
+          monitoringNeedsSync
+            ? `需同步到 ${prometheusStack?.runtimePrometheusURLSyncTarget ?? "发现地址"}`
+            : config?.vmSelectUrlK8sHint || config?.prometheusUrlK8sHint || config?.prometheusUrlHint
+        }
+        tone={configLoading ? "loading" : monitoringProblem ? "warn" : monitoringReady ? "ok" : "warn"}
       />
       <StatusTile
         label="VMLog"

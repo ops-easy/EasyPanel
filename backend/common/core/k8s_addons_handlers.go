@@ -538,6 +538,12 @@ type k8sAddonsKubePromBody struct {
 	KubeEtcdTargetPort      *int     `json:"kubeEtcdTargetPort"`
 }
 
+type k8sAddonsKubePromSyncRuntimeBody struct {
+	Namespace     string `json:"namespace"`
+	ReleaseName   string `json:"releaseName"`
+	ClearVMSelect *bool  `json:"clearVmSelect"`
+}
+
 func handleK8sAddonsKubePrometheusStackInstall(c *gin.Context, app *ServerApp) {
 	if !GuardK8sREST(c, app.K8s(), app.K8sREST()) {
 		return
@@ -688,6 +694,54 @@ func errStringPtr(err error) string {
 		return ""
 	}
 	return err.Error()
+}
+
+func handleK8sAddonsKubePrometheusStackSyncRuntime(c *gin.Context, app *ServerApp) {
+	if !GuardK8s(c, app.K8s()) {
+		return
+	}
+	var body k8sAddonsKubePromSyncRuntimeBody
+	_ = c.ShouldBindJSON(&body)
+	namespace := strings.TrimSpace(body.Namespace)
+	if namespace == "" {
+		namespace = effectiveKubePrometheusStackNamespace(app.Runtime())
+	}
+	if err := validateK8sAddonNamespace(namespace); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace 无效: " + err.Error()})
+		return
+	}
+	releaseName := strings.TrimSpace(body.ReleaseName)
+	if releaseName == "" {
+		releaseName = effectiveKubePrometheusStackReleaseName(app.Runtime())
+	}
+	if err := validateK8sAddonReleaseName(releaseName); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "releaseName 无效: " + err.Error()})
+		return
+	}
+	clearVM := true
+	if body.ClearVMSelect != nil {
+		clearVM = *body.ClearVMSelect
+	}
+	svc, err := discoverPrometheusService(c.Request.Context(), app.K8s(), namespace, releaseName)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "未发现 Prometheus Service: " + err.Error()})
+		return
+	}
+	promURL := prometheusHTTPBaseFromService(svc)
+	if err := PatchRuntimePrometheusK8sURL(app, promURL, clearVM); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "写入 prometheusUrlK8s 失败: " + err.Error()})
+		return
+	}
+	SetAuditDetail(c, fmt.Sprintf("同步 kube-prometheus-stack Prometheus 数据源 namespace=%s release=%s url=%s clear_vmselect=%v", namespace, releaseName, promURL, clearVM))
+	c.JSON(http.StatusOK, gin.H{
+		"ok":                      true,
+		"prometheusBaseURL":       promURL,
+		"prometheusService":       svc.Name,
+		"namespace":               namespace,
+		"releaseName":             releaseName,
+		"patchedPrometheusUrlK8s": promURL,
+		"clearedVmSelectUrlK8s":   clearVM,
+	})
 }
 
 func handleK8sAddonsKubePrometheusStackVerify(c *gin.Context, app *ServerApp) {

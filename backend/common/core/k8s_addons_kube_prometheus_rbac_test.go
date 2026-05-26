@@ -69,6 +69,36 @@ func TestPickPrometheusServiceAcceptsHelmTruncatedStackName(t *testing.T) {
 	}
 }
 
+func TestKubePrometheusRuntimeURLStatusFlagsStaleNamespace(t *testing.T) {
+	st := kubePrometheusRuntimeURLStatus(Config{
+		PrometheusURLK8s: "http://kbt-prom-kube-prometheus-s-prometheus.monitoring.svc:9090/",
+	}, "http://kbt-prom-kube-prometheus-s-prometheus.easypanel-monitoring.svc:9090")
+
+	if st.MatchesDiscovered {
+		t.Fatalf("expected stale namespace URL to differ from discovered URL")
+	}
+	if !st.SyncRecommended {
+		t.Fatalf("expected sync to be recommended: %+v", st)
+	}
+	if st.SyncTarget != "http://kbt-prom-kube-prometheus-s-prometheus.easypanel-monitoring.svc:9090" {
+		t.Fatalf("sync target = %q", st.SyncTarget)
+	}
+}
+
+func TestKubePrometheusRuntimeURLStatusDoesNotOverrideVMSelect(t *testing.T) {
+	st := kubePrometheusRuntimeURLStatus(Config{
+		VMSelectURLK8s:   "http://vmselect.monitoring.svc:8481/select/0/prometheus",
+		PrometheusURLK8s: "http://kbt-prom-kube-prometheus-s-prometheus.monitoring.svc:9090",
+	}, "http://kbt-prom-kube-prometheus-s-prometheus.easypanel-monitoring.svc:9090")
+
+	if !st.UsesVMSelect {
+		t.Fatalf("expected vmselect to be detected: %+v", st)
+	}
+	if st.SyncRecommended {
+		t.Fatalf("did not expect sync recommendation while vmselect is active: %+v", st)
+	}
+}
+
 func TestFriendlyKubePrometheusInstallErrorExplainsRBACEscalation(t *testing.T) {
 	err := fmt.Errorf(`应用 kube-prometheus-stack 渲染清单: 文档 #27: Apply ClusterRole /kbt-prom-kube-prometheus-s-operator: clusterroles.rbac.authorization.k8s.io "kbt-prom-kube-prometheus-s-operator" is forbidden: user "system:serviceaccount:easy:easypanel" is attempting to grant RBAC permissions not currently held`)
 
