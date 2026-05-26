@@ -276,6 +276,12 @@ metadata:
 - [行为准则](./CODE_OF_CONDUCT.md)
 - [项目来源与 NOTICE](./NOTICE)
 
+## 作者微信
+
+扫码添加作者微信。部署使用、运维交流、功能建议、PR 沟通或其他问题，都可以联系作者。
+
+<img src="./docs/assets/author-wechat.jpg" alt="作者微信二维码" width="260" />
+
 ## 项目来源与许可证
 
 EasyPanel 的早期项目来源为 abcdocker 的原始仓库：
