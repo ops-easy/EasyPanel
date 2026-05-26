@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "frontend-api-uses",
-  "routeCount": 874,
+  "routeCount": 877,
   "routes": [
     {
       "method": "UNKNOWN",
@@ -2735,7 +2735,7 @@
       "method": "GET",
       "pathPattern": "/api/config",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
-      "sourceLine": 167,
+      "sourceLine": 168,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2743,7 +2743,7 @@
       "method": "GET",
       "pathPattern": "/api/config",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx",
-      "sourceLine": 143,
+      "sourceLine": 145,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2751,7 +2751,7 @@
       "method": "GET",
       "pathPattern": "/api/config",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
-      "sourceLine": 95,
+      "sourceLine": 96,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3583,7 +3583,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/addons/dashboard-monitoring/install",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx",
-      "sourceLine": 196,
+      "sourceLine": 217,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3591,15 +3591,15 @@
       "method": "GET",
       "pathPattern": "/api/k8s/addons/dashboard-monitoring/verify",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx",
-      "sourceLine": 222,
-      "needsManualReview": false,
+      "sourceLine": 246,
+      "needsManualReview": true,
       "kind": "http"
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/addons/ingress-nginx/controller-node",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
-      "sourceLine": 312,
+      "sourceLine": 324,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3607,7 +3607,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/addons/ingress-nginx/host-ports",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
-      "sourceLine": 333,
+      "sourceLine": 346,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3615,7 +3615,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/addons/ingress-nginx/install",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
-      "sourceLine": 282,
+      "sourceLine": 294,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3623,7 +3623,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/addons/ingress-nginx/uninstall",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
-      "sourceLine": 390,
+      "sourceLine": 405,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3631,7 +3631,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/addons/ingress-nginx/verify",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
-      "sourceLine": 369,
+      "sourceLine": 384,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3639,7 +3639,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/k8s/addons/kube-prometheus-stack/install",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
-      "sourceLine": 182,
+      "sourceLine": 198,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -3647,7 +3647,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/addons/kube-prometheus-stack/verify",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
-      "sourceLine": 244,
+      "sourceLine": 276,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3655,7 +3655,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/addons/status",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
-      "sourceLine": 184,
+      "sourceLine": 185,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3663,7 +3663,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/addons/status",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx",
-      "sourceLine": 168,
+      "sourceLine": 173,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3671,7 +3671,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/addons/status",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
-      "sourceLine": 136,
+      "sourceLine": 145,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3681,6 +3681,30 @@
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sSettings.tsx",
       "sourceLine": 198,
       "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/addons/status",
+      "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sVmLogSection.tsx",
+      "sourceLine": 111,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/addons/victoria-logs/install",
+      "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sVmLogSection.tsx",
+      "sourceLine": 169,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/addons/victoria-logs/verify",
+      "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sVmLogSection.tsx",
+      "sourceLine": 210,
+      "needsManualReview": true,
       "kind": "http"
     },
     {
@@ -3895,7 +3919,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/nodes",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sAddonsSection.tsx",
-      "sourceLine": 204,
+      "sourceLine": 207,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5439,7 +5463,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/vmlog/discover",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sVmLogSection.tsx",
-      "sourceLine": 71,
+      "sourceLine": 104,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5447,7 +5471,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/vmlog/namespaces",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sVmLogSection.tsx",
-      "sourceLine": 64,
+      "sourceLine": 97,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5623,7 +5647,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/query",
       "sourceFile": "frontend/src/lib/api.ts",
-      "sourceLine": 642,
+      "sourceLine": 654,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5639,7 +5663,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/query_range",
       "sourceFile": "frontend/src/lib/api.ts",
-      "sourceLine": 655,
+      "sourceLine": 667,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -6279,7 +6303,7 @@
       "method": "GET",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sVmLogSection.tsx",
-      "sourceLine": 49,
+      "sourceLine": 82,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -6351,7 +6375,7 @@
       "method": "PUT",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sVmLogSection.tsx",
-      "sourceLine": 84,
+      "sourceLine": 131,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -6503,7 +6527,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/v1/query",
       "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 249,
+      "sourceLine": 251,
       "needsManualReview": false,
       "kind": "literal"
     },

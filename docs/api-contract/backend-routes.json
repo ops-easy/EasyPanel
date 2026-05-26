@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "backend-routes",
-  "routeCount": 537,
+  "routeCount": 539,
   "routes": [
     {
       "method": "GET",
@@ -1883,15 +1883,27 @@
     },
     {
       "method": "POST",
+      "pathPattern": "/api/k8s/addons/victoria-logs/install",
+      "sourceFile": "backend/common/core/k8s_routes.go",
+      "sourceLine": 85
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/addons/victoria-logs/verify",
+      "sourceFile": "backend/common/core/k8s_routes.go",
+      "sourceLine": 84
+    },
+    {
+      "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 101
+      "sourceLine": 103
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/configmaps",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 99
+      "sourceLine": 101
     },
     {
       "method": "GET",
@@ -1945,19 +1957,19 @@
       "method": "GET",
       "pathPattern": "/api/k8s/daemonsets",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 88
+      "sourceLine": 90
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/deployments",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 85
+      "sourceLine": 87
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/deployments/:namespace/:name/restart",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 86
+      "sourceLine": 88
     },
     {
       "method": "POST",
@@ -2005,49 +2017,49 @@
       "method": "GET",
       "pathPattern": "/api/k8s/object-json",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 103
+      "sourceLine": 105
     },
     {
       "method": "PUT",
       "pathPattern": "/api/k8s/object-json",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 104
+      "sourceLine": 106
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/object-revisions",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 105
+      "sourceLine": 107
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/object-revisions/diff",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 107
+      "sourceLine": 109
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/object-revisions/rollback",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 108
+      "sourceLine": 110
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/object-revisions/yaml",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 106
+      "sourceLine": 108
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 102
+      "sourceLine": 104
     },
     {
       "method": "DELETE",
       "pathPattern": "/api/k8s/objects/:kind/:namespace/:name",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 109
+      "sourceLine": 111
     },
     {
       "method": "GET",
@@ -2167,55 +2179,55 @@
       "method": "POST",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/delete",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 95
+      "sourceLine": 97
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/list",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 92
+      "sourceLine": 94
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/mkdir",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 96
+      "sourceLine": 98
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/mounts",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 91
+      "sourceLine": 93
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/read",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 93
+      "sourceLine": 95
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/rename",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 97
+      "sourceLine": 99
     },
     {
       "method": "PUT",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/write",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 94
+      "sourceLine": 96
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pvcs",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 89
+      "sourceLine": 91
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/pvcs/:namespace/:name/expand",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 90
+      "sourceLine": 92
     },
     {
       "method": "GET",
@@ -2245,13 +2257,13 @@
       "method": "GET",
       "pathPattern": "/api/k8s/resource-relations",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 84
+      "sourceLine": 86
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/secrets",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 100
+      "sourceLine": 102
     },
     {
       "method": "GET",
@@ -2263,13 +2275,13 @@
       "method": "GET",
       "pathPattern": "/api/k8s/statefulsets",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 87
+      "sourceLine": 89
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/storage-classes",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 98
+      "sourceLine": 100
     },
     {
       "method": "GET",
