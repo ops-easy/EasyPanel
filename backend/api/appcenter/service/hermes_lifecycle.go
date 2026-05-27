@@ -32,7 +32,7 @@ func handleAppHermesUpgrade(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	image := strings.TrimSpace(body.Image)
+	image := normalizeHermesImage(body.Image)
 	if image == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "升级 Hermes 必须填写 image"})
 		return
@@ -70,7 +70,7 @@ func handleAppHermesRollback(c *gin.Context, app *ServerApp) {
 	if !ok {
 		return
 	}
-	prev := strings.TrimSpace(inst.PreviousImage)
+	prev := normalizeHermesImage(inst.PreviousImage)
 	if prev == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Hermes 实例没有可回滚镜像"})
 		return
@@ -98,6 +98,7 @@ func patchHermesDeploymentImage(ctx context.Context, app *ServerApp, inst Hermes
 	if app.K8s() == nil {
 		return apierrors.NewServiceUnavailable("K8s 未连接")
 	}
+	image = normalizeHermesImage(image)
 	dep, err := app.K8s().AppsV1().Deployments(inst.Namespace).Get(ctx, inst.DeploymentName, metav1.GetOptions{})
 	if err != nil {
 		return err

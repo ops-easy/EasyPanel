@@ -26,7 +26,7 @@ func handleAppHermesBootstrapPut(c *gin.Context, app *ServerApp) {
 		return
 	}
 	body.DefaultNamespace = strings.TrimSpace(body.DefaultNamespace)
-	body.DefaultImage = strings.TrimSpace(body.DefaultImage)
+	body.DefaultImage = normalizeHermesImage(body.DefaultImage)
 	body.DefaultStorageSize = strings.TrimSpace(body.DefaultStorageSize)
 	if body.DefaultNamespace == "" || body.DefaultImage == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "defaultNamespace 与 defaultImage 不能为空"})

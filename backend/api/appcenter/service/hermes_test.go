@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -8,6 +9,45 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
+
+const legacyHermesGHCRImage = "ghcr.io/nousresearch/hermes-agent:latest"
+
+type hermesTestPlatformKV struct {
+	data map[string]string
+}
+
+func newHermesTestPlatformKV() *hermesTestPlatformKV {
+	return &hermesTestPlatformKV{data: map[string]string{}}
+}
+
+func (kv *hermesTestPlatformKV) Get(k string) (string, bool) {
+	v, ok := kv.data[k]
+	return v, ok
+}
+
+func (kv *hermesTestPlatformKV) Set(k, v string) error {
+	kv.data[k] = v
+	return nil
+}
+
+func (kv *hermesTestPlatformKV) Snapshot() map[string]string {
+	out := make(map[string]string, len(kv.data))
+	for k, v := range kv.data {
+		out[k] = v
+	}
+	return out
+}
+
+func setHermesInstancesForTest(t *testing.T, kv *hermesTestPlatformKV, list []HermesInstance) {
+	t.Helper()
+	raw, err := json.Marshal(hermesInstancesPayload{Instances: list})
+	if err != nil {
+		t.Fatalf("marshal Hermes instances: %v", err)
+	}
+	if err := kv.Set(kvKeyHermesInstances, string(raw)); err != nil {
+		t.Fatalf("set Hermes instances: %v", err)
+	}
+}
 
 func TestHermesBuildDeploymentModeCommands(t *testing.T) {
 	cases := []struct {
@@ -120,6 +160,146 @@ func TestHermesBuildDeploymentModeCommands(t *testing.T) {
 func TestHermesDefaultImageUsesPublishedDockerHubRepository(t *testing.T) {
 	if got := defaultHermesBootstrap().DefaultImage; got != "nousresearch/hermes-agent:latest" {
 		t.Fatalf("default Hermes image=%q, want Docker Hub image", got)
+	}
+}
+
+func TestHermesBootstrapNormalizesLegacyGHCRImage(t *testing.T) {
+	kv := newHermesTestPlatformKV()
+	raw := `{"bootstrapComplete":true,"defaultNamespace":"hermes","defaultMode":"gateway-dashboard","defaultImage":"ghcr.io/nousresearch/hermes-agent:latest","defaultStorageSize":"10Gi"}`
+	if err := kv.Set(kvKeyHermesBootstrap, raw); err != nil {
+		t.Fatalf("set bootstrap: %v", err)
+	}
+
+	got := loadHermesBootstrap(kv)
+	if got.DefaultImage != hermesDefaultImage {
+		t.Fatalf("defaultImage=%q, want %q", got.DefaultImage, hermesDefaultImage)
+	}
+}
+
+func TestSaveHermesBootstrapNormalizesLegacyGHCRImage(t *testing.T) {
+	kv := newHermesTestPlatformKV()
+	if err := saveHermesBootstrap(kv, &HermesBootstrap{
+		BootstrapComplete:  true,
+		DefaultNamespace:   "hermes",
+		DefaultMode:        "gateway-dashboard",
+		DefaultImage:       legacyHermesGHCRImage,
+		DefaultStorageSize: "10Gi",
+	}); err != nil {
+		t.Fatalf("saveHermesBootstrap returned error: %v", err)
+	}
+
+	raw, ok := kv.Get(kvKeyHermesBootstrap)
+	if !ok {
+		t.Fatalf("bootstrap KV was not written")
+	}
+	if strings.Contains(raw, legacyHermesGHCRImage) {
+		t.Fatalf("bootstrap KV still contains legacy image: %s", raw)
+	}
+	got := loadHermesBootstrap(kv)
+	if got.DefaultImage != hermesDefaultImage {
+		t.Fatalf("defaultImage=%q, want %q", got.DefaultImage, hermesDefaultImage)
+	}
+}
+
+func TestLoadHermesInstancesNormalizesLegacyGHCRImage(t *testing.T) {
+	kv := newHermesTestPlatformKV()
+	setHermesInstancesForTest(t, kv, []HermesInstance{{
+		ID:             "legacy",
+		DisplayName:    "Legacy Hermes",
+		Namespace:      "hermes",
+		DeploymentName: "hermes-agent",
+		ServiceName:    "hermes-agent",
+		Image:          legacyHermesGHCRImage,
+		PreviousImage:  legacyHermesGHCRImage,
+		Mode:           "gateway-dashboard",
+	}})
+
+	list, err := loadHermesInstances(kv)
+	if err != nil {
+		t.Fatalf("loadHermesInstances returned error: %v", err)
+	}
+	if len(list) != 1 {
+		t.Fatalf("instance count=%d, want 1", len(list))
+	}
+	if list[0].Image != hermesDefaultImage {
+		t.Fatalf("image=%q, want %q", list[0].Image, hermesDefaultImage)
+	}
+	if list[0].PreviousImage != hermesDefaultImage {
+		t.Fatalf("previousImage=%q, want %q", list[0].PreviousImage, hermesDefaultImage)
+	}
+}
+
+func TestAppendHermesInstanceNormalizesLegacyGHCRImage(t *testing.T) {
+	kv := newHermesTestPlatformKV()
+	saved, err := appendHermesInstance(kv, HermesInstance{
+		DisplayName:    "Legacy Hermes",
+		Namespace:      "hermes",
+		DeploymentName: "hermes-agent",
+		ServiceName:    "hermes-agent",
+		Image:          legacyHermesGHCRImage,
+		PreviousImage:  legacyHermesGHCRImage,
+		Mode:           "gateway-dashboard",
+	})
+	if err != nil {
+		t.Fatalf("appendHermesInstance returned error: %v", err)
+	}
+	if saved.Image != hermesDefaultImage {
+		t.Fatalf("saved image=%q, want %q", saved.Image, hermesDefaultImage)
+	}
+	raw, _ := kv.Get(kvKeyHermesInstances)
+	if strings.Contains(raw, legacyHermesGHCRImage) {
+		t.Fatalf("instance KV still contains legacy image: %s", raw)
+	}
+}
+
+func TestPatchHermesInstanceNormalizesLegacyGHCRImage(t *testing.T) {
+	kv := newHermesTestPlatformKV()
+	setHermesInstancesForTest(t, kv, []HermesInstance{{
+		ID:             "legacy",
+		DisplayName:    "Legacy Hermes",
+		Namespace:      "hermes",
+		DeploymentName: "hermes-agent",
+		ServiceName:    "hermes-agent",
+		Image:          hermesDefaultImage,
+		Mode:           "gateway-dashboard",
+	}})
+
+	saved, err := patchHermesInstance(kv, "legacy", func(x *HermesInstance) {
+		x.Image = legacyHermesGHCRImage
+		x.PreviousImage = legacyHermesGHCRImage
+	})
+	if err != nil {
+		t.Fatalf("patchHermesInstance returned error: %v", err)
+	}
+	if saved.Image != hermesDefaultImage {
+		t.Fatalf("saved image=%q, want %q", saved.Image, hermesDefaultImage)
+	}
+	if saved.PreviousImage != hermesDefaultImage {
+		t.Fatalf("previousImage=%q, want %q", saved.PreviousImage, hermesDefaultImage)
+	}
+	raw, _ := kv.Get(kvKeyHermesInstances)
+	if strings.Contains(raw, legacyHermesGHCRImage) {
+		t.Fatalf("instance KV still contains legacy image: %s", raw)
+	}
+}
+
+func TestBuildHermesDeploymentNormalizesLegacyGHCRImage(t *testing.T) {
+	dep, err := buildHermesDeployment(HermesK8sDeployOpts{
+		Namespace:      "hermes",
+		DeploymentName: "hermes-agent",
+		Image:          legacyHermesGHCRImage,
+		Mode:           "gateway-dashboard",
+		PVCName:        "hermes-home",
+		SecretName:     "hermes-secret",
+		ConfigMapName:  "hermes-config",
+	})
+	if err != nil {
+		t.Fatalf("buildHermesDeployment returned error: %v", err)
+	}
+	for _, c := range dep.Spec.Template.Spec.Containers {
+		if c.Image != hermesDefaultImage {
+			t.Fatalf("container %q image=%q, want %q", c.Name, c.Image, hermesDefaultImage)
+		}
 	}
 }
 

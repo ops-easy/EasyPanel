@@ -93,7 +93,7 @@ func handleAppHermesDeploy(c *gin.Context, app *ServerApp) {
 	if dep == "" {
 		dep = "hermes-agent"
 	}
-	img := strings.TrimSpace(body.Image)
+	img := normalizeHermesImage(body.Image)
 	if img == "" {
 		img = defaultHermesBootstrap().DefaultImage
 	}

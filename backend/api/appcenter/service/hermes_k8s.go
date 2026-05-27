@@ -73,6 +73,7 @@ func hermesRuntimeVolumeName(name string) string {
 
 func hermesContainer(name string, args []string, image, secretName, configMapName, mode string) corev1.Container {
 	home := hermesRuntimeHome(name)
+	image = normalizeHermesImage(image)
 	env := []corev1.EnvVar{
 		{Name: "HOME", Value: home},
 		{Name: "HERMES_HOME", Value: home},
@@ -124,7 +125,7 @@ func buildHermesDeployment(opts HermesK8sDeployOpts) (*appsv1.Deployment, error)
 	}
 	ns := strings.TrimSpace(opts.Namespace)
 	name := strings.TrimSpace(opts.DeploymentName)
-	image := strings.TrimSpace(opts.Image)
+	image := normalizeHermesImage(opts.Image)
 	if ns == "" || name == "" || image == "" {
 		return nil, errors.New("namespace、deploymentName、image 不能为空")
 	}

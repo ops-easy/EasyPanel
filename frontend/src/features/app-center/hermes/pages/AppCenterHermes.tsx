@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { apiDelete, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import { cloudVmAppCenterCanWrite } from "@/lib/platform-permissions";
+import { HERMES_DEFAULT_IMAGE, normalizeHermesImage } from "../hermesImage";
 
 type HermesBootstrap = {
   bootstrapComplete: boolean;
@@ -121,7 +122,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
     namespace: "hermes",
     deploymentName: "hermes-agent",
     serviceName: "hermes-agent",
-    image: "nousresearch/hermes-agent:latest",
+    image: HERMES_DEFAULT_IMAGE,
     mode: "gateway-dashboard",
     storageSize: "10Gi",
     modelProvider: "openrouter",
@@ -145,7 +146,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
     setForm((f) => ({
       ...f,
       namespace: f.namespace || boot.defaultNamespace || "hermes",
-      image: f.image || boot.defaultImage || "nousresearch/hermes-agent:latest",
+      image: normalizeHermesImage(f.image || boot.defaultImage || HERMES_DEFAULT_IMAGE),
       mode: f.mode || boot.defaultMode || "gateway-dashboard",
       storageSize: f.storageSize || boot.defaultStorageSize || "10Gi",
       modelProvider: f.modelProvider || boot.defaultModelProvider || "",
@@ -153,7 +154,11 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
     }));
   }, [boot]);
 
-  const rows = useMemo(() => listQ.data?.instances ?? [], [listQ.data?.instances]);
+  const rows = useMemo(
+    () => (listQ.data?.instances ?? []).map((row) => ({ ...row, image: normalizeHermesImage(row.image) })),
+    [listQ.data?.instances]
+  );
+  const defaultImageLabel = normalizeHermesImage(boot?.defaultImage);
   const readyCount = useMemo(
     () => rows.filter((x) => x.ready || statusQ.data?.statuses?.[x.id]?.ready).length,
     [rows, statusQ.data?.statuses]
@@ -192,7 +197,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
         bootstrapComplete: true,
         defaultNamespace: form.namespace,
         defaultMode: form.mode,
-        defaultImage: form.image,
+        defaultImage: normalizeHermesImage(form.image) || HERMES_DEFAULT_IMAGE,
         defaultStorageSize: form.storageSize,
         defaultModelProvider: form.modelProvider,
         defaultModelName: form.modelName,
@@ -208,6 +213,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
     mutationFn: () =>
       apiPostJson<{ instance: HermesInstance; apiServerKey?: string }>("/api/app-center/hermes/k8s-deploy", {
         ...form,
+        image: normalizeHermesImage(form.image) || HERMES_DEFAULT_IMAGE,
         nodePort: Number(form.nodePort) || 0,
         replicas: Number(form.replicas) || 1,
         secretPlaintext: {
@@ -311,7 +317,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs text-slate-500">默认镜像</p>
-              <p className="mt-1 truncate font-mono text-sm text-slate-950">{boot?.defaultImage || "-"}</p>
+              <p className="mt-1 truncate font-mono text-sm text-slate-950">{defaultImageLabel || "-"}</p>
             </div>
           </section>
 

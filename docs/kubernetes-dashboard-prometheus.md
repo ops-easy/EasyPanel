@@ -24,17 +24,18 @@
 
 | 项目 | 说明 |
 |------|------|
-| **安装内容** | [metrics-server v0.7.2](https://github.com/kubernetes-sigs/metrics-server/releases/tag/v0.7.2) 的 `components.yaml`；[Kubernetes Dashboard v2.7.0](https://github.com/kubernetes/dashboard/tree/v2.7.0) 的 `aio/deploy/recommended.yaml`；以及平台创建的 ServiceAccount **`easypanel-dashboard-admin`**（绑定 **cluster-admin**，仅便于登录演示，**生产请改为最小权限**）。 |
-| **清单下载** | 与 **ingress-nginx 一键安装** 相同：由运行时 `k8sAddonsManifestMirror`（或请求体 `manifestMirror`）控制，依次尝试 jsDelivr、多条 ghproxy、直连等；单线超时约 90s 换线。 |
-| **镜像改写** | `registry.k8s.io/` → `m.daocloud.io/registry.k8s.io/`；`kubernetesui/` → `m.daocloud.io/docker.io/kubernetesui/`。与 ingress 共用「跳过 K8s 镜像改写」类开关时（如 `INGRESS_NGINX_SKIP_K8S_REGISTRY_MIRROR=true`）则**不做**改写，需自备可拉取的镜像仓库。 |
+| **安装内容** | [metrics-server](https://github.com/kubernetes-sigs/metrics-server) 的 `latest/download/components.yaml`；Kubernetes Dashboard 官方 Helm chart **`kubernetes-dashboard/kubernetes-dashboard`**（平台用镜像内 `/app/helm` 执行 `helm template` 后由 client-go apply）；以及平台创建的 ServiceAccount **`easypanel-dashboard-admin`**（绑定 **cluster-admin**，仅便于登录演示，**生产请改为最小权限**）。 |
+| **Dashboard 目标** | 请求体/运行时配置中的 `dashboardNamespace` 与 `dashboardReleaseName` 会直接参与 Helm 渲染；例如 release 为 `dash-ui` 时，Kong 入口 Service 通常为 **`dash-ui-kong-proxy`**。 |
+| **清单与 Chart 下载** | metrics-server 清单与 **ingress-nginx 一键安装** 相同：由运行时 `k8sAddonsManifestMirror`（或请求体 `manifestMirror`）控制，依次尝试 jsDelivr、多条 ghproxy、直连等；Dashboard chart 由 Helm 从 `https://kubernetes.github.io/dashboard/` 拉取。 |
+| **镜像改写** | metrics-server 中的 `registry.k8s.io/` → `m.daocloud.io/registry.k8s.io/`；Dashboard Helm 渲染结果按 kube-prometheus-stack / VictoriaLogs 相同规则改写 `registry.k8s.io/`、`docker.io/`、`quay.io/`、`gcr.io/` 等前缀。与 ingress 共用「跳过 K8s 镜像改写」类开关时（如 `INGRESS_NGINX_SKIP_K8S_REGISTRY_MIRROR=true`）则**不做**改写，需自备可拉取的镜像仓库。 |
 | **kubelet 证书** | 页面默认勾选为 metrics-server 注入 **`--kubelet-insecure-tls`**（国内自签 kubelet 常见需要）；正规 CA 环境可取消勾选。 |
-| **API** | `POST /api/k8s/addons/dashboard-monitoring/install`（管理员）；安装后轮询 Deployment 就绪，响应体含 `verification`。 |
-| **仅自检** | `GET /api/k8s/addons/dashboard-monitoring/verify?maxWaitSec=180` |
+| **API** | `POST /api/k8s/addons/dashboard-monitoring/install`（管理员）；请求体可传 `metricsServerNamespace`、`dashboardNamespace`、`dashboardReleaseName`、`manifestMirror`、`kubeletInsecureTls`；安装后轮询 metrics-server、Dashboard api/auth/web、Kong Deployment 与 Kong proxy Service，响应体含 `verification`，并会尽量把目标 namespace/release 写回运行时配置。 |
+| **仅自检** | `GET /api/k8s/addons/dashboard-monitoring/verify?maxWaitSec=180&metricsServerNamespace=kube-system&dashboardNamespace=kubernetes-dashboard&dashboardReleaseName=kubernetes-dashboard` |
 | **聚合状态** | `GET /api/k8s/addons/status` 的 JSON 中增加 **`metricsServer`**、**`kubernetesDashboard`** 字段（与 ingress 状态并列）。 |
 
 **重要**：本功能**不会**自动配置 **`prometheusUrlK8s` / `vmSelectUrlK8s`**。平台「集群 → 监控」等页的 PromQL 数据源仍在集群设置中单独维护，与 Dashboard Web UI **独立**。
 
-**手动安装**（与平台改写规则一致的可复制步骤）见集群设置页该卡片底部文本框；亦可参考下文第 3、4 节自行 `kubectl apply` 与 `sed` 替换镜像前缀。
+**手动安装**（与平台改写规则一致的可复制步骤）见集群设置页该卡片底部文本框；核心做法是 metrics-server 使用清单 apply，Dashboard 使用 `helm template` 渲染 `kubernetes-dashboard/kubernetes-dashboard` 后再 apply。
 
 ### 1.2 kube-prometheus-stack：平台一键安装（推荐 · 对齐监控页 PromQL）
 
@@ -168,7 +169,29 @@ helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dash
 
 Chart 参数与 Kong 网关前置方式见 [Artifact Hub：kubernetes-dashboard](https://artifacthub.io/packages/helm/k8s-dashboard/kubernetes-dashboard) 及仓库内 `charts/kubernetes-dashboard/values.yaml`。
 
-若内网无法 `helm repo add`，可将 chart 打包导入私有 Helm 仓库后再安装。
+平台一键安装不直接执行 `helm upgrade --install`，而是与 kube-prometheus-stack / VictoriaLogs 一样在后端执行：
+
+```bash
+DASHBOARD_NAMESPACE=kubernetes-dashboard
+DASHBOARD_RELEASE=kubernetes-dashboard
+
+helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/ || true
+helm repo update
+helm template "$DASHBOARD_RELEASE" kubernetes-dashboard/kubernetes-dashboard \
+  --namespace "$DASHBOARD_NAMESPACE" \
+  | kubectl apply -f -
+```
+
+如果 release 改为 `dash-ui`、namespace 改为 `dash-system`，对应的一键安装请求体应包含：
+
+```json
+{
+  "dashboardNamespace": "dash-system",
+  "dashboardReleaseName": "dash-ui"
+}
+```
+
+Kong 入口 Service 随 release 变化，通常为 `$DASHBOARD_RELEASE-kong-proxy`。若内网无法 `helm repo add`，可将 chart 打包导入私有 Helm 仓库，或在运行镜像中预置可访问的 Helm 仓库配置。
 
 ### 4.2 历史环境：旧版清单安装（仅适用于已锁版本的老集群）
 
@@ -183,20 +206,20 @@ kubectl get svc -n kubernetes-dashboard
 
 ### 4.3 暴露访问方式（择一）
 
-**kubectl proxy / API 代理（调试）**
+**Kong Service 端口转发（调试）**
 
-新版经 **Kong** 暴露 Service，路径与 Service 名以 `kubectl get svc -n kubernetes-dashboard` 为准；亦可查阅上游 [Accessing Dashboard](https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md)。
-
-旧版（v2 清单）典型示例：
+新版 Dashboard 经 **Kong** 暴露，官方推荐用 Service 端口转发：
 
 ```bash
-kubectl proxy
-# 路径示例（仅旧版）：https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md
+kubectl -n "$DASHBOARD_NAMESPACE" port-forward "svc/$DASHBOARD_RELEASE-kong-proxy" 8443:443
+# 浏览器打开：https://localhost:8443
 ```
+
+若你的 release 仍为默认值，即 `svc/kubernetes-dashboard-kong-proxy`。亦可查阅上游 [Deploy and Access the Kubernetes Dashboard](https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/)。
 
 **Ingress + TLS（生产常用）**
 
-- 为 `kubernetes-dashboard` Service 创建 Ingress，配置证书与域名；
+- 为 Kong proxy Service（如 `kubernetes-dashboard-kong-proxy`）创建 Ingress，配置证书与域名；
 - 严格限制来源 IP 或前置 SSO/OIDC。
 
 **NodePort / LoadBalancer**
@@ -214,16 +237,17 @@ Dashboard **必须使用具有权限的 Token 或 kubeconfig**，不要使用过
 按需修改 Role/ClusterRole；以下为**示例**，生产请按最小权限裁剪。
 
 ```bash
-kubectl create serviceaccount dashboard-user -n kubernetes-dashboard
+DASHBOARD_NAMESPACE=kubernetes-dashboard
+kubectl create serviceaccount dashboard-user -n "$DASHBOARD_NAMESPACE"
 kubectl create clusterrolebinding dashboard-user-binding \
   --clusterrole=cluster-admin \
-  --serviceaccount=kubernetes-dashboard:dashboard-user
+  --serviceaccount="$DASHBOARD_NAMESPACE:dashboard-user"
 ```
 
 获取 Token（Kubernetes 1.24+ 使用 Secret 方式）：
 
 ```bash
-kubectl create token dashboard-user -n kubernetes-dashboard --duration=24h
+kubectl create token dashboard-user -n "$DASHBOARD_NAMESPACE" --duration=24h
 ```
 
 将 Token 粘贴到 Dashboard 登录页。

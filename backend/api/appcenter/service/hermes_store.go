@@ -114,6 +114,7 @@ func loadHermesBootstrap(kv PlatformKV) *HermesBootstrap {
 	if b.DefaultImage == "" {
 		b.DefaultImage = def.DefaultImage
 	}
+	normalizeHermesBootstrapImages(&b)
 	if b.DefaultStorageSize == "" {
 		b.DefaultStorageSize = def.DefaultStorageSize
 	}
@@ -127,7 +128,9 @@ func saveHermesBootstrap(kv PlatformKV, b *HermesBootstrap) error {
 	if kv == nil || b == nil {
 		return errors.New("platform_kv 不可用")
 	}
-	raw, err := json.Marshal(b)
+	next := *b
+	normalizeHermesBootstrapImages(&next)
+	raw, err := json.Marshal(&next)
 	if err != nil {
 		return err
 	}
@@ -149,6 +152,9 @@ func loadHermesInstances(kv PlatformKV) ([]HermesInstance, error) {
 	if p.Instances == nil {
 		return []HermesInstance{}, nil
 	}
+	for i := range p.Instances {
+		normalizeHermesInstanceImages(&p.Instances[i])
+	}
 	return p.Instances, nil
 }
 
@@ -156,7 +162,11 @@ func saveHermesInstances(kv PlatformKV, list []HermesInstance) error {
 	if kv == nil {
 		return errors.New("platform_kv 不可用")
 	}
-	raw, err := json.Marshal(hermesInstancesPayload{Instances: list})
+	next := append([]HermesInstance(nil), list...)
+	for i := range next {
+		normalizeHermesInstanceImages(&next[i])
+	}
+	raw, err := json.Marshal(hermesInstancesPayload{Instances: next})
 	if err != nil {
 		return err
 	}
@@ -171,6 +181,7 @@ func appendHermesInstance(kv PlatformKV, inst HermesInstance) (HermesInstance, e
 	if strings.TrimSpace(inst.ID) == "" {
 		inst.ID = uuid.NewString()
 	}
+	normalizeHermesInstanceImages(&inst)
 	if inst.Replicas == 0 {
 		inst.Replicas = 1
 	}
@@ -186,6 +197,7 @@ func patchHermesInstance(kv PlatformKV, id string, patch func(*HermesInstance)) 
 	for i := range list {
 		if list[i].ID == strings.TrimSpace(id) {
 			patch(&list[i])
+			normalizeHermesInstanceImages(&list[i])
 			list[i].UpdatedAt = NowBeijingRFC3339()
 			return list[i], saveHermesInstances(kv, list)
 		}

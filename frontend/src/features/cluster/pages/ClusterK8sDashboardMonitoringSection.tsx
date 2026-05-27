@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { APP_CONFIG_QUERY_KEY } from "@/hooks/use-app-config";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Loader2 } from "lucide-react";
@@ -67,8 +67,15 @@ type KubernetesDashboardAddonSlice = {
   adminBindingInstalled?: boolean;
   accessHint?: string;
   allComponentsReady?: boolean;
+  helmChart?: string;
+  kongProxyService?: string;
   dashboardDeployment?: DeploymentBrief;
   scraperDeployment?: DeploymentBrief;
+  kongDeployment?: DeploymentBrief;
+  apiDeployment?: DeploymentBrief;
+  authDeployment?: DeploymentBrief;
+  webDeployment?: DeploymentBrief;
+  metricsScraperDeployment?: DeploymentBrief;
 };
 
 type DashboardAddonsStatus = AddonsStatusResponse & {
@@ -89,7 +96,17 @@ function isMirrorMode(v: string): v is MirrorMode {
   return v === "auto" || v === "ghproxy_preferred" || v === "direct" || v === "ghproxy_only";
 }
 
-const MANUAL_STEPS = `# 手动安装（国内镜像思路与平台一键安装一致）
+function addonName(value: string, fallback: string) {
+  return value.trim() || fallback;
+}
+
+function buildManualSteps(dashboardNamespace: string, dashboardReleaseName: string) {
+  const ns = addonName(dashboardNamespace, "kubernetes-dashboard");
+  const rel = addonName(dashboardReleaseName, "kubernetes-dashboard");
+  return `# 手动安装（与平台一键安装一致：metrics-server 清单 + Dashboard Helm 渲染）
+DASHBOARD_NAMESPACE=${ns}
+DASHBOARD_RELEASE=${rel}
+
 # 1) metrics-server latest/components.yaml，下载后替换 registry.k8s.io → m.daocloud.io/registry.k8s.io
 curl -fsSL -o components.yaml \\
   "https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml"
@@ -99,11 +116,15 @@ kubectl apply -f components.yaml
 kubectl -n kube-system patch deploy metrics-server --type='json' \\
   -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
 
-# 2) Kubernetes Dashboard 2.7 recommended，替换 kubernetesui → m.daocloud.io/docker.io/kubernetesui
-curl -fsSL -o recommended.yaml \\
-  "https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml"
-sed -i.bak 's|image: kubernetesui/|image: m.daocloud.io/docker.io/kubernetesui/|g' recommended.yaml
-kubectl apply -f recommended.yaml
+# 2) Kubernetes Dashboard Helm chart，经 helm template 渲染后 apply
+helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/ || true
+helm repo update
+helm template "$DASHBOARD_RELEASE" kubernetes-dashboard/kubernetes-dashboard \\
+  --namespace "$DASHBOARD_NAMESPACE" \\
+  | sed -e 's|registry.k8s.io/|m.daocloud.io/registry.k8s.io/|g' \\
+        -e 's|docker.io/|docker.m.daocloud.io/|g' \\
+        -e 's|quay.io/|quay.m.daocloud.io/|g' \\
+  | kubectl apply -f -
 
 # 3) 登录用高权限 SA（生产请改为最小权限 Role）
 kubectl apply -f - <<'EOF'
@@ -111,7 +132,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: easypanel-dashboard-admin
-  namespace: kubernetes-dashboard
+  namespace: ${ns}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -124,16 +145,17 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: easypanel-dashboard-admin
-  namespace: kubernetes-dashboard
+  namespace: ${ns}
 EOF
 
 kubectl get pods -n kube-system -l k8s-app=metrics-server
-kubectl get pods -n kubernetes-dashboard
-kubectl create token easypanel-dashboard-admin -n kubernetes-dashboard --duration=24h
-# 访问：kubectl proxy 后打开
-# http://127.0.0.1:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+kubectl get deploy,svc -n "$DASHBOARD_NAMESPACE" -l app.kubernetes.io/instance="$DASHBOARD_RELEASE"
+kubectl create token easypanel-dashboard-admin -n "$DASHBOARD_NAMESPACE" --duration=24h
+# 访问：Kong proxy Service 端口转发后打开 https://localhost:8443
+kubectl -n "$DASHBOARD_NAMESPACE" port-forward "svc/\${DASHBOARD_RELEASE}-kong-proxy" 8443:443
 
 # 4) 本平台「集群 → 监控」图表：在集群设置填写 prometheusUrlK8s / vmSelectUrlK8s（与 Dashboard Web UI 独立）`;
+}
 
 const ClusterK8sDashboardMonitoringSection: React.FC = () => {
   const { status: auth } = useAuth();
@@ -207,7 +229,7 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
   const runInstall = useCallback(async () => {
     setInstallOpen(false);
     setBusy(true);
-    setPhase("正在下载清单（国内友好线路）并应用 metrics-server、Dashboard 与登录 SA…");
+    setPhase("正在安装 metrics-server，并用 helm template 渲染 Dashboard Helm chart 与 Kong 入口…");
     try {
       const res = await apiPostJson<{
         message?: string;
@@ -240,12 +262,12 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
 
   const runVerify = useCallback(async () => {
     setVerifyBusy(true);
-    setPhase("正在检查 metrics-server 与 Dashboard Deployment 就绪情况…");
+    setPhase("正在检查 metrics-server、Dashboard Helm 组件与 Kong proxy Service…");
     try {
       const res = await apiGetJson<{ verification: IngressAddonVerification }>(
         `/api/k8s/addons/dashboard-monitoring/verify?maxWaitSec=180&metricsServerNamespace=${encodeURIComponent(
           metricsServerNamespace,
-        )}&dashboardNamespace=${encodeURIComponent(dashboardNamespace)}`,
+        )}&dashboardNamespace=${encodeURIComponent(dashboardNamespace)}&dashboardReleaseName=${encodeURIComponent(dashboardReleaseName)}`,
       );
       setVerification(res.verification);
       if (res.verification.ok) {
@@ -260,23 +282,33 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
       setVerifyBusy(false);
       setPhase("");
     }
-  }, [dashboardNamespace, metricsServerNamespace, qc]);
+  }, [dashboardNamespace, dashboardReleaseName, metricsServerNamespace, qc]);
 
   const ms = st?.metricsServer;
   const kd = st?.kubernetesDashboard;
+  const effectiveDashboardNamespace = addonName(dashboardNamespace, "kubernetes-dashboard");
+  const effectiveDashboardReleaseName = addonName(dashboardReleaseName, "kubernetes-dashboard");
+  const dashboardKongService = kd?.kongProxyService || `${effectiveDashboardReleaseName}-kong-proxy`;
+  const loginTokenCommand = `kubectl create token easypanel-dashboard-admin -n ${effectiveDashboardNamespace} --duration=24h`;
+  const kongPortForwardCommand = `kubectl -n ${effectiveDashboardNamespace} port-forward svc/${dashboardKongService} 8443:443`;
+  const manualSteps = useMemo(
+    () => buildManualSteps(effectiveDashboardNamespace, effectiveDashboardReleaseName),
+    [effectiveDashboardNamespace, effectiveDashboardReleaseName],
+  );
 
   return (
     <Card className="border-violet-100 bg-gradient-to-b from-violet-50/40 to-white shadow-sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg text-slate-900">Kubernetes Dashboard · metrics-server（可选 Web UI · 国内镜像）</CardTitle>
+        <CardTitle className="text-lg text-slate-900">Kubernetes Dashboard · metrics-server（Helm / Kong · 国内镜像）</CardTitle>
         <CardDescription className="text-sm text-slate-600">
           一键安装官方 <strong className="text-slate-800">metrics-server latest/components.yaml</strong> 与{" "}
-          <strong className="text-slate-800">Dashboard 2.7（recommended 清单）</strong>：清单下载策略与上方 ingress 相同（jsDelivr / ghproxy）；容器镜像将{" "}
+          <strong className="text-slate-800">kubernetes-dashboard/kubernetes-dashboard</strong>：Dashboard 使用后端内置 Helm 执行{" "}
+          <code className="rounded bg-white px-0.5 text-[11px]">helm template</code> 渲染后由平台应用，release 与 namespace 会参与资源命名；metrics-server 清单下载策略与上方 ingress 相同（jsDelivr / ghproxy）。容器镜像将{" "}
           <code className="rounded bg-white px-0.5 text-[11px]">registry.k8s.io</code> 改写为{" "}
-          <code className="rounded bg-white px-0.5 text-[11px]">m.daocloud.io/registry.k8s.io</code>，将{" "}
-          <code className="rounded bg-white px-0.5 text-[11px]">kubernetesui/*</code> 改写为{" "}
-          <code className="rounded bg-white px-0.5 text-[11px]">m.daocloud.io/docker.io/kubernetesui/*</code>
-          （与 ingress 共用「关闭 K8s 镜像改写」开关时则不改写）。安装结束后自动轮询 Deployment 就绪；另创建{" "}
+          <code className="rounded bg-white px-0.5 text-[11px]">m.daocloud.io/registry.k8s.io</code>，并按 kube-prometheus-stack / VictoriaLogs
+          的规则改写 Helm 渲染出的 <code className="rounded bg-white px-0.5 text-[11px]">docker.io</code>、{" "}
+          <code className="rounded bg-white px-0.5 text-[11px]">quay.io</code> 等前缀（关闭镜像改写时不处理）。安装结束后自动轮询 Dashboard api/auth/web 与 Kong
+          proxy Service；另创建{" "}
           <code className="rounded bg-white px-0.5 text-[11px]">easypanel-dashboard-admin</code>（cluster-admin，仅便于登录演示，生产请改最小权限）。
           <span className="mt-2 block text-[13px] text-slate-700">
             <strong className="text-slate-800">说明：</strong>本平台「集群 → 监控」页的 <strong>Prometheus / VictoriaMetrics</strong> 地址仍在下方「Kubernetes
@@ -321,7 +353,9 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
                 {ms?.deployment?.error && <p className="mt-1 text-[11px] text-red-700">{ms.deployment.error}</p>}
               </div>
               <div className="rounded-md border border-white/80 bg-white/70 px-2 py-2">
-                <p className="font-mono text-[11px] text-slate-500">{kd?.namespace ?? "kubernetes-dashboard"}</p>
+                <p className="font-mono text-[11px] text-slate-500">
+                  {kd?.releaseName ?? "kubernetes-dashboard"} · {kd?.namespace ?? "kubernetes-dashboard"}
+                </p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   {kd?.installed ? (
                     <Badge className="bg-violet-600 hover:bg-violet-600">已部署</Badge>
@@ -337,8 +371,9 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
                     <span className="text-[11px] text-slate-600">SA 已创建</span>
                   ) : null}
                 </div>
+                {kd?.kongProxyService ? <p className="mt-1 font-mono text-[11px] text-slate-600">svc/{kd.kongProxyService}</p> : null}
                 {kd?.allComponentsReady ? (
-                  <p className="mt-1 text-[11px] text-emerald-800">metrics-server + Dashboard 链路齐套</p>
+                  <p className="mt-1 text-[11px] text-emerald-800">metrics-server + Dashboard Helm/Kong 链路齐套</p>
                 ) : null}
               </div>
             </div>
@@ -438,7 +473,7 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
             </div>
             <p className="text-[11px] leading-relaxed text-slate-600">
               metrics-server 只提供资源用量 API（kubectl top / Dashboard 用量条），Dashboard 是可选 Web UI；平台图表仍使用 Prometheus
-              或 VictoriaMetrics vmselect。当前安装保留 Dashboard 2.7 recommended.yaml 兼容路径，metrics-server 使用官方 latest/components.yaml。
+              或 VictoriaMetrics vmselect。当前安装使用 Dashboard 官方 Helm chart，Kong proxy Service 名随 release 变化；metrics-server 使用官方 latest/components.yaml。
             </p>
             <div className="flex items-start gap-3">
               <Checkbox
@@ -483,7 +518,9 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
               一键安装 / 升级 Dashboard 与 metrics-server
             </Button>
             <p className="text-[11px] text-slate-500">
-              登录 Token：<code className="rounded bg-slate-100 px-0.5">kubectl create token easypanel-dashboard-admin -n kubernetes-dashboard --duration=24h</code>
+              访问：<code className="rounded bg-slate-100 px-0.5">{kongPortForwardCommand}</code> 后打开{" "}
+              <code className="rounded bg-slate-100 px-0.5">https://localhost:8443</code>；登录 Token：
+              <code className="rounded bg-slate-100 px-0.5">{loginTokenCommand}</code>
             </p>
           </div>
         ) : (
@@ -495,8 +532,10 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>确认安装 metrics-server 与 Kubernetes Dashboard？</AlertDialogTitle>
               <AlertDialogDescription className="space-y-2 text-slate-600">
-                将向集群应用官方清单（经国内镜像改写），并创建绑定 <strong className="text-slate-800">cluster-admin</strong> 的 ServiceAccount，便于 Web
-                登录。生产环境请后续改为最小权限 Role。
+                将应用 metrics-server 清单，并以 Helm 渲染 <span className="font-mono">kubernetes-dashboard/kubernetes-dashboard</span> 到{" "}
+                <span className="font-mono">{effectiveDashboardNamespace}</span>（release{" "}
+                <span className="font-mono">{effectiveDashboardReleaseName}</span>），入口为 Kong proxy Service。平台还会创建绑定{" "}
+                <strong className="text-slate-800">cluster-admin</strong> 的 ServiceAccount，便于 Web 登录。生产环境请后续改为最小权限 Role。
                 {kubeletInsecureTls ? (
                   <span className="block">
                     将为 metrics-server 添加参数 <span className="font-mono">--kubelet-insecure-tls</span>。
@@ -525,7 +564,7 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
             对接说明；下方为可复制的命令摘要（与平台改写规则一致）。
           </p>
           <pre className="mt-2 max-h-[min(40vh,280px)] overflow-auto rounded border border-slate-200 bg-slate-950 p-2 font-mono text-[10px] leading-relaxed text-slate-100">
-            {MANUAL_STEPS}
+            {manualSteps}
           </pre>
           <a
             href="https://github.com/DaoCloud/public-image-mirror"

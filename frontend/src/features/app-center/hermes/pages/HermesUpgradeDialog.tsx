@@ -7,20 +7,21 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { apiPostJson } from "@/lib/api";
 import type { HermesInstance } from "./AppCenterHermesDetail";
+import { normalizeHermesImage } from "../hermesImage";
 
 export default function HermesUpgradeDialog({ instance, canWrite, onChanged }: { instance?: HermesInstance; canWrite: boolean; onChanged: () => void }) {
   const [image, setImage] = useState("");
   const [replicas, setReplicas] = useState("1");
 
   useEffect(() => {
-    setImage(instance?.image || "");
+    setImage(normalizeHermesImage(instance?.image || ""));
     setReplicas(String(instance?.replicas || 1));
   }, [instance]);
 
   const upgrade = useMutation({
     mutationFn: () =>
       apiPostJson(`/api/app-center/hermes/instances/${encodeURIComponent(instance?.id ?? "")}/upgrade`, {
-        image,
+        image: normalizeHermesImage(image),
         replicas: Number(replicas) || 1,
       }),
     onSuccess: () => {
@@ -55,9 +56,9 @@ export default function HermesUpgradeDialog({ instance, canWrite, onChanged }: {
           <Input value={replicas} disabled={!canWrite} onChange={(e) => setReplicas(e.target.value)} />
         </div>
       </div>
-      <p className="mt-3 text-xs text-slate-500">上一版本：{instance?.previousImage || "-"}</p>
+      <p className="mt-3 text-xs text-slate-500">上一版本：{normalizeHermesImage(instance?.previousImage) || "-"}</p>
       <div className="mt-4 flex flex-wrap gap-2">
-        <Button disabled={!instance || !canWrite || upgrade.isPending || image.trim() === instance?.image} onClick={() => upgrade.mutate()}>
+        <Button disabled={!instance || !canWrite || upgrade.isPending || normalizeHermesImage(image) === normalizeHermesImage(instance?.image)} onClick={() => upgrade.mutate()}>
           {upgrade.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
           升级
         </Button>

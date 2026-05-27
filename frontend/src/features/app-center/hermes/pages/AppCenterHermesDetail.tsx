@@ -14,6 +14,7 @@ import HermesExposurePanel from "./HermesExposurePanel";
 import HermesLogsEventsPanel from "./HermesLogsEventsPanel";
 import HermesProbePanel from "./HermesProbePanel";
 import HermesUpgradeDialog from "./HermesUpgradeDialog";
+import { normalizeHermesImage } from "../hermesImage";
 
 export type HermesInstance = {
   id: string;
@@ -99,24 +100,29 @@ const AppCenterHermesDetail: React.FC = () => {
   }, [fileQ.data?.content]);
 
   const inst = instQ.data?.instance;
+  const normalizedImage = normalizeHermesImage(inst?.image);
+  const normalizedPreviousImage = normalizeHermesImage(inst?.previousImage);
+  const displayInst = inst
+    ? { ...inst, image: normalizedImage, previousImage: normalizedPreviousImage || undefined }
+    : undefined;
   const st = statusQ.data?.statuses?.[id];
-  const runtimeReady = inst?.ready === true;
+  const runtimeReady = displayInst?.ready === true;
   const rows = useMemo(
     () => [
-      ["命名空间", inst?.namespace],
-      ["Deployment", inst?.deploymentName],
-      ["Service", inst?.serviceName],
-      ["模式", inst?.mode],
-      ["镜像", inst?.image],
-      ["模型", [inst?.modelProvider, inst?.modelName].filter(Boolean).join(" / ")],
-      ["PVC", inst?.homePvcName],
-      ["Secret", inst?.secretName],
-      ["ConfigMap", inst?.configMapName],
-      ["暴露方式", inst?.exposeMode || "clusterIP"],
-      ["公开地址", inst?.publicUrl],
-      ["上次探测", inst?.lastProbeAt],
+      ["命名空间", displayInst?.namespace],
+      ["Deployment", displayInst?.deploymentName],
+      ["Service", displayInst?.serviceName],
+      ["模式", displayInst?.mode],
+      ["镜像", displayInst?.image],
+      ["模型", [displayInst?.modelProvider, displayInst?.modelName].filter(Boolean).join(" / ")],
+      ["PVC", displayInst?.homePvcName],
+      ["Secret", displayInst?.secretName],
+      ["ConfigMap", displayInst?.configMapName],
+      ["暴露方式", displayInst?.exposeMode || "clusterIP"],
+      ["公开地址", displayInst?.publicUrl],
+      ["上次探测", displayInst?.lastProbeAt],
     ],
-    [inst]
+    [displayInst]
   );
 
   const restartMut = useMutation({
@@ -169,12 +175,12 @@ const AppCenterHermesDetail: React.FC = () => {
         </Button>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-950">{inst?.displayName || "Hermes 实例"}</h1>
-            <p className="mt-2 font-mono text-xs text-slate-500">{inst ? `${inst.namespace}/${inst.deploymentName}` : id}</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-950">{displayInst?.displayName || "Hermes 实例"}</h1>
+            <p className="mt-2 font-mono text-xs text-slate-500">{displayInst ? `${displayInst.namespace}/${displayInst.deploymentName}` : id}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge variant={st?.ready ? "default" : "outline"}>{st?.ready ? "K8s Ready" : st?.message || "等待状态"}</Badge>
-            <Badge variant={runtimeReady ? "default" : "outline"}>{runtimeReady ? "Runtime Ready" : inst?.lastProbeError || "未通过运行时探测"}</Badge>
+            <Badge variant={runtimeReady ? "default" : "outline"}>{runtimeReady ? "Runtime Ready" : displayInst?.lastProbeError || "未通过运行时探测"}</Badge>
           </div>
         </div>
       </section>
@@ -237,9 +243,9 @@ const AppCenterHermesDetail: React.FC = () => {
       </section>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <HermesProbePanel instance={inst} status={st} canWrite={canWrite} onChanged={() => void qc.invalidateQueries({ queryKey: ["app-hermes-instance", id] })} />
-        <HermesExposurePanel instance={inst} status={st} canWrite={canWrite} onChanged={() => void qc.invalidateQueries({ queryKey: ["app-hermes-instance", id] })} />
-        <HermesUpgradeDialog instance={inst} canWrite={canWrite} onChanged={() => void qc.invalidateQueries({ queryKey: ["app-hermes-instance", id] })} />
+        <HermesProbePanel instance={displayInst} status={st} canWrite={canWrite} onChanged={() => void qc.invalidateQueries({ queryKey: ["app-hermes-instance", id] })} />
+        <HermesExposurePanel instance={displayInst} status={st} canWrite={canWrite} onChanged={() => void qc.invalidateQueries({ queryKey: ["app-hermes-instance", id] })} />
+        <HermesUpgradeDialog instance={displayInst} canWrite={canWrite} onChanged={() => void qc.invalidateQueries({ queryKey: ["app-hermes-instance", id] })} />
         <HermesLogsEventsPanel instanceId={id} />
       </div>
 

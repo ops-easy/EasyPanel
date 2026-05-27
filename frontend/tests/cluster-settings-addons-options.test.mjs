@@ -9,6 +9,7 @@ const prometheusSource = read("../src/features/settings/components/SettingsProme
 const kubePromSource = read("../src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx");
 const vmLogSource = read("../src/features/cluster/pages/ClusterK8sVmLogSection.tsx");
 const dashboardSource = read("../src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx");
+const dashboardDocs = read("../../docs/kubernetes-dashboard-prometheus.md");
 
 test("ingress addon exposes namespace and explains controller parameters", () => {
   assert.match(ingressSource, /ingressNamespace/);
@@ -59,8 +60,23 @@ test("VictoriaLogs addon has install and verify flow", () => {
   assert.match(vmLogSource, /autoWriteRuntime/);
 });
 
-test("dashboard monitoring exposes target namespaces", () => {
+test("dashboard monitoring exposes Helm target, release-aware verify, and Kong access hints", () => {
   assert.match(dashboardSource, /metricsServerNamespace/);
   assert.match(dashboardSource, /dashboardNamespace/);
+  assert.match(dashboardSource, /dashboardReleaseName/);
   assert.match(dashboardSource, /latest\/components.yaml/);
+  assert.match(dashboardSource, /helm template/);
+  assert.match(dashboardSource, /kubernetes-dashboard\/kubernetes-dashboard/);
+  assert.match(dashboardSource, /dashboardReleaseName=\$\{encodeURIComponent\(dashboardReleaseName\)\}/);
+  assert.match(dashboardSource, /\$\{DASHBOARD_RELEASE\}-kong-proxy/);
+  assert.match(dashboardSource, /Kong/);
+  assert.doesNotMatch(dashboardSource, /recommended\.yaml|Dashboard 2\.7/);
+});
+
+test("dashboard docs describe the one-click Helm and Kong path", () => {
+  assert.match(dashboardDocs, /helm template/);
+  assert.match(dashboardDocs, /kubernetes-dashboard\/kubernetes-dashboard/);
+  assert.match(dashboardDocs, /\$DASHBOARD_RELEASE-kong-proxy/);
+  assert.match(dashboardDocs, /dashboardReleaseName/);
+  assert.match(dashboardDocs, /Kong/);
 });
