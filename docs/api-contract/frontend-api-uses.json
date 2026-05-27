@@ -1119,7 +1119,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 254,
+      "sourceLine": 258,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1143,7 +1143,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 317,
+      "sourceLine": 321,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1151,7 +1151,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:param",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 333,
+      "sourceLine": 337,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1159,7 +1159,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/backups",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 441,
+      "sourceLine": 445,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1167,7 +1167,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/backups",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 460,
+      "sourceLine": 464,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1175,7 +1175,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:param/backups/:param",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 484,
+      "sourceLine": 488,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1183,7 +1183,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/backups/:param/restore",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 473,
+      "sourceLine": 477,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1191,7 +1191,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/ping",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 345,
+      "sourceLine": 349,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1199,7 +1199,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/processlist",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 432,
+      "sourceLine": 436,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1207,7 +1207,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/query",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 400,
+      "sourceLine": 404,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1215,7 +1215,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/runtime",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 413,
+      "sourceLine": 417,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1223,7 +1223,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/schemas",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 422,
+      "sourceLine": 426,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1231,7 +1231,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/users",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 450,
+      "sourceLine": 454,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1239,7 +1239,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/users",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 495,
+      "sourceLine": 499,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1247,7 +1247,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:param/users/:param",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 524,
+      "sourceLine": 528,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1255,7 +1255,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/mysql/instances/:param/users/:param/password",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 511,
+      "sourceLine": 515,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1263,7 +1263,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:param/users/${encodeURIComponent(u.username",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 524,
+      "sourceLine": 528,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1271,7 +1271,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/mysql/instances/:param/users/${encodeURIComponent(userForm.passwordUser",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 511,
+      "sourceLine": 515,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1279,7 +1279,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/k8s-deploy",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 355,
+      "sourceLine": 359,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1287,7 +1287,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/status",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 248,
+      "sourceLine": 252,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1295,7 +1295,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/templates",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 262,
+      "sourceLine": 266,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1303,7 +1303,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/templates",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 373,
+      "sourceLine": 377,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3639,7 +3639,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/k8s/addons/kube-prometheus-stack/install",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
-      "sourceLine": 207,
+      "sourceLine": 211,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -3647,7 +3647,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/addons/kube-prometheus-stack/sync-runtime",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
-      "sourceLine": 321,
+      "sourceLine": 333,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3655,7 +3655,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/addons/kube-prometheus-stack/verify",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
-      "sourceLine": 285,
+      "sourceLine": 297,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3679,7 +3679,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/addons/status",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sKubePrometheusStackSection.tsx",
-      "sourceLine": 154,
+      "sourceLine": 158,
       "needsManualReview": false,
       "kind": "http"
     },
