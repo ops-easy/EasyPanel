@@ -3,6 +3,10 @@ package core
 import (
 	"strings"
 	"testing"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestKubePromValuesExposeCommonInstallOptions(t *testing.T) {
@@ -40,6 +44,63 @@ func TestKubePromValuesDisableGrafanaHelmTestPod(t *testing.T) {
 		if !strings.Contains(values, want) {
 			t.Fatalf("values YAML missing %q:\n%s", want, values)
 		}
+	}
+}
+
+func TestKubePromValuesEnableDefaultPersistenceAndResources(t *testing.T) {
+	values := buildKubePromStackValuesYAML(KubePromStackInstallOpts{})
+	for _, want := range []string{
+		`storage: "50Gi"`,
+		"retentionSize: 45GB",
+		"walCompression: true",
+		"resources:\n      requests:\n        cpu: 500m\n        memory: 2Gi\n      limits:\n        cpu: \"2\"\n        memory: 6Gi",
+		"prometheusOperator:\n  resources:\n    requests:\n      cpu: 100m\n      memory: 256Mi\n    limits:\n      cpu: 500m\n      memory: 512Mi",
+		"kube-state-metrics:\n  resources:\n    requests:\n      cpu: 100m\n      memory: 256Mi\n    limits:\n      cpu: 500m\n      memory: 512Mi",
+		"prometheus-node-exporter:\n  resources:\n    requests:\n      cpu: 50m\n      memory: 64Mi\n    limits:\n      cpu: 200m\n      memory: 256Mi",
+	} {
+		if !strings.Contains(values, want) {
+			t.Fatalf("values YAML missing %q:\n%s", want, values)
+		}
+	}
+}
+
+func TestKubePromValuesAllowPrometheusResourceOverrides(t *testing.T) {
+	values := buildKubePromStackValuesYAML(KubePromStackInstallOpts{
+		StorageSize:             "100Gi",
+		PrometheusCPURequest:    "750m",
+		PrometheusMemoryRequest: "3Gi",
+		PrometheusCPULimit:      "3",
+		PrometheusMemoryLimit:   "8Gi",
+	})
+	for _, want := range []string{
+		`storage: "100Gi"`,
+		"retentionSize: 90GB",
+		"cpu: 750m",
+		"memory: 3Gi",
+		"cpu: \"3\"",
+		"memory: 8Gi",
+	} {
+		if !strings.Contains(values, want) {
+			t.Fatalf("values YAML missing %q:\n%s", want, values)
+		}
+	}
+}
+
+func TestKubePrometheusStatefulSetNeedsPersistenceRecreate(t *testing.T) {
+	volatile := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-kbt-prom-kube-prometheus-s-prometheus"}}
+	if !kubePrometheusStatefulSetNeedsPersistenceRecreate(volatile, "kbt-prom") {
+		t.Fatal("Prometheus StatefulSet without volumeClaimTemplates should be recreated")
+	}
+
+	persistent := volatile.DeepCopy()
+	persistent.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-kbt-prom-db"}}}
+	if kubePrometheusStatefulSetNeedsPersistenceRecreate(persistent, "kbt-prom") {
+		t.Fatal("Prometheus StatefulSet with volumeClaimTemplates should not be recreated")
+	}
+
+	otherRelease := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "prometheus-other-kube-prometheus-s-prometheus"}}
+	if kubePrometheusStatefulSetNeedsPersistenceRecreate(otherRelease, "kbt-prom") {
+		t.Fatal("other releases must not be touched")
 	}
 }
 

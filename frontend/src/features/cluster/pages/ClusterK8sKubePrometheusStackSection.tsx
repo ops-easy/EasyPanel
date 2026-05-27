@@ -115,7 +115,11 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
   const [retention, setRetention] = useState("15d");
   const [scrapeInterval, setScrapeInterval] = useState("30s");
   const [storageClassName, setStorageClassName] = useState("");
-  const [storageSize, setStorageSize] = useState("");
+  const [storageSize, setStorageSize] = useState("50Gi");
+  const [prometheusCpuRequest, setPrometheusCpuRequest] = useState("500m");
+  const [prometheusMemoryRequest, setPrometheusMemoryRequest] = useState("2Gi");
+  const [prometheusCpuLimit, setPrometheusCpuLimit] = useState("2");
+  const [prometheusMemoryLimit, setPrometheusMemoryLimit] = useState("6Gi");
   const [grafana, setGrafana] = useState(false);
   const [alertmanager, setAlertmanager] = useState(false);
   const [nodeExporter, setNodeExporter] = useState(true);
@@ -211,6 +215,10 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
         scrapeInterval,
         storageClassName,
         storageSize,
+        prometheusCpuRequest,
+        prometheusMemoryRequest,
+        prometheusCpuLimit,
+        prometheusMemoryLimit,
         manifestMirror,
         grafanaEnabled: grafana,
         alertmanagerEnabled: alertmanager,
@@ -268,6 +276,10 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
     scrapeInterval,
     storageClassName,
     storageSize,
+    prometheusCpuRequest,
+    prometheusMemoryRequest,
+    prometheusCpuLimit,
+    prometheusMemoryLimit,
   ]);
 
   const runVerify = useCallback(async () => {
@@ -566,8 +578,24 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
                 <Input className="h-9 font-mono text-xs" value={storageClassName} onChange={(e) => setStorageClassName(e.target.value)} placeholder="留空使用集群默认" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Prometheus PVC 大小（可选）</Label>
-                <Input className="h-9 font-mono text-xs" value={storageSize} onChange={(e) => setStorageSize(e.target.value)} placeholder="20Gi" />
+                <Label className="text-xs">Prometheus PVC size</Label>
+                <Input className="h-9 font-mono text-xs" value={storageSize} onChange={(e) => setStorageSize(e.target.value)} placeholder="50Gi" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prometheus CPU request</Label>
+                <Input className="h-9 font-mono text-xs" value={prometheusCpuRequest} onChange={(e) => setPrometheusCpuRequest(e.target.value)} placeholder="500m" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prometheus memory request</Label>
+                <Input className="h-9 font-mono text-xs" value={prometheusMemoryRequest} onChange={(e) => setPrometheusMemoryRequest(e.target.value)} placeholder="2Gi" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prometheus CPU limit</Label>
+                <Input className="h-9 font-mono text-xs" value={prometheusCpuLimit} onChange={(e) => setPrometheusCpuLimit(e.target.value)} placeholder="2" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prometheus memory limit</Label>
+                <Input className="h-9 font-mono text-xs" value={prometheusMemoryLimit} onChange={(e) => setPrometheusMemoryLimit(e.target.value)} placeholder="6Gi" />
               </div>
             </div>
             <p className="text-[11px] leading-relaxed text-slate-600">

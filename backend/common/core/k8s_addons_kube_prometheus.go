@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,6 +27,15 @@ const (
 	kubePromStackNamespace   = "easypanel-monitoring"
 )
 
+const (
+	kubePromDefaultStorageSize             = "50Gi"
+	kubePromDefaultRetentionSize           = "45GB"
+	kubePromDefaultPrometheusCPURequest    = "500m"
+	kubePromDefaultPrometheusMemoryRequest = "2Gi"
+	kubePromDefaultPrometheusCPULimit      = "2"
+	kubePromDefaultPrometheusMemoryLimit   = "6Gi"
+)
+
 // 优先 56.21.0；失败时依次尝试备用版本（GitHub release 资源名均为 kube-prometheus-stack-X.Y.Z.tgz）。
 var kubePrometheusStackChartURLs = []string{
 	"https://github.com/prometheus-community/helm-charts/releases/download/kube-prometheus-stack-56.21.0/kube-prometheus-stack-56.21.0.tgz",
@@ -40,6 +50,11 @@ type KubePromStackInstallOpts struct {
 	ScrapeInterval          string
 	StorageClassName        string
 	StorageSize             string
+	RetentionSize           string
+	PrometheusCPURequest    string
+	PrometheusMemoryRequest string
+	PrometheusCPULimit      string
+	PrometheusMemoryLimit   string
 	GrafanaEnabled          bool
 	AlertmanagerEnabled     bool
 	NodeExporterEnabled     bool
@@ -197,6 +212,41 @@ func RewriteKubePrometheusRenderedImages(raw []byte) []byte {
 	return []byte(s)
 }
 
+func kubePromRetentionSizeFromStorage(storageSize string) string {
+	s := strings.ToLower(strings.TrimSpace(storageSize))
+	type unit struct {
+		suffix string
+		scale  int64
+		out    string
+	}
+	for _, u := range []unit{
+		{suffix: "gi", scale: 1, out: "GB"},
+		{suffix: "g", scale: 1, out: "GB"},
+		{suffix: "gb", scale: 1, out: "GB"},
+		{suffix: "ti", scale: 1000, out: "GB"},
+		{suffix: "t", scale: 1000, out: "GB"},
+		{suffix: "tb", scale: 1000, out: "GB"},
+		{suffix: "mi", scale: 1, out: "MB"},
+		{suffix: "m", scale: 1, out: "MB"},
+		{suffix: "mb", scale: 1, out: "MB"},
+	} {
+		raw := strings.TrimSpace(strings.TrimSuffix(s, u.suffix))
+		if raw == s || raw == "" {
+			continue
+		}
+		n, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || n <= 0 {
+			continue
+		}
+		size := n * u.scale * 9 / 10
+		if size < 1 {
+			size = 1
+		}
+		return fmt.Sprintf("%d%s", size, u.out)
+	}
+	return kubePromDefaultRetentionSize
+}
+
 func buildKubePromStackValuesYAML(opts KubePromStackInstallOpts) string {
 	retention := strings.TrimSpace(opts.Retention)
 	if retention == "" {
@@ -206,13 +256,40 @@ func buildKubePromStackValuesYAML(opts KubePromStackInstallOpts) string {
 	if scrapeInterval == "" {
 		scrapeInterval = "30s"
 	}
+	storageSize := strings.TrimSpace(opts.StorageSize)
+	if storageSize == "" {
+		storageSize = kubePromDefaultStorageSize
+	}
+	retentionSize := strings.TrimSpace(opts.RetentionSize)
+	if retentionSize == "" {
+		retentionSize = kubePromRetentionSizeFromStorage(storageSize)
+	}
+	promCPURequest := firstNonEmpty(strings.TrimSpace(opts.PrometheusCPURequest), kubePromDefaultPrometheusCPURequest)
+	promMemoryRequest := firstNonEmpty(strings.TrimSpace(opts.PrometheusMemoryRequest), kubePromDefaultPrometheusMemoryRequest)
+	promCPULimit := firstNonEmpty(strings.TrimSpace(opts.PrometheusCPULimit), kubePromDefaultPrometheusCPULimit)
+	promMemoryLimit := firstNonEmpty(strings.TrimSpace(opts.PrometheusMemoryLimit), kubePromDefaultPrometheusMemoryLimit)
 	var b strings.Builder
 	fmt.Fprintf(&b, `grafana:
   enabled: %v
   testFramework:
     enabled: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 alertmanager:
   enabled: %v
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
 kubeApiServer:
   enabled: true
 kubeControllerManager:
@@ -248,21 +325,52 @@ kubeScheduler:
   enabled: %v
 nodeExporter:
   enabled: %v
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
 defaultRules:
   create: true
 prometheus:
   prometheusSpec:
     retention: %s
+    retentionSize: %s
     scrapeInterval: %s
+    walCompression: true
+    resources:
+      requests:
+        cpu: %s
+        memory: %s
+      limits:
+        cpu: %q
+        memory: %s
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
     serviceMonitorNamespaceSelector: {}
     podMonitorNamespaceSelector: {}
-`, opts.KubeStateMetricsEnabled, opts.NodeExporterEnabled, retention, scrapeInterval)
-	storageSize := strings.TrimSpace(opts.StorageSize)
-	if storageSize != "" {
-		b.WriteString(`    storageSpec:
+`, opts.KubeStateMetricsEnabled, opts.NodeExporterEnabled, retention, retentionSize, scrapeInterval, promCPURequest, promMemoryRequest, promCPULimit, promMemoryLimit)
+	b.WriteString(`    storageSpec:
       volumeClaimTemplate:
         spec:
           accessModes:
@@ -270,10 +378,9 @@ prometheus:
           resources:
             requests:
 `)
-		fmt.Fprintf(&b, "              storage: %q\n", storageSize)
-		if sc := strings.TrimSpace(opts.StorageClassName); sc != "" {
-			fmt.Fprintf(&b, "          storageClassName: %q\n", sc)
-		}
+	fmt.Fprintf(&b, "              storage: %q\n", storageSize)
+	if sc := strings.TrimSpace(opts.StorageClassName); sc != "" {
+		fmt.Fprintf(&b, "          storageClassName: %q\n", sc)
 	}
 	return b.String()
 }
@@ -430,6 +537,9 @@ func InstallKubePrometheusStack(ctx context.Context, app *ServerApp, mirror Mani
 	}
 	if err := cleanupKubePrometheusDisabledOptionalComponents(ctx, app.K8sREST(), namespace, releaseName, opts); err != nil {
 		return nil, fmt.Errorf("cleanup disabled kube-prometheus-stack components: %w", err)
+	}
+	if err := cleanupKubePrometheusVolatilePrometheusStatefulSets(ctx, app.K8s(), namespace, releaseName); err != nil {
+		return nil, fmt.Errorf("cleanup volatile kube-prometheus-stack Prometheus StatefulSet: %w", err)
 	}
 	cleanupKubePrometheusGrafanaTestPods(ctx, app.K8s(), namespace)
 

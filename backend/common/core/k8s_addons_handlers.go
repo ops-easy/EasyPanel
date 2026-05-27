@@ -524,6 +524,11 @@ type k8sAddonsKubePromBody struct {
 	ScrapeInterval          string   `json:"scrapeInterval"`
 	StorageClassName        string   `json:"storageClassName"`
 	StorageSize             string   `json:"storageSize"`
+	RetentionSize           string   `json:"retentionSize"`
+	PrometheusCPURequest    string   `json:"prometheusCpuRequest"`
+	PrometheusMemoryRequest string   `json:"prometheusMemoryRequest"`
+	PrometheusCPULimit      string   `json:"prometheusCpuLimit"`
+	PrometheusMemoryLimit   string   `json:"prometheusMemoryLimit"`
 	ManifestMirror          string   `json:"manifestMirror"`
 	GrafanaEnabled          bool     `json:"grafanaEnabled"`
 	AlertmanagerEnabled     bool     `json:"alertmanagerEnabled"`
@@ -615,6 +620,11 @@ func handleK8sAddonsKubePrometheusStackInstall(c *gin.Context, app *ServerApp) {
 		ScrapeInterval:          strings.TrimSpace(body.ScrapeInterval),
 		StorageClassName:        strings.TrimSpace(body.StorageClassName),
 		StorageSize:             strings.TrimSpace(body.StorageSize),
+		RetentionSize:           strings.TrimSpace(body.RetentionSize),
+		PrometheusCPURequest:    strings.TrimSpace(body.PrometheusCPURequest),
+		PrometheusMemoryRequest: strings.TrimSpace(body.PrometheusMemoryRequest),
+		PrometheusCPULimit:      strings.TrimSpace(body.PrometheusCPULimit),
+		PrometheusMemoryLimit:   strings.TrimSpace(body.PrometheusMemoryLimit),
 		GrafanaEnabled:          body.GrafanaEnabled,
 		AlertmanagerEnabled:     body.AlertmanagerEnabled,
 		NodeExporterEnabled:     nodeExporter,

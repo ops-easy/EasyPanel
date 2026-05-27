@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"strings"
 
+	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
@@ -82,6 +84,37 @@ func cleanupKubePrometheusDisabledOptionalComponents(ctx context.Context, restCf
 		}
 	}
 	return errors.Join(errs...)
+}
+
+func cleanupKubePrometheusVolatilePrometheusStatefulSets(ctx context.Context, k8s *kubernetes.Clientset, ns, releaseName string) error {
+	if k8s == nil || strings.TrimSpace(ns) == "" {
+		return nil
+	}
+	list, err := k8s.AppsV1().StatefulSets(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	bg := metav1.DeletePropagationBackground
+	var errs []error
+	for i := range list.Items {
+		st := &list.Items[i]
+		if !kubePrometheusStatefulSetNeedsPersistenceRecreate(st, releaseName) {
+			continue
+		}
+		kubePromRecordCleanupErr(&errs, "delete volatile Prometheus StatefulSet "+st.Name, k8s.AppsV1().StatefulSets(ns).Delete(ctx, st.Name, metav1.DeleteOptions{PropagationPolicy: &bg}))
+	}
+	return errors.Join(errs...)
+}
+
+func kubePrometheusStatefulSetNeedsPersistenceRecreate(st *appsv1.StatefulSet, releaseName string) bool {
+	if st == nil || len(st.Spec.VolumeClaimTemplates) > 0 {
+		return false
+	}
+	name := strings.ToLower(strings.TrimSpace(st.Name))
+	release := strings.ToLower(firstValidAddonReleaseName(releaseName, kubePromStackReleaseName))
+	return strings.HasPrefix(name, "prometheus-") &&
+		strings.Contains(name, release) &&
+		strings.Contains(name, "kube-prometheus")
 }
 
 func kubePromDisabledOptionalComponents(opts KubePromStackInstallOpts) []string {
