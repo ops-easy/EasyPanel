@@ -14,6 +14,8 @@ func TestHermesBuildDeploymentModeCommands(t *testing.T) {
 		mode       string
 		containers int
 		commands   map[string][]string
+		homes      map[string]string
+		mounts     map[string]string
 	}{
 		{
 			mode:       "gateway",
@@ -21,20 +23,32 @@ func TestHermesBuildDeploymentModeCommands(t *testing.T) {
 			commands: map[string][]string{
 				"gateway": {"gateway", "run"},
 			},
+			homes:  map[string]string{"gateway": "/opt/data/gateway"},
+			mounts: map[string]string{"gateway": "hermes-gateway-data"},
 		},
 		{
 			mode:       "dashboard",
 			containers: 1,
 			commands: map[string][]string{
-				"dashboard": {"dashboard", "--host", "0.0.0.0", "--no-open"},
+				"dashboard": {"dashboard", "--host", "0.0.0.0", "--no-open", "--insecure"},
 			},
+			homes:  map[string]string{"dashboard": "/opt/data/dashboard"},
+			mounts: map[string]string{"dashboard": "hermes-dashboard-data"},
 		},
 		{
 			mode:       "gateway-dashboard",
 			containers: 2,
 			commands: map[string][]string{
 				"gateway":   {"gateway", "run"},
-				"dashboard": {"dashboard", "--host", "0.0.0.0", "--no-open"},
+				"dashboard": {"dashboard", "--host", "0.0.0.0", "--no-open", "--insecure"},
+			},
+			homes: map[string]string{
+				"gateway":   "/opt/data/gateway",
+				"dashboard": "/opt/data/dashboard",
+			},
+			mounts: map[string]string{
+				"gateway":   "hermes-gateway-data",
+				"dashboard": "hermes-dashboard-data",
 			},
 		},
 	}
@@ -43,7 +57,7 @@ func TestHermesBuildDeploymentModeCommands(t *testing.T) {
 			dep, err := buildHermesDeployment(HermesK8sDeployOpts{
 				Namespace:      "hermes",
 				DeploymentName: "hermes-agent",
-				Image:          "ghcr.io/nousresearch/hermes-agent:latest",
+				Image:          "nousresearch/hermes-agent:latest",
 				Mode:           tc.mode,
 				PVCName:        "hermes-home",
 				SecretName:     "hermes-secret",
@@ -71,28 +85,41 @@ func TestHermesBuildDeploymentModeCommands(t *testing.T) {
 				}
 				foundHome := false
 				for _, env := range c.Env {
-					if env.Name == "HERMES_HOME" && env.Value == "/opt/data" {
+					if env.Name == "HERMES_HOME" && env.Value == tc.homes[c.Name] {
 						foundHome = true
 					}
 				}
 				if !foundHome {
-					t.Fatalf("container %q missing HERMES_HOME=/opt/data", c.Name)
+					t.Fatalf("container %q missing HERMES_HOME=%s", c.Name, tc.homes[c.Name])
 				}
-				foundPVC := false
+				if c.ImagePullPolicy != corev1.PullIfNotPresent {
+					t.Fatalf("container %q imagePullPolicy=%s, want %s", c.Name, c.ImagePullPolicy, corev1.PullIfNotPresent)
+				}
+				foundRuntimeMount := false
 				for _, mount := range c.VolumeMounts {
-					if mount.Name == "hermes-home" && mount.MountPath == "/opt/data" {
-						foundPVC = true
+					if mount.Name == tc.mounts[c.Name] && mount.MountPath == tc.homes[c.Name] {
+						foundRuntimeMount = true
 					}
 				}
-				if !foundPVC {
-					t.Fatalf("container %q missing shared /opt/data PVC mount", c.Name)
+				if !foundRuntimeMount {
+					t.Fatalf("container %q missing isolated runtime mount %s at %s", c.Name, tc.mounts[c.Name], tc.homes[c.Name])
 				}
 				assertHermesQuantity(t, c.Resources.Requests, corev1.ResourceCPU, "250m")
 				assertHermesQuantity(t, c.Resources.Requests, corev1.ResourceMemory, "512Mi")
 				assertHermesQuantity(t, c.Resources.Limits, corev1.ResourceCPU, "1")
 				assertHermesQuantity(t, c.Resources.Limits, corev1.ResourceMemory, "1Gi")
 			}
+			assertHermesVolume(t, dep.Spec.Template.Spec.Volumes, "hermes-home", "hermes-home", false)
+			for _, volumeName := range tc.mounts {
+				assertHermesVolume(t, dep.Spec.Template.Spec.Volumes, volumeName, "", true)
+			}
 		})
+	}
+}
+
+func TestHermesDefaultImageUsesPublishedDockerHubRepository(t *testing.T) {
+	if got := defaultHermesBootstrap().DefaultImage; got != "nousresearch/hermes-agent:latest" {
+		t.Fatalf("default Hermes image=%q, want Docker Hub image", got)
 	}
 }
 
@@ -231,4 +258,24 @@ func assertHermesQuantity(t *testing.T, got corev1.ResourceList, name corev1.Res
 	if q.Cmp(w) != 0 {
 		t.Fatalf("resource %s=%s, want %s", name, q.String(), w.String())
 	}
+}
+
+func assertHermesVolume(t *testing.T, volumes []corev1.Volume, name, claimName string, wantEmptyDir bool) {
+	t.Helper()
+	for _, volume := range volumes {
+		if volume.Name != name {
+			continue
+		}
+		if wantEmptyDir {
+			if volume.EmptyDir == nil {
+				t.Fatalf("volume %q EmptyDir=nil, want emptyDir volume", name)
+			}
+			return
+		}
+		if volume.PersistentVolumeClaim == nil || volume.PersistentVolumeClaim.ClaimName != claimName {
+			t.Fatalf("volume %q pvc=%+v, want claim %q", name, volume.PersistentVolumeClaim, claimName)
+		}
+		return
+	}
+	t.Fatalf("missing volume %q in %#v", name, volumes)
 }

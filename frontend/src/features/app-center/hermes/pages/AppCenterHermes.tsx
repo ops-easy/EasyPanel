@@ -121,7 +121,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
     namespace: "hermes",
     deploymentName: "hermes-agent",
     serviceName: "hermes-agent",
-    image: "ghcr.io/nousresearch/hermes-agent:latest",
+    image: "nousresearch/hermes-agent:latest",
     mode: "gateway-dashboard",
     storageSize: "10Gi",
     modelProvider: "openrouter",
@@ -145,7 +145,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
     setForm((f) => ({
       ...f,
       namespace: f.namespace || boot.defaultNamespace || "hermes",
-      image: f.image || boot.defaultImage || "ghcr.io/nousresearch/hermes-agent:latest",
+      image: f.image || boot.defaultImage || "nousresearch/hermes-agent:latest",
       mode: f.mode || boot.defaultMode || "gateway-dashboard",
       storageSize: f.storageSize || boot.defaultStorageSize || "10Gi",
       modelProvider: f.modelProvider || boot.defaultModelProvider || "",

@@ -80,13 +80,13 @@ func defaultHermesBootstrap() *HermesBootstrap {
 		BootstrapComplete:  false,
 		DefaultNamespace:   "hermes",
 		DefaultMode:        "gateway-dashboard",
-		DefaultImage:       "ghcr.io/nousresearch/hermes-agent:latest",
+		DefaultImage:       hermesDefaultImage,
 		DefaultStorageSize: "10Gi",
 		DefaultProvider:    "openrouter",
 		DefaultModelName:   "anthropic/claude-sonnet-4.5",
 		Modes: []HermesModePreset{
 			{ID: "gateway", Label: "Gateway", Description: "运行 hermes gateway run", Command: []string{"gateway", "run"}},
-			{ID: "dashboard", Label: "Dashboard", Description: "运行 hermes dashboard", Command: []string{"dashboard", "--host", "0.0.0.0", "--no-open"}},
+			{ID: "dashboard", Label: "Dashboard", Description: "运行 hermes dashboard", Command: []string{"dashboard", "--host", "0.0.0.0", "--no-open", "--insecure"}},
 			{ID: "gateway-dashboard", Label: "Gateway + Dashboard", Description: "同时运行 gateway 与 dashboard"},
 		},
 	}

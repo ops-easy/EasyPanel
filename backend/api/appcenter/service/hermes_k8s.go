@@ -17,6 +17,7 @@ import (
 const (
 	hermesGatewayPort   = int32(8642)
 	hermesDashboardPort = int32(9119)
+	hermesDefaultImage  = "nousresearch/hermes-agent:latest"
 )
 
 func hermesDefaultResources() corev1.ResourceRequirements {
@@ -55,10 +56,26 @@ func hermesLabels(name string) map[string]string {
 	}
 }
 
+func hermesRuntimeHome(name string) string {
+	switch name {
+	case "gateway":
+		return "/opt/data/gateway"
+	case "dashboard":
+		return "/opt/data/dashboard"
+	default:
+		return "/opt/data/" + strings.TrimSpace(name)
+	}
+}
+
+func hermesRuntimeVolumeName(name string) string {
+	return "hermes-" + strings.TrimSpace(name) + "-data"
+}
+
 func hermesContainer(name string, args []string, image, secretName, configMapName, mode string) corev1.Container {
+	home := hermesRuntimeHome(name)
 	env := []corev1.EnvVar{
-		{Name: "HOME", Value: "/opt/data"},
-		{Name: "HERMES_HOME", Value: "/opt/data"},
+		{Name: "HOME", Value: home},
+		{Name: "HERMES_HOME", Value: home},
 	}
 	if mode == "gateway" || mode == "gateway-dashboard" {
 		env = append(env,
@@ -83,18 +100,19 @@ func hermesContainer(name string, args []string, image, secretName, configMapNam
 		ports = append(ports, corev1.ContainerPort{Name: "dashboard", ContainerPort: hermesDashboardPort, Protocol: corev1.ProtocolTCP})
 	}
 	return corev1.Container{
-		Name:  name,
-		Image: image,
-		Args:  append([]string(nil), args...),
-		Env:   env,
-		Ports: ports,
+		Name:            name,
+		Image:           image,
+		ImagePullPolicy: corev1.PullIfNotPresent,
+		Args:            append([]string(nil), args...),
+		Env:             env,
+		Ports:           ports,
 		EnvFrom: []corev1.EnvFromSource{
 			{SecretRef: &corev1.SecretEnvSource{LocalObjectReference: corev1.LocalObjectReference{Name: secretName}, Optional: hermesBoolPtr(true)}},
 			{ConfigMapRef: &corev1.ConfigMapEnvSource{LocalObjectReference: corev1.LocalObjectReference{Name: configMapName}, Optional: hermesBoolPtr(true)}},
 		},
 		Resources: hermesDefaultResources(),
 		VolumeMounts: []corev1.VolumeMount{
-			{Name: "hermes-home", MountPath: "/opt/data"},
+			{Name: hermesRuntimeVolumeName(name), MountPath: home},
 		},
 	}
 }
@@ -127,11 +145,11 @@ func buildHermesDeployment(opts HermesK8sDeployOpts) (*appsv1.Deployment, error)
 	case "gateway":
 		containers = append(containers, hermesContainer("gateway", []string{"gateway", "run"}, image, secret, cm, mode))
 	case "dashboard":
-		containers = append(containers, hermesContainer("dashboard", []string{"dashboard", "--host", "0.0.0.0", "--no-open"}, image, secret, cm, mode))
+		containers = append(containers, hermesContainer("dashboard", []string{"dashboard", "--host", "0.0.0.0", "--no-open", "--insecure"}, image, secret, cm, mode))
 	case "gateway-dashboard":
 		containers = append(containers,
 			hermesContainer("gateway", []string{"gateway", "run"}, image, secret, cm, "gateway"),
-			hermesContainer("dashboard", []string{"dashboard", "--host", "0.0.0.0", "--no-open"}, image, secret, cm, "dashboard"),
+			hermesContainer("dashboard", []string{"dashboard", "--host", "0.0.0.0", "--no-open", "--insecure"}, image, secret, cm, "dashboard"),
 		)
 	}
 	labels := hermesLabels(name)
@@ -148,18 +166,32 @@ func buildHermesDeployment(opts HermesK8sDeployOpts) (*appsv1.Deployment, error)
 				ObjectMeta: metav1.ObjectMeta{Labels: labels},
 				Spec: corev1.PodSpec{
 					Containers: containers,
-					Volumes: []corev1.Volume{
+					Volumes: append([]corev1.Volume{
 						{
 							Name: "hermes-home",
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: pvc},
 							},
 						},
-					},
+					}, hermesRuntimeVolumes(containers)...),
 				},
 			},
 		},
 	}, nil
+}
+
+func hermesRuntimeVolumes(containers []corev1.Container) []corev1.Volume {
+	out := make([]corev1.Volume, 0, len(containers))
+	seen := map[string]bool{}
+	for _, c := range containers {
+		name := hermesRuntimeVolumeName(c.Name)
+		if seen[name] {
+			continue
+		}
+		seen[name] = true
+		out = append(out, corev1.Volume{Name: name, VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}})
+	}
+	return out
 }
 
 func buildHermesPVC(opts HermesK8sDeployOpts) *corev1.PersistentVolumeClaim {
