@@ -421,9 +421,15 @@ func InstallKubePrometheusStack(ctx context.Context, app *ServerApp, mirror Mani
 	if err := ensureNamespace(ctx, app.K8s(), namespace); err != nil {
 		return nil, fmt.Errorf("创建或确认命名空间 %s: %w", namespace, err)
 	}
+	if err := cleanupKubePrometheusDisabledOptionalComponents(ctx, app.K8sREST(), namespace, releaseName, opts); err != nil {
+		return nil, fmt.Errorf("cleanup disabled kube-prometheus-stack components: %w", err)
+	}
 	cleanupKubePrometheusGrafanaTestPods(ctx, app.K8s(), namespace)
 	if err := applyYAMLManifestDynamic(ctx, app.K8sREST(), rendered); err != nil {
 		return nil, fmt.Errorf("应用 kube-prometheus-stack 渲染清单: %w", err)
+	}
+	if err := cleanupKubePrometheusDisabledOptionalComponents(ctx, app.K8sREST(), namespace, releaseName, opts); err != nil {
+		return nil, fmt.Errorf("cleanup disabled kube-prometheus-stack components: %w", err)
 	}
 	cleanupKubePrometheusGrafanaTestPods(ctx, app.K8s(), namespace)
 
