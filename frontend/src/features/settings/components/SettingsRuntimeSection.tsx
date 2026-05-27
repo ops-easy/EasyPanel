@@ -981,7 +981,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                 placeholder="http://prometheus-k8s.monitoring.svc:9090 或 http://vmselect:8481"
               />
               <p className="text-xs text-gray-500">
-                与「集群设置 → Monitoring」写入同一字段；Pod 列表 CPU/内存来自此地址的{" "}
+                与「集群设置 → 监控」写入同一字段；Pod 列表 CPU/内存来自此地址的{" "}
                 <code className="rounded bg-gray-100 px-0.5">/api/v1/query</code>（cAdvisor
                 指标）。若单独填写下方 <code className="rounded bg-gray-100 px-0.5">vmSelectUrlK8s</code>，则查询优先走
                 VictoriaMetrics。

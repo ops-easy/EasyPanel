@@ -371,7 +371,7 @@ export default function AIChatSheet({ open, onOpenChange }: AIChatSheetProps) {
           {messages.length === 0 ? (
             <div className="flex h-full min-h-64 flex-col items-center justify-center gap-3 text-center text-sm text-slate-500">
               <Bot className="h-8 w-8 text-slate-300" aria-hidden />
-              <p className="max-w-sm">可以问平台巡检、Kubernetes 排障、OpenClaw / Hermes 接入、网络和文档中心相关问题。</p>
+              <p className="max-w-sm">可以问平台巡检、Kubernetes 排障、AI Provider 接入、网络和文档中心相关问题。</p>
             </div>
           ) : (
             messages.map((msg, index) => {

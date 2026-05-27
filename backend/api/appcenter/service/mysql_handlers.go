@@ -669,6 +669,32 @@ type appMySQLQueryBody struct {
 	ConfirmMutation bool   `json:"confirmMutation"`
 }
 
+type appMySQLQueryRunner interface {
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+func appMySQLRunnerForSchema(ctx context.Context, db *sql.DB, schema string) (appMySQLQueryRunner, func(), error) {
+	schema = strings.TrimSpace(schema)
+	if schema == "" {
+		return db, func() {}, nil
+	}
+	quoted, err := appMySQLQuoteIdentifier(schema)
+	if err != nil {
+		return nil, func() {}, err
+	}
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return nil, func() {}, err
+	}
+	cleanup := func() { _ = conn.Close() }
+	if _, err := conn.ExecContext(ctx, "USE "+quoted); err != nil {
+		cleanup()
+		return nil, func() {}, err
+	}
+	return conn, cleanup, nil
+}
+
 func handleAppMySQLQuery(c *gin.Context, app *ServerApp) {
 	var body appMySQLQueryBody
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -691,8 +717,14 @@ func handleAppMySQLQuery(c *gin.Context, app *ServerApp) {
 		}
 	}
 	withAppMySQLInstanceDB(c, app, 60*time.Second, func(ctx context.Context, db *sql.DB, _ *appMySQLStoredConfig, _ *appMySQLRow) {
+		runner, cleanup, err := appMySQLRunnerForSchema(ctx, db, body.Schema)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		defer cleanup()
 		if readOnly {
-			rows, err := db.QueryContext(ctx, stmt)
+			rows, err := runner.QueryContext(ctx, stmt)
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return
@@ -706,7 +738,7 @@ func handleAppMySQLQuery(c *gin.Context, app *ServerApp) {
 			c.JSON(http.StatusOK, gin.H{"readOnly": true, "rows": result.Rows, "columns": result.Columns, "truncated": result.Truncated})
 			return
 		}
-		res, err := db.ExecContext(ctx, stmt)
+		res, err := runner.ExecContext(ctx, stmt)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return

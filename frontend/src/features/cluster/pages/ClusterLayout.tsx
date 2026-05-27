@@ -20,7 +20,7 @@ const ClusterLayout: React.FC = () => {
     pathname === "/cluster/bastion" ||
     pathname.startsWith("/cluster/bastion/");
   const isBastionSection = isBastionWorkspace;
-  /** AI 巡检 / 监控 / 告警：独立子路由 */
+  /** AI 巡检：监控看板、告警通知、日志检索和报告等独立子路由 */
   const isAiInspectSection = pathname.startsWith("/cluster/ai-inspect");
   /** Harbor 仓库：仅需运行时 Harbor 凭据，不要求 K8s 已连通 */
   const isHarborSection = pathname.startsWith("/cluster/harbor");

@@ -1,6 +1,14 @@
 package core
 
-import "testing"
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	pvemodel "github.com/ops-easy/EasyPanel/backend/api/pve/model"
+	pveprovider "github.com/ops-easy/EasyPanel/backend/api/pve/provider"
+)
 
 func TestParseBastionTargetKey(t *testing.T) {
 	cases := []struct {
@@ -107,6 +115,64 @@ func TestUsableGuestIPv4SkipsLoopbackAndCIDR(t *testing.T) {
 		t.Fatalf("loopback should be skipped, got %q", got)
 	}
 	if got := usableGuestIPv4("192.168.10.21/24"); got != "192.168.10.21" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestPVEResolveQemuGuestIPFallsBackToCloudInitConfig(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api2/json/nodes/pve-a/qemu/104/agent/network-get-interfaces", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"data":null,"message":"No QEMU guest agent configured\n"}`))
+	})
+	mux.HandleFunc("/api2/json/nodes/pve-a/qemu/104/config", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"data":{"ipconfig0":"ip=192.168.40.104/24,gw=192.168.40.1"}}`))
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	client, err := pveprovider.NewClient(pvemodel.Target{
+		BaseURL: srv.URL,
+		TokenID: "root@pam!test",
+		SkipTLS: true,
+	}, "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := pveResolveQemuGuestIP(context.Background(), client, "pve-a", "104")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "192.168.40.104" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestPVEResolveLXCGuestIPFallsBackToConfigNetIP(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api2/json/nodes/pve-a/lxc/204/interfaces", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	})
+	mux.HandleFunc("/api2/json/nodes/pve-a/lxc/204/config", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"data":{"net0":"name=eth0,bridge=vmbr0,ip=10.20.30.204/24,gw=10.20.30.1"}}`))
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	client, err := pveprovider.NewClient(pvemodel.Target{
+		BaseURL: srv.URL,
+		TokenID: "root@pam!test",
+	}, "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := pveResolveLXCGuestIP(context.Background(), client, "pve-a", "204")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "10.20.30.204" {
 		t.Fatalf("got %q", got)
 	}
 }

@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -103,6 +103,16 @@ function scopeIcon(scope: LogOverviewScope) {
   }
 }
 
+function logWindowMinutesFromTimeWindow(timeWindow: string | null): number {
+  if (!timeWindow) return 1440;
+  const raw = timeWindow.trim().toLowerCase();
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n <= 0) return 1440;
+  if (raw.endsWith("h")) return n * 60;
+  if (raw.endsWith("m")) return n;
+  return Math.ceil(n / 60);
+}
+
 function OverviewItemCard({
   item,
   onOpen,
@@ -164,8 +174,17 @@ function OverviewItemCard({
 
 const AiInspectLogs: React.FC = () => {
   const navigate = useNavigate();
-  const [windowMin, setWindowMin] = useState(1440);
+  const [searchParams] = useSearchParams();
+  const alertQuery = (searchParams.get("alertQuery") || "").trim();
+  const alertScope = (searchParams.get("scope") || "k8s").trim();
+  const alertTimeWindow = searchParams.get("timeWindow");
+  const [windowMin, setWindowMin] = useState(logWindowMinutesFromTimeWindow(alertTimeWindow));
   const [refreshSec, setRefreshSec] = useState(30);
+
+  useEffect(() => {
+    if (!alertQuery) return;
+    setWindowMin(logWindowMinutesFromTimeWindow(alertTimeWindow));
+  }, [alertQuery, alertTimeWindow]);
 
   const statusQ = useQuery({
     queryKey: ["ops-vmlog-status"],
@@ -209,9 +228,12 @@ const AiInspectLogs: React.FC = () => {
   const openDetail = useCallback(
     (scope: LogOverviewScope) => {
       const qs = new URLSearchParams({ tab: scope, window: String(windowMin), page: "1" });
+      if (alertQuery) qs.set("alertQuery", alertQuery);
+      if (alertQuery) qs.set("alertScope", alertScope);
+      if (alertTimeWindow) qs.set("timeWindow", alertTimeWindow);
       navigate(`/cluster/ai-inspect/logs/detail?${qs.toString()}`);
     },
-    [navigate, windowMin]
+    [alertQuery, alertScope, alertTimeWindow, navigate, windowMin]
   );
 
   const onManualRefresh = useCallback(() => {
@@ -224,7 +246,7 @@ const AiInspectLogs: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-cyan-200/80 bg-gradient-to-br from-cyan-50/90 via-white to-slate-50/80 px-6 py-7 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-cyan-900/80">AI 巡检 · 日志总览</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-cyan-900/80">观测与巡检 · 日志检索</p>
         <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-slate-900">
           <ScrollText className="h-7 w-7 text-cyan-600" />
           VictoriaLogs 状态总览
@@ -232,6 +254,13 @@ const AiInspectLogs: React.FC = () => {
         <p className="mt-2 max-w-3xl text-sm text-slate-600">
           在一个页面汇总项目配置、Pod、Nginx 与平台日志的状态、错误信号与处理优先级；点击任一范围进入分页明细与配置详情页。
         </p>
+        {alertQuery ? (
+          <div className="mt-4 rounded-xl border border-cyan-200 bg-white/90 px-4 py-3 text-xs leading-relaxed text-cyan-950">
+            <p className="font-semibold">来自告警排障</p>
+            <p className="mt-1 break-all font-mono text-cyan-900">{alertQuery}</p>
+            <p className="mt-1 text-cyan-800">scope：{alertScope} · 时间窗：{alertTimeWindow || `${windowMin}m`}</p>
+          </div>
+        ) : null}
         <div className="mt-4 flex flex-wrap gap-2">
           <Button type="button" variant="outline" size="sm" className="border-cyan-200 bg-white/90" asChild>
             <a href={st?.docsUrl || "https://docs.victoriametrics.com/victorialogs/"} target="_blank" rel="noreferrer">
@@ -246,12 +275,12 @@ const AiInspectLogs: React.FC = () => {
             </a>
           </Button>
           <Button type="button" variant="outline" size="sm" className="border-cyan-200 bg-white/90" asChild>
-            <Link to="/cluster/settings">Cluster Settings（VictoriaLogs）</Link>
+            <Link to="/cluster/settings">集群设置（VictoriaLogs）</Link>
           </Button>
           <Button type="button" variant="outline" size="sm" className="border-cyan-200 bg-white/90" asChild>
             <Link to="/cluster/ai-inspect/log-collection" className="inline-flex items-center gap-1.5">
               <HardDrive className="h-4 w-4" />
-              日志采集（Vector 助手）
+              日志接入（Vector 助手）
             </Link>
           </Button>
         </div>
@@ -264,8 +293,8 @@ const AiInspectLogs: React.FC = () => {
             AI 建议 · 控制平面（kube-system）
           </CardTitle>
           <CardDescription className="text-xs leading-relaxed">
-            与下方 VictoriaLogs 总览互补：平台周期抓取 apiserver/etcd 等日志并由已配置的 AI Provider 输出集群级建议。完整内容、确认与铃铛在「AI 巡检
-            → Dashboard」。
+            与下方 VictoriaLogs 总览互补：平台周期抓取 apiserver/etcd 等日志并由已配置的 AI Provider 输出集群级建议。完整内容、确认与铃铛在「观测与巡检
+            → 总览」。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -277,7 +306,7 @@ const AiInspectLogs: React.FC = () => {
               </span>
             ) : null}
             <Button type="button" variant="outline" size="sm" className="h-8" asChild>
-              <Link to="/cluster/ai-inspect/dashboard">打开 Dashboard 总建议</Link>
+              <Link to="/cluster/ai-inspect/dashboard">打开观测与巡检总览</Link>
             </Button>
           </div>
           {clusterAdvisoryQ.data?.runError ? (

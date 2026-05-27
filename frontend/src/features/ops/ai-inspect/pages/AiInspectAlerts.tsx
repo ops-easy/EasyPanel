@@ -85,6 +85,19 @@ const emptyRule = (): AlertRule => ({
   annotations: { summary: "阈值告警" },
 });
 
+function buildAlertTroubleshootingLinks(rule: AlertRule): { monitoring: string; logs: string } {
+  const scope = ["k8s", "vcenter"].includes((rule.scope || "").trim()) ? rule.scope.trim() : "k8s";
+  const alertQuery = (rule.promql || "").trim();
+  const timeWindow = `${Math.max(rule.forSeconds || 300, 300)}s`;
+  const params = new URLSearchParams({ scope, timeWindow });
+  if (alertQuery) params.set("alertQuery", alertQuery);
+  const query = params.toString();
+  return {
+    monitoring: `/cluster/ai-inspect/monitoring?${query}`,
+    logs: `/cluster/ai-inspect/logs?${query}`,
+  };
+}
+
 const AiInspectAlerts: React.FC = () => {
   const qc = useQueryClient();
   const { status } = useAuth();
@@ -190,9 +203,9 @@ const AiInspectAlerts: React.FC = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">告警中心</h1>
+        <h1 className="text-2xl font-bold text-slate-900">告警与通知</h1>
         <p className="mt-1 text-sm text-slate-600">
-          基于 Prometheus 即时查询（与监控中心相同数据源）；支持邮箱、企业微信机器人；支持标签抑制与「for」持续时间；通知正文格式参考 Prometheus 告警文本。
+          基于 Prometheus 即时查询（与监控看板相同数据源）；支持邮箱、企业微信机器人；支持标签抑制与「for」持续时间；通知正文格式参考 Prometheus 告警文本。
         </p>
       </div>
 
@@ -324,7 +337,9 @@ const AiInspectAlerts: React.FC = () => {
           </Button>
         </div>
         <div className="mt-4 space-y-6">
-          {draft.rules.map((r, idx) => (
+          {draft.rules.map((r, idx) => {
+            const troubleshootingLinks = buildAlertTroubleshootingLinks(r);
+            return (
             <div key={r.id} className="rounded-xl border border-slate-100 bg-slate-50/80 p-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
@@ -426,9 +441,16 @@ const AiInspectAlerts: React.FC = () => {
                 >
                   删除
                 </Button>
+                <Button type="button" variant="outline" size="sm" asChild>
+                  <Link to={troubleshootingLinks.monitoring}>监控排障</Link>
+                </Button>
+                <Button type="button" variant="outline" size="sm" asChild>
+                  <Link to={troubleshootingLinks.logs}>日志排障</Link>
+                </Button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

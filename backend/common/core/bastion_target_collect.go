@@ -95,6 +95,7 @@ func collectPVEBastionTargets(ctx context.Context, app *ServerApp) ([]BastionTar
 	}
 	out := make([]BastionTarget, 0)
 	warnings := make([]string, 0)
+	overrides := loadBastionTargetOverrides(kv)
 	q := url.Values{}
 	q.Set("type", "vm")
 	for _, target := range targetDefs {
@@ -129,6 +130,7 @@ func collectPVEBastionTargets(ctx context.Context, app *ServerApp) ([]BastionTar
 			if id == "" {
 				continue
 			}
+			ov := overrides[id]
 			out = append(out, BastionTarget{
 				ID:         id,
 				Provider:   bastionProviderPVE,
@@ -137,6 +139,7 @@ func collectPVEBastionTargets(ctx context.Context, app *ServerApp) ([]BastionTar
 				Kind:       pveGuestKind(guestType),
 				GuestType:  guestType,
 				PowerState: row.Status,
+				Address:    strings.TrimSpace(ov.SSHHost),
 				Node:       node,
 			})
 		}

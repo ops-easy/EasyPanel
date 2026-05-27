@@ -19,6 +19,11 @@ import { apiGetJson, apiPostJson, apiPutJson, ApiHttpError } from "@/lib/api";
 import { ArrowDown, ArrowRight, Bot, ChevronDown, ScrollText, Sparkles, UserRound } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { AIProviderConfigPanel } from "@/features/ops/ai-inspect/components/AIProviderConfigPanel";
+import { InspectionRunPanel } from "@/features/ops/ai-inspect/components/InspectionRunPanel";
+import { InspectionSchedulePanel } from "@/features/ops/ai-inspect/components/InspectionSchedulePanel";
+import { InspectionScopePanel } from "@/features/ops/ai-inspect/components/InspectionScopePanel";
+import { ProviderScenarioOverridesPanel } from "@/features/ops/ai-inspect/components/ProviderScenarioOverridesPanel";
 
 type OpenClawK8sStatus = {
   phase?: string;
@@ -41,8 +46,8 @@ const INSPECT_MODEL_QUICK_PRESETS: { id: string; model: string }[] = [
 const OPS_AI_PROVIDER_SCENARIOS: { role: string; title: string; hint: string }[] = [
   { role: "inspect_summary", title: "巡检报告 · AI 总摘要", hint: "平台巡检完成后生成 Markdown 总评（与上方系统/用户模板一致，可用不同网关与模型）。" },
   { role: "inspect_probe", title: "巡检内 · 连通性探针（pong）", hint: "巡检流程中的大模型 ping；可与摘要使用不同 AI Provider/模型。" },
-  { role: "vmlog_analyze", title: "VictoriaLogs · 日志智能分析", hint: "日志查询页「AI Provider 分析」与单行分析接口。" },
-  { role: "cluster_advisory", title: "kube-system · 控制平面周期建议", hint: "Dashboard 控制面 AI 建议后台任务。" },
+  { role: "vmlog_analyze", title: "VictoriaLogs · 日志智能分析", hint: "日志检索页「AI Provider 分析」与单行分析接口。" },
+  { role: "cluster_advisory", title: "kube-system · 控制平面周期建议", hint: "观测与巡检总览里的控制面 AI 建议后台任务。" },
 ];
 
 function emptyAIProviderProfile(): AIProviderEndpointForm {
@@ -319,7 +324,7 @@ const AiInspectHome: React.FC = () => {
   if (!isAdmin) {
     return (
       <div className="rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-6 text-sm text-amber-950">
-        AI 巡检配置与执行仅管理员可用。你可使用左侧「监控中心」查看基于 Prometheus 的监控图（只读）。
+        巡检策略与执行仅管理员可用。你可使用左侧「监控看板」查看基于 Prometheus 的监控图（只读）。
       </div>
     );
   }
@@ -435,11 +440,11 @@ const AiInspectHome: React.FC = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">巡检配置</h1>
+        <h1 className="text-2xl font-bold text-slate-900">巡检策略</h1>
         <p className="mt-1 text-sm text-slate-600">
           对接 OpenAI 兼容接口（含自建网关 / 应用中心 AI 网关），汇总 Kubernetes、vCenter、Prometheus、Redis、SSH、云主机等检查结果；支持定时每日报告。总览与模块摘要见{" "}
           <Link to="/cluster/ai-inspect/dashboard" className="font-medium text-sky-700 underline">
-            Dashboard 总览
+            观测与巡检总览
           </Link>
           。各类巡检与 AI 报告见{" "}
           <Link to="/cluster/ai-inspect/reports/platform" className="font-medium text-sky-700 underline">
@@ -449,8 +454,7 @@ const AiInspectHome: React.FC = () => {
         </p>
       </div>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">AI Provider / 对话接口</h2>
+      <AIProviderConfigPanel>
         <CollapsibleManual
           storageKey="ai-inspect.openclaw-config-manual"
           title="配置说明（填什么、怎么用）"
@@ -863,13 +867,9 @@ const AiInspectHome: React.FC = () => {
             />
           </div>
         </div>
-      </section>
+      </AIProviderConfigPanel>
 
-      <section className="rounded-2xl border border-violet-200/80 bg-gradient-to-b from-violet-50/40 to-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">分场景 AI Provider（可选）</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          下列能力默认走上方「AI Provider / 对话接口」；若需<strong>不同应用中心实例或远端模型</strong>，在对应折叠中开启并填写。保存时与主配置一并提交。
-        </p>
+      <ProviderScenarioOverridesPanel>
         <div className="mt-4 space-y-3">
           {OPS_AI_PROVIDER_SCENARIOS.map(({ role, title, hint }) => {
             const p = draft.providerProfiles?.[role] ?? emptyAIProviderProfile();
@@ -1062,7 +1062,7 @@ const AiInspectHome: React.FC = () => {
             );
           })}
         </div>
-      </section>
+      </ProviderScenarioOverridesPanel>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">模型参数</h2>
@@ -1117,8 +1117,7 @@ const AiInspectHome: React.FC = () => {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">巡检范围与每日报告</h2>
+      <InspectionScopePanel>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {(
             [
@@ -1165,7 +1164,8 @@ const AiInspectHome: React.FC = () => {
             )}
           </ul>
         </div>
-        <div className="mt-6 flex flex-wrap items-end gap-4">
+        <InspectionSchedulePanel>
+        <div className="mt-3 flex flex-wrap items-end gap-4">
           <div className="space-y-2">
             <Label>每日报告时刻（中国时区 Asia/Shanghai）</Label>
             <div className="flex gap-2">
@@ -1207,7 +1207,9 @@ const AiInspectHome: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="mt-6 flex flex-wrap gap-3">
+        </InspectionSchedulePanel>
+        <InspectionRunPanel>
+        <div className="mt-3 flex flex-wrap gap-3">
           <Button type="button" onClick={() => saveMut.mutate(putBody())} disabled={saveMut.isPending}>
             保存配置
           </Button>
@@ -1371,7 +1373,8 @@ const AiInspectHome: React.FC = () => {
             </div>
           </div>
         ) : null}
-      </section>
+        </InspectionRunPanel>
+      </InspectionScopePanel>
 
     </div>
   );

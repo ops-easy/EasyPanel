@@ -1,4 +1,4 @@
-/** 监控中心内置图：直连 Prometheus / vmselect（与集群设置、配置中的数据源一致），不经 Grafana。 */
+/** 监控看板内置图：直连 Prometheus / vmselect（与集群设置、配置中的数据源一致），不经 Grafana。 */
 
 export type MonitoringDataScope = "k8s" | "vcenter";
 export type PanelDisplayMode = "single" | "matrix";
@@ -132,7 +132,7 @@ export const OPS_MONITORING_PRESETS: OpsMonitoringPreset[] = [
     title: "VM CPU MHz（按 VM 名拆线，vmware_/vsphere_）",
     scope: "vcenter",
     display: "matrix",
-    // 与 vCenter ESXi 看板、列表 IO 一致：vm_name / vmname；监控中心走 query_range，对 counter 用 rate
+    // 与 vCenter ESXi 看板、列表 IO 一致：vm_name / vmname；监控看板走 query_range，对 counter 用 rate
     labelKeys: ["vm_name", "vmname", "name"],
     promql:
       "sum by (vm_name) (rate(vmware_vm_cpu_usagemhz_average[5m])) or sum by (vmname) (rate(vmware_vm_cpu_usagemhz_average[5m])) or sum by (vm_name) (rate(vsphere_vm_cpu_usagemhz_average[5m])) or sum by (vmname) (rate(vsphere_vm_cpu_usagemhz_average[5m]))",

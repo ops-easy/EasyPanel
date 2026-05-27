@@ -9,6 +9,17 @@ const clusterPrometheusPanelSource = read("../src/features/cluster/pages/Cluster
 const prometheusSettingsSource = read("../src/features/settings/components/SettingsPrometheusSection.tsx");
 const runtimeSettingsSource = read("../src/features/settings/components/SettingsRuntimeSection.tsx");
 const sidebarSource = read("../src/shared/layout/Sidebar.tsx");
+const aiInspectLogsSource = read("../src/features/ops/ai-inspect/pages/AiInspectLogs.tsx");
+const aiInspectLogDetailsSource = read("../src/features/ops/ai-inspect/pages/AiInspectLogDetails.tsx");
+const aiInspectLogCollectionSource = read("../src/features/ops/ai-inspect/pages/AiInspectLogCollection.tsx");
+const aiInspectDashboardSource = read("../src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx");
+const aiInspectLogsModelSource = read("../src/features/ops/ai-inspect/pages/aiInspectLogs.model.ts");
+
+const mojibakePattern = /[\uFFFD\uE000-\uF8FF]|[脙脗][\u0080-\u00ff]|闆嗙兢|鎬昏|鍏ュ彛|鐩戞帶|鏃ュ織|楂樼骇|鍓嶅線|鈫|鈥/u;
+
+function assertReadableSource(name, source) {
+  assert.doesNotMatch(source, mojibakePattern, `${name} should not contain mojibake Chinese`);
+}
 
 test("cluster settings page uses Chinese for visible page labels", () => {
   assert.match(clusterSettingsSource, />集群设置</);
@@ -83,4 +94,40 @@ test("cluster settings Prometheus actions use compact Chinese labels", () => {
   assert.match(prometheusSettingsSource, /"清除覆盖"/);
   assert.match(prometheusSettingsSource, /className="whitespace-nowrap"/);
   assert.doesNotMatch(prometheusSettingsSource, />监控数据源（Prometheus \/ VictoriaMetrics）…</);
+});
+
+test("cluster settings related copy stays readable Chinese", () => {
+  for (const [name, source] of [
+    ["cluster settings page", clusterSettingsSource],
+    ["prometheus settings", prometheusSettingsSource],
+    ["runtime settings", runtimeSettingsSource],
+    ["cluster monitoring page", clusterPrometheusPanelSource],
+    ["sidebar", sidebarSource],
+    ["AI inspect logs", aiInspectLogsSource],
+    ["AI inspect log details", aiInspectLogDetailsSource],
+    ["AI inspect log collection", aiInspectLogCollectionSource],
+    ["AI inspect dashboard", aiInspectDashboardSource],
+    ["AI inspect logs model", aiInspectLogsModelSource],
+  ]) {
+    assertReadableSource(name, source);
+  }
+});
+
+test("log and monitoring jumps use Chinese cluster settings copy", () => {
+  for (const source of [
+    aiInspectLogsSource,
+    aiInspectLogDetailsSource,
+    aiInspectLogCollectionSource,
+    aiInspectDashboardSource,
+    aiInspectLogsModelSource,
+  ]) {
+    assert.doesNotMatch(source, /Cluster Settings/);
+  }
+
+  assert.match(aiInspectLogsSource, />集群设置（VictoriaLogs）</);
+  assert.match(aiInspectLogDetailsSource, />集群设置（VictoriaLogs）</);
+  assert.match(aiInspectLogCollectionSource, />集群设置（VictoriaLogs）</);
+  assert.match(aiInspectDashboardSource, /在「集群设置 → 日志」配置地址与命名空间内 Service 发现/);
+  assert.match(aiInspectLogsModelSource, /在「集群设置 → 日志」中填写 Service 内网 URL/);
+  assert.match(runtimeSettingsSource, /与「集群设置 → 监控」写入同一字段/);
 });

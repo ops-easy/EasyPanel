@@ -441,7 +441,7 @@ const AiInspectLogDetails: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-cyan-200/80 bg-gradient-to-br from-cyan-50/90 via-white to-slate-50/80 px-6 py-7 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-cyan-900/80">AI 巡检 · 日志详情</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-cyan-900/80">观测与巡检 · 日志详情</p>
         <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-slate-900">
           <ScrollText className="h-7 w-7 text-cyan-600" />
           {activeTab.label}
@@ -449,15 +449,15 @@ const AiInspectLogDetails: React.FC = () => {
         <p className="mt-2 max-w-3xl text-sm text-slate-600">{activeTab.short}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button type="button" variant="outline" size="sm" className="border-cyan-200 bg-white/90" asChild>
-            <Link to="/cluster/ai-inspect/logs">返回总览</Link>
+            <Link to="/cluster/ai-inspect/logs">返回日志检索</Link>
           </Button>
           <Button type="button" variant="outline" size="sm" className="border-cyan-200 bg-white/90" asChild>
-            <Link to="/cluster/settings">Cluster Settings（VictoriaLogs）</Link>
+            <Link to="/cluster/settings">集群设置（VictoriaLogs）</Link>
           </Button>
           <Button type="button" variant="outline" size="sm" className="border-cyan-200 bg-white/90" asChild>
             <Link to="/cluster/ai-inspect/log-collection" className="inline-flex items-center gap-1.5">
               <HardDrive className="h-4 w-4" />
-              日志采集（Vector 助手）
+              日志接入（Vector 助手）
             </Link>
           </Button>
           <Button type="button" variant="outline" size="sm" className="border-cyan-200 bg-white/90" asChild>
@@ -546,7 +546,7 @@ const AiInspectLogDetails: React.FC = () => {
                     <Link to="/cluster/settings">查看 VictoriaLogs 配置</Link>
                   </Button>
                   <Button type="button" variant="outline" size="sm" asChild>
-                    <Link to="/cluster/ai-inspect/log-collection">查看日志采集助手</Link>
+                    <Link to="/cluster/ai-inspect/log-collection">查看日志接入助手</Link>
                   </Button>
                 </div>
               </>
@@ -840,7 +840,7 @@ const AiInspectLogDetails: React.FC = () => {
             <CardContent className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 <Button type="button" size="sm" variant="outline" className="h-8" asChild>
-                  <Link to="/cluster/ai-inspect/dashboard">Dashboard 总建议</Link>
+                  <Link to="/cluster/ai-inspect/dashboard">观测与巡检总览</Link>
                 </Button>
                 <Button
                   type="button"

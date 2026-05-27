@@ -19,6 +19,7 @@ import { useAuth } from "@/auth/auth-context";
 import { apiDelete, apiGetJson, apiPutJson, type AppConfig } from "@/lib/api";
 import { menuItemVisible, moduleVisible } from "@/lib/platform-permissions";
 import CloudVmSshTerminalSheet from "@/features/app-center/cloudvm/components/CloudVmSshTerminalSheet";
+import MySQLSqlConsoleSheet from "@/features/app-center/mysql/components/MySQLSqlConsoleSheet";
 import RedisCliTerminalSheet from "@/features/app-center/redis/components/RedisCliTerminalSheet";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -255,6 +256,7 @@ const VCenterBastion: React.FC = () => {
   const [rdpUrlDraft, setRdpUrlDraft] = useState("");
   const [cloudVmSheetId, setCloudVmSheetId] = useState<number | null>(null);
   const [redisSheetId, setRedisSheetId] = useState<number | null>(null);
+  const [mysqlSheetId, setMySQLSheetId] = useState<number | null>(null);
   const [sshTermFontSize, setSshTermFontSize] = useState(() => readBastionSshFontSize());
   const [sshFontPresetId, setSshFontPresetId] = useState(() => readBastionSshFontPresetId());
   const [sshTermThemeId, setSshTermThemeId] = useState(() => readSshTerminalThemeId());
@@ -298,6 +300,13 @@ const VCenterBastion: React.FC = () => {
     queryKey: ["bastion-sidebar-redis"],
     queryFn: ({ signal }) =>
       apiGetJson<{ instances: { id: number; name: string }[] }>("/api/app-center/redis/instances", { signal }),
+    enabled: showAppShortcuts,
+    staleTime: 60_000,
+  });
+  const mysqlListQ = useQuery({
+    queryKey: ["bastion-sidebar-mysql"],
+    queryFn: ({ signal }) =>
+      apiGetJson<{ instances: { id: number; name: string }[] }>("/api/app-center/mysql/instances", { signal }),
     enabled: showAppShortcuts,
     staleTime: 60_000,
   });
@@ -682,7 +691,7 @@ const VCenterBastion: React.FC = () => {
           <SquareTerminal className="size-4 shrink-0 text-[#1890ff]" aria-hidden />
           <div className="min-w-0">
             <h1 className="truncate text-xs font-semibold tracking-wide text-[#ffffff]">主机与终端</h1>
-            <p className="truncate text-[10px] text-[#8c8c8c]">vCenter · PVE · 额外主机 · 云主机 · Redis CLI</p>
+            <p className="truncate text-[10px] text-[#8c8c8c]">vCenter · PVE · 额外主机 · 云主机 · Redis CLI · MySQL SQL</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
@@ -853,6 +862,7 @@ const VCenterBastion: React.FC = () => {
 
             {showAppShortcuts &&
             ((redisListQ.data?.instances?.length ?? 0) > 0 ||
+              (mysqlListQ.data?.instances?.length ?? 0) > 0 ||
               (cloudVmListQ.data?.instances?.length ?? 0) > 0) ? (
               <div className="border-b border-[#3c3c3c]/80">
                 <p className="px-2.5 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wide text-[#6e7681]">
@@ -908,6 +918,33 @@ const VCenterBastion: React.FC = () => {
                           </span>
                           <span className="mt-0.5 block truncate font-mono text-[11px] text-[#8c8c8c]">
                             redis-cli
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                  {(mysqlListQ.data?.instances ?? []).map((r) => (
+                    <li key={`mysql-${r.id}`}>
+                      <button
+                        type="button"
+                        onClick={() => setMySQLSheetId(r.id)}
+                        className="group flex w-full items-start gap-2 border-l-2 border-transparent py-1.5 pl-2 pr-1.5 text-left transition-colors hover:bg-[#2d3032]"
+                      >
+                        <Database
+                          className="mt-0.5 size-3.5 shrink-0 text-[#58a6ff]/85"
+                          aria-hidden
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-start justify-between gap-2">
+                            <span className="truncate text-[13px] font-medium leading-snug text-[#e6edf3]">
+                              {r.name || `MySQL #${r.id}`}
+                            </span>
+                            <BastionSidebarServiceChip className="bg-[#1f6feb]/22 text-[#79c0ff]">
+                              SQL
+                            </BastionSidebarServiceChip>
+                          </span>
+                          <span className="mt-0.5 block truncate font-mono text-[11px] text-[#8c8c8c]">
+                            应用中心
                           </span>
                         </span>
                       </button>
@@ -1513,6 +1550,16 @@ const VCenterBastion: React.FC = () => {
           open
           onOpenChange={(o) => {
             if (!o) setRedisSheetId(null);
+          }}
+        />
+      ) : null}
+      {mysqlSheetId != null ? (
+        <MySQLSqlConsoleSheet
+          instanceId={mysqlSheetId}
+          instanceName={mysqlListQ.data?.instances?.find((i) => i.id === mysqlSheetId)?.name}
+          open
+          onOpenChange={(o) => {
+            if (!o) setMySQLSheetId(null);
           }}
         />
       ) : null}

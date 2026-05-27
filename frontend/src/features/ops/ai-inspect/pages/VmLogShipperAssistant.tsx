@@ -17,6 +17,11 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { cn } from "@/lib/utils";
 import type { VCenterVMsResponse } from "@/features/vcenter/pages/types";
+import { LogIngestionVerificationPanel } from "@/features/ops/ai-inspect/components/LogIngestionVerificationPanel";
+import { LogPresetSelector } from "@/features/ops/ai-inspect/components/LogPresetSelector";
+import { OpenSearchDualWritePanel } from "@/features/ops/ai-inspect/components/OpenSearchDualWritePanel";
+import { SshInstallTaskPanel } from "@/features/ops/ai-inspect/components/SshInstallTaskPanel";
+import { VectorScriptPanel } from "@/features/ops/ai-inspect/components/VectorScriptPanel";
 
 type VmLogStatusMinimal = {
   configured?: boolean;
@@ -182,7 +187,7 @@ const VM_SHIPPER_DEFAULT_SYSTEM_PATHS = [
   "/var/log/cloud-init-output.log",
 ];
 
-/** 虚拟机 / 宝塔 → VictoriaLogs Vector 采集助手（原日志查询页内嵌块，现独立复用） */
+/** 虚拟机 / 宝塔 → VictoriaLogs Vector 采集助手（原日志检索页内嵌块，现独立复用） */
 export const VmLogShipperAssistant: React.FC = () => {
   const { status } = useAuth();
   const isAdmin = status?.role === "admin";
@@ -444,7 +449,7 @@ export const VmLogShipperAssistant: React.FC = () => {
               to="/cluster/ai-inspect/logs"
               state={{ aiInspectLogsTab: "vcenter", aiInspectLogsIngestOpen: true }}
             >
-              日志查询 → vCenter / 虚拟机采集说明
+              日志检索 → vCenter / 虚拟机采集说明
             </Link>
             。管理云主机：{" "}
             <Link className="font-medium text-emerald-800 underline-offset-2 hover:underline" to="/cluster/compute/cloud">
@@ -454,6 +459,7 @@ export const VmLogShipperAssistant: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
+          <LogPresetSelector>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-1.5">
               <Label className="text-xs">日志预设</Label>
@@ -506,8 +512,7 @@ export const VmLogShipperAssistant: React.FC = () => {
               />
               <p className="text-[11px] text-slate-500">留空则用运行时配置；含 .svc.cluster.local 时助手会提示不可达虚拟机。</p>
             </div>
-            <div className="space-y-1.5 md:col-span-2 rounded-lg border border-indigo-100 bg-indigo-50/40 px-3 py-2.5">
-              <p className="text-[11px] font-medium text-indigo-950">OpenSearch 双写（可选，Vector elasticsearch/opensearch sink）</p>
+            <OpenSearchDualWritePanel>
               <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
                 填写后除 VictoriaLogs 外，同步写入 OpenSearch；索引名默认为{" "}
                 <code className="rounded bg-white px-1">{`{前缀}-年-月-日`}</code>。虚拟机侧须填{" "}
@@ -551,7 +556,7 @@ export const VmLogShipperAssistant: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </OpenSearchDualWritePanel>
             <div className="space-y-1.5">
               <Label className="text-xs">vm_host 标签（LogsQL 筛选）</Label>
               <Input
@@ -571,7 +576,9 @@ export const VmLogShipperAssistant: React.FC = () => {
               />
             </div>
           </div>
+          </LogPresetSelector>
 
+          <SshInstallTaskPanel>
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
@@ -698,7 +705,6 @@ export const VmLogShipperAssistant: React.FC = () => {
               )}
             </div>
           ) : null}
-
           {shipperGen?.warning ? (
             <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">{shipperGen.warning}</p>
           ) : null}
@@ -988,6 +994,7 @@ export const VmLogShipperAssistant: React.FC = () => {
                   </pre>
                 </div>
               ) : null}
+              <LogIngestionVerificationPanel>
               {enabledCollectors.length ? (
                 <div className="space-y-2 rounded-md border border-slate-200 bg-white/90 p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1064,6 +1071,7 @@ export const VmLogShipperAssistant: React.FC = () => {
                   ) : null}
                 </div>
               ) : null}
+              </LogIngestionVerificationPanel>
             </div>
           ) : null}
 
@@ -1183,6 +1191,9 @@ export const VmLogShipperAssistant: React.FC = () => {
             </div>
           ) : null}
 
+          </SshInstallTaskPanel>
+
+          <VectorScriptPanel>
           {shipperGen?.bashScript ? (
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1224,6 +1235,7 @@ export const VmLogShipperAssistant: React.FC = () => {
               </pre>
             </div>
           ) : null}
+          </VectorScriptPanel>
         </CardContent>
       </Card>
 

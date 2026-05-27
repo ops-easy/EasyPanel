@@ -21,6 +21,7 @@ import { workspaceMenuVisible } from "@/lib/platform-permissions";
 import { cn } from "@/lib/utils";
 import { type K8sSummary } from "@/features/cluster/pages/types";
 import { type VCenterVMsResponse, type VCenterHostsResponse } from "@/features/vcenter/pages/types";
+import { OBSERVABILITY_INSPECT_WORKSPACE_LABEL } from "@/features/ops/ai-inspect/aiInspectNavigation";
 
 type RedisStatus = {
   mysqlReachable: boolean;
@@ -265,7 +266,7 @@ const HomeHub: React.FC = () => {
     refetchOnWindowFocus: false,
   });
 
-  // AI 巡检
+  // 观测与巡检
   const aiAlertsQ = useQuery({
     queryKey: ["ops-alerts-hub"],
     queryFn: ({ signal }) => apiGetJson<AiAlertsGet>("/api/ops/alerts", { signal }),
@@ -406,7 +407,7 @@ const HomeHub: React.FC = () => {
       ? "OpenWrt 未配置：请先登记 OpenWrt 设备的 Prometheus scope、instance 或 job 标签，避免进入子页后才发现没有数据源。"
       : "";
 
-  // 堡垒机 / AI 巡检聚合（useMemo：与无关 hub 卡片解耦）
+  // 堡垒机 / 观测与巡检聚合（useMemo：与无关 hub 卡片解耦）
   const {
     nBastionVm,
     nBastionOn,
@@ -692,7 +693,7 @@ const HomeHub: React.FC = () => {
           </Link>
         )}
 
-        {/* AI 巡检 */}
+        {/* 观测与巡检 */}
         {showAiInspect && (
           <Link
             to="/cluster/ai-inspect/dashboard"
@@ -712,8 +713,8 @@ const HomeHub: React.FC = () => {
                 <HubStatusPill tone="cyan">已就绪</HubStatusPill>
               )}
             </div>
-            <h2 className="mt-4 text-base font-semibold text-gray-900">AI 巡检</h2>
-            <p className="mt-0.5 text-xs text-gray-400">AI Provider 巡检、监控告警、日志查询与采集</p>
+            <h2 className="mt-4 text-base font-semibold text-gray-900">{OBSERVABILITY_INSPECT_WORKSPACE_LABEL}</h2>
+            <p className="mt-0.5 text-xs text-gray-400">AI Provider 巡检、监控看板、告警通知、日志检索与巡检报告</p>
 
             <HubMetricGrid>
               <MetricItem label="K8s 数据源" value={aiLoading ? "…" : aiPromK8s ? "已配置" : "未配置"} />
@@ -724,7 +725,7 @@ const HomeHub: React.FC = () => {
               <MetricItem label="通知通道" value={isAdmin ? (aiLoading ? "…" : aiChannels) : "受限"} />
             </HubMetricGrid>
             <HubCardHint>
-              AI 巡检摘要统一汇总数据源、告警、监控面板和报告；配置权限受角色控制。
+              观测与巡检摘要统一汇总数据源、监控看板、告警通知、日志检索与巡检报告；配置权限受角色控制。
             </HubCardHint>
 
             <span className={cn(hubEntryClass, "text-cyan-600")}>

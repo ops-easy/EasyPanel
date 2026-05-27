@@ -1,13 +1,21 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, ChevronRight, ClipboardList, HardDrive, LayoutDashboard, LineChart, ScrollText, Sparkles } from "lucide-react";
+import { Bell, ChevronRight, LayoutDashboard, Sparkles } from "lucide-react";
 import { apiGetJson, apiPostJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { OpenClawChatMarkdown } from "@/features/app-center/openclaw/components/OpenClawChatMarkdown";
 import { cn } from "@/lib/utils";
+import {
+  AI_INSPECT_NAV_ITEMS_BY_ID,
+  OBSERVABILITY_INSPECT_WORKSPACE_LABEL,
+  type AiInspectNavItem,
+} from "@/features/ops/ai-inspect/aiInspectNavigation";
+import { AccessHealthMatrix, type AccessHealthItem } from "@/features/ops/ai-inspect/components/AccessHealthMatrix";
+import { CurrentRiskPanel } from "@/features/ops/ai-inspect/components/CurrentRiskPanel";
+import { NextStepPanel, type NextStepAction } from "@/features/ops/ai-inspect/components/NextStepPanel";
 import { OPS_MONITORING_PRESETS } from "./opsMonitoringPresets";
 import { toast } from "sonner";
 
@@ -21,15 +29,14 @@ type AIProviderGet = {
 };
 
 function SummaryCard(props: {
-  to: string;
-  title: string;
-  icon: React.ReactNode;
+  item: AiInspectNavItem;
   children: React.ReactNode;
   className?: string;
 }) {
+  const Icon = props.item.icon;
   return (
     <Link
-      to={props.to}
+      to={props.item.to}
       className={cn(
         "group flex flex-col rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md",
         props.className
@@ -38,9 +45,9 @@ function SummaryCard(props: {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 text-slate-900">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-700">
-            {props.icon}
+            <Icon className="h-4 w-4" aria-hidden />
           </span>
-          <h2 className="text-base font-semibold">{props.title}</h2>
+          <h2 className="text-base font-semibold">{props.item.label}</h2>
         </div>
         <ChevronRight className="h-5 w-5 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-500" />
       </div>
@@ -49,7 +56,7 @@ function SummaryCard(props: {
   );
 }
 
-/** AI 巡检工作区总览：各子模块摘要，与顶栏「Dashboard」及侧栏「总览」对应 */
+/** 观测与巡检工作区总览：数据接入、风险与排障动作的状态枢纽 */
 const AiInspectDashboard: React.FC = () => {
   const qc = useQueryClient();
   const { status } = useAuth();
@@ -128,28 +135,93 @@ const AiInspectDashboard: React.FC = () => {
 
   const oc = openclawQ.data?.endpoint;
   const repN = repQ.data?.total ?? repQ.data?.reports?.length ?? 0;
+  const navItems = AI_INSPECT_NAV_ITEMS_BY_ID;
+  const k8sPrometheusConfigured = promStatusQ.data?.scopes?.k8s?.configured === true;
+  const vcenterPrometheusConfigured = promStatusQ.data?.scopes?.vcenter?.configured === true;
+  const aiProviderReady = Boolean(oc?.enabled && (oc.apiKeySet || oc.baseUrl));
+  const accessHealthItems: AccessHealthItem[] = [
+    {
+      label: "Kubernetes 指标",
+      scope: "Prometheus / k8s",
+      status: promStatusQ.isLoading ? "unknown" : k8sPrometheusConfigured ? "ok" : "missing",
+      detail: k8sPrometheusConfigured ? "监控看板和告警规则可直接查询 K8s 指标。" : "先在集群设置中配置 Kubernetes Prometheus 地址。",
+      to: navItems.monitoring.to,
+    },
+    {
+      label: "vCenter 指标",
+      scope: "Prometheus / vcenter",
+      status: promStatusQ.isLoading ? "unknown" : vcenterPrometheusConfigured ? "ok" : "missing",
+      detail: vcenterPrometheusConfigured ? "VMware 指标可用于虚拟化看板与巡检报告。" : "未接入时，vCenter 监控和关联告警会缺少数据。",
+      to: navItems.monitoring.to,
+    },
+    {
+      label: "PVE 指标",
+      scope: "Prometheus / PVE",
+      status: "unknown",
+      detail: "跟随巡检策略中的 PVE / Proxmox VE 开关与运行时数据源配置。",
+      to: navItems.configure.to,
+    },
+    {
+      label: "Network 指标",
+      scope: "Prometheus / 网络设备",
+      status: "unknown",
+      detail: "OpenWrt / iKuai 指标纳入网络设备巡检，适合和流量告警联动。",
+      to: navItems.configure.to,
+    },
+    {
+      label: "日志检索",
+      scope: "VictoriaLogs",
+      status: clusterAdvisoryQ.data?.logPodsSampled ? "ok" : "unknown",
+      detail: "日志接入和检索分开维护，告警排障可直接跳到日志检索页。",
+      to: navItems.logs.to,
+    },
+    {
+      label: "AI Provider",
+      scope: oc?.provider || "OpenAI compatible",
+      status: openclawQ.isLoading ? "unknown" : aiProviderReady ? "ok" : "missing",
+      detail: aiProviderReady ? "巡检摘要、日志智能分析和控制面建议可复用同一 Provider。" : "未启用时仍可采集报告，但不会生成大模型摘要。",
+      to: navItems.configure.to,
+    },
+  ];
+  const nextStepActions: NextStepAction[] = [
+    { item: navItems.monitoring, note: "确认 K8s / vCenter 指标曲线和自定义 PromQL 是否正常。" },
+    { item: navItems.alerts, note: "维护 PromQL 告警规则，并从告警跳到监控或日志排障。", adminOnly: true },
+    { item: navItems.logs, note: "查看 VictoriaLogs 连接状态、错误趋势和单条 AI 分析。" },
+    { item: navItems.reports, note: "阅读平台巡检、Pod 重启和工作负载建议报告。" },
+    { item: navItems.logCollection, note: "为虚拟机或宝塔主机安装 Vector 采集器。" },
+    { item: navItems.configure, note: "调整 AI Provider、巡检范围和每日自动报告。", adminOnly: true },
+  ];
 
   return (
     <div className="space-y-8">
       <div className="rounded-2xl border border-cyan-200/80 bg-gradient-to-br from-cyan-50/90 via-white to-slate-50/80 px-6 py-7 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-cyan-900/80">AI 巡检 · 总览</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-cyan-900/80">{OBSERVABILITY_INSPECT_WORKSPACE_LABEL} · 总览</p>
         <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-slate-900">
           <LayoutDashboard className="h-7 w-7 text-cyan-600" />
-          Dashboard
+          观测与巡检总览
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
-          以下为<strong>监控中心</strong>、<strong>告警中心</strong>与<strong>巡检配置</strong>（AI Provider / 定时巡检）的摘要；点击卡片进入对应页面。与左侧「总览」同级，顶栏「Dashboard」也会进入本页。
+          按运维工作流串起<strong>监控看板</strong>、<strong>告警与通知</strong>、<strong>日志检索</strong>和<strong>巡检报告</strong>；需要接入采集器或调整定时任务时，再进入接入与设置。
         </p>
         {isAdmin ? (
           <Button type="button" variant="outline" size="sm" className="mt-4 border-cyan-200 bg-white/90" asChild>
-            <Link to="/cluster/ai-inspect/configure" className="gap-1.5">
+            <Link to={navItems.configure.to} className="gap-1.5">
               <Sparkles className="h-4 w-4" />
-              打开巡检配置
+              打开巡检策略
             </Link>
           </Button>
         ) : null}
       </div>
 
+      <AccessHealthMatrix items={accessHealthItems} />
+
+      <CurrentRiskPanel
+        rating={clusterAdvisoryQ.data?.rating}
+        updatedAt={clusterAdvisoryQ.data?.updatedAt}
+        bellActive={clusterAdvisoryQ.data?.bellActive}
+        reportCount={repN}
+        enabledAlertRules={rulesOn}
+      >
       <Card
         className={cn(
           "border-slate-200/90 shadow-sm",
@@ -230,33 +302,12 @@ const AiInspectDashboard: React.FC = () => {
           ) : null}
         </CardContent>
       </Card>
+      </CurrentRiskPanel>
+
+      <NextStepPanel actions={nextStepActions} isAdmin={isAdmin} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <SummaryCard
-          to="/cluster/ai-inspect/logs"
-          title="日志查询"
-          icon={<ScrollText className="h-4 w-4" aria-hidden />}
-        >
-          <p>
-            对接 VictoriaLogs（Helm 部署的 VMLog）：查看连接状态、集群内 Service 探测，以及按菜单分类的采集说明与 LogsQL 查询。
-          </p>
-          <p className="mt-2 text-xs text-slate-500">在「Cluster Settings → VictoriaLogs」配置地址与命名空间内 Service 发现。</p>
-        </SummaryCard>
-        <SummaryCard
-          to="/cluster/ai-inspect/log-collection"
-          title="日志采集"
-          icon={<HardDrive className="h-4 w-4" aria-hidden />}
-        >
-          <p>
-            虚拟机 / 宝塔主机安装 Vector，将文本日志推送到 VictoriaLogs；生成脚本、后台 SSH 安装与进度回传。可在运行时配置自有域名下载源。
-          </p>
-          <p className="mt-2 text-xs text-slate-500">与「日志查询」分工：本页负责采集器，查询页负责 VL 可视化与趋势。</p>
-        </SummaryCard>
-        <SummaryCard
-          to="/cluster/ai-inspect/monitoring"
-          title="监控中心"
-          icon={<LineChart className="h-4 w-4" aria-hidden />}
-        >
+        <SummaryCard item={navItems.monitoring}>
           {promStatusQ.isLoading || monitoringPanelsQ.isLoading ? (
             <span className="text-slate-400">加载中…</span>
           ) : (
@@ -273,11 +324,7 @@ const AiInspectDashboard: React.FC = () => {
           )}
         </SummaryCard>
 
-        <SummaryCard
-          to="/cluster/ai-inspect/alerts"
-          title="告警中心"
-          icon={<Bell className="h-4 w-4" aria-hidden />}
-        >
+        <SummaryCard item={navItems.alerts}>
           {!isAdmin ? (
             <p>告警规则与通知通道的配置、评估日志仅<strong>管理员</strong>可见；你可进入页面查看说明或联系管理员开通。</p>
           ) : alertsQ.isLoading ? (
@@ -295,11 +342,14 @@ const AiInspectDashboard: React.FC = () => {
           )}
         </SummaryCard>
 
-        <SummaryCard
-          to="/cluster/ai-inspect/reports"
-          title="巡检报告"
-          icon={<ClipboardList className="h-4 w-4" aria-hidden />}
-        >
+        <SummaryCard item={navItems.logs}>
+          <p>
+            对接 VictoriaLogs（Helm 部署的 VMLog）：查看连接状态、集群内 Service 探测，以及按菜单分类的采集说明与 LogsQL 查询。
+          </p>
+          <p className="mt-2 text-xs text-slate-500">在「集群设置 → 日志」配置地址与命名空间内 Service 发现。</p>
+        </SummaryCard>
+
+        <SummaryCard item={navItems.reports}>
           {!isAdmin ? (
             <p>
               平台巡检历史、Pod / 工作负载重启 AI、集群 rollup 与关联分析等汇总入口；<strong>管理员</strong>可查看平台级列表，非只读用户可查看
@@ -317,14 +367,17 @@ const AiInspectDashboard: React.FC = () => {
           )}
         </SummaryCard>
 
-        <SummaryCard
-          to="/cluster/ai-inspect/configure"
-          title="巡检配置"
-          icon={<Sparkles className="h-4 w-4" aria-hidden />}
-        >
+        <SummaryCard item={navItems.logCollection}>
+          <p>
+            虚拟机 / 宝塔主机安装 Vector，将文本日志推送到 VictoriaLogs；生成脚本、后台 SSH 安装与进度回传。可在运行时配置自有域名下载源。
+          </p>
+          <p className="mt-2 text-xs text-slate-500">与「日志检索」分工：本页负责采集器，检索页负责 VL 可视化与趋势。</p>
+        </SummaryCard>
+
+        <SummaryCard item={navItems.configure}>
           {!isAdmin ? (
             <p>
-              AI Provider 与定时巡检、模型与巡检范围仅管理员可配。请使用左侧<strong>监控中心</strong>查看 Prometheus 监控图。
+              AI Provider 与定时巡检、模型与巡检范围仅管理员可配。请使用左侧<strong>监控看板</strong>查看 Prometheus 监控图。
             </p>
           ) : openclawQ.isLoading ? (
             <span className="text-slate-400">加载中…</span>

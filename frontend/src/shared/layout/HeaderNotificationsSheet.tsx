@@ -268,7 +268,7 @@ const HeaderNotificationsSheet: React.FC = () => {
             <div className="shrink-0 rounded-xl border border-violet-300 bg-violet-50 px-3 py-3 text-sm shadow-sm">
               <p className="font-semibold text-violet-950">OpenClaw 网关服务探活</p>
               <p className="mt-1 text-xs leading-relaxed text-violet-900/90">
-                极简补全探活（与「对话」、AI 巡检同源）。列表里<strong>下一行即原因概括</strong>：
+                极简补全探活（与「对话」、观测与巡检同源）。列表里<strong>下一行即原因概括</strong>：
                 <span className="font-mono">404</span>
                 →路由；<span className="font-mono">5xx</span>→上游；无 HTTP→连接层；超时→可调{" "}
                 <span className="font-mono">EASYPANEL_OPENCLAW_GATEWAY_HEALTH_CHAT_TIMEOUT_SEC</span>（约{" "}
@@ -358,8 +358,8 @@ const HeaderNotificationsSheet: React.FC = () => {
             <div className="shrink-0 rounded-xl border border-rose-300/90 bg-rose-50/95 px-3 py-3 text-sm shadow-sm">
               <p className="font-semibold text-rose-950">K8s 控制平面 · 周期 AI 建议</p>
               <p className="mt-1 text-[11px] leading-relaxed text-rose-900/90">
-                后台约每 30 分钟抓取 <span className="font-mono">kube-system</span> 关键组件日志并由巡检 OpenClaw 汇总；与 VictoriaLogs
-                明细互补。完整内容与确认见「AI 巡检 → 总览」。
+                后台约每 30 分钟抓取 <span className="font-mono">kube-system</span> 关键组件日志并由 AI Provider 汇总；与 VictoriaLogs
+                明细互补。完整内容与确认见「观测与巡检 → 总览」。
               </p>
               {clusterAdvisoryQ.data?.updatedAt ? (
                 <p className="mt-1 font-mono text-[10px] text-rose-800/80">
@@ -377,7 +377,7 @@ const HeaderNotificationsSheet: React.FC = () => {
               ) : null}
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button type="button" variant="secondary" size="sm" className="h-8 border-rose-200" asChild>
-                  <Link to="/cluster/ai-inspect/dashboard">打开 AI 巡检总览</Link>
+                  <Link to="/cluster/ai-inspect/dashboard">打开观测与巡检总览</Link>
                 </Button>
                 {clusterAdvisoryBell ? (
                   <Button

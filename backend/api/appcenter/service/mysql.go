@@ -593,6 +593,17 @@ func appMySQLQueryAllowedWithoutMutationConfirm(sqlText string) bool {
 	}
 }
 
+func appMySQLQuoteIdentifier(raw string) (string, error) {
+	s := strings.TrimSpace(raw)
+	if s == "" {
+		return "", errors.New("identifier is empty")
+	}
+	if strings.ContainsRune(s, 0) {
+		return "", errors.New("identifier contains null byte")
+	}
+	return "`" + strings.ReplaceAll(s, "`", "``") + "`", nil
+}
+
 func appMySQLLimitRows(raw int) int {
 	if raw <= 0 {
 		return 500

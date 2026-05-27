@@ -61,8 +61,8 @@ function LlmRoutingLegend() {
       <span className="font-medium">排障说明：</span>
       以「<span className="font-mono">[上游模型接入层·直连 …]</span>」开头的是请求直达模型供应商（K8s Secret 里{" "}
       <code className="rounded bg-black/5 px-0.5">OPENAI_BASE_URL</code>
-      ），<strong>不经过</strong> OpenClaw 网关；以「<span className="font-mono">[OpenClaw 网关]</span>」开头的是平台访问您集群内
-      OpenClaw 网关 <code className="rounded bg-black/5 px-0.5">/v1/chat/completions</code> 的 HTTP 结果。若两段都出现，通常表示直连与网关转发均未成功，可先按上游状态码（如 529
+      ），<strong>不经过</strong> AI Provider 网关；以「<span className="font-mono">[AI Provider 网关]</span>」开头的是平台访问您集群内
+      Provider 网关 <code className="rounded bg-black/5 px-0.5">/v1/chat/completions</code> 的 HTTP 结果。若两段都出现，通常表示直连与网关转发均未成功，可先按上游状态码（如 529
       过载）查模型侧，再结合网关日志看是否为网关对上游错误的封装（如 500 internal error）。
     </p>
   );

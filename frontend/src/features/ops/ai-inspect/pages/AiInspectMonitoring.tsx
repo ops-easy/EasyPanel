@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Plus, Trash2 } from "lucide-react";
@@ -31,6 +32,23 @@ import {
 
 const ALL_CATEGORY = "全部";
 const CUSTOM_FALLBACK_CATEGORY = "自定义";
+
+function monitoringScopeFromParam(scope: string | null): MonitoringDataScope {
+  return scope === "vcenter" ? "vcenter" : "k8s";
+}
+
+function monitoringRangeFromTimeWindow(timeWindow: string | null): 60 | 360 | 1440 | 4320 | 10080 {
+  if (!timeWindow) return 360;
+  const raw = timeWindow.trim().toLowerCase();
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n <= 0) return 360;
+  const minutes = raw.endsWith("h") ? n * 60 : raw.endsWith("m") ? n : Math.ceil(n / 60);
+  if (minutes <= 60) return 60;
+  if (minutes <= 360) return 360;
+  if (minutes <= 1440) return 1440;
+  if (minutes <= 4320) return 4320;
+  return 10080;
+}
 
 type OpsMonitoringCustomPanel = {
   id: string;
@@ -76,16 +94,20 @@ export default function AiInspectMonitoring() {
   const qc = useQueryClient();
   const { status } = useAuth();
   const isAdmin = status?.role === "admin";
+  const [searchParams] = useSearchParams();
+  const alertQuery = (searchParams.get("alertQuery") || "").trim();
+  const alertScope = monitoringScopeFromParam(searchParams.get("scope"));
+  const alertRange = monitoringRangeFromTimeWindow(searchParams.get("timeWindow"));
 
-  const [pageScope, setPageScope] = useState<MonitoringDataScope>("k8s");
+  const [pageScope, setPageScope] = useState<MonitoringDataScope>(alertScope);
   const [category, setCategory] = useState<string>(ALL_CATEGORY);
-  const [rangeMinutes, setRangeMinutes] = useState<60 | 360 | 1440 | 4320 | 10080>(360);
+  const [rangeMinutes, setRangeMinutes] = useState<60 | 360 | 1440 | 4320 | 10080>(alertRange);
 
   const [addOpen, setAddOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
+  const [newTitle, setNewTitle] = useState(alertQuery ? "告警排障 PromQL" : "");
   const [newCategory, setNewCategory] = useState("");
-  const [newPromql, setNewPromql] = useState("");
-  const [newScope, setNewScope] = useState<"k8s" | "vcenter" | "inherit">("inherit");
+  const [newPromql, setNewPromql] = useState(alertQuery);
+  const [newScope, setNewScope] = useState<"k8s" | "vcenter" | "inherit">(alertScope);
   const [newDisplay, setNewDisplay] = useState<"single" | "matrix">("single");
   const [newLabelKeys, setNewLabelKeys] = useState("");
 
@@ -120,6 +142,16 @@ export default function AiInspectMonitoring() {
     }
   }, [categoryOptions, category]);
 
+  React.useEffect(() => {
+    if (!alertQuery) return;
+    setPageScope(alertScope);
+    setRangeMinutes(alertRange);
+    setCategory(ALL_CATEGORY);
+    setNewTitle("告警排障 PromQL");
+    setNewPromql(alertQuery);
+    setNewScope(alertScope);
+  }, [alertQuery, alertScope, alertRange]);
+
   const unifiedPanels: UnifiedPanel[] = useMemo(() => {
     const custom = customQ.data?.panels ?? [];
     const presets: UnifiedPanel[] = OPS_MONITORING_PRESETS.filter((p) => p.scope === pageScope).map((p) => ({
@@ -129,13 +161,29 @@ export default function AiInspectMonitoring() {
     const customs: UnifiedPanel[] = custom
       .filter((c) => effectiveDataScope(c.scope, pageScope) === pageScope)
       .map((c) => ({ ...c, source: "custom" as const }));
-    const all = [...presets, ...customs];
+    const all: UnifiedPanel[] = [
+      ...(alertQuery
+        ? [
+            {
+              id: "alert-handoff-promql",
+              title: "告警排障 PromQL",
+              category: "告警排障",
+              promql: alertQuery,
+              scope: alertScope,
+              display: "single" as const,
+              source: "custom" as const,
+            },
+          ]
+        : []),
+      ...presets,
+      ...customs,
+    ];
     if (category === ALL_CATEGORY) return all;
     return all.filter((p) => {
       if (p.source === "preset") return p.category === category;
       return customCategoryLabel(p) === category;
     });
-  }, [pageScope, category, customQ.data?.panels]);
+  }, [pageScope, category, customQ.data?.panels, alertQuery, alertScope]);
 
   const chartQ = useQuery({
     queryKey: [
@@ -232,7 +280,7 @@ export default function AiInspectMonitoring() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">监控中心</h1>
+        <h1 className="text-2xl font-bold text-slate-900">监控看板</h1>
         <p className="mt-1 text-sm text-slate-600">
           使用已在<strong>集群设置</strong>与<strong>配置</strong>中配置的 Prometheus / VictoriaMetrics（vmselect）数据源，通过{" "}
           <code className="rounded bg-slate-100 px-1">query_range</code> 直接绘图；内置常用 PromQL 分类展示，也可添加自定义图。不再依赖 Grafana

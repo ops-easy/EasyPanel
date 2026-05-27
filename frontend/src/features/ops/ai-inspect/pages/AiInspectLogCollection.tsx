@@ -19,7 +19,7 @@ type VmLogStatusHints = {
   vmLogVectorDownloadBaseUrlHint?: string;
 };
 
-/** AI 巡检：虚拟机 / 宝塔日志 → VictoriaLogs（Vector 采集助手） */
+/** 观测与巡检：虚拟机 / 宝塔日志 → VictoriaLogs（Vector 采集助手） */
 const AiInspectLogCollection: React.FC = () => {
   const { status } = useAuth();
   const isAdmin = status?.role === "admin";
@@ -67,15 +67,15 @@ const AiInspectLogCollection: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50/80 px-6 py-7 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-emerald-900/80">AI 巡检 · 日志采集</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-emerald-900/80">观测与巡检 · 日志接入</p>
         <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-slate-900">
           <HardDrive className="h-7 w-7 text-emerald-600" />
           虚拟机 / 宝塔 → VictoriaLogs
         </h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-600">
-          在 Linux 虚拟机或宝塔主机上安装 <strong>Vector</strong>，将文本日志推送到 VictoriaLogs；可在同页配置<strong>可选 OpenSearch 双写</strong>（应用中心部署的集群请用 NodePort 等虚拟机可达地址）。支持生成脚本、管理员后台 SSH 安装与任务进度回传。日志查询与分桶趋势见{" "}
+          在 Linux 虚拟机或宝塔主机上安装 <strong>Vector</strong>，将文本日志推送到 VictoriaLogs；可在同页配置<strong>可选 OpenSearch 双写</strong>（应用中心部署的集群请用 NodePort 等虚拟机可达地址）。支持生成脚本、管理员后台 SSH 安装与任务进度回传。日志检索与分桶趋势见{" "}
           <Link className="font-medium text-emerald-800 underline-offset-2 hover:underline" to="/cluster/ai-inspect/logs">
-            日志查询
+            日志检索
           </Link>
           。
         </p>
@@ -83,11 +83,11 @@ const AiInspectLogCollection: React.FC = () => {
           <Button type="button" variant="outline" size="sm" className="border-emerald-200 bg-white/90" asChild>
             <Link to="/cluster/ai-inspect/logs" className="inline-flex items-center gap-1.5">
               <ScrollText className="h-4 w-4" />
-              VictoriaLogs 日志查询
+              VictoriaLogs 日志检索
             </Link>
           </Button>
           <Button type="button" variant="outline" size="sm" className="border-emerald-200 bg-white/90" asChild>
-            <Link to="/cluster/settings">Cluster Settings（VictoriaLogs）</Link>
+            <Link to="/cluster/settings">集群设置（VictoriaLogs）</Link>
           </Button>
         </div>
       </div>

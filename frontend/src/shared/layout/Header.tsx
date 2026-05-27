@@ -31,6 +31,7 @@ import { workspaceFromPathname } from "@/lib/workspace";
 import { cn } from "@/lib/utils";
 import GlobalSearchBar from "@/shared/layout/GlobalSearchBar";
 import { workspaceMenuVisible } from "@/lib/platform-permissions";
+import { OBSERVABILITY_INSPECT_WORKSPACE_LABEL } from "@/features/ops/ai-inspect/aiInspectNavigation"; // 观测与巡检
 
 const HeaderNotificationsSheet = React.lazy(() => import("@/shared/layout/HeaderNotificationsSheet"));
 
@@ -153,7 +154,7 @@ const Header: React.FC<HeaderProps> = ({ tone = "light" }) => {
                   : "border-slate-200 bg-slate-50/90 text-slate-800 hover:bg-slate-100",
                 isDark ? "focus-visible:ring-2 focus-visible:ring-emerald-500/30" : "focus-visible:ring-2 focus-visible:ring-blue-500/30"
               )}
-              aria-label="切换工作区：Kubernetes、虚拟化与主机、网络设备、宝塔、应用中心、堡垒机、AI 巡检、文档仓库"
+              aria-label={`切换工作区：Kubernetes、虚拟化与主机、网络设备、宝塔、应用中心、堡垒机、${OBSERVABILITY_INSPECT_WORKSPACE_LABEL}、文档仓库`}
             >
               <span
                 className={cn(
@@ -213,7 +214,7 @@ const Header: React.FC<HeaderProps> = ({ tone = "light" }) => {
                           : isBastion
                             ? "堡垒机"
                             : isAiInspect
-                              ? "AI 巡检"
+                              ? OBSERVABILITY_INSPECT_WORKSPACE_LABEL
                               : "应用中心"}
               </span>
               <ChevronDown size={16} className={isDark ? "text-slate-400" : "text-slate-500"} aria-hidden />
@@ -313,8 +314,8 @@ const Header: React.FC<HeaderProps> = ({ tone = "light" }) => {
                 <Sparkles className="text-white" size={17} strokeWidth={2.25} />
               </div>
               <div className="flex flex-col gap-0.5">
-                <span className="font-medium">AI 巡检</span>
-                <span className={cn("text-xs", menuHintClass)}>监控中心 · 告警 · OpenClaw</span>
+                <span className="font-medium">{OBSERVABILITY_INSPECT_WORKSPACE_LABEL}</span>
+                <span className={cn("text-xs", menuHintClass)}>监控看板 · 告警通知 · 日志检索</span>
               </div>
             </DropdownMenuItem>
             ) : null}

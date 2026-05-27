@@ -145,7 +145,7 @@ function AiInspectReportsLayout(props: { children: React.ReactNode }) {
     return (
       <div className="mx-auto max-w-lg space-y-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-6 text-sm text-amber-950">
         <Button variant="outline" size="sm" asChild>
-          <Link to="/cluster/ai-inspect/dashboard">返回 AI 巡检总览</Link>
+          <Link to="/cluster/ai-inspect/dashboard">返回观测与巡检总览</Link>
         </Button>
         <p>巡检报告聚合（平台巡检、Pod / 工作负载重启 AI、集群 rollup）仅对非只读角色开放；如需查看请联系管理员。</p>
       </div>
@@ -161,10 +161,10 @@ function AiInspectReportsLayout(props: { children: React.ReactNode }) {
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button type="button" variant="outline" size="sm" asChild>
-            <Link to="/cluster/ai-inspect/configure">巡检配置与执行任务</Link>
+            <Link to="/cluster/ai-inspect/configure">巡检策略与执行任务</Link>
           </Button>
           <Button type="button" variant="secondary" size="sm" asChild>
-            <Link to="/cluster/ai-inspect/dashboard">Dashboard 总览</Link>
+            <Link to="/cluster/ai-inspect/dashboard">观测与巡检总览</Link>
           </Button>
         </div>
       </div>
@@ -219,7 +219,7 @@ function AiInspectReportsPlatform() {
       <div>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">平台级巡检报告</h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          全集群与多数据源汇总（K8s、vCenter、Prometheus、日志、Redis、SSH、云主机、AI Provider 探针等）；由「巡检配置」页的定时或立即执行生成。
+          全集群与多数据源汇总（K8s、vCenter、Prometheus、日志、Redis、SSH、云主机、AI Provider 探针等）；由「巡检策略」页的定时或立即执行生成。
         </p>
       </div>
       {repQ.isLoading ? (
@@ -227,7 +227,7 @@ function AiInspectReportsPlatform() {
       ) : (
         <div className="space-y-4">
           {(repQ.data?.reports ?? []).length === 0 ? (
-            <p className="text-sm text-slate-500">暂无历史报告；请在「巡检配置」中点击「立即执行巡检」。</p>
+            <p className="text-sm text-slate-500">暂无历史报告；请在「巡检策略」中点击「立即执行巡检」。</p>
           ) : null}
           {(repQ.data?.reports ?? []).map((r) => (
             <div

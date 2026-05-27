@@ -12,14 +12,10 @@ import {
   Cloud,
   AppWindow,
   Sparkles,
-  LineChart,
-  Bell,
-  ScrollText,
   Radar,
   Database,
   FolderTree,
   Ship,
-  HardDrive,
   Shield,
   FileText,
   BarChart3,
@@ -44,6 +40,12 @@ import { cn } from "@/lib/utils";
 import { menuItemVisible, moduleVisible, workspaceMenuVisible } from "@/lib/platform-permissions";
 import { apiGetJson, type K8sSidebarMenuItem } from "@/lib/api";
 import { APP_CENTER_MODULE_NAV_ITEMS, isAppCenterNavItemActive } from "@/features/app-center/layout/appCenterNavigation";
+import {
+  AI_INSPECT_NAV_GROUPS,
+  OBSERVABILITY_INSPECT_WORKSPACE_LABEL,
+  isAiInspectNavItemActive,
+} from "@/features/ops/ai-inspect/aiInspectNavigation";
+// 观测与巡检
 
 type SidebarWorkspace = WorkspaceId;
 
@@ -142,7 +144,7 @@ function isDashboardActive(pathname: string, ws: SidebarWorkspace): boolean {
     return pathname === "/cluster/bastion" || pathname === "/cluster/bastion/";
   }
   if (ws === "aiinspect") {
-    // 仅总览入口高亮 Dashboard；日志查询/日志采集/监控等子页各自高亮，避免与「日志采集」同色冲突
+    // 仅总览入口高亮 Dashboard；日志检索、日志接入、监控看板等子页各自高亮，避免入口互相抢焦点。
     return (
       pathname === "/cluster/ai-inspect/dashboard" ||
       pathname === "/cluster/ai-inspect" ||
@@ -571,17 +573,6 @@ const Sidebar: React.FC = () => {
     location.pathname === "/cluster/apps/dns" ||
     location.pathname.startsWith("/cluster/apps/dns/");
 
-  const aiInspectReportsActive =
-    location.pathname === "/cluster/ai-inspect/reports" ||
-    location.pathname.startsWith("/cluster/ai-inspect/reports/");
-  const aiInspectConfigureActive =
-    location.pathname === "/cluster/ai-inspect/configure" ||
-    location.pathname.startsWith("/cluster/ai-inspect/configure/");
-  const aiInspectMonitoringActive = location.pathname.startsWith("/cluster/ai-inspect/monitoring");
-  const aiInspectAlertsActive = location.pathname.startsWith("/cluster/ai-inspect/alerts");
-  const aiInspectLogsActive = location.pathname.startsWith("/cluster/ai-inspect/logs");
-  const aiInspectLogCollectionActive = location.pathname.startsWith("/cluster/ai-inspect/log-collection");
-
   const docsMediaActive =
     location.pathname === "/docs/media" || location.pathname.startsWith("/docs/media/");
   const docsGuidesActive =
@@ -674,7 +665,7 @@ const Sidebar: React.FC = () => {
             : isBastion
               ? "堡垒机"
               : isAiinspect
-                ? "AI 巡检"
+                ? OBSERVABILITY_INSPECT_WORKSPACE_LABEL
                 : "应用中心";
 
   const brandClass = isDocs
@@ -759,7 +750,7 @@ const Sidebar: React.FC = () => {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-6">
-        {!isBastion ? (
+        {!isBastion && !isAiinspect ? (
           <Link
             to={dashTo}
             className={navLinkTint(dashActive, dashTint)}
@@ -837,7 +828,7 @@ const Sidebar: React.FC = () => {
             {showAiInspectNav && (
               <Link to="/cluster/ai-inspect/dashboard" className={navLinkTint(false, "slate")}>
                 <Sparkles size={20} className="text-gray-400" />
-                <span>AI 巡检</span>
+                <span>{OBSERVABILITY_INSPECT_WORKSPACE_LABEL}</span>
               </Link>
             )}
             {showDocsNav && (
@@ -1171,53 +1162,30 @@ const Sidebar: React.FC = () => {
           </>
         ) : showAiInspectNav && isAiinspect ? (
           <>
-            <div className="px-4 pb-1 pt-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                AI 巡检
-              </p>
-            </div>
-            <Link
-              to="/cluster/ai-inspect/logs"
-              className={navLinkTint(aiInspectLogsActive, "slate")}
-            >
-              <ScrollText size={20} className={iconTint(aiInspectLogsActive, "slate")} />
-              <span>日志查询</span>
-            </Link>
-            <Link
-              to="/cluster/ai-inspect/log-collection"
-              className={navLinkTint(aiInspectLogCollectionActive, "emerald")}
-            >
-              <HardDrive size={20} className={iconTint(aiInspectLogCollectionActive, "emerald")} />
-              <span>日志采集</span>
-            </Link>
-            <Link
-              to="/cluster/ai-inspect/monitoring"
-              className={navLinkTint(aiInspectMonitoringActive, "slate")}
-            >
-              <LineChart size={20} className={iconTint(aiInspectMonitoringActive, "slate")} />
-              <span>监控中心</span>
-            </Link>
-            <Link
-              to="/cluster/ai-inspect/alerts"
-              className={navLinkTint(aiInspectAlertsActive, "slate")}
-            >
-              <Bell size={20} className={iconTint(aiInspectAlertsActive, "slate")} />
-              <span>告警中心</span>
-            </Link>
-            <Link
-              to="/cluster/ai-inspect/reports"
-              className={navLinkTint(aiInspectReportsActive, "slate")}
-            >
-              <ClipboardList size={20} className={iconTint(aiInspectReportsActive, "slate")} />
-              <span>巡检报告</span>
-            </Link>
-            <Link
-              to="/cluster/ai-inspect/configure"
-              className={navLinkTint(aiInspectConfigureActive, "slate")}
-            >
-              <Sparkles size={20} className={iconTint(aiInspectConfigureActive, "slate")} />
-              <span>巡检配置</span>
-            </Link>
+            {AI_INSPECT_NAV_GROUPS.map((group) => (
+              <React.Fragment key={group.id}>
+                <div className="px-4 pb-1 pt-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                    {group.label}
+                  </p>
+                </div>
+                {group.items.map((item) => {
+                  const active = isAiInspectNavItemActive(item, location.pathname);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.to}
+                      title={item.description}
+                      className={navLinkTint(active, item.tint)}
+                    >
+                      <Icon size={20} className={iconTint(active, item.tint)} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </React.Fragment>
+            ))}
           </>
         ) : null}
 

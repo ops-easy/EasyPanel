@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -73,7 +74,7 @@ func bastionDialSSHToPVE(ctx context.Context, app *ServerApp, targetKey BastionT
 	if addr == "" {
 		addr, err = pveResolveGuestSSHHost(ctx, client, targetKey)
 		if err != nil {
-			return nil, fmt.Errorf("resolve PVE guest address: %w; configure sshHost override if the guest agent is unavailable", err)
+			return nil, fmt.Errorf("无法自动获取 PVE Guest SSH 地址: %w; 请在 SSH 设置中填写 SSH Host，或在虚拟机内安装并启用 qemu-guest-agent", err)
 		}
 	}
 	if addr == "" {
@@ -153,10 +154,25 @@ func pveResolveGuestSSHHost(ctx context.Context, client *pveprovider.Client, tar
 
 func pveResolveQemuGuestIP(ctx context.Context, client *pveprovider.Client, node, vmid string) (string, error) {
 	p := fmt.Sprintf("/nodes/%s/qemu/%s/agent/network-get-interfaces", url.PathEscape(node), url.PathEscape(vmid))
-	data, err := client.Do(ctx, http.MethodGet, p, nil, nil)
-	if err != nil {
-		return "", err
+	data, agentErr := client.Do(ctx, http.MethodGet, p, nil, nil)
+	if agentErr == nil {
+		if ip, err := pveFirstQemuAgentIPv4(data); err == nil {
+			return ip, nil
+		} else {
+			agentErr = err
+		}
 	}
+
+	if ip, configErr := pveResolveGuestConfigIPv4(ctx, client, node, "qemu", vmid); configErr == nil {
+		return ip, nil
+	} else if agentErr != nil {
+		return "", fmt.Errorf("%w; PVE config fallback failed: %v", agentErr, configErr)
+	} else {
+		return "", configErr
+	}
+}
+
+func pveFirstQemuAgentIPv4(data json.RawMessage) (string, error) {
 	var wrapper struct {
 		Result []struct {
 			Name        string `json:"name"`
@@ -181,10 +197,25 @@ func pveResolveQemuGuestIP(ctx context.Context, client *pveprovider.Client, node
 
 func pveResolveLXCGuestIP(ctx context.Context, client *pveprovider.Client, node, vmid string) (string, error) {
 	p := fmt.Sprintf("/nodes/%s/lxc/%s/interfaces", url.PathEscape(node), url.PathEscape(vmid))
-	data, err := client.Do(ctx, http.MethodGet, p, nil, nil)
-	if err != nil {
-		return "", err
+	data, ifaceErr := client.Do(ctx, http.MethodGet, p, nil, nil)
+	if ifaceErr == nil {
+		if ip, err := pveFirstLXCInterfaceIPv4(data); err == nil {
+			return ip, nil
+		} else {
+			ifaceErr = err
+		}
 	}
+
+	if ip, configErr := pveResolveGuestConfigIPv4(ctx, client, node, "lxc", vmid); configErr == nil {
+		return ip, nil
+	} else if ifaceErr != nil {
+		return "", fmt.Errorf("%w; PVE config fallback failed: %v", ifaceErr, configErr)
+	} else {
+		return "", configErr
+	}
+}
+
+func pveFirstLXCInterfaceIPv4(data json.RawMessage) (string, error) {
 	var rows []struct {
 		Name string `json:"name"`
 		Inet string `json:"inet"`
@@ -198,6 +229,70 @@ func pveResolveLXCGuestIP(ctx context.Context, client *pveprovider.Client, node,
 		}
 	}
 	return "", errors.New("LXC interfaces returned no usable IPv4")
+}
+
+func pveResolveGuestConfigIPv4(ctx context.Context, client *pveprovider.Client, node, guestType, vmid string) (string, error) {
+	kind := strings.ToLower(strings.TrimSpace(guestType))
+	switch kind {
+	case "qemu", "vm":
+		kind = "qemu"
+	case "lxc", "ct":
+		kind = "lxc"
+	default:
+		return "", fmt.Errorf("unsupported PVE guest type %q", guestType)
+	}
+	p := fmt.Sprintf("/nodes/%s/%s/%s/config", url.PathEscape(node), kind, url.PathEscape(vmid))
+	data, err := client.Do(ctx, http.MethodGet, p, nil, nil)
+	if err != nil {
+		return "", err
+	}
+	return pveFirstConfigIPv4(data, kind)
+}
+
+func pveFirstConfigIPv4(data json.RawMessage, guestType string) (string, error) {
+	var cfg map[string]interface{}
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return "", err
+	}
+	keys := make([]string, 0, len(cfg))
+	for key := range cfg {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		if !pveGuestConfigNetworkKey(key, guestType) {
+			continue
+		}
+		if ip := pveIPv4FromNetworkConfig(bastionAnyString(cfg[key])); ip != "" {
+			return ip, nil
+		}
+	}
+	return "", errors.New("PVE guest config returned no static IPv4")
+}
+
+func pveGuestConfigNetworkKey(key, guestType string) bool {
+	key = strings.ToLower(strings.TrimSpace(key))
+	switch strings.ToLower(strings.TrimSpace(guestType)) {
+	case "qemu", "vm":
+		return strings.HasPrefix(key, "ipconfig")
+	case "lxc", "ct":
+		return strings.HasPrefix(key, "net")
+	default:
+		return false
+	}
+}
+
+func pveIPv4FromNetworkConfig(raw string) string {
+	for _, part := range strings.Split(raw, ",") {
+		k, v, ok := strings.Cut(part, "=")
+		if !ok || !strings.EqualFold(strings.TrimSpace(k), "ip") {
+			continue
+		}
+		if ip := usableGuestIPv4(strings.Trim(strings.TrimSpace(v), `"'`)); ip != "" {
+			return ip
+		}
+	}
+	return ""
 }
 
 func usableGuestIPv4(raw string) string {

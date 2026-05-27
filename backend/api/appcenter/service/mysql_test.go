@@ -224,6 +224,19 @@ func TestAppMySQLQueryGuardRejectsMutationsByDefault(t *testing.T) {
 	}
 }
 
+func TestAppMySQLQuoteIdentifierEscapesBackticks(t *testing.T) {
+	got, err := appMySQLQuoteIdentifier("team`orders")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "`team``orders`" {
+		t.Fatalf("got %q", got)
+	}
+	if _, err := appMySQLQuoteIdentifier(" "); err == nil {
+		t.Fatal("empty identifier should be rejected")
+	}
+}
+
 func assertAppMySQLQuantity(t *testing.T, got corev1.ResourceList, name corev1.ResourceName, want string) {
 	t.Helper()
 	q, ok := got[name]

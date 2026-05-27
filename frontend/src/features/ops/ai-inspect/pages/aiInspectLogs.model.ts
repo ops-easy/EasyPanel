@@ -1,4 +1,4 @@
-/** AI 巡检 · VictoriaLogs 日志查询：类型、筛选项常量、时间格式化（与 AiInspectLogs 页配套的一份模块）。 */
+/** 观测与巡检 · VictoriaLogs 日志检索：类型、筛选项常量、时间格式化（与 AiInspectLogs 页配套的一份模块）。 */
 
 export type VmLogDiscovered = {
   namespace: string;
@@ -259,7 +259,7 @@ export const VM_LOG_CATEGORIES: LogCategory[] = [
       {
         title: "Helm 与采集",
         steps: [
-          "使用 VictoriaMetrics 官方 helm-charts 部署 VictoriaLogs，在「Cluster Settings → VictoriaLogs」中填写 Service 内网 URL。",
+          "使用 VictoriaMetrics 官方 helm-charts 部署 VictoriaLogs，在「集群设置 → 日志」中填写 Service 内网 URL。",
           "用 vlagent / Vector 等采集容器 stdout，并保留 kubernetes.namespace_name、kubernetes.pod_name 等字段；本页按命名空间筛选依赖这些字段。",
         ],
       },
@@ -274,8 +274,8 @@ export const VM_LOG_CATEGORIES: LogCategory[] = [
         title: "架构：虚拟机 / 中间件 → VictoriaLogs",
         steps: [
           "采集助手远程安装可选：① **云主机**（登记固定 IP:端口）；② **vCenter 虚拟机**（选 moRef，平台按 VMware Tools 上报的 Guest IP SSH，凭据与虚拟机详情「SSH」页相同：全局 VCENTER_VM_SSH_* 或逐台保存密码/密钥）。无需再把 vCenter 虚拟机重复登记到云主机列表。",
-          "VictoriaLogs 建议部署在 **Kubernetes 集群内**（与本平台同集群时，日志查询页填内网 Service:9428）。",
-          "**虚拟机上的宝塔、Nginx、MySQL、Redis** 等文本日志需由 **采集 Agent** 推到 VL；请在 **AI 巡检 → 日志采集** 使用「采集助手」生成 **Vector** 安装脚本（或管理员一键 SSH 下发）。",
+          "VictoriaLogs 建议部署在 **Kubernetes 集群内**（与本平台同集群时，日志检索页填内网 Service:9428）。",
+          "**虚拟机上的宝塔、Nginx、MySQL、Redis** 等文本日志需由 **观测与巡检 → 日志接入** 使用「采集助手」生成 **Vector** 安装脚本（或管理员一键 SSH 下发）。",
           "脚本下载 Vector 时会**优先走国内常用 GitHub 镜像线**（ghproxy 等），超时后自动换线，最后回源官方 release，降低直连 github.com 超时概率。",
           "推送接口为 VL 的 HTTP **insert/jsonline**，并携带流字段 **vm_host**、**log_source**，便于 LogsQL 筛选（如 vm_host:web1 AND log_source:baota-nginx）。",
           "若 VL 仅集群内 DNS（*.svc.cluster.local）可达，虚拟机无法直连：请为 VL 暴露 **NodePort / Ingress / 内网 LB**，并在助手中填写虚拟机可访问的 **http(s)://IP:端口**（无 /select 路径，与运行时 victoriaLogsUrl 根地址一致）。",
@@ -323,8 +323,8 @@ export const VM_LOG_CATEGORIES: LogCategory[] = [
   },
   {
     id: "aiinspect",
-    label: "AI 巡检",
-    short: "监控、告警、AI 巡检等（按 grafana、prometheus、alert、inspect 等粗筛）。",
+    label: "观测与巡检",
+    short: "监控、告警、巡检等（按 grafana、prometheus、alert、inspect 等粗筛）。",
     ingest: [
       {
         title: "运维组件",
