@@ -737,6 +737,10 @@ type appMySQLK8sDeployBody struct {
 	PersistenceEnabled *bool  `json:"persistenceEnabled"`
 	StorageSize        string `json:"storageSize"`
 	StorageClassName   string `json:"storageClassName"`
+	MySQLCPURequest    string `json:"mysqlCpuRequest"`
+	MySQLCPULimit      string `json:"mysqlCpuLimit"`
+	MySQLMemoryRequest string `json:"mysqlMemoryRequest"`
+	MySQLMemoryLimit   string `json:"mysqlMemoryLimit"`
 	TemplateID         int64  `json:"templateId"`
 }
 
@@ -780,6 +784,10 @@ func handleAppMySQLK8sDeploy(c *gin.Context, app *ServerApp) {
 		PersistenceEnabled: persistence,
 		StorageSize:        strings.TrimSpace(body.StorageSize),
 		StorageClassName:   strings.TrimSpace(body.StorageClassName),
+		MySQLCPURequest:    strings.TrimSpace(body.MySQLCPURequest),
+		MySQLCPULimit:      strings.TrimSpace(body.MySQLCPULimit),
+		MySQLMemoryRequest: strings.TrimSpace(body.MySQLMemoryRequest),
+		MySQLMemoryLimit:   strings.TrimSpace(body.MySQLMemoryLimit),
 		TemplateID:         body.TemplateID,
 	}
 	db := app.MySQLDB()

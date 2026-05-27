@@ -3,6 +3,9 @@ package core
 import (
 	"strings"
 	"testing"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestIngressAddonNamespaceFromBody(t *testing.T) {
@@ -68,5 +71,34 @@ webhooks:
 	}
 	if strings.Contains(s, "namespace: ingress-nginx") || strings.Contains(s, "name: ingress-nginx\n---") {
 		t.Fatalf("rewritten manifest still contains old namespace:\n%s", s)
+	}
+}
+
+func TestPatchIngressControllerContainerAddsDefaultResources(t *testing.T) {
+	c := corev1.Container{
+		Name: "controller",
+		Args: []string{"--http-port=80"},
+		Ports: []corev1.ContainerPort{
+			{Name: "http", ContainerPort: 80},
+			{Name: "https", ContainerPort: 443},
+		},
+	}
+	patchIngressControllerContainer(&c, 8080, 8443)
+
+	assertIngressQuantity(t, c.Resources.Requests, corev1.ResourceCPU, "100m")
+	assertIngressQuantity(t, c.Resources.Requests, corev1.ResourceMemory, "128Mi")
+	assertIngressQuantity(t, c.Resources.Limits, corev1.ResourceCPU, "1")
+	assertIngressQuantity(t, c.Resources.Limits, corev1.ResourceMemory, "512Mi")
+}
+
+func assertIngressQuantity(t *testing.T, got corev1.ResourceList, name corev1.ResourceName, want string) {
+	t.Helper()
+	q, ok := got[name]
+	if !ok {
+		t.Fatalf("missing resource %s in %#v", name, got)
+	}
+	w := resource.MustParse(want)
+	if q.Cmp(w) != 0 {
+		t.Fatalf("resource %s=%s, want %s", name, q.String(), w.String())
 	}
 }

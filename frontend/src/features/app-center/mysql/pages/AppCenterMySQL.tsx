@@ -156,6 +156,10 @@ const emptyDeploy = {
   persistenceEnabled: true,
   storageSize: "10Gi",
   storageClassName: "",
+  mysqlCpuRequest: "250m",
+  mysqlCpuLimit: "1",
+  mysqlMemoryRequest: "512Mi",
+  mysqlMemoryLimit: "1Gi",
   templateId: "none",
   mysqlImage: "",
   exporterImage: "",
@@ -1393,6 +1397,20 @@ export default function AppCenterMySQL() {
                       <ToggleLine label="Exporter" checked={deploy.enableExporter} onChange={(v) => setDeploy({ ...deploy, enableExporter: v })} />
                       <ToggleLine label="持久化" checked={deploy.persistenceEnabled} onChange={(v) => setDeploy({ ...deploy, persistenceEnabled: v })} />
                     </div>
+                  </div>
+                  <div className="mt-4 grid gap-4 lg:grid-cols-4">
+                    <Field label="CPU Request">
+                      <Input value={deploy.mysqlCpuRequest} onChange={(e) => setDeploy({ ...deploy, mysqlCpuRequest: e.target.value })} />
+                    </Field>
+                    <Field label="CPU Limit">
+                      <Input value={deploy.mysqlCpuLimit} onChange={(e) => setDeploy({ ...deploy, mysqlCpuLimit: e.target.value })} />
+                    </Field>
+                    <Field label="Memory Request">
+                      <Input value={deploy.mysqlMemoryRequest} onChange={(e) => setDeploy({ ...deploy, mysqlMemoryRequest: e.target.value })} />
+                    </Field>
+                    <Field label="Memory Limit">
+                      <Input value={deploy.mysqlMemoryLimit} onChange={(e) => setDeploy({ ...deploy, mysqlMemoryLimit: e.target.value })} />
+                    </Field>
                   </div>
                 </WizardSection>
 

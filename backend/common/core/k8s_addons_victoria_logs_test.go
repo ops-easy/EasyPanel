@@ -28,6 +28,19 @@ func TestVictoriaLogsValuesAndURL(t *testing.T) {
 	}
 }
 
+func TestVictoriaLogsDefaultValuesIncludePersistentResources(t *testing.T) {
+	values := buildVictoriaLogsSingleValuesYAML(VictoriaLogsInstallOpts{})
+	for _, want := range []string{
+		`size: "50Gi"`,
+		"resources:\n    requests:\n      cpu: 500m\n      memory: 1Gi",
+		"limits:\n      cpu: \"2\"\n      memory: 4Gi",
+	} {
+		if !strings.Contains(values, want) {
+			t.Fatalf("values YAML missing %q:\n%s", want, values)
+		}
+	}
+}
+
 func TestVictoriaLogsCollectorValues(t *testing.T) {
 	values := buildVictoriaLogsCollectorValuesYAML("http://eplogs-victoria-logs-single-server:9428")
 	if !strings.Contains(values, `url: "http://eplogs-victoria-logs-single-server:9428"`) {

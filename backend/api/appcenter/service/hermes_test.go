@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestHermesBuildDeploymentModeCommands(t *testing.T) {
@@ -86,6 +87,10 @@ func TestHermesBuildDeploymentModeCommands(t *testing.T) {
 				if !foundPVC {
 					t.Fatalf("container %q missing shared /opt/data PVC mount", c.Name)
 				}
+				assertHermesQuantity(t, c.Resources.Requests, corev1.ResourceCPU, "250m")
+				assertHermesQuantity(t, c.Resources.Requests, corev1.ResourceMemory, "512Mi")
+				assertHermesQuantity(t, c.Resources.Limits, corev1.ResourceCPU, "1")
+				assertHermesQuantity(t, c.Resources.Limits, corev1.ResourceMemory, "1Gi")
 			}
 		})
 	}
@@ -214,4 +219,16 @@ func containsAll(s string, parts ...string) bool {
 		}
 	}
 	return true
+}
+
+func assertHermesQuantity(t *testing.T, got corev1.ResourceList, name corev1.ResourceName, want string) {
+	t.Helper()
+	q, ok := got[name]
+	if !ok {
+		t.Fatalf("missing resource %s in %#v", name, got)
+	}
+	w := resource.MustParse(want)
+	if q.Cmp(w) != 0 {
+		t.Fatalf("resource %s=%s, want %s", name, q.String(), w.String())
+	}
 }

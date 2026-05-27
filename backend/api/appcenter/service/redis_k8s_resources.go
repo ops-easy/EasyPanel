@@ -8,6 +8,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+const (
+	defaultRedisCPURequest    = "250m"
+	defaultRedisCPULimit      = "1000m"
+	defaultRedisMemoryRequest = "768Mi"
+	defaultRedisMemoryLimit   = "1Gi"
+)
+
 func parseQty(s string) (resource.Quantity, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -33,10 +40,10 @@ func redisWorkloadResourceRequirements(opts RedisK8sDeployOpts) *corev1.Resource
 		}
 		(*dst)[name] = q
 	}
-	add(&r.Requests, corev1.ResourceCPU, opts.RedisCPURequest)
-	add(&r.Limits, corev1.ResourceCPU, opts.RedisCPULimit)
-	add(&r.Requests, corev1.ResourceMemory, opts.RedisMemoryRequest)
-	add(&r.Limits, corev1.ResourceMemory, opts.RedisMemoryLimit)
+	add(&r.Requests, corev1.ResourceCPU, firstNonEmpty(opts.RedisCPURequest, defaultRedisCPURequest))
+	add(&r.Limits, corev1.ResourceCPU, firstNonEmpty(opts.RedisCPULimit, defaultRedisCPULimit))
+	add(&r.Requests, corev1.ResourceMemory, firstNonEmpty(opts.RedisMemoryRequest, defaultRedisMemoryRequest))
+	add(&r.Limits, corev1.ResourceMemory, firstNonEmpty(opts.RedisMemoryLimit, defaultRedisMemoryLimit))
 	if (r.Requests == nil || len(r.Requests) == 0) && (r.Limits == nil || len(r.Limits) == 0) {
 		return nil
 	}

@@ -91,11 +91,97 @@ func byteSlicesToStrings(parts [][]byte) []string {
 	return out
 }
 
+type dashboardMonitoringResourceDefaults struct {
+	cpuRequest    string
+	memoryRequest string
+	cpuLimit      string
+	memoryLimit   string
+}
+
+func dashboardMonitoringResourceDefaultsFor(deploymentName, containerName string) (dashboardMonitoringResourceDefaults, bool) {
+	deploymentName = strings.TrimSpace(deploymentName)
+	containerName = strings.TrimSpace(containerName)
+	switch deploymentName {
+	case k8sMetricsServerDeployment:
+		if containerName == "" || containerName == "metrics-server" {
+			return dashboardMonitoringResourceDefaults{"100m", "200Mi", "500m", "512Mi"}, true
+		}
+	case "kubernetes-dashboard":
+		if containerName == "" || containerName == "kubernetes-dashboard" {
+			return dashboardMonitoringResourceDefaults{"100m", "128Mi", "500m", "256Mi"}, true
+		}
+	case "dashboard-metrics-scraper":
+		if containerName == "" || containerName == "dashboard-metrics-scraper" {
+			return dashboardMonitoringResourceDefaults{"50m", "64Mi", "200m", "128Mi"}, true
+		}
+	}
+	return dashboardMonitoringResourceDefaults{}, false
+}
+
+func ensureStringMapField(parent map[string]any, key string) map[string]any {
+	m, ok := parent[key].(map[string]any)
+	if !ok || m == nil {
+		m = map[string]any{}
+		parent[key] = m
+	}
+	return m
+}
+
+func setStringIfMissing(m map[string]any, key, value string) bool {
+	if strings.TrimSpace(value) == "" {
+		return false
+	}
+	if _, ok := m[key]; ok {
+		return false
+	}
+	m[key] = value
+	return true
+}
+
+func patchDashboardMonitoringContainerResources(container map[string]any, defaults dashboardMonitoringResourceDefaults) bool {
+	resources := ensureStringMapField(container, "resources")
+	requests := ensureStringMapField(resources, "requests")
+	limits := ensureStringMapField(resources, "limits")
+	changed := false
+	changed = setStringIfMissing(requests, "cpu", defaults.cpuRequest) || changed
+	changed = setStringIfMissing(requests, "memory", defaults.memoryRequest) || changed
+	changed = setStringIfMissing(limits, "cpu", defaults.cpuLimit) || changed
+	changed = setStringIfMissing(limits, "memory", defaults.memoryLimit) || changed
+	return changed
+}
+
+func patchDashboardMonitoringDeploymentResources(obj *unstructured.Unstructured) {
+	if obj == nil || obj.GetKind() != "Deployment" {
+		return
+	}
+	containers, ok, _ := unstructured.NestedSlice(obj.Object, "spec", "template", "spec", "containers")
+	if !ok {
+		return
+	}
+	changed := false
+	for i := range containers {
+		container, ok := containers[i].(map[string]any)
+		if !ok || container == nil {
+			continue
+		}
+		name, _ := container["name"].(string)
+		defaults, ok := dashboardMonitoringResourceDefaultsFor(obj.GetName(), name)
+		if !ok {
+			continue
+		}
+		if patchDashboardMonitoringContainerResources(container, defaults) {
+			containers[i] = container
+			changed = true
+		}
+	}
+	if changed {
+		_ = unstructured.SetNestedSlice(obj.Object, containers, "spec", "template", "spec", "containers")
+	}
+}
+
 func rewriteDashboardMonitoringManifestNamespace(raw []byte, fromNamespace, toNamespace string) ([]byte, error) {
 	toNamespace = strings.TrimSpace(toNamespace)
-	if toNamespace == "" || toNamespace == fromNamespace {
-		return raw, nil
-	}
+	rewriteNamespace := toNamespace != "" && toNamespace != fromNamespace
 	var out [][]byte
 	for _, doc := range splitYAMLDocuments(string(raw)) {
 		if len(strings.TrimSpace(string(doc))) == 0 {
@@ -111,12 +197,12 @@ func rewriteDashboardMonitoringManifestNamespace(raw []byte, fromNamespace, toNa
 		}
 		switch obj.GetKind() {
 		case "Namespace":
-			if obj.GetName() == fromNamespace {
+			if rewriteNamespace && obj.GetName() == fromNamespace {
 				obj.SetName(toNamespace)
 			}
 		case "ClusterRoleBinding":
 			subjects, ok, _ := unstructured.NestedSlice(obj.Object, "subjects")
-			if ok {
+			if rewriteNamespace && ok {
 				for i := range subjects {
 					m, _ := subjects[i].(map[string]any)
 					if m == nil || m["kind"] != "ServiceAccount" {
@@ -129,12 +215,13 @@ func rewriteDashboardMonitoringManifestNamespace(raw []byte, fromNamespace, toNa
 				_ = unstructured.SetNestedSlice(obj.Object, subjects, "subjects")
 			}
 		default:
-			if dashboardMonitoringNamespacedKind(obj.GetKind()) {
+			if rewriteNamespace && dashboardMonitoringNamespacedKind(obj.GetKind()) {
 				if obj.GetNamespace() == "" || obj.GetNamespace() == fromNamespace {
 					obj.SetNamespace(toNamespace)
 				}
 			}
 		}
+		patchDashboardMonitoringDeploymentResources(obj)
 		b, err := sigyaml.Marshal(obj.Object)
 		if err != nil {
 			return nil, fmt.Errorf("渲染 YAML: %w", err)

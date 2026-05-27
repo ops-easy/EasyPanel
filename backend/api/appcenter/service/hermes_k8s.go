@@ -19,6 +19,19 @@ const (
 	hermesDashboardPort = int32(9119)
 )
 
+func hermesDefaultResources() corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    apiresource.MustParse("250m"),
+			corev1.ResourceMemory: apiresource.MustParse("512Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    apiresource.MustParse("1"),
+			corev1.ResourceMemory: apiresource.MustParse("1Gi"),
+		},
+	}
+}
+
 type HermesK8sDeployOpts struct {
 	Namespace      string
 	DeploymentName string
@@ -79,6 +92,7 @@ func hermesContainer(name string, args []string, image, secretName, configMapNam
 			{SecretRef: &corev1.SecretEnvSource{LocalObjectReference: corev1.LocalObjectReference{Name: secretName}, Optional: hermesBoolPtr(true)}},
 			{ConfigMapRef: &corev1.ConfigMapEnvSource{LocalObjectReference: corev1.LocalObjectReference{Name: configMapName}, Optional: hermesBoolPtr(true)}},
 		},
+		Resources: hermesDefaultResources(),
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: "hermes-home", MountPath: "/opt/data"},
 		},

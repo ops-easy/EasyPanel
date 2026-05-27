@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -252,6 +253,23 @@ func patchIngressControllerContainer(c *corev1.Container, httpPort, httpsPort in
 			c.Ports[i].ContainerPort = httpsPort
 		}
 	}
+	ensureContainerResourceDefault(&c.Resources.Requests, corev1.ResourceCPU, "100m")
+	ensureContainerResourceDefault(&c.Resources.Requests, corev1.ResourceMemory, "128Mi")
+	ensureContainerResourceDefault(&c.Resources.Limits, corev1.ResourceCPU, "1")
+	ensureContainerResourceDefault(&c.Resources.Limits, corev1.ResourceMemory, "512Mi")
+}
+
+func ensureContainerResourceDefault(list *corev1.ResourceList, name corev1.ResourceName, value string) {
+	if list == nil || strings.TrimSpace(value) == "" {
+		return
+	}
+	if *list == nil {
+		*list = corev1.ResourceList{}
+	}
+	if _, ok := (*list)[name]; ok {
+		return
+	}
+	(*list)[name] = resource.MustParse(value)
 }
 
 func findIngressControllerContainerIndex(containers []corev1.Container) int {

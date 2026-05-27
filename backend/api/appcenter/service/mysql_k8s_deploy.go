@@ -18,6 +18,10 @@ const (
 	defaultAppMySQLImage         = "mysql:8.0"
 	defaultAppMySQLExporterImage = "prom/mysqld-exporter:v0.15.1"
 	appMySQLMetricsPort          = int32(9104)
+	defaultAppMySQLCPURequest    = "250m"
+	defaultAppMySQLCPULimit      = "1"
+	defaultAppMySQLMemoryRequest = "512Mi"
+	defaultAppMySQLMemoryLimit   = "1Gi"
 )
 
 type AppMySQLK8sDeployOpts struct {
@@ -216,10 +220,10 @@ func appMySQLMainContainer(opts AppMySQLK8sDeployOpts, image string) corev1.Cont
 		}
 		(*dst)[name] = qty
 	}
-	addResources(&c.Resources.Requests, corev1.ResourceCPU, opts.MySQLCPURequest)
-	addResources(&c.Resources.Limits, corev1.ResourceCPU, opts.MySQLCPULimit)
-	addResources(&c.Resources.Requests, corev1.ResourceMemory, opts.MySQLMemoryRequest)
-	addResources(&c.Resources.Limits, corev1.ResourceMemory, opts.MySQLMemoryLimit)
+	addResources(&c.Resources.Requests, corev1.ResourceCPU, firstNonEmpty(opts.MySQLCPURequest, defaultAppMySQLCPURequest))
+	addResources(&c.Resources.Limits, corev1.ResourceCPU, firstNonEmpty(opts.MySQLCPULimit, defaultAppMySQLCPULimit))
+	addResources(&c.Resources.Requests, corev1.ResourceMemory, firstNonEmpty(opts.MySQLMemoryRequest, defaultAppMySQLMemoryRequest))
+	addResources(&c.Resources.Limits, corev1.ResourceMemory, firstNonEmpty(opts.MySQLMemoryLimit, defaultAppMySQLMemoryLimit))
 	return c
 }
 

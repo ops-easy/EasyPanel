@@ -22,7 +22,7 @@ const (
 	victoriaMetricsHelmRepoURL           = "https://victoriametrics.github.io/helm-charts/"
 	victoriaLogsSingleChartName          = "victoria-logs-single"
 	victoriaLogsCollectorChartName       = "victoria-logs-collector"
-	victoriaLogsDefaultStorageSize       = "20Gi"
+	victoriaLogsDefaultStorageSize       = "50Gi"
 	victoriaLogsServerPort         int32 = 9428
 )
 
@@ -87,6 +87,14 @@ func buildVictoriaLogsSingleValuesYAML(opts VictoriaLogsInstallOpts) string {
 	if sc := strings.TrimSpace(opts.StorageClassName); sc != "" {
 		fmt.Fprintf(&b, "    storageClassName: %q\n", sc)
 	}
+	b.WriteString(`  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+`)
 	return b.String()
 }
 

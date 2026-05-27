@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestAppMySQLStoredConfigEncryptsPassword(t *testing.T) {
@@ -173,10 +175,29 @@ func TestAppMySQLK8sResourceBuildersCreateCompleteStack(t *testing.T) {
 	if len(dep.Spec.Template.Spec.Containers) != 2 {
 		t.Fatalf("containers=%d, want mysql + exporter", len(dep.Spec.Template.Spec.Containers))
 	}
+	mysql := dep.Spec.Template.Spec.Containers[0]
+	assertAppMySQLQuantity(t, mysql.Resources.Requests, corev1.ResourceCPU, "250m")
+	assertAppMySQLQuantity(t, mysql.Resources.Requests, corev1.ResourceMemory, "512Mi")
+	assertAppMySQLQuantity(t, mysql.Resources.Limits, corev1.ResourceCPU, "1")
+	assertAppMySQLQuantity(t, mysql.Resources.Limits, corev1.ResourceMemory, "1Gi")
 	svc := buildAppMySQLService(opts)
 	if len(svc.Spec.Ports) != 2 {
 		t.Fatalf("service ports=%d, want mysql + metrics", len(svc.Spec.Ports))
 	}
+}
+
+func TestAppMySQLMainContainerAllowsResourceOverrides(t *testing.T) {
+	container := appMySQLMainContainer(AppMySQLK8sDeployOpts{
+		BaseName:           "orders-mysql",
+		MySQLCPURequest:    "750m",
+		MySQLCPULimit:      "2",
+		MySQLMemoryRequest: "1Gi",
+		MySQLMemoryLimit:   "3Gi",
+	}, "mysql:8.0")
+	assertAppMySQLQuantity(t, container.Resources.Requests, corev1.ResourceCPU, "750m")
+	assertAppMySQLQuantity(t, container.Resources.Requests, corev1.ResourceMemory, "1Gi")
+	assertAppMySQLQuantity(t, container.Resources.Limits, corev1.ResourceCPU, "2")
+	assertAppMySQLQuantity(t, container.Resources.Limits, corev1.ResourceMemory, "3Gi")
 }
 
 func TestAppMySQLQueryGuardRejectsMutationsByDefault(t *testing.T) {
@@ -200,5 +221,17 @@ func TestAppMySQLQueryGuardRejectsMutationsByDefault(t *testing.T) {
 		if !appMySQLQueryAllowedWithoutMutationConfirm(sql) {
 			t.Fatalf("query %q should be allowed", sql)
 		}
+	}
+}
+
+func assertAppMySQLQuantity(t *testing.T, got corev1.ResourceList, name corev1.ResourceName, want string) {
+	t.Helper()
+	q, ok := got[name]
+	if !ok {
+		t.Fatalf("missing resource %s in %#v", name, got)
+	}
+	w := resource.MustParse(want)
+	if q.Cmp(w) != 0 {
+		t.Fatalf("resource %s=%s, want %s", name, q.String(), w.String())
 	}
 }
