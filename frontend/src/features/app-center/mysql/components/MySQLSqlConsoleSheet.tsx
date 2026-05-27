@@ -53,7 +53,7 @@ function cellText(v: unknown): string {
 }
 
 function SQLResultTable({ result }: { result: SQLResult }) {
-  const rows = result.rows ?? [];
+  const rows = useMemo(() => result.rows ?? [], [result.rows]);
   const columns = useMemo(() => {
     if (result.columns?.length) return result.columns;
     const s = new Set<string>();

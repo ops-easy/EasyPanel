@@ -1,13 +1,13 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "frontend-api-uses",
-  "routeCount": 878,
+  "routeCount": 881,
   "routes": [
     {
       "method": "UNKNOWN",
       "pathPattern": "/api",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 681,
+      "sourceLine": 685,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -207,7 +207,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/instances",
       "sourceFile": "frontend/src/features/vcenter/pages/VCenterBastion.tsx",
-      "sourceLine": 293,
+      "sourceLine": 295,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -215,7 +215,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 233,
+      "sourceLine": 234,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -391,7 +391,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 243,
+      "sourceLine": 244,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -407,7 +407,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/app-center/hermes/instances",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 211,
+      "sourceLine": 216,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -695,7 +695,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 227,
+      "sourceLine": 228,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1126,8 +1126,16 @@
     {
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances",
+      "sourceFile": "frontend/src/features/vcenter/pages/VCenterBastion.tsx",
+      "sourceLine": 309,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 222,
+      "sourceLine": 223,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1206,6 +1214,14 @@
     {
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/query",
+      "sourceFile": "frontend/src/features/app-center/mysql/components/MySQLSqlConsoleSheet.tsx",
+      "sourceLine": 131,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/app-center/mysql/instances/:param/query",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
       "sourceLine": 404,
       "needsManualReview": true,
@@ -1216,6 +1232,14 @@
       "pathPattern": "/api/app-center/mysql/instances/:param/runtime",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
       "sourceLine": 417,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:param/schemas",
+      "sourceFile": "frontend/src/features/app-center/mysql/components/MySQLSqlConsoleSheet.tsx",
+      "sourceLine": 124,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1439,7 +1463,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 191,
+      "sourceLine": 196,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1447,7 +1471,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 238,
+      "sourceLine": 239,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1791,7 +1815,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances/k8s-status",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 217,
+      "sourceLine": 222,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1879,7 +1903,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/opensearch/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 248,
+      "sourceLine": 249,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2015,7 +2039,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances",
       "sourceFile": "frontend/src/features/vcenter/pages/VCenterBastion.tsx",
-      "sourceLine": 300,
+      "sourceLine": 302,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2023,7 +2047,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 217,
+      "sourceLine": 218,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2191,7 +2215,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/status",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 212,
+      "sourceLine": 213,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2431,7 +2455,7 @@
       "method": "GET",
       "pathPattern": "/api/bastion/targets",
       "sourceFile": "frontend/src/features/vcenter/pages/VCenterBastion.tsx",
-      "sourceLine": 307,
+      "sourceLine": 316,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2455,7 +2479,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/bastion/targets/ssh-settings",
       "sourceFile": "frontend/src/features/vcenter/pages/VCenterBastion.tsx",
-      "sourceLine": 168,
+      "sourceLine": 169,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -2463,7 +2487,7 @@
       "method": "GET",
       "pathPattern": "/api/cloud-hosts",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
-      "sourceLine": 217,
+      "sourceLine": 222,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2959,7 +2983,7 @@
       "method": "GET",
       "pathPattern": "/api/dns/domains",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 252,
+      "sourceLine": 253,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4591,7 +4615,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/summary",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 182,
+      "sourceLine": 183,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4719,7 +4743,7 @@
       "method": "GET",
       "pathPattern": "/api/network/devices",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 303,
+      "sourceLine": 304,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4727,7 +4751,7 @@
       "method": "GET",
       "pathPattern": "/api/network/devices",
       "sourceFile": "frontend/src/shared/layout/Sidebar.tsx",
-      "sourceLine": 453,
+      "sourceLine": 455,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5167,7 +5191,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 79,
+      "sourceLine": 86,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5175,7 +5199,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 166,
+      "sourceLine": 171,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5183,7 +5207,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 276,
+      "sourceLine": 277,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5191,7 +5215,7 @@
       "method": "PUT",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 275,
+      "sourceLine": 280,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5199,7 +5223,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/alerts",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectAlerts.tsx",
-      "sourceLine": 94,
+      "sourceLine": 107,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5207,7 +5231,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/alerts",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 74,
+      "sourceLine": 81,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5215,7 +5239,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/alerts",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 271,
+      "sourceLine": 272,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5223,7 +5247,7 @@
       "method": "PUT",
       "pathPattern": "/api/ops/alerts",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectAlerts.tsx",
-      "sourceLine": 133,
+      "sourceLine": 146,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5231,7 +5255,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/alerts/alertmanager-webhook/regenerate",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectAlerts.tsx",
-      "sourceLine": 116,
+      "sourceLine": 129,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5239,7 +5263,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/alerts/log",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectAlerts.tsx",
-      "sourceLine": 100,
+      "sourceLine": 113,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5247,7 +5271,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/alerts/test-channel",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectAlerts.tsx",
-      "sourceLine": 165,
+      "sourceLine": 178,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5263,7 +5287,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/cluster-advisory",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectLogs.tsx",
-      "sourceLine": 202,
+      "sourceLine": 221,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5279,7 +5303,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/ops/cluster-advisory",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 102,
+      "sourceLine": 109,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -5287,7 +5311,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/cluster-advisory/ack",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 109,
+      "sourceLine": 116,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5303,7 +5327,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/cluster-advisory/run",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 114,
+      "sourceLine": 121,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5311,7 +5335,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/reports",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 85,
+      "sourceLine": 92,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5327,7 +5351,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/reports",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 282,
+      "sourceLine": 283,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5335,7 +5359,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/inspect/run",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 286,
+      "sourceLine": 291,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5343,7 +5367,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/tasks",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 182,
+      "sourceLine": 187,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5351,7 +5375,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/tasks/:param",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 172,
+      "sourceLine": 177,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5359,7 +5383,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/tasks/${encodeURIComponent(inspectTaskId",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectHome.tsx",
-      "sourceLine": 172,
+      "sourceLine": 177,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5367,7 +5391,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 69,
+      "sourceLine": 76,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5375,7 +5399,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectMonitoring.tsx",
-      "sourceLine": 102,
+      "sourceLine": 124,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5383,7 +5407,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 288,
+      "sourceLine": 289,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5391,7 +5415,7 @@
       "method": "PUT",
       "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectMonitoring.tsx",
-      "sourceLine": 168,
+      "sourceLine": 216,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5495,7 +5519,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/vmlog/overview",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectLogs.tsx",
-      "sourceLine": 193,
+      "sourceLine": 212,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5551,7 +5575,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/vmlog/status",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectLogs.tsx",
-      "sourceLine": 172,
+      "sourceLine": 191,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5559,7 +5583,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/vmlog/status",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
-      "sourceLine": 192,
+      "sourceLine": 197,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5567,7 +5591,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/vmlog/vm-shipper/apply",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
-      "sourceLine": 323,
+      "sourceLine": 328,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5583,7 +5607,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/vmlog/vm-shipper/inspect",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
-      "sourceLine": 305,
+      "sourceLine": 310,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5599,7 +5623,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/vmlog/vm-shipper/script",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
-      "sourceLine": 294,
+      "sourceLine": 299,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5615,7 +5639,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/vmlog/vm-shipper/tasks",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
-      "sourceLine": 286,
+      "sourceLine": 291,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5631,7 +5655,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/vmlog/vm-shipper/tasks/:param",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
-      "sourceLine": 276,
+      "sourceLine": 281,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5639,7 +5663,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/vmlog/vm-shipper/tasks/${encodeURIComponent(shipperTaskId",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
-      "sourceLine": 276,
+      "sourceLine": 281,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5719,7 +5743,7 @@
       "method": "GET",
       "pathPattern": "/api/prometheus/status",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 63,
+      "sourceLine": 70,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5727,7 +5751,7 @@
       "method": "GET",
       "pathPattern": "/api/prometheus/status",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectMonitoring.tsx",
-      "sourceLine": 97,
+      "sourceLine": 119,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5743,7 +5767,7 @@
       "method": "GET",
       "pathPattern": "/api/prometheus/status",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 295,
+      "sourceLine": 296,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5807,7 +5831,7 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 203,
+      "sourceLine": 204,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5815,7 +5839,7 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets",
       "sourceFile": "frontend/src/shared/layout/Sidebar.tsx",
-      "sourceLine": 446,
+      "sourceLine": 448,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -6623,7 +6647,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/bastion/vms",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 261,
+      "sourceLine": 262,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -6663,7 +6687,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/hosts",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 196,
+      "sourceLine": 197,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -6719,7 +6743,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/vms",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/VmLogShipperAssistant.tsx",
-      "sourceLine": 222,
+      "sourceLine": 227,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -6751,7 +6775,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/vms",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 189,
+      "sourceLine": 190,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -6823,7 +6847,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/vms/:param/netperf",
       "sourceFile": "frontend/src/features/vcenter/pages/VCenterBastion.tsx",
-      "sourceLine": 378,
+      "sourceLine": 387,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -6847,7 +6871,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/vms/:param/quickstats",
       "sourceFile": "frontend/src/features/vcenter/pages/VCenterBastion.tsx",
-      "sourceLine": 367,
+      "sourceLine": 376,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -6991,7 +7015,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/vms/${encodeURIComponent(selectedVmMoref!",
       "sourceFile": "frontend/src/features/vcenter/pages/VCenterBastion.tsx",
-      "sourceLine": 367,
+      "sourceLine": 376,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -6999,7 +7023,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/vms/${encodeURIComponent(selectedVmMoref!",
       "sourceFile": "frontend/src/features/vcenter/pages/VCenterBastion.tsx",
-      "sourceLine": 378,
+      "sourceLine": 387,
       "needsManualReview": true,
       "kind": "http"
     },
