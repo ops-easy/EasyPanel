@@ -1,10 +1,7 @@
-import React, { useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { Loader2, Play } from "lucide-react";
-import { toast } from "sonner";
-import { ApiHttpError, apiGetJson, apiPostJson } from "@/lib/api";
-import { Button } from "@/shared/ui/button";
-import { Checkbox } from "@/shared/ui/checkbox";
+import React, { useEffect, useRef, useState } from "react";
+import { FitAddon } from "@xterm/addon-fit";
+import { Terminal as XTerm } from "@xterm/xterm";
+import "@xterm/xterm/css/xterm.css";
 import {
   Dialog,
   DialogContent,
@@ -12,20 +9,32 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
-import { Textarea } from "@/shared/ui/textarea";
-import { cn } from "@/lib/utils";
+import PlatformRelayBanner from "@/shared/layout/PlatformRelayBanner";
+import { useEasyPanelXtermOptions } from "@/hooks/use-easypanel-xterm-options";
+import { wsUrlForApiPath } from "@/lib/api";
 
-type SQLResult = {
-  readOnly: boolean;
-  columns?: string[];
-  rows?: Record<string, unknown>[];
-  truncated?: boolean;
-  rowsAffected?: number;
-  lastInsertId?: number;
-};
+function whenTerminalHostReady(
+  getEl: () => HTMLDivElement | null,
+  run: (el: HTMLDivElement) => void,
+  opts?: { maxMs?: number; intervalMs?: number; onTimeout?: () => void }
+): () => void {
+  const maxMs = opts?.maxMs ?? 4000;
+  const intervalMs = opts?.intervalMs ?? 24;
+  const start = performance.now();
+  const id = window.setInterval(() => {
+    const el = getEl();
+    if (el) {
+      window.clearInterval(id);
+      run(el);
+      return;
+    }
+    if (performance.now() - start > maxMs) {
+      window.clearInterval(id);
+      opts?.onTimeout?.();
+    }
+  }, intervalMs);
+  return () => window.clearInterval(id);
+}
 
 export type MySQLSqlConsoleSheetProps = {
   open: boolean;
@@ -34,184 +43,162 @@ export type MySQLSqlConsoleSheetProps = {
   instanceName?: string;
 };
 
-function errMsg(err: unknown): string {
-  if (err instanceof ApiHttpError) return err.message;
-  if (err instanceof Error) return err.message;
-  return String(err);
-}
-
-function cellText(v: unknown): string {
-  if (v == null) return "NULL";
-  if (typeof v === "object") {
-    try {
-      return JSON.stringify(v);
-    } catch {
-      return String(v);
-    }
-  }
-  return String(v);
-}
-
-function SQLResultTable({ result }: { result: SQLResult }) {
-  const rows = useMemo(() => result.rows ?? [], [result.rows]);
-  const columns = useMemo(() => {
-    if (result.columns?.length) return result.columns;
-    const s = new Set<string>();
-    for (const row of rows) {
-      Object.keys(row).forEach((k) => s.add(k));
-    }
-    return Array.from(s);
-  }, [result.columns, rows]);
-
-  if (!result.readOnly) {
-    return (
-      <div className="rounded border border-emerald-900/50 bg-emerald-950/25 px-3 py-2 text-sm text-emerald-100">
-        影响行数 {result.rowsAffected ?? 0}，LastInsertId {result.lastInsertId ?? 0}
-      </div>
-    );
-  }
-
-  if (rows.length === 0 || columns.length === 0) {
-    return (
-      <div className="rounded border border-slate-800 bg-[#111820] px-3 py-6 text-center text-sm text-slate-500">
-        无结果
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-h-[min(42vh,420px)] overflow-auto rounded border border-slate-800 bg-[#0b1016]">
-      <Table>
-        <TableHeader className="sticky top-0 bg-[#111820]">
-          <TableRow className="border-slate-800 hover:bg-[#111820]">
-            {columns.map((col) => (
-              <TableHead key={col} className="whitespace-nowrap font-mono text-xs text-slate-300">
-                {col}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row, idx) => (
-            <TableRow key={idx} className="border-slate-800 hover:bg-[#151f2a]">
-              {columns.map((col) => (
-                <TableCell key={col} className="max-w-[280px] truncate font-mono text-xs text-slate-200">
-                  {cellText(row[col])}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
+/** 应用中心 MySQL：服务端在 Pod 内执行 mysql CLI，通过 MYSQL_PWD 注入密码，浏览器不展示明文 */
 const MySQLSqlConsoleSheet: React.FC<MySQLSqlConsoleSheetProps> = ({
   open,
   onOpenChange,
   instanceId,
   instanceName,
 }) => {
-  const [sql, setSql] = useState("show databases");
-  const [schema, setSchema] = useState("");
-  const [confirmMutation, setConfirmMutation] = useState(false);
-  const [result, setResult] = useState<SQLResult | null>(null);
+  const xtermOpts = useEasyPanelXtermOptions();
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState<"idle" | "connecting" | "open" | "closed" | "error">("idle");
+  const [errMsg, setErrMsg] = useState<string | null>(null);
+  const disposeRef = useRef<(() => void) | null>(null);
 
-  const schemasQ = useQuery({
-    queryKey: ["bastion-sidebar-mysql-schemas", instanceId],
-    queryFn: ({ signal }) =>
-      apiGetJson<{ schemas: string[] }>(`/api/app-center/mysql/instances/${instanceId}/schemas`, { signal }),
-    enabled: open && instanceId > 0,
-    retry: false,
-  });
+  useEffect(() => {
+    const prevDispose = disposeRef.current;
+    prevDispose?.();
+    disposeRef.current = null;
 
-  const queryM = useMutation({
-    mutationFn: () =>
-      apiPostJson<SQLResult>(`/api/app-center/mysql/instances/${instanceId}/query`, {
-        sql,
-        schema,
-        limit: 300,
-        confirmMutation,
-      }),
-    onSuccess: (res) => setResult(res),
-    onError: (err) => toast.error(errMsg(err)),
-  });
+    if (!open || instanceId <= 0) {
+      setStatus("idle");
+      setErrMsg(null);
+      return;
+    }
 
-  const schemas = schemasQ.data?.schemas ?? [];
+    let cancelled = false;
+    const cancelWait = whenTerminalHostReady(
+      () => wrapRef.current,
+      (el) => {
+        if (cancelled) return;
+
+        const term = new XTerm(xtermOpts);
+        const fit = new FitAddon();
+        term.loadAddon(fit);
+        term.open(el);
+        fit.fit();
+
+        setStatus("connecting");
+        setErrMsg(null);
+
+        const wsUrl = wsUrlForApiPath(
+          `/api/app-center/mysql/instances/${encodeURIComponent(String(instanceId))}/mysql-cli/ws`
+        );
+        const ws = new WebSocket(wsUrl);
+        ws.binaryType = "arraybuffer";
+
+        const sendResize = () => {
+          fit.fit();
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
+          }
+        };
+
+        ws.onopen = () => {
+          if (cancelled) return;
+          setStatus("open");
+          sendResize();
+        };
+
+        ws.onmessage = (ev: MessageEvent) => {
+          if (cancelled) return;
+          if (ev.data instanceof ArrayBuffer) {
+            term.write(new Uint8Array(ev.data));
+          } else if (typeof ev.data === "string") {
+            term.write(ev.data);
+          }
+        };
+
+        ws.onerror = () => {
+          if (cancelled) return;
+          setErrMsg("WebSocket 握手失败（请确认已登录，账号具备应用中心与 Pod exec 权限，反向代理允许 Upgrade）");
+          setStatus("error");
+        };
+
+        ws.onclose = () => {
+          if (cancelled) return;
+          setStatus("closed");
+          term.write("\r\n\x1b[33m[连接已关闭]\x1b[0m\r\n");
+        };
+
+        const sub = term.onData((data) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(new TextEncoder().encode(data));
+          }
+        });
+
+        const onWinResize = () => sendResize();
+        window.addEventListener("resize", onWinResize);
+        const ro = new ResizeObserver(() => sendResize());
+        ro.observe(el);
+
+        disposeRef.current = () => {
+          window.removeEventListener("resize", onWinResize);
+          ro.disconnect();
+          sub.dispose();
+          try {
+            ws.close();
+          } catch {
+            /* ignore */
+          }
+          term.dispose();
+        };
+      },
+      {
+        onTimeout: () => {
+          if (cancelled) return;
+          setErrMsg("终端区域未挂载（请关闭弹窗后重试）");
+          setStatus("error");
+        },
+      }
+    );
+
+    return () => {
+      cancelled = true;
+      cancelWait?.();
+      disposeRef.current?.();
+      disposeRef.current = null;
+    };
+  }, [open, instanceId, xtermOpts]);
+
+  const statusLabel =
+    status === "connecting"
+      ? "连接中..."
+      : status === "open"
+        ? "已连接"
+        : status === "closed"
+          ? "已断开"
+          : status === "error"
+            ? "出错"
+            : "";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton
-        className="!flex !max-h-[min(92vh,880px)] w-[min(96vw,980px)] !max-w-[min(96vw,980px)] flex-col gap-0 overflow-hidden border-slate-800 bg-[#0f1419] p-0 text-slate-100 sm:!max-w-[min(96vw,980px)]"
+        className="!flex !max-h-[min(90vh,880px)] w-[min(96vw,960px)] !max-w-[min(96vw,960px)] flex-col gap-0 overflow-hidden border-gray-200 p-0 sm:!max-w-[min(96vw,960px)]"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <DialogHeader className="shrink-0 space-y-1 border-b border-slate-800 bg-[#111820] px-4 py-3 text-left">
-          <DialogTitle className="text-base font-semibold text-slate-100">MySQL SQL 控制台</DialogTitle>
-          <DialogDescription className="text-xs text-slate-500">
-            {instanceName || `MySQL #${instanceId}`} · 实例 #{instanceId}
+        <DialogHeader className="shrink-0 space-y-1 border-b border-gray-200 bg-white px-4 py-3 text-left">
+          <DialogTitle className="text-base font-semibold text-gray-900">mysql</DialogTitle>
+          <DialogDescription className="text-xs text-gray-600">
+            {instanceName || `MySQL #${instanceId}`} · 实例 #{instanceId} · 在 MySQL Pod 内交互；认证由服务端注入环境变量，界面不显示密码
+            {statusLabel ? ` · ${statusLabel}` : ""}
           </DialogDescription>
         </DialogHeader>
-
-        <div className="grid min-h-0 flex-1 gap-3 overflow-auto px-4 py-4">
-          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-slate-400">SQL</Label>
-              <Textarea
-                value={sql}
-                onChange={(e) => setSql(e.target.value)}
-                className="min-h-[180px] resize-y border-slate-700 bg-[#080a0e] font-mono text-xs text-slate-100"
-              />
-            </div>
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-slate-400">Schema</Label>
-                <Input
-                  value={schema}
-                  onChange={(e) => setSchema(e.target.value)}
-                  className="border-slate-700 bg-[#080a0e] font-mono text-xs text-slate-100"
-                />
-              </div>
-              <div className="max-h-[116px] overflow-auto rounded border border-slate-800 bg-[#0b1016] p-1">
-                {schemasQ.isLoading ? (
-                  <p className="px-2 py-1.5 text-xs text-slate-500">加载中...</p>
-                ) : schemas.length > 0 ? (
-                  schemas.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => setSchema(s)}
-                      className={cn(
-                        "block w-full truncate rounded px-2 py-1 text-left font-mono text-xs text-slate-300 hover:bg-slate-800",
-                        schema === s && "bg-slate-800 text-sky-200",
-                      )}
-                    >
-                      {s}
-                    </button>
-                  ))
-                ) : (
-                  <p className="px-2 py-1.5 text-xs text-slate-500">暂无 Schema</p>
-                )}
-              </div>
-              <label className="flex items-center gap-2 text-xs text-slate-300">
-                <Checkbox checked={confirmMutation} onCheckedChange={(v) => setConfirmMutation(v === true)} />
-                允许写操作
-              </label>
-              <Button
-                type="button"
-                className="w-full gap-2 bg-sky-600 hover:bg-sky-700"
-                disabled={instanceId <= 0 || queryM.isPending || !sql.trim()}
-                onClick={() => queryM.mutate()}
-              >
-                {queryM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                执行
-              </Button>
-            </div>
-          </div>
-
-          {result ? <SQLResultTable result={result} /> : null}
+        <div className="shrink-0 border-b border-sky-100 bg-white px-4 pb-3">
+          <PlatformRelayBanner className="rounded-lg border border-sky-200 bg-sky-50/90 px-3 py-2 text-xs leading-relaxed text-sky-950" />
         </div>
+        {errMsg && (
+          <div className="shrink-0 border-b border-red-200 bg-red-50 px-4 py-2 text-xs text-red-800">
+            {errMsg}
+          </div>
+        )}
+        <div
+          ref={wrapRef}
+          className="pod-exec-xterm-host h-[min(560px,70vh)] min-h-[280px] flex-1 overflow-hidden rounded-b-lg border-t border-gray-800 bg-[#1e1e1e] p-2"
+        />
       </DialogContent>
     </Dialog>
   );

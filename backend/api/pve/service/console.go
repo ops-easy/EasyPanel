@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -24,10 +23,14 @@ var pveConsoleUpgrader = websocket.Upgrader{
 }
 
 type pveGuestConsoleTicketBody struct {
-	Node   string `json:"node"`
-	Type   string `json:"type"`
-	Width  int    `json:"width"`
-	Height int    `json:"height"`
+	Node string `json:"node"`
+	Type string `json:"type"`
+}
+
+func pveGuestConsoleTicketForm() url.Values {
+	form := url.Values{}
+	form.Set("websocket", "1")
+	return form
 }
 
 func handlePVEGuestConsoleTicket(c *gin.Context, app *ServerApp) {
@@ -48,15 +51,7 @@ func handlePVEGuestConsoleTicket(c *gin.Context, app *ServerApp) {
 	if !ok {
 		return
 	}
-	form := url.Values{}
-	form.Set("websocket", "1")
-	if body.Width > 0 {
-		form.Set("width", strconv.Itoa(body.Width))
-	}
-	if body.Height > 0 {
-		form.Set("height", strconv.Itoa(body.Height))
-	}
-	data, err := client.Do(c.Request.Context(), http.MethodPost, proxyPath, nil, form)
+	data, err := client.Do(c.Request.Context(), http.MethodPost, proxyPath, nil, pveGuestConsoleTicketForm())
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return

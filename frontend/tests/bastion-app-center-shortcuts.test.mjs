@@ -14,9 +14,12 @@ test("bastion app-center shortcuts include MySQL SQL console beside Redis", () =
   assert.match(source, /SQL/);
 });
 
-test("MySQL SQL console sheet uses the existing app-center query endpoint", () => {
+test("MySQL SQL console sheet uses the same WebSocket terminal style as Redis", () => {
   const source = read("../src/features/app-center/mysql/components/MySQLSqlConsoleSheet.tsx");
-  assert.match(source, /\/api\/app-center\/mysql\/instances\/\$\{instanceId\}\/query/);
-  assert.match(source, /confirmMutation/);
-  assert.match(source, /\/api\/app-center\/mysql\/instances\/\$\{instanceId\}\/schemas/);
+  assert.match(source, /@xterm\/xterm/);
+  assert.match(source, /PlatformRelayBanner/);
+  assert.match(source, /wsUrlForApiPath/);
+  assert.match(source, /\/api\/app-center\/mysql\/instances\/\$\{encodeURIComponent\(String\(instanceId\)\)\}\/mysql-cli\/ws/);
+  assert.doesNotMatch(source, /confirmMutation/);
+  assert.doesNotMatch(source, /\/api\/app-center\/mysql\/instances\/\$\{instanceId\}\/query/);
 });

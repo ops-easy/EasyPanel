@@ -34,6 +34,7 @@ func RegisterMySQLRoutes(api *gin.RouterGroup, app *ServerApp) {
 	g.POST("/instances/:id/backups/:backupId/restore", func(c *gin.Context) { handleAppMySQLBackupRestore(c, app) })
 	g.DELETE("/instances/:id/backups/:backupId", func(c *gin.Context) { handleAppMySQLBackupDelete(c, app) })
 	g.POST("/instances/:id/query", func(c *gin.Context) { handleAppMySQLQuery(c, app) })
+	g.GET("/instances/:id/mysql-cli/ws", func(c *gin.Context) { handleAppMySQLCLIExecWS(c, app) })
 	g.GET("/instances/:id/k8s-status", func(c *gin.Context) { handleAppMySQLK8sRolloutStatus(c, app) })
 	g.GET("/instances/:id/k8s-network", func(c *gin.Context) { handleAppMySQLK8sNetwork(c, app) })
 	g.GET("/instances/:id", func(c *gin.Context) { handleAppMySQLGet(c, app) })

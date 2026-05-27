@@ -345,6 +345,12 @@ func isK8sPodExecAPIPath(path string) bool {
 	if strings.HasPrefix(path, "/api/k8s/pvc-files/") {
 		return true
 	}
+	if strings.HasPrefix(path, "/api/app-center/redis/") && strings.Contains(path, "/redis-cli/ws") {
+		return true
+	}
+	if strings.HasPrefix(path, "/api/app-center/mysql/") && strings.Contains(path, "/mysql-cli/ws") {
+		return true
+	}
 	return strings.Contains(path, "/api/k8s/pods/") && strings.Contains(path, "/exec/ws")
 }
 
@@ -656,6 +662,9 @@ func appMySQLPathIsSensitiveRead(path, method string) bool {
 	}
 	if method != http.MethodGet {
 		return false
+	}
+	if strings.Contains(path, "/mysql-cli/ws") {
+		return true
 	}
 	if strings.Contains(path, "/runtime") {
 		return true

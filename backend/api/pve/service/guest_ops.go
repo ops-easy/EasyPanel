@@ -76,10 +76,36 @@ func validatePVEGuestConfigPatch(form url.Values) error {
 		return errors.New("config patch is required")
 	}
 	for key := range form {
-		switch strings.ToLower(strings.TrimSpace(key)) {
-		case "", "node", "type", "vmid", "target", "targetid":
+		if pveGuestScopeFormFieldDisallowed(key) {
 			return fmt.Errorf("config field %q is not allowed", key)
 		}
+	}
+	return nil
+}
+
+func pveGuestScopeFormFieldDisallowed(key string) bool {
+	switch strings.ToLower(strings.TrimSpace(key)) {
+	case "", "node", "type", "vmid", "target", "targetid":
+		return true
+	default:
+		return false
+	}
+}
+
+func normalizePVEGuestSnapshotCreateForm(form url.Values) error {
+	for key := range form {
+		if pveGuestScopeFormFieldDisallowed(key) {
+			return fmt.Errorf("snapshot field %q is not allowed", key)
+		}
+	}
+	if strings.TrimSpace(form.Get("snapname")) == "" {
+		if name := strings.TrimSpace(form.Get("name")); name != "" {
+			form.Set("snapname", name)
+			form.Del("name")
+		}
+	}
+	if strings.TrimSpace(form.Get("snapname")) == "" {
+		return errors.New("snapname is required")
 	}
 	return nil
 }
@@ -242,14 +268,8 @@ func handlePVEGuestSnapshotCreate(c *gin.Context, app *ServerApp) {
 	if !ok {
 		return
 	}
-	if strings.TrimSpace(form.Get("snapname")) == "" {
-		if name := strings.TrimSpace(form.Get("name")); name != "" {
-			form.Set("snapname", name)
-			form.Del("name")
-		}
-	}
-	if strings.TrimSpace(form.Get("snapname")) == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "snapname is required"})
+	if err := normalizePVEGuestSnapshotCreateForm(form); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	client, _, ok := pveClientForRequest(c, app)

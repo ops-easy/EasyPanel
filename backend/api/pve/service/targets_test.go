@@ -3,6 +3,7 @@ package service
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	pvemodel "github.com/ops-easy/EasyPanel/backend/api/pve/model"
@@ -130,6 +131,45 @@ func TestPVEFullTakeoverPaths(t *testing.T) {
 	}
 	if rollback != "/nodes/pve-a/qemu/103/snapshot/before-upgrade/rollback" {
 		t.Fatalf("rollback path=%q", rollback)
+	}
+}
+
+func TestPVEConsoleTicketFormOmitsViewportDimensions(t *testing.T) {
+	form := pveGuestConsoleTicketForm()
+	if got := form.Get("websocket"); got != "1" {
+		t.Fatalf("websocket=%q, want 1", got)
+	}
+	if _, ok := form["width"]; ok {
+		t.Fatalf("console ticket form should not include width: %#v", form)
+	}
+	if _, ok := form["height"]; ok {
+		t.Fatalf("console ticket form should not include height: %#v", form)
+	}
+}
+
+func TestPVESnapshotCreateFormNormalizesNameWithoutScopeFields(t *testing.T) {
+	form := url.Values{}
+	form.Set("name", "before-change")
+	form.Set("description", "safe point")
+	if err := normalizePVEGuestSnapshotCreateForm(form); err != nil {
+		t.Fatalf("normalizePVEGuestSnapshotCreateForm returned error: %v", err)
+	}
+	if got := form.Get("snapname"); got != "before-change" {
+		t.Fatalf("snapname=%q, want before-change", got)
+	}
+	if _, ok := form["name"]; ok {
+		t.Fatalf("name should be removed after snapname normalization: %#v", form)
+	}
+}
+
+func TestPVESnapshotCreateFormRejectsScopeFields(t *testing.T) {
+	for _, field := range []string{"node", "type", "vmid", "target", "targetId"} {
+		form := url.Values{}
+		form.Set("snapname", "before-change")
+		form.Set(field, "pve-a")
+		if err := normalizePVEGuestSnapshotCreateForm(form); err == nil {
+			t.Fatalf("normalizePVEGuestSnapshotCreateForm accepted scope field %q", field)
+		}
 	}
 }
 

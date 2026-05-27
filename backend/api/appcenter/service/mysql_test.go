@@ -102,6 +102,7 @@ func TestRegisterMySQLRoutes(t *testing.T) {
 		"POST /api/app-center/mysql/instances/:id/backups/:backupId/restore",
 		"DELETE /api/app-center/mysql/instances/:id/backups/:backupId",
 		"POST /api/app-center/mysql/instances/:id/query",
+		"GET /api/app-center/mysql/instances/:id/mysql-cli/ws",
 		"GET /api/app-center/mysql/instances/:id/k8s-status",
 		"GET /api/app-center/mysql/instances/:id/k8s-network",
 		"POST /api/app-center/mysql/k8s-deploy",
@@ -111,6 +112,19 @@ func TestRegisterMySQLRoutes(t *testing.T) {
 		if !got[want] {
 			t.Fatalf("route %s is not registered", want)
 		}
+	}
+}
+
+func TestBuildAppMySQLCliInnerShellUsesEnvPassword(t *testing.T) {
+	cmd := buildAppMySQLCliInnerShell(&appMySQLStoredConfig{DefaultSchema: "orders"})
+	if strings.Contains(cmd, "-p") || strings.Contains(cmd, "root-secret") {
+		t.Fatalf("mysql cli command must not expose plaintext password args: %s", cmd)
+	}
+	if !strings.Contains(cmd, "MYSQL_PWD") {
+		t.Fatalf("mysql cli command should use container password env: %s", cmd)
+	}
+	if !strings.Contains(cmd, "--database='orders'") {
+		t.Fatalf("mysql cli command should select default schema safely: %s", cmd)
 	}
 }
 

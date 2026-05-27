@@ -132,6 +132,17 @@ func StreamK8sPodExecTTY(conn *websocket.Conn, k8s *kubernetes.Clientset, restCf
 	return appcenterprovider.StreamPodExecTTY(conn, k8s, restCfg, ns, podName, container, command, mergeStderr)
 }
 
+func writeWebSocketTerminalError(conn *websocket.Conn, msg string) {
+	if conn == nil {
+		return
+	}
+	msg = strings.TrimSpace(msg)
+	if msg == "" {
+		return
+	}
+	_ = conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31m"+msg+"\x1b[0m\r\n"))
+}
+
 func normalizeModuleAccess(s string) string {
 	return authz.NormalizeModuleAccess(s)
 }

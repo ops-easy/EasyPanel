@@ -23,7 +23,8 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { useSearchParams } from "react-router-dom";
 import { ApiHttpError, apiDeleteJson, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
-import { mysqlAppCenterCanWrite, mysqlShowK8sDeployWizard } from "@/lib/platform-permissions";
+import { k8sPodExecAllowed, mysqlAppCenterCanWrite, mysqlShowK8sDeployWizard } from "@/lib/platform-permissions";
+import MySQLSqlConsoleSheet from "@/features/app-center/mysql/components/MySQLSqlConsoleSheet";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -236,9 +237,11 @@ export default function AppCenterMySQL() {
   const [searchParams] = useSearchParams();
   const canWrite = mysqlAppCenterCanWrite(auth.status?.role, auth.status?.permissions);
   const canDeploy = mysqlShowK8sDeployWizard(auth.status?.role, auth.status?.permissions);
+  const canPodExec = k8sPodExecAllowed(auth.status?.role, auth.status?.permissions);
 
   const [mainTab, setMainTab] = useState<"mysql" | "install" | "templates">("mysql");
   const [managePanelOpen, setManagePanelOpen] = useState(false);
+  const [cliSheetOpen, setCliSheetOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
   const requestedInstanceId = useMemo(() => {
     const raw = searchParams.get("instance");
@@ -284,6 +287,10 @@ export default function AppCenterMySQL() {
     setInstanceSourceFilter("all");
     setSelectedId(requestedInstanceId);
   }, [instances, requestedInstanceId]);
+
+  useEffect(() => {
+    setCliSheetOpen(false);
+  }, [selected?.id]);
 
   const filteredInstances = useMemo(() => {
     let list = instances;
@@ -1012,7 +1019,36 @@ export default function AppCenterMySQL() {
                     </TabsContent>
 
                     <TabsContent value="sql" className="space-y-4 px-5 pt-5">
-                      <Panel title="SQL 控制台" icon={<Play className="h-4 w-4" />}>
+                      <Panel title="mysql-cli" icon={<Terminal className="h-4 w-4" />}>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="text-sm text-slate-700">
+                            <p className="font-medium text-slate-900">交互式终端</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              平台部署实例可进入 Pod 内 mysql CLI，密码由服务端环境变量注入。
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            className="gap-2 bg-sky-600 hover:bg-sky-700"
+                            data-terminal-route="/mysql-cli/ws"
+                            disabled={!selected || !isPlatformMySQL(selected) || !canPodExec}
+                            title={
+                              !selected
+                                ? ""
+                                : !isPlatformMySQL(selected)
+                                  ? "仅平台部署实例可打开 mysql-cli"
+                                  : !canPodExec
+                                    ? "当前账号没有 Pod exec 权限"
+                                    : "打开 mysql-cli"
+                            }
+                            onClick={() => setCliSheetOpen(true)}
+                          >
+                            <Terminal className="h-4 w-4" />
+                            打开 mysql-cli
+                          </Button>
+                        </div>
+                      </Panel>
+                      <Panel title="结构化 SQL 执行" icon={<Play className="h-4 w-4" />}>
                         <div className="space-y-3">
                           <div className="max-w-sm">
                             <Field label="Schema">
@@ -1260,6 +1296,12 @@ export default function AppCenterMySQL() {
                   </Tabs>
                 </CardContent>
               </Card>
+              <MySQLSqlConsoleSheet
+                open={cliSheetOpen}
+                onOpenChange={setCliSheetOpen}
+                instanceId={selected.id}
+                instanceName={selected.name}
+              />
             </div>
           ) : !instancesQ.isLoading && instances.length > 0 ? (
             <Card className="border-dashed border-slate-200">

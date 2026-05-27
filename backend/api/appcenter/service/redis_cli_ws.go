@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -68,14 +67,22 @@ func firstRunningPodName(ctx context.Context, k8s *kubernetes.Clientset, ns stri
 }
 
 func handleAppRedisRedisCLIExecWS(c *gin.Context, app *ServerApp) {
+	conn, err := execUpgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Printf("redis-cli WebSocket 升级失败: %v", err)
+		return
+	}
+	defer conn.Close()
+
 	k8s := app.K8s()
 	restCfg := app.K8sREST()
-	if !GuardK8sREST(c, k8s, restCfg) {
+	if k8s == nil || restCfg == nil {
+		writeWebSocketTerminalError(conn, "K8s 未连接：请先完成初始化，或检查平台服务端的 Kubernetes 连接配置")
 		return
 	}
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 id"})
+		writeWebSocketTerminalError(conn, "无效 Redis 实例 ID")
 		return
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
@@ -83,32 +90,25 @@ func handleAppRedisRedisCLIExecWS(c *gin.Context, app *ServerApp) {
 	st, err := loadStoredForIDIfVisible(ctx, c, app, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "未找到实例"})
+			writeWebSocketTerminalError(conn, "未找到 Redis 实例")
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		writeWebSocketTerminalError(conn, err.Error())
 		return
 	}
 	if strings.TrimSpace(st.K8sNamespace) == "" || strings.TrimSpace(st.K8sBaseName) == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "仅 Kubernetes 平台部署的实例支持控制台 redis-cli"})
+		writeWebSocketTerminalError(conn, "仅 Kubernetes 平台部署的实例支持控制台 redis-cli")
 		return
 	}
 
 	podName, err := resolveRedisCliPodName(ctx, k8s, st)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		writeWebSocketTerminalError(conn, err.Error())
 		return
 	}
 	ns := strings.TrimSpace(st.K8sNamespace)
 	inner := buildRedisCliInnerShell(st)
 	cmd := []string{"/bin/sh", "-c", inner}
-
-	conn, err := execUpgrader.Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		log.Printf("redis-cli WebSocket 升级失败: %v", err)
-		return
-	}
-	defer conn.Close()
 
 	if err := StreamK8sPodExecTTY(conn, k8s, restCfg, ns, podName, "redis", cmd, true); err != nil {
 		// StreamK8sPodExecTTY 已写入终端

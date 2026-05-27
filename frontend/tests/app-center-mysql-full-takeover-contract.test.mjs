@@ -13,12 +13,20 @@ test("MySQL app center page exposes the full takeover surface", () => {
     "/runtime",
     "/processlist",
     "/query",
+    "/mysql-cli/ws",
     "/users",
     "/backups",
     "confirmMutation",
   ]) {
     assert.ok(source.includes(needle), `missing ${needle}`);
   }
+});
+
+test("MySQL app center imports the reusable CLI terminal sheet", () => {
+  const source = read("../src/features/app-center/mysql/pages/AppCenterMySQL.tsx");
+  assert.match(source, /MySQLSqlConsoleSheet/);
+  assert.match(source, /setCliSheetOpen/);
+  assert.match(source, /mysql-cli/);
 });
 
 test("MySQL has a routed app-center entry", () => {

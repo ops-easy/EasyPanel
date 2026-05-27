@@ -105,7 +105,7 @@ const RedisCliTerminalSheet: React.FC<RedisCliTerminalSheetProps> = ({ open, onO
         ws.onerror = () => {
           if (cancelled) return;
           setErrMsg(
-            "WebSocket 失败（请确认已登录且账号非只读；服务端需 pods/exec 权限）"
+            "WebSocket 握手失败（请确认已登录，账号具备应用中心与 Pod exec 权限，反向代理允许 Upgrade）"
           );
           setStatus("error");
         };

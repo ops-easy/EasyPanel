@@ -302,6 +302,28 @@ func TestPrometheusReadQueriesAreAllowedForNonK8sFeatureModules(t *testing.T) {
 	}
 }
 
+func TestAppCenterCliWebSocketsRequirePodExecAndAreSensitiveReads(t *testing.T) {
+	eff := effectivePermissionsFromJSON(DashboardRoleViewer, `{"k8s":"ro","k8sPodExec":false,"appcenter":"rw","appcenterRedis":"full","appcenterMysql":"full"}`)
+	for _, path := range []string{
+		"/api/app-center/redis/instances/1/redis-cli/ws",
+		"/api/app-center/mysql/instances/1/mysql-cli/ws",
+	} {
+		if !isK8sPodExecAPIPath(path) {
+			t.Fatalf("%s should be classified as pod exec path", path)
+		}
+		if !permissionEndpointForbidden(http.MethodGet, path, eff) {
+			t.Fatalf("%s should require k8sPodExec permission", path)
+		}
+	}
+	masked := effectivePermissionsFromJSON(DashboardRoleViewer, `{"k8s":"rw","k8sPodExec":true,"appcenter":"rw","appcenterRedis":"full","appcenterMysql":"readonly"}`)
+	if !appMySQLPathIsSensitiveRead("/api/app-center/mysql/instances/1/mysql-cli/ws", http.MethodGet) {
+		t.Fatalf("mysql cli websocket should be a sensitive read")
+	}
+	if !permissionEndpointForbidden(http.MethodGet, "/api/app-center/mysql/instances/1/mysql-cli/ws", masked) {
+		t.Fatalf("mysql cli websocket should be blocked when mysql scope is readonly")
+	}
+}
+
 func TestPrometheusQueryScopeVisibilityFollowsOwningModule(t *testing.T) {
 	eff := effectivePermissionsFromJSON(DashboardRoleViewer, `{"k8s":"none","vcenter":"none","compute":"none","network":"ro","baota":"none","appcenter":"none"}`)
 

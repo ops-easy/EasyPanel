@@ -386,7 +386,7 @@ function PveConsolePanel({
     mutationFn: () =>
       apiPostJson<PveConsoleEnvelope>(
         `/api/pve/targets/${encodeURIComponent(targetId)}/guests/${encodeURIComponent(vmid)}/console/ticket`,
-        { node, type: guestType, width: 1024, height: 768 }
+        { node, type: guestType }
       ),
     onSuccess: (data) => {
       setConsoleData(data.console ?? null);
