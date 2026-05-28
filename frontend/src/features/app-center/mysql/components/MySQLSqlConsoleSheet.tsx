@@ -43,6 +43,33 @@ export type MySQLSqlConsoleSheetProps = {
   instanceName?: string;
 };
 
+const mysqlShortcutHints = [
+  { keys: "Tab", text: "补全命令、库名或表名" },
+  { keys: "↑ / ↓", text: "切换历史命令" },
+  { keys: "Ctrl+A/E", text: "跳到行首/行尾" },
+  { keys: "Ctrl+U", text: "清空当前行" },
+  { keys: "Ctrl+L", text: "清屏" },
+  { keys: "Ctrl+W", text: "删除光标前一个词" },
+];
+
+function MySQLShortcutHelp() {
+  return (
+    <div className="shrink-0 border-b border-slate-200 bg-slate-50/90 px-4 py-2 text-[11px] leading-relaxed text-slate-600">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <span className="font-medium text-slate-700">快捷键</span>
+        {mysqlShortcutHints.map((item) => (
+          <span key={item.keys} className="inline-flex items-center gap-1.5">
+            <kbd className="rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-700 shadow-sm">
+              {item.keys}
+            </kbd>
+            <span>{item.text}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** 应用中心 MySQL：K8s 实例走 Pod 内 mysql CLI，普通实例由平台服务端直连，浏览器不展示明文密码 */
 const MySQLSqlConsoleSheet: React.FC<MySQLSqlConsoleSheetProps> = ({
   open,
@@ -190,6 +217,7 @@ const MySQLSqlConsoleSheet: React.FC<MySQLSqlConsoleSheetProps> = ({
         <div className="shrink-0 border-b border-sky-100 bg-white px-4 pb-3">
           <PlatformRelayBanner className="rounded-lg border border-sky-200 bg-sky-50/90 px-3 py-2 text-xs leading-relaxed text-sky-950" />
         </div>
+        <MySQLShortcutHelp />
         {errMsg && (
           <div className="shrink-0 border-b border-red-200 bg-red-50 px-4 py-2 text-xs text-red-800">
             {errMsg}
