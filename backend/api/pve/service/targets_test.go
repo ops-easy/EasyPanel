@@ -160,6 +160,16 @@ func TestPVEConsoleCheckOriginAllowsForwardedHostPort(t *testing.T) {
 	}
 }
 
+func TestPVEConsoleCheckOriginAllowsSameHostnameWhenProxyDropsPort(t *testing.T) {
+	r := httptest.NewRequest(http.MethodGet, "http://easypanel:8080/api/pve/targets/id/guests/102/console/ws", nil)
+	r.Host = "192.168.2.110"
+	r.Header.Set("Origin", "http://192.168.2.110:32080")
+
+	if !pveConsoleCheckOrigin(r) {
+		t.Fatalf("pveConsoleCheckOrigin rejected same hostname when proxy dropped browser port")
+	}
+}
+
 func TestPVEConsoleSubprotocolsDefaultToBinary(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/ws", nil)
 	got := pveConsoleSubprotocols(req)

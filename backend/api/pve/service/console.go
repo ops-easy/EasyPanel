@@ -3,6 +3,7 @@ package service
 import (
 	"crypto/tls"
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -21,11 +22,48 @@ func pveConsoleCheckOrigin(r *http.Request) bool {
 		return false
 	}
 	for _, host := range pveConsoleAllowedOriginHosts(r) {
-		if strings.EqualFold(u.Host, host) {
+		if pveConsoleOriginHostMatches(u.Host, host) {
 			return true
 		}
 	}
 	return false
+}
+
+func pveConsoleOriginHostMatches(originHost, requestHost string) bool {
+	originHost = strings.TrimSpace(originHost)
+	requestHost = strings.TrimSpace(requestHost)
+	if originHost == "" || requestHost == "" {
+		return false
+	}
+	if strings.EqualFold(originHost, requestHost) {
+		return true
+	}
+	originName, err := pveConsoleHostname(originHost)
+	if err != nil {
+		return false
+	}
+	requestName, err := pveConsoleHostname(requestHost)
+	if err != nil {
+		return false
+	}
+	return strings.EqualFold(originName, requestName)
+}
+
+func pveConsoleHostname(host string) (string, error) {
+	if strings.HasPrefix(host, "[") {
+		h, _, err := net.SplitHostPort(host)
+		if err != nil {
+			return "", err
+		}
+		return strings.Trim(h, "[]"), nil
+	}
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		return h, nil
+	}
+	if strings.Count(host, ":") > 0 {
+		return "", url.InvalidHostError(host)
+	}
+	return host, nil
 }
 
 func pveConsoleAllowedOriginHosts(r *http.Request) []string {
