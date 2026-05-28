@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "backend-routes",
-  "routeCount": 540,
+  "routeCount": 541,
   "routes": [
     {
       "method": "GET",
@@ -517,19 +517,19 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:id",
       "sourceFile": "backend/api/appcenter/service/mysql_handlers.go",
-      "sourceLine": 41
+      "sourceLine": 42
     },
     {
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:id",
       "sourceFile": "backend/api/appcenter/service/mysql_handlers.go",
-      "sourceLine": 39
+      "sourceLine": 40
     },
     {
       "method": "PUT",
       "pathPattern": "/api/app-center/mysql/instances/:id",
       "sourceFile": "backend/api/appcenter/service/mysql_handlers.go",
-      "sourceLine": 40
+      "sourceLine": 41
     },
     {
       "method": "GET",
@@ -559,11 +559,17 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:id/k8s-network",
       "sourceFile": "backend/api/appcenter/service/mysql_handlers.go",
-      "sourceLine": 38
+      "sourceLine": 39
     },
     {
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:id/k8s-status",
+      "sourceFile": "backend/api/appcenter/service/mysql_handlers.go",
+      "sourceLine": 38
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/app-center/mysql/instances/:id/mysql-cli/ws",
       "sourceFile": "backend/api/appcenter/service/mysql_handlers.go",
       "sourceLine": 37
     },
@@ -631,7 +637,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/k8s-deploy",
       "sourceFile": "backend/api/appcenter/service/mysql_handlers.go",
-      "sourceLine": 42
+      "sourceLine": 43
     },
     {
       "method": "GET",
@@ -643,31 +649,31 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/templates",
       "sourceFile": "backend/api/appcenter/service/mysql_handlers.go",
-      "sourceLine": 43
+      "sourceLine": 44
     },
     {
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/templates",
       "sourceFile": "backend/api/appcenter/service/mysql_handlers.go",
-      "sourceLine": 44
+      "sourceLine": 45
     },
     {
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/templates/:id",
       "sourceFile": "backend/api/appcenter/service/mysql_handlers.go",
-      "sourceLine": 47
+      "sourceLine": 48
     },
     {
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/templates/:id",
       "sourceFile": "backend/api/appcenter/service/mysql_handlers.go",
-      "sourceLine": 45
+      "sourceLine": 46
     },
     {
       "method": "PUT",
       "pathPattern": "/api/app-center/mysql/templates/:id",
       "sourceFile": "backend/api/appcenter/service/mysql_handlers.go",
-      "sourceLine": 46
+      "sourceLine": 47
     },
     {
       "method": "GET",

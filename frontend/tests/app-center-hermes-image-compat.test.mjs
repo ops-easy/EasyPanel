@@ -19,7 +19,7 @@ test("Hermes frontend normalizes the legacy GHCR image before prefilling forms",
   assert.match(helper, /nousresearch\/hermes-agent:latest/);
   assert.match(overview, /normalizeHermesImage\(boot\?\.defaultImage/);
   assert.match(overview, /normalizeHermesImage\(row\.image\)/);
-  assert.match(detail, /normalizeHermesImage\(inst\?\.image\)/);
+  assert.match(detail, /normalizeHermesImage\(inst(?:\?\.)?\.image\)/);
   assert.match(upgrade, /setImage\(normalizeHermesImage\(instance\?\.image \|\| ""\)\)/);
   assert.match(upgrade, /image:\s*normalizeHermesImage\(image\)/);
 });

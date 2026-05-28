@@ -359,7 +359,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/bootstrap",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 103,
+      "sourceLine": 104,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -367,7 +367,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/hermes/bootstrap",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 190,
+      "sourceLine": 195,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -375,7 +375,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 108,
+      "sourceLine": 109,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -415,7 +415,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/hermes/instances/:param",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 229,
+      "sourceLine": 235,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -423,7 +423,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/hermes/instances/:param",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 153,
+      "sourceLine": 160,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -431,7 +431,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/:param",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 79,
+      "sourceLine": 80,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -447,7 +447,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/:param/file",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 92,
+      "sourceLine": 93,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -455,7 +455,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/hermes/instances/:param/file",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 248,
+      "sourceLine": 254,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -463,7 +463,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/hermes/instances/:param/file",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 132,
+      "sourceLine": 139,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -479,7 +479,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/:param/migrate-openclaw",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 147,
+      "sourceLine": 154,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -487,7 +487,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/:param/migrate-openclaw-dry-run",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 141,
+      "sourceLine": 148,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -495,7 +495,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/:param/restart",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 239,
+      "sourceLine": 245,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -503,7 +503,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/:param/restart",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 123,
+      "sourceLine": 130,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -511,7 +511,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 229,
+      "sourceLine": 235,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -519,7 +519,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 153,
+      "sourceLine": 160,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -527,7 +527,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 79,
+      "sourceLine": 80,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -535,7 +535,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 92,
+      "sourceLine": 93,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -543,7 +543,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 239,
+      "sourceLine": 245,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -551,7 +551,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 123,
+      "sourceLine": 130,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -559,7 +559,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 141,
+      "sourceLine": 148,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -567,7 +567,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 147,
+      "sourceLine": 154,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -575,7 +575,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 248,
+      "sourceLine": 254,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -583,7 +583,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(id",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 132,
+      "sourceLine": 139,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -599,7 +599,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(instance",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/HermesUpgradeDialog.tsx",
-      "sourceLine": 22,
+      "sourceLine": 23,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -607,7 +607,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/instances/${encodeURIComponent(instance",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/HermesUpgradeDialog.tsx",
-      "sourceLine": 34,
+      "sourceLine": 35,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -639,7 +639,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/k8s-status",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 113,
+      "sourceLine": 114,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -647,7 +647,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances/k8s-status",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermesDetail.tsx",
-      "sourceLine": 85,
+      "sourceLine": 86,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -655,7 +655,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/hermes/k8s-deploy",
       "sourceFile": "frontend/src/features/app-center/hermes/pages/AppCenterHermes.tsx",
-      "sourceLine": 209,
+      "sourceLine": 214,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1119,7 +1119,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 258,
+      "sourceLine": 261,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1151,7 +1151,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 321,
+      "sourceLine": 328,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1159,7 +1159,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:param",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 337,
+      "sourceLine": 344,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1167,7 +1167,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/backups",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 445,
+      "sourceLine": 452,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1175,7 +1175,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/backups",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 464,
+      "sourceLine": 471,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1183,7 +1183,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:param/backups/:param",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 488,
+      "sourceLine": 495,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1191,15 +1191,23 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/backups/:param/restore",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 477,
+      "sourceLine": 484,
       "needsManualReview": true,
       "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/mysql/instances/:param/mysql-cli/ws",
+      "sourceFile": "frontend/src/features/app-center/mysql/components/MySQLSqlConsoleSheet.tsx",
+      "sourceLine": 86,
+      "needsManualReview": true,
+      "kind": "literal"
     },
     {
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/ping",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 349,
+      "sourceLine": 356,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1207,15 +1215,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/processlist",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 436,
-      "needsManualReview": true,
-      "kind": "http"
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/app-center/mysql/instances/:param/query",
-      "sourceFile": "frontend/src/features/app-center/mysql/components/MySQLSqlConsoleSheet.tsx",
-      "sourceLine": 131,
+      "sourceLine": 443,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1223,7 +1223,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/query",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 404,
+      "sourceLine": 411,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1231,15 +1231,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/runtime",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 417,
-      "needsManualReview": true,
-      "kind": "http"
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/app-center/mysql/instances/:param/schemas",
-      "sourceFile": "frontend/src/features/app-center/mysql/components/MySQLSqlConsoleSheet.tsx",
-      "sourceLine": 124,
+      "sourceLine": 424,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1247,7 +1239,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/schemas",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 426,
+      "sourceLine": 433,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1255,7 +1247,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances/:param/users",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 454,
+      "sourceLine": 461,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1263,7 +1255,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/instances/:param/users",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 499,
+      "sourceLine": 506,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1271,7 +1263,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:param/users/:param",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 528,
+      "sourceLine": 535,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1279,7 +1271,7 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/mysql/instances/:param/users/:param/password",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 515,
+      "sourceLine": 522,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1287,7 +1279,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/mysql/instances/:param/users/${encodeURIComponent(u.username",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 528,
+      "sourceLine": 535,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -1295,15 +1287,23 @@
       "method": "PUT",
       "pathPattern": "/api/app-center/mysql/instances/:param/users/${encodeURIComponent(userForm.passwordUser",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 515,
+      "sourceLine": 522,
       "needsManualReview": true,
       "kind": "http"
+    },
+    {
+      "method": "UNKNOWN",
+      "pathPattern": "/api/app-center/mysql/instances/${encodeURIComponent(String(instanceId",
+      "sourceFile": "frontend/src/features/app-center/mysql/components/MySQLSqlConsoleSheet.tsx",
+      "sourceLine": 86,
+      "needsManualReview": true,
+      "kind": "literal"
     },
     {
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/k8s-deploy",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 359,
+      "sourceLine": 366,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1311,7 +1311,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/status",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 252,
+      "sourceLine": 255,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1319,7 +1319,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/templates",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 266,
+      "sourceLine": 269,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1327,7 +1327,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/mysql/templates",
       "sourceFile": "frontend/src/features/app-center/mysql/pages/AppCenterMySQL.tsx",
-      "sourceLine": 377,
+      "sourceLine": 384,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2767,7 +2767,7 @@
       "method": "GET",
       "pathPattern": "/api/config",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx",
-      "sourceLine": 145,
+      "sourceLine": 167,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3607,7 +3607,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/addons/dashboard-monitoring/install",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx",
-      "sourceLine": 217,
+      "sourceLine": 239,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3615,7 +3615,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/addons/dashboard-monitoring/verify",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx",
-      "sourceLine": 246,
+      "sourceLine": 268,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3695,7 +3695,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/addons/status",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sDashboardMonitoringSection.tsx",
-      "sourceLine": 173,
+      "sourceLine": 195,
       "needsManualReview": false,
       "kind": "http"
     },

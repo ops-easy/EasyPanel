@@ -100,11 +100,12 @@ const AppCenterHermesDetail: React.FC = () => {
   }, [fileQ.data?.content]);
 
   const inst = instQ.data?.instance;
-  const normalizedImage = normalizeHermesImage(inst?.image);
-  const normalizedPreviousImage = normalizeHermesImage(inst?.previousImage);
-  const displayInst = inst
-    ? { ...inst, image: normalizedImage, previousImage: normalizedPreviousImage || undefined }
-    : undefined;
+  const displayInst = useMemo(() => {
+    if (!inst) return undefined;
+    const normalizedImage = normalizeHermesImage(inst.image);
+    const normalizedPreviousImage = normalizeHermesImage(inst.previousImage);
+    return { ...inst, image: normalizedImage, previousImage: normalizedPreviousImage || undefined };
+  }, [inst]);
   const st = statusQ.data?.statuses?.[id];
   const runtimeReady = displayInst?.ready === true;
   const rows = useMemo(
