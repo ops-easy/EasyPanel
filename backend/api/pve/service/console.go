@@ -17,7 +17,28 @@ func pveConsoleCheckOrigin(r *http.Request) bool {
 		return true
 	}
 	u, err := url.Parse(origin)
-	return err == nil && strings.EqualFold(u.Host, r.Host)
+	if err != nil {
+		return false
+	}
+	for _, host := range pveConsoleAllowedOriginHosts(r) {
+		if strings.EqualFold(u.Host, host) {
+			return true
+		}
+	}
+	return false
+}
+
+func pveConsoleAllowedOriginHosts(r *http.Request) []string {
+	hosts := []string{r.Host}
+	for _, header := range []string{"X-Forwarded-Host", "X-Original-Host"} {
+		for _, host := range strings.Split(r.Header.Get(header), ",") {
+			host = strings.TrimSpace(host)
+			if host != "" {
+				hosts = append(hosts, host)
+			}
+		}
+	}
+	return hosts
 }
 
 func pveConsoleSubprotocols(r *http.Request) []string {
