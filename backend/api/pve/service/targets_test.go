@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	pvemodel "github.com/ops-easy/EasyPanel/backend/api/pve/model"
@@ -11,6 +12,7 @@ import (
 	transportauthz "github.com/ops-easy/EasyPanel/backend/common/transport/authz"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 )
 
 func TestPVENormalizeBaseURL(t *testing.T) {
@@ -144,6 +146,50 @@ func TestPVEConsoleTicketFormOmitsViewportDimensions(t *testing.T) {
 	}
 	if _, ok := form["height"]; ok {
 		t.Fatalf("console ticket form should not include height: %#v", form)
+	}
+}
+
+func TestPVEConsoleSubprotocolsDefaultToBinary(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/ws", nil)
+	got := pveConsoleSubprotocols(req)
+	if len(got) != 1 || got[0] != "binary" {
+		t.Fatalf("pveConsoleSubprotocols()=%#v, want [binary]", got)
+	}
+}
+
+func TestPVEConsoleUpgraderEchoesNoVNCSubprotocol(t *testing.T) {
+	serverProto := make(chan string, 1)
+	serverErr := make(chan error, 1)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		upgrader := pveConsoleUpgraderFor(r)
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			serverErr <- err
+			return
+		}
+		defer conn.Close()
+		serverProto <- conn.Subprotocol()
+	}))
+	defer srv.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+	dialer := websocket.Dialer{Subprotocols: []string{"binary", "base64"}}
+	conn, _, err := dialer.Dial(wsURL, nil)
+	if err != nil {
+		t.Fatalf("dial console websocket: %v", err)
+	}
+	defer conn.Close()
+
+	if got := conn.Subprotocol(); got != "binary" {
+		t.Fatalf("client subprotocol=%q, want binary", got)
+	}
+	select {
+	case err := <-serverErr:
+		t.Fatalf("server upgrade failed: %v", err)
+	case got := <-serverProto:
+		if got != "binary" {
+			t.Fatalf("server subprotocol=%q, want binary", got)
+		}
 	}
 }
 

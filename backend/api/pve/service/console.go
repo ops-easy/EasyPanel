@@ -11,15 +11,45 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var pveConsoleUpgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		origin := strings.TrimSpace(r.Header.Get("Origin"))
-		if origin == "" {
-			return true
+func pveConsoleCheckOrigin(r *http.Request) bool {
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	if origin == "" {
+		return true
+	}
+	u, err := url.Parse(origin)
+	return err == nil && strings.EqualFold(u.Host, r.Host)
+}
+
+func pveConsoleSubprotocols(r *http.Request) []string {
+	protocols := websocket.Subprotocols(r)
+	if len(protocols) == 0 {
+		return []string{"binary"}
+	}
+	out := make([]string, 0, len(protocols))
+	seen := map[string]struct{}{}
+	for _, proto := range protocols {
+		proto = strings.TrimSpace(proto)
+		if proto == "" {
+			continue
 		}
-		u, err := url.Parse(origin)
-		return err == nil && strings.EqualFold(u.Host, r.Host)
-	},
+		key := strings.ToLower(proto)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, proto)
+	}
+	if len(out) == 0 {
+		return []string{"binary"}
+	}
+	return out
+}
+
+func pveConsoleUpgraderFor(r *http.Request) websocket.Upgrader {
+	return websocket.Upgrader{
+		CheckOrigin:  pveConsoleCheckOrigin,
+		Subprotocols: pveConsoleSubprotocols(r),
+	}
 }
 
 type pveGuestConsoleTicketBody struct {
@@ -92,7 +122,8 @@ func handlePVEGuestConsoleWebSocket(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
-	dialer := websocket.Dialer{}
+	subprotocols := pveConsoleSubprotocols(c.Request)
+	dialer := websocket.Dialer{Subprotocols: subprotocols}
 	if client.SkipTLSVerify() {
 		dialer.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint:gosec // User explicitly configured PVE skip TLS verification.
 	}
@@ -103,7 +134,8 @@ func handlePVEGuestConsoleWebSocket(c *gin.Context, app *ServerApp) {
 	}
 	defer remoteConn.Close()
 
-	localConn, err := pveConsoleUpgrader.Upgrade(c.Writer, c.Request, nil)
+	upgrader := pveConsoleUpgraderFor(c.Request)
+	localConn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		return
 	}
