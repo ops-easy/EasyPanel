@@ -335,17 +335,10 @@ function RedisManagedStatusCell({ instanceId }: { instanceId: number }) {
 }
 
 function RedisCliExecButton({ instance, isViewer }: { instance: RedisInstance; isViewer: boolean }) {
-  const [open, setOpen] = useState(false);
-  if (!isPlatformK8sRedis(instance)) {
-    return (
-      <span className="text-xs text-slate-400" title="仅平台部署实例可在控制台打开 redis-cli">
-        —
-      </span>
-    );
-  }
-  if (isViewer) {
-    return <span className="text-xs text-slate-400">只读</span>;
-  }
+	const [open, setOpen] = useState(false);
+	if (isViewer) {
+		return <span className="text-xs text-slate-400">只读</span>;
+	}
   return (
     <>
       <Button

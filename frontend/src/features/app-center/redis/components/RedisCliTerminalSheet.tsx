@@ -42,7 +42,7 @@ export type RedisCliTerminalSheetProps = {
   instanceId: number;
 };
 
-/** 应用中心 Redis：服务端在 Pod 内执行 redis-cli，通过 REDISCLI_AUTH 注入密码，浏览器不展示明文 */
+/** 应用中心 Redis：K8s 实例走 Pod 内 redis-cli，普通实例由平台服务端直连，浏览器不展示明文密码 */
 const RedisCliTerminalSheet: React.FC<RedisCliTerminalSheetProps> = ({ open, onOpenChange, instanceId }) => {
   const xtermOpts = useEasyPanelXtermOptions();
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -105,7 +105,7 @@ const RedisCliTerminalSheet: React.FC<RedisCliTerminalSheetProps> = ({ open, onO
         ws.onerror = () => {
           if (cancelled) return;
           setErrMsg(
-            "WebSocket 握手失败（请确认已登录，账号具备应用中心与 Pod exec 权限，反向代理允许 Upgrade）"
+            "WebSocket 握手失败（请确认已登录，账号具备应用中心访问权限，反向代理允许 Upgrade）"
           );
           setStatus("error");
         };
@@ -177,7 +177,7 @@ const RedisCliTerminalSheet: React.FC<RedisCliTerminalSheetProps> = ({ open, onO
         <DialogHeader className="shrink-0 space-y-1 border-b border-gray-200 bg-white px-4 py-3 text-left">
           <DialogTitle className="text-base font-semibold text-gray-900">redis-cli</DialogTitle>
           <DialogDescription className="text-xs text-gray-600">
-            实例 #{instanceId} · 在 Redis Pod 内交互；认证由服务端注入环境变量，界面不显示密码
+            实例 #{instanceId} · K8s 实例在 Pod 内交互，普通实例由平台服务端直连；界面不显示密码
             {statusLabel ? ` · ${statusLabel}` : ""}
           </DialogDescription>
         </DialogHeader>

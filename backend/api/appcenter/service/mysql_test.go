@@ -128,6 +128,32 @@ func TestBuildAppMySQLCliInnerShellUsesEnvPassword(t *testing.T) {
 	}
 }
 
+func TestAppMySQLCLIModeAllowsExternalInstances(t *testing.T) {
+	st := &appMySQLStoredConfig{
+		Mode:     AppMySQLExternal,
+		Host:     "mysql.example.internal",
+		Port:     3306,
+		Username: "root",
+	}
+	if got := appMySQLResolveCLIMode(st); got != appMySQLCLIModeDirect {
+		t.Fatalf("appMySQLResolveCLIMode()=%q, want %q", got, appMySQLCLIModeDirect)
+	}
+}
+
+func TestFormatMySQLCLITableIncludesRows(t *testing.T) {
+	got := formatMySQLCLITable([]string{"id", "name"}, [][]string{{"1", "orders"}})
+	for _, want := range []string{
+		"+----+--------+",
+		"| id | name   |",
+		"| 1  | orders |",
+		"1 row in set",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("formatted table missing %q:\n%s", want, got)
+		}
+	}
+}
+
 func TestAppMySQLBackupCommandsProtectSystemSchemas(t *testing.T) {
 	for _, schema := range []string{"mysql", "information_schema", "sys", "bad;name"} {
 		if _, err := appMySQLBuildBackupCommand(schema, "backup.sql"); err == nil {

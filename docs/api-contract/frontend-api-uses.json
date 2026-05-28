@@ -2023,7 +2023,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 445,
+      "sourceLine": 438,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2063,7 +2063,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/redis/instances",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 2653,
+      "sourceLine": 2646,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2071,7 +2071,7 @@
       "method": "DELETE",
       "pathPattern": "/api/app-center/redis/instances/:param",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1068,
+      "sourceLine": 1061,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2079,7 +2079,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/bigkeys",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1052,
+      "sourceLine": 1045,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2087,7 +2087,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/clients",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1038,
+      "sourceLine": 1031,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2103,7 +2103,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/k8s-status",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1637,
+      "sourceLine": 1630,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2111,7 +2111,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/keys",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 960,
+      "sourceLine": 953,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2119,7 +2119,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/keys",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 975,
+      "sourceLine": 968,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2127,7 +2127,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/keys",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1021,
+      "sourceLine": 1014,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2135,7 +2135,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances/:param/keys",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1468,
+      "sourceLine": 1461,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2143,7 +2143,7 @@
       "method": "POST",
       "pathPattern": "/api/app-center/redis/instances/:param/keys/delete",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1059,
+      "sourceLine": 1052,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2175,7 +2175,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/app-center/redis/k8s-deploy",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1863,
+      "sourceLine": 1856,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -2183,7 +2183,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/runtime",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 874,
+      "sourceLine": 867,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -2191,7 +2191,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/app-center/redis/runtime/ws",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 899,
+      "sourceLine": 892,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -2207,7 +2207,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/status",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 438,
+      "sourceLine": 431,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2223,7 +2223,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/templates",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1775,
+      "sourceLine": 1768,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4591,7 +4591,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/storage-classes",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1825,
+      "sourceLine": 1818,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4679,7 +4679,7 @@
       "method": "GET",
       "pathPattern": "/api/namespaces",
       "sourceFile": "frontend/src/features/app-center/redis/pages/AppCenterRedis.tsx",
-      "sourceLine": 1831,
+      "sourceLine": 1824,
       "needsManualReview": false,
       "kind": "http"
     },

@@ -43,7 +43,7 @@ export type MySQLSqlConsoleSheetProps = {
   instanceName?: string;
 };
 
-/** 应用中心 MySQL：服务端在 Pod 内执行 mysql CLI，通过 MYSQL_PWD 注入密码，浏览器不展示明文 */
+/** 应用中心 MySQL：K8s 实例走 Pod 内 mysql CLI，普通实例由平台服务端直连，浏览器不展示明文密码 */
 const MySQLSqlConsoleSheet: React.FC<MySQLSqlConsoleSheetProps> = ({
   open,
   onOpenChange,
@@ -112,7 +112,7 @@ const MySQLSqlConsoleSheet: React.FC<MySQLSqlConsoleSheetProps> = ({
 
         ws.onerror = () => {
           if (cancelled) return;
-          setErrMsg("WebSocket 握手失败（请确认已登录，账号具备应用中心与 Pod exec 权限，反向代理允许 Upgrade）");
+          setErrMsg("WebSocket 握手失败（请确认已登录，账号具备应用中心访问权限，反向代理允许 Upgrade）");
           setStatus("error");
         };
 
@@ -183,7 +183,7 @@ const MySQLSqlConsoleSheet: React.FC<MySQLSqlConsoleSheetProps> = ({
         <DialogHeader className="shrink-0 space-y-1 border-b border-gray-200 bg-white px-4 py-3 text-left">
           <DialogTitle className="text-base font-semibold text-gray-900">mysql</DialogTitle>
           <DialogDescription className="text-xs text-gray-600">
-            {instanceName || `MySQL #${instanceId}`} · 实例 #{instanceId} · 在 MySQL Pod 内交互；认证由服务端注入环境变量，界面不显示密码
+            {instanceName || `MySQL #${instanceId}`} · 实例 #{instanceId} · K8s 实例在 Pod 内交互，普通实例由平台服务端直连；界面不显示密码
             {statusLabel ? ` · ${statusLabel}` : ""}
           </DialogDescription>
         </DialogHeader>

@@ -1024,20 +1024,18 @@ export default function AppCenterMySQL() {
                           <div className="text-sm text-slate-700">
                             <p className="font-medium text-slate-900">交互式终端</p>
                             <p className="mt-1 text-xs text-slate-500">
-                              平台部署实例可进入 Pod 内 mysql CLI，密码由服务端环境变量注入。
+                              K8s 实例进入 Pod 内 mysql CLI，普通实例由平台服务端直连；界面不显示密码。
                             </p>
                           </div>
                           <Button
                             type="button"
                             className="gap-2 bg-sky-600 hover:bg-sky-700"
                             data-terminal-route="/mysql-cli/ws"
-                            disabled={!selected || !isPlatformMySQL(selected) || !canPodExec}
+                            disabled={!selected || (isPlatformMySQL(selected) && !canPodExec)}
                             title={
                               !selected
                                 ? ""
-                                : !isPlatformMySQL(selected)
-                                  ? "仅平台部署实例可打开 mysql-cli"
-                                  : !canPodExec
+                                : isPlatformMySQL(selected) && !canPodExec
                                     ? "当前账号没有 Pod exec 权限"
                                     : "打开 mysql-cli"
                             }
