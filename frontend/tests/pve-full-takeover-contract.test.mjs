@@ -34,6 +34,9 @@ test("PVE console embeds a noVNC client instead of only exposing proxy URLs", ()
   assert.match(pkg, /"@novnc\/novnc"/);
   assert.match(guest, /import\("@novnc\/novnc"\)/);
   assert.match(guest, /new RFB\(/);
+  assert.match(guest, /qualityLevel/);
+  assert.match(guest, /compressionLevel/);
+  assert.match(guest, /pveConsoleQualityProfiles/);
   assert.match(guest, /disconnect\(\)/);
   assert.match(guest, /console\/ticket`[\s\S]*\{ node, type: guestType \}/);
   assert.doesNotMatch(guest, /console\/ticket`[\s\S]*width:/);

@@ -3,6 +3,7 @@ package service
 import (
 	"crypto/tls"
 	"encoding/json"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -209,11 +210,17 @@ func handlePVEGuestConsoleWebSocket(c *gin.Context, app *ServerApp) {
 func pveProxyWebSocket(dst, src *websocket.Conn, done chan<- struct{}) {
 	defer func() { done <- struct{}{} }()
 	for {
-		messageType, message, err := src.ReadMessage()
+		messageType, reader, err := src.NextReader()
 		if err != nil {
 			return
 		}
-		if err := dst.WriteMessage(messageType, message); err != nil {
+		writer, err := dst.NextWriter(messageType)
+		if err != nil {
+			return
+		}
+		_, copyErr := io.Copy(writer, reader)
+		closeErr := writer.Close()
+		if copyErr != nil || closeErr != nil {
 			return
 		}
 	}

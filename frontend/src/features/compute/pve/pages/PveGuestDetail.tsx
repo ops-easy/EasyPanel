@@ -7,6 +7,7 @@ import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Switch } from "@/shared/ui/switch";
 import { Textarea } from "@/shared/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -31,6 +32,13 @@ type PveSnapshotsEnvelope = { snapshots?: unknown };
 type PveTaskEnvelope = { task?: unknown };
 type PveConsoleEnvelope = { console?: Record<string, unknown> };
 type NoVNCRFB = InstanceType<typeof import("@novnc/novnc").default>;
+type PveConsoleQuality = "smooth" | "balanced" | "sharp";
+
+const pveConsoleQualityProfiles: Record<PveConsoleQuality, { label: string; qualityLevel: number; compressionLevel: number; resizeSession: boolean }> = {
+  smooth: { label: "流畅", qualityLevel: 3, compressionLevel: 2, resizeSession: true },
+  balanced: { label: "均衡", qualityLevel: 5, compressionLevel: 2, resizeSession: true },
+  sharp: { label: "清晰", qualityLevel: 7, compressionLevel: 1, resizeSession: false },
+};
 
 function asRows(raw: unknown): Record<string, unknown>[] {
   if (Array.isArray(raw)) return raw as Record<string, unknown>[];
@@ -378,9 +386,11 @@ function PveConsolePanel({
   const [viewerStatus, setViewerStatus] = useState("未连接");
   const [viewerError, setViewerError] = useState("");
   const [viewOnly, setViewOnly] = useState(false);
+  const [quality, setQuality] = useState<PveConsoleQuality>("smooth");
   const screenRef = useRef<HTMLDivElement | null>(null);
   const rfbRef = useRef<NoVNCRFB | null>(null);
   const viewOnlyRef = useRef(viewOnly);
+  const qualityRef = useRef(quality);
 
   const ticketMut = useMutation({
     mutationFn: () =>
@@ -417,9 +427,12 @@ function PveConsolePanel({
           shared: true,
           credentials: ticket ? { password: ticket } : undefined,
         });
+        const profile = pveConsoleQualityProfiles[qualityRef.current];
         rfbRef.current = rfb;
+        rfb.qualityLevel = profile.qualityLevel;
+        rfb.compressionLevel = profile.compressionLevel;
         rfb.scaleViewport = true;
-        rfb.resizeSession = false;
+        rfb.resizeSession = profile.resizeSession;
         rfb.clipViewport = false;
         rfb.dragViewport = false;
         rfb.focusOnClick = true;
@@ -459,6 +472,16 @@ function PveConsolePanel({
     viewOnlyRef.current = viewOnly;
     if (rfbRef.current) rfbRef.current.viewOnly = viewOnly;
   }, [viewOnly]);
+
+  useEffect(() => {
+    qualityRef.current = quality;
+    const rfb = rfbRef.current;
+    if (!rfb) return;
+    const profile = pveConsoleQualityProfiles[quality];
+    rfb.qualityLevel = profile.qualityLevel;
+    rfb.compressionLevel = profile.compressionLevel;
+    rfb.resizeSession = profile.resizeSession;
+  }, [quality]);
 
   const disconnectViewer = () => {
     if (!rfbRef.current) return;
@@ -502,6 +525,18 @@ function PveConsolePanel({
           <Switch checked={viewOnly} onCheckedChange={setViewOnly} />
           <span>只读</span>
         </label>
+        <Select value={quality} onValueChange={(v) => setQuality(v as PveConsoleQuality)}>
+          <SelectTrigger className="h-9 w-[112px] bg-white text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(pveConsoleQualityProfiles).map(([key, profile]) => (
+              <SelectItem key={key} value={key}>
+                {profile.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {proxyWsUrl ? <Button type="button" variant="ghost" size="sm" onClick={() => copy(proxyWsUrl)}>复制代理地址</Button> : null}
       </div>
       {viewerError ? <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{viewerError}</div> : null}
