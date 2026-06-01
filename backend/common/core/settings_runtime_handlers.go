@@ -60,13 +60,20 @@ func handleGetRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 	}
 }
 
-func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
+func handlePutRuntimeSettings(app *ServerApp, hooks RuntimeSettingsHooks) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var body RuntimeSettings
-		if err := c.ShouldBindJSON(&body); err != nil {
+		var req struct {
+			RuntimeSettings
+			Confirm bool `json:"confirm"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "JSON 无效: " + err.Error()})
 			return
 		}
+		if !requireOpsMutationConfirm(c, req.Confirm, "runtime settings update") {
+			return
+		}
+		body := req.RuntimeSettings
 		body.IdracHost = strings.TrimSpace(body.IdracHost)
 		body.IdracUser = strings.TrimSpace(body.IdracUser)
 		body.BaotaUpstreamHost = strings.TrimSpace(body.BaotaUpstreamHost)
@@ -283,12 +290,22 @@ func handlePutRuntimeSettings(app *ServerApp) gin.HandlerFunc {
 		}
 		InvalidateRuntimeStatusCache(context.Background(), app)
 		InvalidateVCenterPrometheusCache(context.Background(), app)
-		HarborCacheBustGen(context.Background(), app)
-		go func(a *ServerApp) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(harborIndexCrawlTimeoutSec())*time.Second)
-			defer cancel()
-			HarborIndexRefreshOnce(ctx, a)
-		}(app)
+		if hooks.InvalidateHarborCache != nil {
+			hooks.InvalidateHarborCache(context.Background(), app)
+		}
+		if hooks.RefreshHarborIndex != nil {
+			timeout := 90 * time.Second
+			if hooks.HarborIndexTimeout != nil {
+				if configuredTimeout := hooks.HarborIndexTimeout(); configuredTimeout > 0 {
+					timeout = configuredTimeout
+				}
+			}
+			go func(a *ServerApp, refresh func(context.Context, *ServerApp), refreshTimeout time.Duration) {
+				ctx, cancel := context.WithTimeout(context.Background(), refreshTimeout)
+				defer cancel()
+				refresh(ctx, a)
+			}(app, hooks.RefreshHarborIndex, timeout)
+		}
 		SetAuditDetail(c, runtimeSettingsAuditSummary(cur, &body))
 		InvalidateUserConfigAPICache(context.Background(), app, dashboardUsernameFromGin(c))
 		c.JSON(http.StatusOK, gin.H{"ok": true, "message": "已保存 MySQL 动态配置并重载"})

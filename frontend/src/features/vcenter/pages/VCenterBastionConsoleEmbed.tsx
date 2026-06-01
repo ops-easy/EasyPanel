@@ -199,7 +199,9 @@ const VCenterBastionConsoleEmbed: React.FC = () => {
       }
       if (cancelled) return;
       if (!loaded) {
-        setMsg("无法加载 WMKS 脚本，请配置 VCENTER_WMKS_SCRIPT_URL。");
+        setMsg(
+          "无法加载 WMKS 脚本，请在运行时配置 VCENTER_WMKS_SCRIPT_URL / vcenterWmksScriptUrl，或上传与 vCenter 版本匹配的 wmks.min.js；配置完成后刷新此控制台即可连接。"
+        );
         return;
       }
 

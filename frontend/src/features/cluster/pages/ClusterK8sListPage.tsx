@@ -61,6 +61,8 @@ import {
   workloadApplyPipelineProgress,
   type WorkloadApplyPipelineStep,
 } from "./workloadApplyPipeline";
+import { withK8sMutationConfirm, withK8sMutationConfirmQuery } from "@/features/cluster/lib/k8sMutationConfirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 export type K8sColumn = {
   key: string;
@@ -193,7 +195,10 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
           }
         }
         setApplyPipelineStep("apply");
-        return apiPostJson<{ message?: string }>("/api/k8s/apply-yaml", { yamlContent });
+        return apiPostJson<{ message?: string }>(
+          "/api/k8s/apply-yaml",
+          withK8sMutationConfirm({ yamlContent })
+        );
       } finally {
         setApplyPipelineStep(null);
       }
@@ -215,7 +220,9 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
   const deleteMut = useMutation({
     mutationFn: ({ name }: { name: string }) =>
       apiDelete(
-        `/api/k8s/objects/${deleteKind}/${encodeURIComponent(namespaceFixed!)}/${encodeURIComponent(name)}`
+        withK8sMutationConfirmQuery(
+          `/api/k8s/objects/${deleteKind}/${encodeURIComponent(namespaceFixed!)}/${encodeURIComponent(name)}`
+        )
       ),
     onSuccess: () => {
       setDelTarget(null);
@@ -228,7 +235,7 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
     mutationFn: ({ name, size }: { name: string; size: string }) =>
       apiPostJson(
         `/api/k8s/pvcs/${encodeURIComponent(namespaceFixed!)}/${encodeURIComponent(name)}/expand`,
-        { size }
+        withK8sMutationConfirm({ size })
       ),
     onSuccess: () => {
       setExpandTarget(null);
@@ -678,10 +685,13 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
             <Button type="button" variant="secondary" onClick={() => setYamlOpen(false)}>
               取消
             </Button>
-            <Button
+            <ConfirmActionButton
               type="button"
               disabled={applyMut.isPending}
-              onClick={() => void applyMut.mutateAsync(yamlDraft)}
+              title="确认应用 Kubernetes YAML？"
+              description={`将把 ${yamlEditName || yamlKind || "Kubernetes YAML"} 写入命名空间 ${namespaceFixed}。`}
+              confirmLabel="应用"
+              onConfirm={() => void applyMut.mutateAsync(yamlDraft)}
             >
               {applyMut.isPending ? (
                 <span className="inline-flex items-center gap-1.5">
@@ -693,7 +703,7 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
               ) : (
                 "提交应用"
               )}
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
           {applyMut.isError && (
             <p className="text-sm text-red-600">

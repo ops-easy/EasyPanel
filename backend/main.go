@@ -44,7 +44,7 @@ func main() {
 
 	bg := app.Cfg().EnableBackgroundJobs
 	if !bg {
-		log.Println(">>> EASYPANEL_ENABLE_BACKGROUND_JOBS=false：本进程仅作 API/Web 副本，不启动宝塔同步、告警巡检、Pod 重启关联/报告清理、出站监视、vCenter Prom 缓存刷新、审计裁剪定时器（多副本时请保证至少一个 Pod 为 true）")
+		log.Println(">>> EASYPANEL_ENABLE_BACKGROUND_JOBS=false：本进程仅作 API/Web 副本，不启动宝塔同步、DNS 故障切换/定时任务、告警巡检、Pod 重启关联/报告清理、出站监视、vCenter Prom 缓存刷新、审计裁剪定时器（多副本时请保证至少一个 Pod 为 true）")
 	}
 	if bg {
 		go scheduler.StartSyncer(ctx, app)
@@ -61,6 +61,8 @@ func main() {
 	scheduler.InitSystemLoginSecurityState(app)
 	if bg {
 		scheduler.StartOpsBackground(app)
+		scheduler.StartDnsFailoverWorker(ctx, app)
+		scheduler.StartDnsScheduledWorker(ctx, app)
 		scheduler.StartK8sRestartCorrelationWorker(app)
 		scheduler.StartOpenClawGatewayHealthWatcher(app)
 		scheduler.StartHarborImageIndexWorker(app)

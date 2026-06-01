@@ -3,8 +3,9 @@ import { useAppConfig } from "@/hooks/use-app-config";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, History, Layers, Tag, Terminal } from "lucide-react";
-import { apiDeleteJson, apiGetJson, type AppConfig } from "@/lib/api";
+import { apiDeleteJson, apiGetJson } from "@/lib/api";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import {
   Table,
@@ -25,6 +26,7 @@ import {
   harborRepoRelativeToProject,
 } from "./harborPaths";
 import { HarborBuildHistorySheet } from "./HarborBuildHistoryPanel";
+import { withHarborMutationConfirmQuery } from "@/features/harbor/lib/harborMutationConfirm";
 import {
   HarborBreadcrumb,
   HarborEmpty,
@@ -148,7 +150,9 @@ const HarborArtifactsPage: React.FC = () => {
       qs.set("repository", repoPath);
       qs.set("reference", reference);
       return apiDeleteJson(
-        `/api/harbor/projects/${encodeURIComponent(project)}/artifacts?${qs.toString()}`
+        withHarborMutationConfirmQuery(
+          `/api/harbor/projects/${encodeURIComponent(project)}/artifacts?${qs.toString()}`
+        )
       );
     },
     onSuccess: () => {
@@ -242,6 +246,7 @@ const HarborArtifactsPage: React.FC = () => {
               ) : (
                 artifactRows.map((a, idx) => {
                   const ref = a.digest || a.tags?.[0]?.name || "";
+                  const deleteLabel = ref.length > 48 ? `${ref.slice(0, 48)}...` : ref;
                   const scan = a.scan_overview?.summary;
                   return (
                     <TableRow key={a.digest || a.id} className={cn(idx % 2 === 1 && "bg-slate-50/40")}>
@@ -363,19 +368,20 @@ const HarborArtifactsPage: React.FC = () => {
                       </TableCell>
                       {isAdmin ? (
                         <TableCell className="text-right">
-                          <Button
+                          <ConfirmActionButton
                             type="button"
                             variant="destructive"
                             size="sm"
                             className="h-7 text-xs shadow-sm"
                             disabled={!ref || delMut.isPending}
-                            onClick={() => {
-                              if (!ref || !window.confirm(`删除制品 ${ref.slice(0, 48)}…？`)) return;
-                              delMut.mutate(ref);
-                            }}
+                            title="删除 Harbor 制品"
+                            description={`将删除 Harbor 制品 ${deleteLabel}，此操作会影响后续镜像拉取且无法从平台撤销。`}
+                            confirmLabel="删除"
+                            confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                            onConfirm={() => delMut.mutate(ref)}
                           >
                             删除
-                          </Button>
+                          </ConfirmActionButton>
                         </TableCell>
                       ) : null}
                     </TableRow>

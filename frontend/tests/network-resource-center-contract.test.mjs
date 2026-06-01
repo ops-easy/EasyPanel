@@ -224,6 +224,30 @@ test("network config layout keeps section tabs compact across provider forms", (
   assert.match(openWrtActions, /rounded-lg[^"]*min-w-0[^"]*overflow-hidden/);
 });
 
+test("OpenWrt disruptive actions require target-name confirmation before submit", () => {
+  const panel = read("../src/features/network/openwrt/pages/OpenWrtActionPanel.tsx");
+
+  assert.match(panel, /const actionConfirmed = confirmName\.trim\(\) === \(target\?\.name \?\? ""\)\.trim\(\);/);
+  assert.match(panel, /const actionDisabled = disabled \|\| !actionConfirmed;/);
+  assert.doesNotMatch(panel, /const rebootConfirmed/);
+  for (const action of ["reload-network", "reload-wifi", "restart-dnsmasq", "reboot"]) {
+    assert.match(panel, new RegExp(`onAction\\("${action}", true\\)`));
+  }
+  assert.doesNotMatch(panel, /onAction\("reload-network"\)/);
+  assert.doesNotMatch(panel, /onAction\("reload-wifi"\)/);
+  assert.doesNotMatch(panel, /onAction\("restart-dnsmasq"\)/);
+});
+
+test("legacy OpenWrt config apply has explicit confirmation instead of hard-coded confirm", () => {
+  const dialog = read("../src/features/network/openwrt/pages/OpenWrtConfigDiffDialog.tsx");
+
+  assert.match(dialog, /const \[confirm, setConfirm\] = useState\(false\);/);
+  assert.match(dialog, /<Checkbox checked=\{confirm\}/);
+  assert.match(dialog, /confirm,/);
+  assert.match(dialog, /disabled=\{disabled \|\| apply\.isPending \|\| !preview\?\.commands\?\.length \|\| !confirm\}/);
+  assert.doesNotMatch(dialog, /confirm:\s*true/);
+});
+
 test("network configuration page does not mix in router configuration actions", () => {
   const config = read("../src/features/network/pages/NetworkConfigPage.tsx");
 
@@ -300,10 +324,12 @@ test("network resource shell centralizes filters loading errors and raw disclosu
 });
 
 test("network dashboard separates access health from router config entry", () => {
-  assert.match(dashboard, /接入源健康/);
+  assert.match(dashboard, /配置源健康/);
+  assert.match(dashboard, /配置源/);
   assert.match(dashboard, /资源入口/);
   assert.match(dashboard, /路由器配置接管/);
   assert.match(dashboard, /打开配置/);
+  assert.doesNotMatch(dashboard, /接入源健康|正在读取网络接入源|未接入|待接入/);
   assert.doesNotMatch(dashboard, /接入设置/);
   assert.doesNotMatch(dashboard, /<Input\b|<Textarea\b|JSON\.stringify/);
 });

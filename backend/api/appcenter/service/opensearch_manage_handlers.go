@@ -169,6 +169,9 @@ func handleOpenSearchIndexDelete(c *gin.Context, app *ServerApp) {
 	if !appOpenSearchRequireWrite(c) {
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenSearch delete index") {
+		return
+	}
 	id, err := openSearchInstanceID(c)
 	if err != nil || id <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的实例 id"})
@@ -202,6 +205,9 @@ func handleOpenSearchIndexDelete(c *gin.Context, app *ServerApp) {
 
 func handleOpenSearchIndexSettings(c *gin.Context, app *ServerApp) {
 	if !appOpenSearchRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenSearch update index settings") {
 		return
 	}
 	id, err := openSearchInstanceID(c)
@@ -261,6 +267,9 @@ func handleOpenSearchIndicesPrune(c *gin.Context, app *ServerApp) {
 	var in openSearchPruneInput
 	if err := c.ShouldBindJSON(&in); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !in.DryRun && !requireAppCenterMutationConfirm(c, in.Confirm, "OpenSearch prune indices") {
 		return
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Minute)

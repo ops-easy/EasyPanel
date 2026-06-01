@@ -67,6 +67,10 @@ import {
   redisAppCenterCanWrite,
   redisShowK8sDeployWizard,
 } from "@/lib/platform-permissions";
+import {
+  withAppCenterMutationConfirm,
+  withAppCenterMutationConfirmQuery,
+} from "@/features/app-center/lib/appCenterMutationConfirm";
 import RedisCliTerminalSheet from "@/features/app-center/redis/components/RedisCliTerminalSheet";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -218,7 +222,7 @@ function RedisK8sNetworkSection({ instanceId }: { instanceId: number }) {
                                 <TableHead className="h-8 text-[10px]">名称</TableHead>
                                 <TableHead className="h-8 text-[10px]">Service 端口</TableHead>
                                 <TableHead className="h-8 text-[10px]">NodePort</TableHead>
-                                <TableHead className="h-8 text-[10px]">集群外示例</TableHead>
+                                <TableHead className="h-8 text-[10px]">集群外地址</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -1049,7 +1053,10 @@ function RedisInstanceDetail({
   });
 
   const delMut = async (keys: string[]) => {
-    await apiPostJson(`/api/app-center/redis/instances/${instance.id}/keys/delete`, { keys });
+    await apiPostJson(
+      `/api/app-center/redis/instances/${instance.id}/keys/delete`,
+      withAppCenterMutationConfirm({ keys })
+    );
     toast.success(`已删除 ${keys.length} 个键`);
     onRefresh();
   };
@@ -1058,7 +1065,7 @@ function RedisInstanceDetail({
   const releaseMut = useMutation({
     mutationFn: () =>
       apiDeleteJson<{ ok?: boolean; k8sWarnings?: string[] }>(
-        `/api/app-center/redis/instances/${instance.id}`
+        withAppCenterMutationConfirmQuery(`/api/app-center/redis/instances/${instance.id}`)
       ),
     onSuccess: (data) => {
       toast.success("已移除实例配置");
@@ -1853,7 +1860,7 @@ function InstallScriptPanel({
             note?: string;
           }>;
         };
-      }>("/api/app-center/redis/k8s-deploy", {
+      }>(withAppCenterMutationConfirmQuery("/api/app-center/redis/k8s-deploy"), {
         namespace: k8sNamespace.trim(),
         deploymentName: deploymentName.trim(),
         version: engineLine,
@@ -2643,7 +2650,10 @@ function ManageRedisInlinePanel({
         body.masterAddr = masterAddr.trim();
         if (replicaAddr.trim()) body.replicaAddr = replicaAddr.trim();
       }
-      const res = await apiPostJson<{ id: number }>("/api/app-center/redis/instances", body);
+      const res = await apiPostJson<{ id: number }>(
+        "/api/app-center/redis/instances",
+        withAppCenterMutationConfirm(body)
+      );
       toast.success("已保存");
       onCreated(res.id);
       onOpenChange(false);

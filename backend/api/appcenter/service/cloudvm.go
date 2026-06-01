@@ -577,6 +577,9 @@ func handleCloudVMBootstrapPut(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "cloud-vm bootstrap") {
+		return
+	}
 	var body CloudVMBootstrap
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -616,6 +619,7 @@ func handleCloudVMBootstrapPut(c *gin.Context, app *ServerApp) {
 		return
 	}
 	mirrorPlatformKVIfDualWrite(app)
+	SetAuditDetail(c, fmt.Sprintf("应用中心容器主机更新引导配置 namespace=%s images=%d accessNode=%s", body.DefaultNamespace, len(body.Images), body.DefaultAccessNodeName))
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
@@ -664,9 +668,13 @@ func handleCloudVMRevealHysteriaClient(c *gin.Context, app *ServerApp) {
 	}
 	var body struct {
 		Password string `json:"password"`
+		Confirm  bool   `json:"confirm,omitempty"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "cloud-vm reveal hysteria client") {
 		return
 	}
 	if strings.TrimSpace(body.Password) == "" {
@@ -904,6 +912,9 @@ type cloudVMCreateBody struct {
 
 func handleCloudVMCreate(c *gin.Context, app *ServerApp) {
 	if !appCloudVMRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "cloud-vm create") {
 		return
 	}
 	db := cloudVMDB(app)
@@ -1350,9 +1361,13 @@ func handleCloudVMUpdatePut(c *gin.Context, app *ServerApp) {
 		InitScript   *string              `json:"initScript"`
 		Software     *CloudVMSoftwareOpts `json:"software"`
 		RootPassword *string              `json:"rootPassword"`
+		Confirm      bool                 `json:"confirm"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "cloud-vm update") {
 		return
 	}
 	hasPwd := body.RootPassword != nil && strings.TrimSpace(*body.RootPassword) != ""
@@ -1501,9 +1516,13 @@ func handleCloudVMScale(c *gin.Context, app *ServerApp) {
 		MemRequest *string `json:"memRequest"`
 		MemLimit   *string `json:"memLimit"`
 		PVCSize    *string `json:"pvcSize"`
+		Confirm    bool    `json:"confirm"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "cloud-vm scale") {
 		return
 	}
 	if body.CPURequest == nil && body.CPULimit == nil && body.MemRequest == nil && body.MemLimit == nil && body.PVCSize == nil {
@@ -1614,6 +1633,9 @@ func handleCloudVMDelete(c *gin.Context, app *ServerApp) {
 	if !appCloudVMRequireWrite(c) {
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "cloud-vm delete") {
+		return
+	}
 	db := cloudVMDB(app)
 	if db == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "需要 MySQL"})
@@ -1676,6 +1698,16 @@ func handleCloudVMResetRootPassword(c *gin.Context, app *ServerApp) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	if id <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 id"})
+		return
+	}
+	var body struct {
+		Confirm bool `json:"confirm"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "cloud-vm root password reset") {
 		return
 	}
 	k8s := app.K8s()

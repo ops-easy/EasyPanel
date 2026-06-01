@@ -69,6 +69,11 @@ func openWrtActionCommand(action string) (string, error) {
 	}
 }
 
+func openWrtActionRequiresConfirm(action string) bool {
+	_, err := openWrtActionCommand(action)
+	return err == nil
+}
+
 func buildOpenWrtConfigCommands(req openWrtConfigRequest) (openWrtCommandPreview, error) {
 	commands := []string{}
 	pkgs := map[string]bool{}

@@ -4,6 +4,7 @@ import { Database, Loader2, Plug, Router, Save, Settings, Trash2, Wifi } from "l
 import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -15,6 +16,7 @@ import { deviceQueryHint, type NetworkDeviceKind } from "@/features/network/comp
 import { formatDateTime } from "@/features/network/components/NetworkOpsPrimitives";
 import type { NetworkDevice } from "@/features/network/model/networkTypes";
 import OpenWrtInstancePanel, { type OpenWrtTargetForm } from "@/features/network/openwrt/pages/OpenWrtTargetPanel";
+import { withNetworkMutationConfirm, withNetworkMutationConfirmQuery } from "@/features/network/lib/networkMutationConfirm";
 
 const OPENWRT_PROBE_ENDPOINT = "/api/network/devices/openwrt/probe";
 const IKUAI_PROBE_ENDPOINT = "/api/network/devices/ikuai/probe";
@@ -114,7 +116,7 @@ function ProviderSummary({
             ready ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-100 text-slate-600"
           )}
         >
-          {ready ? "已接入" : "未接入"}
+          {ready ? "已配置" : "未配置"}
         </Badge>
       </div>
       <p className="mt-3 text-xs text-slate-500">最近更新：{updatedLabel(device)}</p>
@@ -205,7 +207,6 @@ function IkuaiConfigPanel({
         className="mt-5 grid min-w-0 gap-4"
         onSubmit={(event) => {
           event.preventDefault();
-          onSave();
         }}
       >
         <div className="grid gap-2">
@@ -274,16 +275,34 @@ function IkuaiConfigPanel({
             {probing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plug className="h-4 w-4" />}
             探测 iKuai
           </Button>
-          <Button type="submit" className="gap-2 bg-cyan-700 hover:bg-cyan-800" disabled={!canWrite || saving}>
+          <ConfirmActionButton
+            type="button"
+            className="gap-2 bg-cyan-700 hover:bg-cyan-800"
+            disabled={!canWrite || saving}
+            title="确认保存 iKuai 实例？"
+            description="将写入 iKuai 管理地址、登录凭据与 Prometheus 查询标签配置。"
+            confirmLabel="保存"
+            onConfirm={onSave}
+          >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             保存 iKuai 实例
-          </Button>
+          </ConfirmActionButton>
         </div>
         {device ? (
-          <Button type="button" variant="outline" className="gap-2 text-red-700" disabled={!canWrite || deleting} onClick={() => onDelete(device.id)}>
+          <ConfirmActionButton
+            type="button"
+            variant="outline"
+            className="gap-2 text-red-700"
+            disabled={!canWrite || deleting}
+            title="确认删除 iKuai 实例？"
+            description={`将从平台配置中移除「${device.name || device.id}」iKuai 连接目标。`}
+            confirmLabel="删除"
+            confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+            onConfirm={() => onDelete(device.id)}
+          >
             {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
             删除 iKuai 实例
-          </Button>
+          </ConfirmActionButton>
         ) : null}
       </form>
     </section>
@@ -292,8 +311,8 @@ function IkuaiConfigPanel({
 
 function MonitoringLabelsPanel({ ikuaiDevice, openWrtDevice }: { ikuaiDevice?: NetworkDevice; openWrtDevice?: NetworkDevice }) {
   const rows = [
-    { label: "iKuai", device: ikuaiDevice, address: ikuaiDevice?.apiUrl || ikuaiDevice?.host || "未接入" },
-    { label: "OpenWrt", device: openWrtDevice, address: openWrtDevice?.host || openWrtDevice?.apiUrl || "未接入" },
+    { label: "iKuai", device: ikuaiDevice, address: ikuaiDevice?.apiUrl || ikuaiDevice?.host || "未配置" },
+    { label: "OpenWrt", device: openWrtDevice, address: openWrtDevice?.host || openWrtDevice?.apiUrl || "未配置" },
   ];
   return (
     <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -311,7 +330,7 @@ function MonitoringLabelsPanel({ ikuaiDevice, openWrtDevice }: { ikuaiDevice?: N
                 <p className="mt-1 truncate text-xs text-slate-500">{row.address}</p>
               </div>
               <Badge variant="outline" className={row.device ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "bg-white text-slate-600"}>
-                {row.device ? "已接入" : "未接入"}
+                {row.device ? "已配置" : "未配置"}
               </Badge>
             </div>
             <div className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-3">
@@ -357,7 +376,7 @@ export default function NetworkConfigPage() {
 
   const saveIkuai = useMutation({
     mutationFn: () =>
-      apiPostJson<{ device: NetworkDevice }>("/api/network/devices", {
+      apiPostJson<{ device: NetworkDevice }>("/api/network/devices", withNetworkMutationConfirm({
         kind: "ikuai",
         authType: "http-web",
         name: ikuaiForm.name,
@@ -371,7 +390,7 @@ export default function NetworkConfigPage() {
         instanceLabel: ikuaiForm.instanceLabel,
         jobLabel: ikuaiForm.jobLabel,
         notes: ikuaiForm.notes,
-      }),
+      })),
     onSuccess: () => {
       toast.success("iKuai 接入信息已保存");
       refreshDevices();
@@ -399,7 +418,7 @@ export default function NetworkConfigPage() {
   });
 
   const saveOpenWrt = useMutation({
-    mutationFn: (body: OpenWrtTargetForm) => apiPostJson("/api/network/devices", { kind: "openwrt", ...body }),
+    mutationFn: (body: OpenWrtTargetForm) => apiPostJson("/api/network/devices", withNetworkMutationConfirm({ kind: "openwrt", ...body })),
     onSuccess: () => {
       toast.success("OpenWrt 接入信息已保存");
       refreshDevices();
@@ -414,7 +433,7 @@ export default function NetworkConfigPage() {
   });
 
   const deleteDevice = useMutation({
-    mutationFn: (id: string) => apiDelete(`/api/network/devices/${encodeURIComponent(id)}`),
+    mutationFn: (id: string) => apiDelete(withNetworkMutationConfirmQuery(`/api/network/devices/${encodeURIComponent(id)}`)),
     onSuccess: () => {
       toast.success("网络实例已删除");
       refreshDevices();

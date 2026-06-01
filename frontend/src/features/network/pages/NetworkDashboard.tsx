@@ -51,7 +51,7 @@ const resourceCards = [
   {
     key: "devices",
     label: "设备",
-    desc: "查看 iKuai、OpenWrt 的接入状态、管理地址、监控覆盖和最近更新时间。",
+    desc: "查看 iKuai、OpenWrt 的配置状态、管理地址、监控覆盖和最近更新时间。",
     to: "/cluster/network/devices",
     icon: Network,
     tint: "border-cyan-200 bg-cyan-50 text-cyan-800",
@@ -141,7 +141,7 @@ function ProviderAccessBadge({ kind, device }: { kind: NetworkDeviceKind; device
           ready ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-100 text-slate-600"
         )}
       >
-        {ready ? "已接入" : "未接入"}
+        {ready ? "已配置" : "未配置"}
       </Badge>
     </div>
   );
@@ -158,7 +158,7 @@ function NetworkResourceCard({
   return (
     <Link
       to={to}
-      className="group min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+      className="group min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50/70 hover:shadow-md"
     >
       <div className={cn("mb-4 flex h-11 w-11 items-center justify-center rounded-lg border", tint)}>
         <Icon className="h-5 w-5" />
@@ -239,7 +239,7 @@ const NetworkDashboard: React.FC = () => {
 
       <section className="grid gap-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-slate-950">接入源健康</h2>
+          <h2 className="text-sm font-semibold text-slate-950">配置源健康</h2>
           <Button asChild variant="outline" size="sm">
             <Link to="/cluster/network/access">配置</Link>
           </Button>
@@ -247,7 +247,7 @@ const NetworkDashboard: React.FC = () => {
         <div className="grid gap-3 md:grid-cols-2">
           {devicesQ.isLoading ? (
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-5 text-sm text-slate-500 shadow-sm">
-              正在读取网络接入源...
+              正在读取网络配置源...
             </div>
           ) : (
             <>
@@ -259,7 +259,7 @@ const NetworkDashboard: React.FC = () => {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <NetworkMetricCard label="接入源" value={`${configuredCount}/2`} hint="iKuai / OpenWrt" tone="cyan" />
+        <NetworkMetricCard label="配置源" value={`${configuredCount}/2`} hint="iKuai / OpenWrt" tone="cyan" />
         <NetworkMetricCard label="OpenWrt 指标" value={`${openWrtReadyCount}/5`} hint="Prometheus 指标族" tone="emerald" />
         <NetworkMetricCard
           label="最近更新"
@@ -290,9 +290,9 @@ const NetworkDashboard: React.FC = () => {
       ) : (
         <section className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
           <Settings className="mx-auto h-8 w-8 text-slate-400" />
-          <p className="mt-3 text-sm font-medium text-slate-900">先接入 iKuai 或 OpenWrt</p>
+          <p className="mt-3 text-sm font-medium text-slate-900">先配置 iKuai 或 OpenWrt</p>
           <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            未配置来源时首页只展示接入状态。保存数据源后，接口、终端、无线、防火墙和监控页面会自动成为日常工作入口。
+            未配置来源时首页只展示配置状态。保存数据源后，接口、终端、无线、防火墙和监控页面会自动成为日常工作入口。
           </p>
           <Button asChild className="mt-4 bg-cyan-700 hover:bg-cyan-800">
             <Link to="/cluster/network/access">去配置</Link>

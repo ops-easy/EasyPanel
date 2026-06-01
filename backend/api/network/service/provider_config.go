@@ -112,20 +112,21 @@ func handleProviderConfigApply(c *gin.Context, app *ServerApp) {
 	if !requireNetworkAdmin(c) {
 		return
 	}
-	provider, domain, dev, ok := providerDeviceForRequest(c, app)
-	if !ok {
-		return
-	}
 	var body networkChangeSet
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	body.Domain = effectiveConfigDomain(domain, body.Domain)
+	body.Domain = effectiveConfigDomain(c.Param("domain"), body.Domain)
 	if !body.Confirm {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "network config apply requires confirm=true"})
 		return
 	}
+	provider, _, dev, ok := providerDeviceForRequest(c, app)
+	if !ok {
+		return
+	}
+	setNetworkAuditDetail(c, networkConfigAuditDetail(provider, dev, body.Domain, len(body.Changes), body.Reload))
 	switch provider {
 	case networkDeviceKindOpenWrt:
 		out, err := newOpenWrtClient(nil).ApplyConfig(c.Request.Context(), dev, openWrtRequestFromChangeSet(body))
@@ -148,21 +149,39 @@ func handleProviderAction(c *gin.Context, app *ServerApp) {
 	if !requireNetworkAdmin(c) {
 		return
 	}
-	provider, _, dev, ok := providerDeviceForRequest(c, app)
-	if !ok {
-		return
-	}
 	var body networkActionRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	provider, err := normalizeNetworkDeviceKind(c.Param("provider"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	switch provider {
 	case networkDeviceKindOpenWrt:
-		if strings.EqualFold(strings.TrimSpace(body.Action), "reboot") && !body.Confirm {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "OpenWrt reboot requires confirm=true"})
+		if _, err := openWrtActionCommand(body.Action); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		if openWrtActionRequiresConfirm(body.Action) && !body.Confirm {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "OpenWrt action requires confirm=true"})
+			return
+		}
+	case networkDeviceKindIkuai:
+		if !body.Confirm {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "iKuai action requires confirm=true"})
+			return
+		}
+	}
+	provider, _, dev, ok := providerDeviceForRequest(c, app)
+	if !ok {
+		return
+	}
+	switch provider {
+	case networkDeviceKindOpenWrt:
+		setNetworkAuditDetail(c, networkActionAuditDetail(provider, dev, body.Action))
 		out, err := newOpenWrtClient(nil).RunAction(c.Request.Context(), dev, body.Action)
 		if err != nil {
 			c.JSON(http.StatusBadGateway, gin.H{"error": err.Error(), "result": out})
@@ -170,6 +189,7 @@ func handleProviderAction(c *gin.Context, app *ServerApp) {
 		}
 		c.JSON(http.StatusOK, out)
 	case networkDeviceKindIkuai:
+		setNetworkAuditDetail(c, networkActionAuditDetail(provider, dev, body.Action))
 		out, err := ikuaiHTTPClientForDevice(dev).RunAction(c.Request.Context(), dev, body)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "result": out})

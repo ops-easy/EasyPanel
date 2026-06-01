@@ -1,12 +1,16 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, Copy, Home, RefreshCw, RotateCcw } from "lucide-react";
+import { Button } from "@/shared/ui/button";
 
 type S = { error: Error | null };
+type Props = { children: React.ReactNode; resetKey: string };
 
 /**
  * 捕获子树渲染错误，避免整页白屏；刷新可恢复数据类问题。
  */
 export class AppRouteBoundary extends React.Component<
-  { children: React.ReactNode },
+  Props,
   S
 > {
   state: S = { error: null };
@@ -15,33 +19,65 @@ export class AppRouteBoundary extends React.Component<
     return { error };
   }
 
+  componentDidUpdate(prevProps: Props) {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.error) {
+      this.setState({ error: null });
+    }
+  }
+
+  private copyErrorMessage(message: string) {
+    if (typeof navigator === "undefined" || !navigator.clipboard) return;
+    void navigator.clipboard.writeText(message).catch(() => undefined);
+  }
+
   render() {
     if (this.state.error) {
       const msg = this.state.error.message || String(this.state.error);
+      const detail = this.state.error.stack || msg;
       return (
-        <div className="mx-auto flex max-w-lg flex-col gap-4 rounded-xl border border-red-200 bg-red-50/90 p-6 text-slate-900">
-          <h2 className="text-lg font-semibold text-red-900">页面渲染出错</h2>
-          <p className="text-sm text-red-800/90">
-            可能是数据异常或前端边界情况。请尝试点击下方按钮刷新页面。
-          </p>
-          <pre className="max-h-40 overflow-auto rounded-md bg-white/80 p-3 font-mono text-xs text-slate-700">
-            {msg}
-          </pre>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800"
-              onClick={() => window.location.reload()}
-            >
-              刷新页面
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-              onClick={() => this.setState({ error: null })}
-            >
-              重试（不刷新）
-            </button>
+        <div className="flex min-h-[calc(100vh-7rem)] items-center justify-center px-4 py-10">
+          <div
+            role="alert"
+            className="w-full max-w-2xl overflow-hidden rounded-lg border border-rose-200 bg-white shadow-sm"
+          >
+            <div className="border-b border-rose-100 bg-rose-50/80 px-6 py-5">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-white text-rose-700">
+                  <AlertTriangle className="h-5 w-5" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold text-rose-950">页面渲染出错</h2>
+                  <p className="mt-1 text-sm leading-relaxed text-rose-900/80">
+                    当前路由遇到前端边界错误。你可以先回到工作台继续处理其它模块，也可以复制错误信息用于排查。
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4 px-6 py-5">
+              <pre className="max-h-44 overflow-auto rounded-lg border border-slate-200 bg-slate-950 p-3 font-mono text-xs leading-relaxed text-slate-100">
+                {detail}
+              </pre>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild>
+                  <Link to="/" onClick={() => this.setState({ error: null })}>
+                    <Home className="mr-1.5 h-4 w-4" aria-hidden />
+                    返回工作台
+                  </Link>
+                </Button>
+                <Button type="button" variant="outline" onClick={() => this.setState({ error: null })}>
+                  <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden />
+                  重试当前页
+                </Button>
+                <Button type="button" variant="outline" onClick={() => window.location.reload()}>
+                  <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden />
+                  刷新页面
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => this.copyErrorMessage(detail)}>
+                  <Copy className="mr-1.5 h-4 w-4" aria-hidden />
+                  复制错误信息
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       );

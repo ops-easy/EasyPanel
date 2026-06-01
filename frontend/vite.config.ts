@@ -95,8 +95,8 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           ws: true,
         },
-        "/r": { target: apiTarget, changeOrigin: true },
-        "/d": { target: apiTarget, changeOrigin: true },
+        "^/r(?:/|$)": { target: apiTarget, changeOrigin: true },
+        "^/d(?:/|$)": { target: apiTarget, changeOrigin: true },
       },
     },
     plugins: [

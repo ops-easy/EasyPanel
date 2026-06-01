@@ -4,6 +4,7 @@ import (
 	"context"
 
 	appcentersvc "github.com/ops-easy/EasyPanel/backend/api/appcenter/service"
+	dnsctl "github.com/ops-easy/EasyPanel/backend/api/dns/controller"
 	harborsvc "github.com/ops-easy/EasyPanel/backend/api/harbor/service"
 	"github.com/ops-easy/EasyPanel/backend/common/appctx"
 	core "github.com/ops-easy/EasyPanel/backend/common/core"
@@ -55,6 +56,14 @@ func StartK8sControlPlaneAdvisoryWorker(ctx context.Context, app *appctx.ServerA
 
 func StartOpsBackground(app *appctx.ServerApp) {
 	core.StartOpsCenterBackground(app)
+}
+
+func StartDnsFailoverWorker(ctx context.Context, app *appctx.ServerApp) {
+	dnsctl.StartDnsFailoverWorker(ctx, app)
+}
+
+func StartDnsScheduledWorker(ctx context.Context, app *appctx.ServerApp) {
+	dnsctl.StartDnsScheduledWorker(ctx, app)
 }
 
 func StartOpenClawGatewayHealthWatcher(app *appctx.ServerApp) {

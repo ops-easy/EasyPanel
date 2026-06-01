@@ -612,6 +612,9 @@ func handleHarborArtifacts(app *ServerApp) gin.HandlerFunc {
 
 func handleHarborDeleteArtifact(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !requireHarborMutationConfirm(c, harborMutationConfirmed(c.Query("confirm")), "Harbor artifact delete") {
+			return
+		}
 		cfg := app.Cfg()
 		if !harborConfiguredFromCfg(cfg) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": errHarborNotConfigured.Error()})
@@ -651,7 +654,7 @@ func handleHarborDeleteArtifact(app *ServerApp) gin.HandlerFunc {
 		if code >= 200 && code < 300 {
 			HarborCacheBustGen(context.Background(), app)
 			go func(a *ServerApp) {
-				ctx2, cancel := context.WithTimeout(context.Background(), time.Duration(harborIndexCrawlTimeoutSec())*time.Second)
+				ctx2, cancel := context.WithTimeout(context.Background(), HarborIndexCrawlTimeout())
 				defer cancel()
 				HarborIndexRefreshOnce(ctx2, a)
 			}(app)

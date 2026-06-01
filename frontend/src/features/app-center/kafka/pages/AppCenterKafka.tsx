@@ -8,8 +8,13 @@ import type { ApiHttpErrorCheck } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import { cloudVmAppCenterCanWrite } from "@/lib/platform-permissions";
 import { KafkaThrottleWorkspace } from "@/features/app-center/kafka/pages/AppCenterKafkaThrottle";
+import {
+  withAppCenterMutationConfirm,
+  withAppCenterMutationConfirmQuery,
+} from "@/features/app-center/lib/appCenterMutationConfirm";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
@@ -289,7 +294,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
   >("topics");
 
   const [ns, setNs] = useState("default");
-  const [base, setBase] = useState("kafka-demo");
+  const [base, setBase] = useState("kafka-main");
   const [tplId, setTplId] = useState<number>(0);
   const [sc, setSc] = useState("");
   const [saslUser, setSaslUser] = useState("admin");
@@ -380,7 +385,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
         message?: string;
         externalAdvertiseHost?: string;
         externalNodePorts?: number[];
-      }>(`/api/app-center/kafka/instances/${instanceId}/exposure`, {
+      }>(withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/exposure`), {
         mode: p.mode,
         advertiseHost: p.advertiseHost,
         nodePorts: p.nodePorts,
@@ -540,7 +545,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
   const perfStartMut = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       apiPostJson<{ jobName?: string; namespace?: string }>(
-        `/api/app-center/kafka/instances/${instanceId}/perf-test`,
+        withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/perf-test`),
         body
       ),
     onSuccess: (r) => {
@@ -563,7 +568,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
 
   const perfDeleteMut = useMutation({
     mutationFn: (name: string) =>
-      apiDeleteJson(`/api/app-center/kafka/instances/${instanceId}/perf-test/${encodeURIComponent(name)}`),
+      apiDeleteJson(withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/perf-test/${encodeURIComponent(name)}`)),
     onSuccess: () => {
       toast.success("已请求删除压测 Job");
       setPerfJobName("");
@@ -575,7 +580,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
 
   const deployMut = useMutation({
     mutationFn: () =>
-      apiPostJson<Record<string, unknown>>("/api/app-center/kafka/k8s-deploy", {
+      apiPostJson<Record<string, unknown>>(withAppCenterMutationConfirmQuery("/api/app-center/kafka/k8s-deploy"), {
         namespace: ns.trim(),
         baseName: base.trim(),
         templateId: tplId,
@@ -614,10 +619,13 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
       const cfg: KafkaTplCfg = { ...formCfg, extraKafkaCfgLines: lines };
       const body = { name: formName.trim(), description: formDesc.trim(), config: cfg };
       if (editing) {
-        await apiPutJson(`/api/app-center/kafka/templates/${editing.id}`, body);
+        await apiPutJson(`/api/app-center/kafka/templates/${editing.id}`, withAppCenterMutationConfirm(body));
         return editing.id;
       }
-      const r = await apiPostJson<{ id: number }>("/api/app-center/kafka/templates", body);
+      const r = await apiPostJson<{ id: number }>(
+        "/api/app-center/kafka/templates",
+        withAppCenterMutationConfirm(body)
+      );
       return r.id;
     },
     onSuccess: () => {
@@ -629,7 +637,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
   });
 
   const delTpl = useMutation({
-    mutationFn: (id: number) => apiDeleteJson(`/api/app-center/kafka/templates/${id}`),
+    mutationFn: (id: number) => apiDeleteJson(withAppCenterMutationConfirmQuery(`/api/app-center/kafka/templates/${id}`)),
     onSuccess: () => {
       toast.success("已删除");
       void qc.invalidateQueries({ queryKey: ["app-center-kafka-templates"] });
@@ -639,7 +647,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
 
   const createTopicMut = useMutation({
     mutationFn: () =>
-      apiPostJson(`/api/app-center/kafka/instances/${instanceId}/topics`, {
+      apiPostJson(withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/topics`), {
         topic: newTopic.trim(),
         partitions: Number.parseInt(newParts, 10) || 3,
         replicationFactor: Number.parseInt(newRf, 10) || 3,
@@ -652,7 +660,8 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
   });
 
   const delTopicMut = useMutation({
-    mutationFn: (t: string) => apiDeleteJson(`/api/app-center/kafka/instances/${instanceId}/topics/${encodeURIComponent(t)}`),
+    mutationFn: (t: string) =>
+      apiDeleteJson(withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/topics/${encodeURIComponent(t)}`)),
     onSuccess: () => {
       toast.success("已删除主题");
       void qc.invalidateQueries({ queryKey: ["kafka-topics", instanceId] });
@@ -693,25 +702,31 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
       else ops = [aclWCustomOp.trim() || "Read"];
       const uniq = [...new Set(ops)];
       for (const op of uniq) {
-        await apiPostJson(`/api/app-center/kafka/instances/${instanceId}/acls`, {
-          resourceType: "Topic",
-          resourceName: topic,
-          resourcePatternType: pat,
-          principal,
-          host,
-          operation: op,
-          permissionType: "Allow",
-        });
+        await apiPostJson(
+          withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/acls`),
+          {
+            resourceType: "Topic",
+            resourceName: topic,
+            resourcePatternType: pat,
+            principal,
+            host,
+            operation: op,
+            permissionType: "Allow",
+          }
+        );
       }
       const userEntity = principal.replace(/^User:/i, "");
       if (aclWSyncQuota) {
         const pr = mibPerSecToQuotaBytes(aclWProdMiB);
         const cr = mibPerSecToQuotaBytes(aclWConsMiB);
-        await apiPutJson(`/api/app-center/kafka/instances/${instanceId}/quotas`, {
-          user: userEntity,
-          producerByteRate: pr,
-          consumerByteRate: cr,
-        });
+        await apiPutJson(
+          withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/quotas`),
+          {
+            user: userEntity,
+            producerByteRate: pr,
+            consumerByteRate: cr,
+          }
+        );
       }
     },
     onSuccess: () => {
@@ -725,7 +740,11 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
   });
 
   const delAclMut = useMutation({
-    mutationFn: () => apiPostJson(`/api/app-center/kafka/instances/${instanceId}/acls/delete`, buildAclWizardDeleteFilter()),
+    mutationFn: () =>
+      apiPostJson(
+        withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/acls/delete`),
+        buildAclWizardDeleteFilter()
+      ),
     onSuccess: () => {
       toast.success("已按过滤器删除 ACL");
       void qc.invalidateQueries({ queryKey: ["kafka-acls", instanceId] });
@@ -735,10 +754,13 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
 
   const scramMut = useMutation({
     mutationFn: () =>
-      apiPostJson(`/api/app-center/kafka/instances/${instanceId}/scram-users`, {
-        username: scramUser.trim(),
-        password: scramPass,
-      }),
+      apiPostJson(
+        withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/scram-users`),
+        {
+          username: scramUser.trim(),
+          password: scramPass,
+        }
+      ),
     onSuccess: () => {
       toast.success("SCRAM 用户已写入");
       setScramPass("");
@@ -748,7 +770,9 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
 
   const delScramMut = useMutation({
     mutationFn: (username: string) =>
-      apiDeleteJson(`/api/app-center/kafka/instances/${instanceId}/scram-users/${encodeURIComponent(username)}`),
+      apiDeleteJson(
+        withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/scram-users/${encodeURIComponent(username)}`)
+      ),
     onSuccess: () => {
       toast.success("已删除 SCRAM 用户");
     },
@@ -757,7 +781,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
 
   const delInstMut = useMutation({
     mutationFn: (id: number) =>
-      apiDeleteJson<{ ok?: boolean; k8sWarnings?: string[] }>(`/api/app-center/kafka/instances/${id}`),
+      apiDeleteJson<{ ok?: boolean; k8sWarnings?: string[] }>(withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${id}`)),
     onSuccess: (data, id) => {
       toast.success("已从平台删除实例");
       const w = data?.k8sWarnings ?? [];
@@ -780,9 +804,12 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
       } catch {
         throw new Error("配置 JSON 无效");
       }
-      return apiPostJson(`/api/app-center/kafka/instances/${instanceId}/topics/${encodeURIComponent(selectedTopic)}/configs`, {
-        entries,
-      });
+      return apiPostJson(
+        withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/topics/${encodeURIComponent(selectedTopic)}/configs`),
+        {
+          entries,
+        }
+      );
     },
     onSuccess: () => {
       toast.success("主题配置已提交");
@@ -802,7 +829,9 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
         if (!Number.isNaN(n)) body.partition = n;
       }
       return apiPostJson<{ partition?: number; offset?: number }>(
-        `/api/app-center/kafka/instances/${instanceId}/topics/${encodeURIComponent(selectedTopic)}/messages`,
+        withAppCenterMutationConfirmQuery(
+          `/api/app-center/kafka/instances/${instanceId}/topics/${encodeURIComponent(selectedTopic)}/messages`
+        ),
         body
       );
     },
@@ -1455,17 +1484,19 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
                                             </Button>
                                           </TableCell>
                                           <TableCell className="text-right">
-                                            <Button
+                                            <ConfirmActionButton
                                               size="sm"
                                               variant="ghost"
                                               className="text-red-600"
                                               disabled={!canWrite}
-                                              onClick={() => {
-                                                if (confirm(`删除主题 ${t.topic} ?`)) delTopicMut.mutate(t.topic);
-                                              }}
+                                              title="删除 Kafka Topic？"
+                                              description={`将删除主题「${t.topic}」及其消息数据，此操作不可恢复。`}
+                                              confirmLabel="删除 Topic"
+                                              confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                                              onConfirm={() => delTopicMut.mutate(t.topic)}
                                             >
                                               删除
-                                            </Button>
+                                            </ConfirmActionButton>
                                           </TableCell>
                                         </TableRow>
                                       ))}
@@ -1863,19 +1894,20 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
                                     {perfStartMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
                                     启动压测
                                   </Button>
-                                  <Button
+                                  <ConfirmActionButton
                                     type="button"
                                     size="sm"
                                     variant="outline"
                                     className="text-red-700"
                                     disabled={!canWrite || !perfJobName.trim() || perfDeleteMut.isPending}
-                                    onClick={() => {
-                                      if (!confirm(`删除压测 Job「${perfJobName}」？`)) return;
-                                      perfDeleteMut.mutate(perfJobName);
-                                    }}
+                                    title="删除压测 Job？"
+                                    description={`将删除压测 Job「${perfJobName.trim() || "-"}」，正在运行的生产/消费压测会被停止。`}
+                                    confirmLabel="删除 Job"
+                                    confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                                    onConfirm={() => perfDeleteMut.mutate(perfJobName)}
                                   >
                                     删除当前 Job
-                                  </Button>
+                                  </ConfirmActionButton>
                                   {!canWrite ? <span className="text-xs text-slate-500">只读账号无法启动/删除压测。</span> : null}
                                 </div>
 
@@ -2115,7 +2147,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
                               <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
                                 <div>
                                   <CardTitle className="text-base">消费者组</CardTitle>
-                                  <CardDescription>DescribeGroups 摘要（含部分成员示例）</CardDescription>
+                                  <CardDescription>DescribeGroups 摘要（含部分成员样本）</CardDescription>
                                 </div>
                                 <Button
                                   type="button"
@@ -2136,7 +2168,7 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
                                         <TableHead>状态</TableHead>
                                         <TableHead>协议类型</TableHead>
                                         <TableHead>成员数</TableHead>
-                                        <TableHead className="min-w-[220px]">成员示例</TableHead>
+                                        <TableHead className="min-w-[220px]">成员样本</TableHead>
                                         <TableHead className="text-right w-[100px]">滞后</TableHead>
                                       </TableRow>
                                     </TableHeader>
@@ -2473,24 +2505,19 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
                                       {aclBundleMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
                                       应用 ACL{aclWSyncQuota ? " 与配额" : ""}
                                     </Button>
-                                    <Button
+                                    <ConfirmActionButton
                                       size="sm"
                                       variant="outline"
                                       className="text-red-700"
                                       disabled={!canWrite || delAclMut.isPending}
-                                      onClick={() => {
-                                        if (
-                                          !confirm(
-                                            "按当前向导中的 Topic、用户、Host 作为过滤器删除匹配的 Allow ACL。\n若 Operation 为 Any，会删除该用户在 Topic 上的多条记录。\n留空 Topic 将匹配所有 Topic，极危险。确认？"
-                                          )
-                                        ) {
-                                          return;
-                                        }
-                                        delAclMut.mutate();
-                                      }}
+                                      title="删除匹配的 Kafka ACL？"
+                                      description="将按当前向导中的 Topic、用户、Host 作为过滤器删除匹配的 Allow ACL；Operation 为 Any 时会删除多条记录，留空 Topic 会匹配所有 Topic。"
+                                      confirmLabel="删除匹配 ACL"
+                                      confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                                      onConfirm={() => delAclMut.mutate()}
                                     >
                                       删除匹配的 ACL
-                                    </Button>
+                                    </ConfirmActionButton>
                                     <Button
                                       type="button"
                                       variant="outline"
@@ -2598,19 +2625,19 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
                                       <Button size="sm" disabled={!canWrite} onClick={() => scramMut.mutate()}>
                                         创建/更新
                                       </Button>
-                                      <Button
+                                      <ConfirmActionButton
                                         size="sm"
                                         variant="outline"
                                         className="text-red-700"
                                         disabled={!canWrite || delScramMut.isPending || !scramUser.trim()}
-                                        onClick={() => {
-                                          const u = scramUser.trim();
-                                          if (!confirm(`删除 SCRAM 用户「${u}」？`)) return;
-                                          delScramMut.mutate(u);
-                                        }}
+                                        title="删除 SCRAM 用户？"
+                                        description={`将删除 SCRAM 用户「${scramUser.trim() || "-"}」，该用户将无法继续通过 SCRAM 认证访问 Kafka。`}
+                                        confirmLabel="删除用户"
+                                        confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                                        onConfirm={() => delScramMut.mutate(scramUser.trim())}
                                       >
                                         删除用户
-                                      </Button>
+                                      </ConfirmActionButton>
                                       <Button
                                         type="button"
                                         variant="outline"
@@ -3013,17 +3040,20 @@ const AppCenterKafkaInner: React.FC<AppCenterKafkaInnerProps> = ({ routeInstance
                           <Button size="sm" variant="ghost" onClick={() => openEdit(t)} disabled={!canWrite}>
                             编辑
                           </Button>
-                          <Button
+                          <ConfirmActionButton
                             size="sm"
                             variant="ghost"
                             className="text-red-600"
-                            onClick={() => {
-                              if (confirm(`删除模版「${t.name}」？`)) delTpl.mutate(t.id);
-                            }}
                             disabled={!canWrite}
+                            title="删除 Kafka 部署模版？"
+                            description={`将删除模版「${t.name}」，已部署实例不受影响，新部署将无法再选择该模版。`}
+                            confirmLabel="删除模版"
+                            confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                            onConfirm={() => delTpl.mutate(t.id)}
                           >
                             <Trash2 className="h-4 w-4" />
-                          </Button>
+                            <span className="sr-only">删除</span>
+                          </ConfirmActionButton>
                         </TableCell>
                       </TableRow>
                     ))

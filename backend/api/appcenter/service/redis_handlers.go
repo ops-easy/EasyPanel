@@ -162,14 +162,17 @@ func handleAppRedisCreate(c *gin.Context, app *ServerApp) {
 	if !appRedisRequireWrite(c) {
 		return
 	}
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL，无法保存 Redis 连接（请配置 MYSQL_DSN 或运行时 mysqlDsn）"})
-		return
-	}
 	var body map[string]interface{}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmedValue(body["confirm"]), "app-center redis create instance") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL，无法保存 Redis 连接（请配置 MYSQL_DSN 或运行时 mysqlDsn）"})
 		return
 	}
 	name, _ := body["name"].(string)
@@ -255,11 +258,6 @@ func handleAppRedisUpdate(c *gin.Context, app *ServerApp) {
 	if !appRedisRequireWrite(c) {
 		return
 	}
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL 未连接"})
-		return
-	}
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 id"})
@@ -268,6 +266,14 @@ func handleAppRedisUpdate(c *gin.Context, app *ServerApp) {
 	var body map[string]interface{}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmedValue(body["confirm"]), "app-center redis update instance") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL 未连接"})
 		return
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
@@ -324,6 +330,9 @@ func handleAppRedisUpdate(c *gin.Context, app *ServerApp) {
 
 func handleAppRedisDelete(c *gin.Context, app *ServerApp) {
 	if !appRedisRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "app-center redis delete instance") {
 		return
 	}
 	db := app.MySQLDB()
@@ -654,10 +663,14 @@ func handleAppRedisKeysDelete(c *gin.Context, app *ServerApp) {
 		return
 	}
 	var body struct {
-		Keys []string `json:"keys"`
+		Keys    []string `json:"keys"`
+		Confirm bool     `json:"confirm"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "app-center redis delete keys") {
 		return
 	}
 	if len(body.Keys) == 0 || len(body.Keys) > 200 {
@@ -779,6 +792,9 @@ type redisK8sDeployBody struct {
 
 func handleAppRedisK8sDeploy(c *gin.Context, app *ServerApp) {
 	if !appRedisRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "app-center redis deploy") {
 		return
 	}
 	k8s := app.K8s()
@@ -1128,20 +1144,24 @@ type appRedisTemplateWriteBody struct {
 	Name        string                  `json:"name"`
 	Description string                  `json:"description"`
 	Config      *AppRedisTemplateConfig `json:"config"`
+	Confirm     bool                    `json:"confirm,omitempty"`
 }
 
 func handleAppRedisTemplateCreate(c *gin.Context, app *ServerApp) {
 	if !appRedisRequireWrite(c) {
 		return
 	}
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL"})
-		return
-	}
 	var body appRedisTemplateWriteBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "app-center redis write template") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL"})
 		return
 	}
 	name := strings.TrimSpace(body.Name)
@@ -1188,14 +1208,17 @@ func handleAppRedisTemplateUpdate(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 id"})
 		return
 	}
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL"})
-		return
-	}
 	var body appRedisTemplateWriteBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "app-center redis write template") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL"})
 		return
 	}
 	name := strings.TrimSpace(body.Name)
@@ -1228,6 +1251,9 @@ func handleAppRedisTemplateUpdate(c *gin.Context, app *ServerApp) {
 
 func handleAppRedisTemplateDelete(c *gin.Context, app *ServerApp) {
 	if !appRedisRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "app-center redis delete template") {
 		return
 	}
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)

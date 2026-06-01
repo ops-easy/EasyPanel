@@ -31,6 +31,10 @@ func MountSettingsRoutes(api *gin.RouterGroup, app *ServerApp) {
 	RegisterSettingsRoutes(api, app)
 }
 
+func MountSettingsRoutesWithHooks(api *gin.RouterGroup, app *ServerApp, hooks RuntimeSettingsHooks) {
+	RegisterSettingsRoutesWithHooks(api, app, hooks)
+}
+
 func MountSystemRoutes(r *gin.Engine, api *gin.RouterGroup, app *ServerApp) {
 	RegisterSystemPublicRoutes(r, app)
 	RegisterSystemProtectedRoutes(api, app)

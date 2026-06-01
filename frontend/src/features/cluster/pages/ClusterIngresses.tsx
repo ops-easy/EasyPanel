@@ -34,6 +34,8 @@ import {
 } from "@/shared/ui/dialog";
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { withK8sMutationConfirm, withK8sMutationConfirmQuery } from "@/features/cluster/lib/k8sMutationConfirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 type IngressRow = {
   namespace: string;
@@ -70,7 +72,7 @@ const ClusterIngresses: React.FC = () => {
 
   const applyMut = useMutation({
     mutationFn: (yamlContent: string) =>
-      apiPostJson("/api/k8s/apply-yaml", { yamlContent }),
+      apiPostJson("/api/k8s/apply-yaml", withK8sMutationConfirm({ yamlContent })),
     onSuccess: () => {
       setIngressDialogOpen(false);
       setApplyConfirmOpen(false);
@@ -82,7 +84,9 @@ const ClusterIngresses: React.FC = () => {
   const deleteMut = useMutation({
     mutationFn: (name: string) =>
       apiDelete(
-        `/api/k8s/objects/ingress/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}`
+        withK8sMutationConfirmQuery(
+          `/api/k8s/objects/ingress/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}`
+        )
       ),
     onSuccess: () => {
       setDelName(null);
@@ -313,13 +317,16 @@ const ClusterIngresses: React.FC = () => {
                 <Button type="button" variant="secondary" onClick={() => setIngressDialogOpen(false)}>
                   取消
                 </Button>
-                <Button
+                <ConfirmActionButton
                   type="button"
                   disabled={applyMut.isPending}
-                  onClick={() => void applyMut.mutateAsync(yamlDraft)}
+                  title="确认应用 Ingress YAML？"
+                  description={`将把当前 Ingress YAML 写入命名空间 ${namespace}。`}
+                  confirmLabel="应用"
+                  onConfirm={() => void applyMut.mutateAsync(yamlDraft)}
                 >
                   {applyMut.isPending ? "提交中…" : "提交应用"}
-                </Button>
+                </ConfirmActionButton>
               </DialogFooter>
             </>
           )}

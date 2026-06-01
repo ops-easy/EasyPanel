@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Plug, Trash2 } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
@@ -152,22 +153,33 @@ export default function OpenWrtInstancePanel({
             {probing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plug className="mr-2 h-4 w-4" />}
             探测
           </Button>
-          <Button type="button" disabled={!canWrite || creating} onClick={() => onCreate(form)}>
+          <ConfirmActionButton
+            type="button"
+            disabled={!canWrite || creating}
+            title="确认保存 OpenWrt 实例？"
+            description="将写入 OpenWrt 管理地址、SSH/API 凭据与监控标签配置。"
+            confirmLabel="保存"
+            onConfirm={() => onCreate(form)}
+          >
             {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plug className="mr-2 h-4 w-4" />}
             保存 OpenWrt 实例
-          </Button>
+          </ConfirmActionButton>
         </div>
         {device ? (
-          <Button
+          <ConfirmActionButton
             type="button"
             variant="outline"
             className="gap-2 text-red-700"
             disabled={!canWrite || deletingId === device.id}
-            onClick={() => onDelete(device.id)}
+            title="确认删除 OpenWrt 实例？"
+            description={`将从平台配置中移除「${device.name || device.id}」OpenWrt 连接目标。`}
+            confirmLabel="删除"
+            confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+            onConfirm={() => onDelete(device.id)}
           >
             {deletingId === device.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
             删除 OpenWrt 实例
-          </Button>
+          </ConfirmActionButton>
         ) : null}
       </div>
     </section>

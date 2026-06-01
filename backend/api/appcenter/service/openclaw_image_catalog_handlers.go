@@ -40,6 +40,9 @@ func handleAppOpenClawImageCatalogPut(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw image catalog") {
+		return
+	}
 	if app.PlatformKV() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "platform_kv 不可用"})
 		return
@@ -67,6 +70,7 @@ func handleAppOpenClawImageCatalogPut(c *gin.Context, app *ServerApp) {
 	for _, o := range opts {
 		outOpts = append(outOpts, gin.H{"id": o.ID, "label": o.Label, "image": o.Image})
 	}
+	SetAuditDetail(c, fmt.Sprintf("应用中心 OpenClaw 更新镜像目录 mode=%s entries=%d presets=%d", openClawCatalogMode(d), len(d.Entries), len(d.Presets)))
 	c.JSON(http.StatusOK, gin.H{
 		"ok":      true,
 		"mode":    openClawCatalogMode(d),

@@ -7,6 +7,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import type { HermesInstance, HermesStatus } from "./AppCenterHermesDetail";
 import { apiPutJson } from "@/lib/api";
+import { withAppCenterMutationConfirmQuery } from "@/features/app-center/lib/appCenterMutationConfirm";
 
 export default function HermesExposurePanel({
   instance,
@@ -33,12 +34,15 @@ export default function HermesExposurePanel({
 
   const save = useMutation({
     mutationFn: () =>
-      apiPutJson(`/api/app-center/hermes/instances/${encodeURIComponent(instance?.id ?? "")}/exposure`, {
-        exposeMode,
-        ingressHost,
-        publicUrl,
-        nodePort: Number(nodePort) || 0,
-      }),
+      apiPutJson(
+        withAppCenterMutationConfirmQuery(`/api/app-center/hermes/instances/${encodeURIComponent(instance?.id ?? "")}/exposure`),
+        {
+          exposeMode,
+          ingressHost,
+          publicUrl,
+          nodePort: Number(nodePort) || 0,
+        }
+      ),
     onSuccess: () => {
       toast.success("Hermes 暴露配置已更新");
       onChanged();

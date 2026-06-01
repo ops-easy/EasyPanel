@@ -114,6 +114,9 @@ func handleOpenClawTelegramSettingsPut(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw telegram settings") {
+		return
+	}
 	db := app.MySQLDB()
 	if db == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "需要 MySQL"})
@@ -148,6 +151,7 @@ func handleOpenClawTelegramSettingsPut(c *gin.Context, app *ServerApp) {
 		RespondAPIError500(c, err.Error())
 		return
 	}
+	SetAuditDetail(c, "应用中心 OpenClaw 更新 Telegram 设置 instance="+id)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
@@ -221,6 +225,9 @@ func handleOpenClawApplyTelegramToJSON(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw apply telegram config") {
+		return
+	}
 	if app.K8s() == nil || app.K8sREST() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "K8s 未连接"})
 		return
@@ -291,6 +298,7 @@ func handleOpenClawApplyTelegramToJSON(c *gin.Context, app *ServerApp) {
 	if eff != "" && app.K8sREST() != nil {
 		_ = openClawPodMergeHTTPProxyIntoJSON(ctx, app.K8s(), app.K8sREST(), inst.Namespace, pod, eff)
 	}
+	SetAuditDetail(c, "应用中心 OpenClaw 写入 Telegram 配置 "+inst.DisplayName+" namespace="+inst.Namespace+" pod="+pod)
 	c.JSON(http.StatusOK, gin.H{"ok": true, "message": "已写入 PVC 上 openclaw.json；若网关未热加载请滚动重启 Deployment", "httpProxyMerged": eff != ""})
 }
 
@@ -427,6 +435,9 @@ func handleAppOpenClawPatchEgressProxy(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw update egress proxy") {
+		return
+	}
 	if app.K8s() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "K8s 未连接"})
 		return
@@ -487,5 +498,10 @@ func handleAppOpenClawPatchEgressProxy(c *gin.Context, app *ServerApp) {
 		}
 	}
 	mirrorPlatformKVIfDualWrite(app)
+	proxyState := "disabled"
+	if strings.TrimSpace(eff) != "" {
+		proxyState = "configured"
+	}
+	SetAuditDetail(c, "应用中心 OpenClaw 更新出口代理 "+inst2.DisplayName+" proxy="+proxyState)
 	c.JSON(http.StatusOK, gin.H{"ok": true, "effectiveHttpProxyUrl": eff})
 }

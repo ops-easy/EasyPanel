@@ -89,7 +89,8 @@ test("PVE 和 OpenWrt 工作区有明确的未配置主状态", () => {
   const openWrtWorkspace = read("../src/features/network/openwrt/pages/OpenWrtWorkspace.tsx");
 
   assert.match(pveWorkspace, /pveNeedsSetup/);
-  assert.match(pveWorkspace, /PveSetupPanel/);
+  assert.match(pveWorkspace, /renderPveTargetForm/);
+  assert.match(pveWorkspace, /<PveTargetForm/);
   assert.match(openWrtWorkspace, /openWrtNeedsSetup/);
   assert.match(openWrtWorkspace, /OpenWrtSetupPanel/);
 });

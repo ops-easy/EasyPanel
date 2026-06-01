@@ -451,6 +451,9 @@ func handleAppOpenClawSetChatModel(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw set chat model") {
+		return
+	}
 	if app.PlatformKV() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "platform_kv 不可用"})
 		return
@@ -473,6 +476,7 @@ func handleAppOpenClawSetChatModel(c *gin.Context, app *ServerApp) {
 		return
 	}
 	mirrorPlatformKVIfDualWrite(app)
+	SetAuditDetail(c, "应用中心 OpenClaw 更新对话模型 instance="+id+" chatModel="+m)
 	c.JSON(http.StatusOK, gin.H{"ok": true, "chatModel": m})
 }
 
@@ -493,6 +497,9 @@ func openClawUpstreamSecretKeyForAPIKey(preset string) string {
 func handleAppOpenClawApplyUpstreamRuntime(c *gin.Context, app *ServerApp) {
 	if appCloudVMWriteDenied(c) {
 		RespondAPIPermissionDenied(c)
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw apply upstream runtime") {
 		return
 	}
 	if app.PlatformKV() == nil {
@@ -645,6 +652,7 @@ func handleAppOpenClawApplyUpstreamRuntime(c *gin.Context, app *ServerApp) {
 		addStep("上游模型探活", false, upDetail)
 	}
 
+	SetAuditDetail(c, "应用中心 OpenClaw 应用上游运行时 "+inst.DisplayName+" model="+MapOpenClawInstanceChatModel(inst))
 	c.JSON(http.StatusOK, gin.H{
 		"ok":                 true,
 		"steps":              steps,

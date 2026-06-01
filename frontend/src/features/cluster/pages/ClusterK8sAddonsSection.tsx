@@ -35,6 +35,7 @@ import {
 } from "@/shared/ui/alert-dialog";
 import { CollapsibleManual } from "@/shared/ui/CollapsibleManual";
 import { apiGetJson, apiPostJson, type AppConfig } from "@/lib/api";
+import { withK8sMutationConfirm } from "@/features/cluster/lib/k8sMutationConfirm";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -292,12 +293,12 @@ const ClusterK8sAddonsSection: React.FC = () => {
     try {
       const res = await apiPostJson<{ message?: string; verification?: IngressAddonVerification }>(
         "/api/k8s/addons/ingress-nginx/install",
-        {
+        withK8sMutationConfirm({
           ...installPayload(),
           hostHttpPort: p.http,
           hostHttpsPort: p.https,
           controllerNodeName: controllerNodeSel === NO_FIXED_NODE ? "" : controllerNodeSel,
-        },
+        }),
       );
       setAddonProgress(100);
       if (res.verification) setLastVerification(res.verification);
@@ -322,8 +323,10 @@ const ClusterK8sAddonsSection: React.FC = () => {
     setAddonPhase("正在更新控制器调度节点…");
     try {
       const res = await apiPostJson<{ message?: string }>("/api/k8s/addons/ingress-nginx/controller-node", {
-        namespace: ingressNamespace.trim() || DEFAULT_INGRESS_NAMESPACE,
-        controllerNodeName: controllerNodeSel === NO_FIXED_NODE ? "" : controllerNodeSel,
+        ...withK8sMutationConfirm({
+          namespace: ingressNamespace.trim() || DEFAULT_INGRESS_NAMESPACE,
+          controllerNodeName: controllerNodeSel === NO_FIXED_NODE ? "" : controllerNodeSel,
+        }),
       });
       toast.success(String(res.message || "").trim() || "已更新调度节点");
       void qc.invalidateQueries({ queryKey: ["k8s-addons-status"] });
@@ -344,11 +347,11 @@ const ClusterK8sAddonsSection: React.FC = () => {
     try {
       const hpRes = await apiPostJson<{ verification?: IngressAddonVerification }>(
         "/api/k8s/addons/ingress-nginx/host-ports",
-        {
+        withK8sMutationConfirm({
           namespace: ingressNamespace.trim() || DEFAULT_INGRESS_NAMESPACE,
           hostHttpPort: p.http,
           hostHttpsPort: p.https,
-        },
+        }),
       );
       setAddonProgress(100);
       if (hpRes.verification) setLastVerification(hpRes.verification);
@@ -403,7 +406,9 @@ const ClusterK8sAddonsSection: React.FC = () => {
     setAddonPhase("正在卸载 ingress-nginx…");
     try {
       const res = await apiPostJson<{ message?: string }>("/api/k8s/addons/ingress-nginx/uninstall", {
-        namespace: ingressNamespace.trim() || DEFAULT_INGRESS_NAMESPACE,
+        ...withK8sMutationConfirm({
+          namespace: ingressNamespace.trim() || DEFAULT_INGRESS_NAMESPACE,
+        }),
       });
       toast.success(String(res.message || "").trim() || "已卸载");
       void qc.invalidateQueries({ queryKey: ["k8s-addons-status"] });

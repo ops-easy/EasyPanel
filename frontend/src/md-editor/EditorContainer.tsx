@@ -22,6 +22,16 @@ import { API_BASE, ApiHttpError, apiDeleteJson, apiGetJson, apiPostJson, apiPutJ
 import { useAuth } from "@/auth/auth-context";
 import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/shared/ui/alert-dialog";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
@@ -42,6 +52,7 @@ import {
 } from "@/shared/ui/sheet";
 import { Switch } from "@/shared/ui/switch";
 import { formatDateTimeShanghai } from "@/lib/datetime-cn";
+import { withOpsMutationConfirm, withOpsMutationConfirmQuery } from "@/lib/ops-mutation-confirm";
 
 type ApiDocRow = {
   id: number;
@@ -64,6 +75,14 @@ type ApiDocDetail = Record<string, unknown> & {
 };
 
 type GuideMatchType = "prefix" | "exact" | "global";
+
+type PendingConfirm = {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  confirmButtonClassName?: string;
+  onConfirm: () => void;
+};
 
 function toMs(iso?: string): number {
   if (!iso) return Date.now();
@@ -107,6 +126,7 @@ export default function MdEditorPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [sharePwdDraft, setSharePwdDraft] = useState("");
   const [clearSharePwd, setClearSharePwd] = useState(false);
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
   const [contentKind, setContentKind] = useState<"markdown" | "excalidraw">("markdown");
 
   const listQ = useQuery({
@@ -357,7 +377,7 @@ export default function MdEditorPage() {
         .map((s) => s.trim())
         .filter(Boolean);
       const cat = categoryId ? parseInt(categoryId, 10) : undefined;
-      const payload = {
+      const payload: Record<string, unknown> = {
         title: editorTitle.trim() || extractTitle(editorBody) || "未命名",
         bodyMarkdown: editorBody,
         contentKind,
@@ -367,7 +387,11 @@ export default function MdEditorPage() {
         saveVersion,
       };
       if (!activeNumericId) throw new Error("未选择文档");
-      return apiPutJson<{ ok?: boolean; unchanged?: boolean }>(`/api/docs/${activeNumericId}`, payload);
+      const publishedChanged = Boolean(detailQ.data?.published) !== published;
+      return apiPutJson<{ ok?: boolean; unchanged?: boolean }>(
+        `/api/docs/${activeNumericId}`,
+        publishedChanged ? withOpsMutationConfirm(payload) : payload
+      );
     },
     onSuccess: (data) => {
       if (data?.unchanged) {
@@ -389,7 +413,7 @@ export default function MdEditorPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => apiDeleteJson(`/api/docs/${id}`),
+    mutationFn: (id: string) => apiDeleteJson(withOpsMutationConfirmQuery(`/api/docs/${id}`)),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["docs-list"] });
       showNotification("文档已删除", "success");
@@ -402,13 +426,13 @@ export default function MdEditorPage() {
     mutationFn: () => {
       if (!currentGuide || !activeNumericId) throw new Error("未选择页面指南");
       const sortOrder = Number.parseInt(guideSortOrder.trim(), 10);
-      return apiPutJson(`/api/docs/guides/${encodeURIComponent(currentGuide.guideKey)}`, {
+      return apiPutJson(`/api/docs/guides/${encodeURIComponent(currentGuide.guideKey)}`, withOpsMutationConfirm({
         docId: Number(activeNumericId),
         routePattern: guideRoutePattern.trim() || "/",
         matchType: guideMatchType,
         enabled: guideEnabled,
         sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
-      });
+      }));
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["docs-list", docsScope] });
@@ -442,7 +466,7 @@ export default function MdEditorPage() {
       if (clearSharePwd) payload.newSharePassword = "";
       else if (sharePwdDraft.trim() !== "") payload.newSharePassword = sharePwdDraft.trim();
       if (!activeNumericId) throw new Error("未选择文档");
-      return apiPutJson(`/api/docs/${activeNumericId}`, payload);
+      return apiPutJson(`/api/docs/${activeNumericId}`, withOpsMutationConfirm(payload));
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["doc", activeNumericId] });
@@ -455,7 +479,7 @@ export default function MdEditorPage() {
 
   const restoreMut = useMutation({
     mutationFn: (versionNo: number) =>
-      apiPostJson(`/api/docs/${activeNumericId}/restore-version`, { versionNo }),
+      apiPostJson(`/api/docs/${activeNumericId}/restore-version`, withOpsMutationConfirm({ versionNo })),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["doc", activeNumericId] });
       setVersionsOpen(false);
@@ -467,8 +491,24 @@ export default function MdEditorPage() {
   const createNewMarkdown = () => createMarkdownMut.mutate();
   const createNewCanvas = () => createExcalidrawMut.mutate();
 
+  const requestConfirm = useCallback((confirm: PendingConfirm) => {
+    setPendingConfirm(confirm);
+  }, []);
+
   const saveDoc = () => {
     if (!activeNumericId) return;
+    const publishedChanged = Boolean(detailQ.data?.published) !== published;
+    if (publishedChanged) {
+      requestConfirm({
+        title: published ? "发布公开页？" : "关闭公开页？",
+        description: published
+          ? "保存后，持有链接的访客可以访问该文档；请确认内容、标题和分享范围已经核对。"
+          : "保存后，公开链接将不能继续访问该文档；已有访客会失去阅读入口。",
+        confirmLabel: published ? "发布并保存" : "关闭并保存",
+        onConfirm: () => saveMut.mutate(),
+      });
+      return;
+    }
     saveMut.mutate();
   };
 
@@ -508,8 +548,13 @@ export default function MdEditorPage() {
   });
 
   const deleteDoc = (id: string) => {
-    if (!window.confirm("确定要删除这个文档吗？（服务器同步删除）")) return;
-    deleteMut.mutate(id);
+    requestConfirm({
+      title: "删除文档？",
+      description: "将同步删除服务器中的文档记录、正文与关联元数据；此操作不可恢复。",
+      confirmLabel: "删除文档",
+      confirmButtonClassName: "bg-red-600 text-white hover:bg-red-700",
+      onConfirm: () => deleteMut.mutate(id),
+    });
   };
 
   const attachmentStorageSummary = useMemo(() => {
@@ -734,7 +779,14 @@ export default function MdEditorPage() {
               type="button"
               className="h-9 shrink-0 bg-violet-600 hover:bg-violet-700"
               disabled={guideMetaMut.isPending}
-              onClick={() => guideMetaMut.mutate()}
+              onClick={() => {
+                requestConfirm({
+                  title: "保存页面指南标识？",
+                  description: "这会影响右下角帮助入口在页面上的匹配结果；请确认路由、匹配方式和启停状态正确。",
+                  confirmLabel: "保存标识",
+                  onConfirm: () => guideMetaMut.mutate(),
+                });
+              }}
             >
               保存标识
             </Button>
@@ -811,6 +863,32 @@ export default function MdEditorPage() {
 
       {notification ? <Notification message={notification.message} type={notification.type} /> : null}
 
+      <AlertDialog open={pendingConfirm !== null} onOpenChange={(open) => !open && setPendingConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{pendingConfirm?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{pendingConfirm?.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              className={
+                pendingConfirm?.confirmButtonClassName ??
+                "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200"
+              }
+              onClick={() => {
+                const action = pendingConfirm?.onConfirm;
+                setPendingConfirm(null);
+                action?.();
+              }}
+            >
+              {pendingConfirm?.confirmLabel ?? "确认"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Sheet open={versionsOpen} onOpenChange={setVersionsOpen}>
         <SheetContent className="flex w-full flex-col sm:max-w-md">
           <SheetHeader>
@@ -835,7 +913,15 @@ export default function MdEditorPage() {
                   size="sm"
                   variant="outline"
                   disabled={restoreMut.isPending}
-                  onClick={() => restoreMut.mutate(v.versionNo)}
+                  onClick={() => {
+                    requestConfirm({
+                      title: `恢复到版本 ${v.versionNo}？`,
+                      description: "当前内容会被覆盖，并新增一条版本记录；恢复后仍可从版本记录继续追溯。",
+                      confirmLabel: "恢复版本",
+                      confirmButtonClassName: "bg-amber-600 text-white hover:bg-amber-700",
+                      onConfirm: () => restoreMut.mutate(v.versionNo),
+                    });
+                  }}
                 >
                   恢复
                 </Button>
@@ -912,7 +998,14 @@ export default function MdEditorPage() {
                 type="button"
                 className="w-full sm:w-auto"
                 disabled={shareSaveMut.isPending || !activeNumericId}
-                onClick={() => shareSaveMut.mutate()}
+                onClick={() => {
+                  requestConfirm({
+                    title: "保存分享设置？",
+                    description: "这会影响公开访问状态或访问密码；请确认链接可见范围和密码策略已经核对。",
+                    confirmLabel: "保存分享设置",
+                    onConfirm: () => shareSaveMut.mutate(),
+                  });
+                }}
               >
                 保存分享设置
               </Button>

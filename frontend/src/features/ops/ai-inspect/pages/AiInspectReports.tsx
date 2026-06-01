@@ -1,11 +1,13 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, NavLink, Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { apiDeleteJson, apiGetJson, ApiHttpError } from "@/lib/api";
+import { withOpsMutationConfirmQuery } from "@/lib/ops-mutation-confirm";
 import { useAuth } from "@/auth/auth-context";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { MarkdownWithCopyToolbar } from "@/shared/ui/MarkdownWithCopyToolbar";
 import { JsonSnippetWithCopy } from "@/shared/ui/JsonSnippetWithCopy";
 import { OpenClawChatMarkdown } from "@/features/app-center/openclaw/components/OpenClawChatMarkdown";
@@ -380,7 +382,8 @@ function AiInspectReportsK8s() {
 function useRestartReportsDelete() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: number) => apiDeleteJson<{ ok?: boolean }>(`/api/k8s/pod-restart-ai/reports/${id}`),
+    mutationFn: async (id: number) =>
+      apiDeleteJson<{ ok?: boolean }>(withOpsMutationConfirmQuery(`/api/k8s/pod-restart-ai/reports/${id}`)),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["k8s-pod-restart-ai-reports"] }),
     onError: (e: unknown) => toast.error(e instanceof ApiHttpError ? e.serverMessage : String(e)),
   });
@@ -402,14 +405,6 @@ function AiInspectReportsPod() {
       }),
     retry: 1,
   });
-
-  const onDelete = useCallback(
-    (id: number) => {
-      if (!window.confirm("确定删除该条分析报告？不可恢复。")) return;
-      delM.mutate(id);
-    },
-    [delM]
-  );
 
   const total = listQ.data?.total ?? 0;
   const items = listQ.data?.items ?? [];
@@ -472,17 +467,21 @@ function AiInspectReportsPod() {
                       复制正文
                     </Button>
                     {canDeleteReports ? (
-                      <Button
+                      <ConfirmActionButton
                         type="button"
                         variant="ghost"
                         size="sm"
                         className="h-8 gap-1 text-destructive hover:text-destructive"
                         disabled={delM.isPending}
-                        onClick={() => onDelete(it.id)}
+                        title="删除 Pod 分析报告？"
+                        description={`将删除报告 #${it.id}，包括已保存的 Markdown 与关联元数据；此操作不可恢复。`}
+                        confirmLabel="删除报告"
+                        confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                        onConfirm={() => delM.mutate(it.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" aria-hidden />
                         删除
-                      </Button>
+                      </ConfirmActionButton>
                     ) : null}
                   </div>
                 </div>
@@ -523,14 +522,6 @@ function AiInspectReportsWorkload() {
       }),
     retry: 1,
   });
-
-  const onDelete = useCallback(
-    (id: number) => {
-      if (!window.confirm("确定删除该条分析报告？不可恢复。")) return;
-      delM.mutate(id);
-    },
-    [delM]
-  );
 
   const total = listQ.data?.total ?? 0;
   const items = listQ.data?.items ?? [];
@@ -580,17 +571,21 @@ function AiInspectReportsWorkload() {
                       复制正文
                     </Button>
                     {canDeleteReports ? (
-                      <Button
+                      <ConfirmActionButton
                         type="button"
                         variant="ghost"
                         size="sm"
                         className="h-8 gap-1 text-destructive hover:text-destructive"
                         disabled={delM.isPending}
-                        onClick={() => onDelete(it.id)}
+                        title="删除应用级分析报告？"
+                        description={`将删除报告 #${it.id}，包括已保存的 Markdown 与关联元数据；此操作不可恢复。`}
+                        confirmLabel="删除报告"
+                        confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                        onConfirm={() => delM.mutate(it.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" aria-hidden />
                         删除
-                      </Button>
+                      </ConfirmActionButton>
                     ) : null}
                   </div>
                 </div>

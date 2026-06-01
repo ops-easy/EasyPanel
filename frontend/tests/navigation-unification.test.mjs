@@ -94,7 +94,8 @@ test("compute sidebar follows the same coarse order as compute top navigation", 
     ],
     "compute top utility navigation"
   );
-  assert.match(computeSubNavSource, /if \(providerConfigured\) base\.push\(\.\.\.resourceLinks\);[\s\S]*base\.push\(\.\.\.utilityLinks\);/);
+  assert.match(computeSubNavSource, /if \(hasVirtualizedProviders\) base\.push\(\.\.\.resourceLinks\);[\s\S]*base\.push\(\.\.\.utilityLinks\);/);
+  assert.doesNotMatch(computeSubNavSource, /if \(providerConfigured\) base\.push\(\.\.\.resourceLinks\);/);
   assertInOrder(
     computeSidebar,
     [
@@ -231,11 +232,11 @@ test("main shell surfaces PVE and OpenWrt setup status before drilling in", () =
   assert.match(homeHubSource, /\/api\/network\/devices/);
 
   assert.match(computeDashboardSource, /\/api\/compute\/providers/);
-  assert.match(computeDashboardSource, /打开配置|先接入 vCenter 或 PVE/);
+  assert.match(computeDashboardSource, /打开配置|先配置 vCenter、PVE 或容器主机/);
 
   assert.match(networkDashboardSource, /\/api\/network\/devices/);
   assert.match(networkDashboardSource, /\/cluster\/network\/access/);
-  assert.match(networkDashboardSource, /OpenWrt 接入|未接入/);
+  assert.match(networkDashboardSource, /OpenWrt 接入|未配置/);
 });
 
 test("network workspace does not link internal toolbox back into vCenter", () => {

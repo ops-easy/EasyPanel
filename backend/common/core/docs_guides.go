@@ -265,16 +265,20 @@ type docsGuideSaveBody struct {
 	BodyMarkdown string `json:"bodyMarkdown"`
 	Enabled      *bool  `json:"enabled"`
 	SortOrder    *int   `json:"sortOrder"`
+	Confirm      bool   `json:"confirm"`
 }
 
 func docsGuidesCreate(c *gin.Context, app *ServerApp) {
-	db := docsRequireMySQL(c, app)
-	if db == nil {
-		return
-	}
 	var body docsGuideSaveBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "docs guide create") {
+		return
+	}
+	db := docsRequireMySQL(c, app)
+	if db == nil {
 		return
 	}
 	key := docsNormalizeGuideKey(body.GuideKey)
@@ -338,10 +342,6 @@ func docsGuidesCreate(c *gin.Context, app *ServerApp) {
 }
 
 func docsGuidesUpdate(c *gin.Context, app *ServerApp) {
-	db := docsRequireMySQL(c, app)
-	if db == nil {
-		return
-	}
 	key := docsNormalizeGuideKey(c.Param("guideKey"))
 	if !docsGuideKeyValid(key) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 guideKey"})
@@ -350,6 +350,13 @@ func docsGuidesUpdate(c *gin.Context, app *ServerApp) {
 	var body docsGuideSaveBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "docs guide update") {
+		return
+	}
+	db := docsRequireMySQL(c, app)
+	if db == nil {
 		return
 	}
 	var curDocID uint64
@@ -402,11 +409,18 @@ func docsGuidesUpdate(c *gin.Context, app *ServerApp) {
 }
 
 func docsGuidesDelete(c *gin.Context, app *ServerApp) {
+	key := docsNormalizeGuideKey(c.Param("guideKey"))
+	if !docsGuideKeyValid(key) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 guideKey"})
+		return
+	}
+	if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "docs guide delete") {
+		return
+	}
 	db := docsRequireMySQL(c, app)
 	if db == nil {
 		return
 	}
-	key := docsNormalizeGuideKey(c.Param("guideKey"))
 	var docID uint64
 	if err := db.QueryRow(`SELECT doc_id FROM easypanel_doc_guides WHERE guide_key=?`, key).Scan(&docID); err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "系统指南不存在"})

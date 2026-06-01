@@ -34,7 +34,7 @@ test("配置集中呈现 vCenter、PVE、监控、iDRAC 与 VMLog 配置", () =>
   assert.match(settingsSource, /focus="idrac"/);
   assert.match(settingsSource, /focus="vmlog"/);
   assert.match(settingsSource, /vCenter 连接/);
-  assert.match(settingsSource, /PVE 接入/);
+  assert.match(settingsSource, /PVE 目标/);
   assert.match(settingsSource, /监控数据源/);
   assert.match(settingsSource, /iDRAC 配置/);
   assert.match(settingsSource, /VMLog/);
@@ -74,7 +74,7 @@ test("PVE target settings uses summary-first layout instead of an empty table", 
   const pvePanelSource = read("../src/features/compute/pve/components/PveTargetSettingsPanel.tsx");
   const pveTargetFormSource = read("../src/features/compute/pve/components/PveTargetForm.tsx");
 
-  assert.match(pvePanelSource, /当前接入目标/);
+  assert.match(pvePanelSource, /当前 PVE 目标/);
   assert.match(pvePanelSource, /TargetSummaryItem/);
   assert.match(pvePanelSource, /target-summary-grid/);
   assert.match(pveTargetFormSource, /lg:grid-cols-12/);

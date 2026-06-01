@@ -9,6 +9,8 @@ const subnav = read("../src/features/compute/layout/ComputeSubNav.tsx");
 const sidebar = read("../src/shared/layout/Sidebar.tsx");
 const settings = read("../src/features/compute/pages/VirtualMachineSettings.tsx");
 const runtimeSettings = read("../src/features/settings/components/SettingsRuntimeSection.tsx");
+const resourcePage = read("../src/features/compute/pages/ComputeResourcePage.tsx");
+const pveTargetSettings = read("../src/features/compute/pve/components/PveTargetSettingsPanel.tsx");
 
 test("compute workspace exposes resource-first routes", () => {
   for (const path of [
@@ -40,6 +42,14 @@ test("compute navigation is resource-first and keeps unconfigured providers out 
 
   assert.match(subnav, /providerConfigured/);
   assert.match(subnav, /\/api\/pve\/targets/);
+  assert.match(subnav, /queryKey: \["compute-subnav-cloud-vm-instances"\]/);
+  assert.match(subnav, /\/api\/app-center\/cloud-vm\/instances/);
+  assert.match(subnav, /const cloudVmCount = cloudVmQ\.data\?\.instances\?\.length \?\? 0;/);
+  assert.match(subnav, /const hasVirtualizedProviders = Boolean\(cfgQ\.data\?\.vcenterConfigured === true \|\| pveTargetCount > 0\);/);
+  assert.match(subnav, /const providerConfigured = Boolean\(hasVirtualizedProviders \|\| cloudVmCount > 0\);/);
+  assert.match(subnav, /if \(hasVirtualizedProviders\) base\.push\(\.\.\.resourceLinks\);/);
+  assert.doesNotMatch(subnav, /if \(providerConfigured\) base\.push\(\.\.\.resourceLinks\);/);
+  assert.match(subnav, /to: "\/cluster\/apps\/cloud-vm", label: "容器主机"/);
   assert.match(subnav, /vcenterConfigured/);
 });
 
@@ -78,6 +88,21 @@ test("compute config page uses cards as the only inner navigation", () => {
   assert.match(settings, /<SettingsRuntimeSection variant="virtualMachine" focus="monitoring" \/>/);
   assert.match(settings, /<SettingsRuntimeSection variant="virtualMachine" focus="idrac" \/>/);
   assert.match(settings, /<SettingsRuntimeSection variant="virtualMachine" focus="vmlog" \/>/);
+});
+
+test("compute user-facing copy reads like configured resources instead of unfinished access setup", () => {
+  assert.match(resourcePage, /状态概览/);
+  assert.match(resourcePage, /还没有配置 vCenter 或 PVE/);
+  assert.doesNotMatch(resourcePage, /健康示例|还没有接入 vCenter 或 PVE/);
+
+  assert.match(settings, /return \{ label: "已配置", health: "ok" as ComputeHealth \};/);
+  assert.match(settings, /title: "PVE 目标"/);
+  assert.match(settings, /description: "宿主机带外 Redfish 配置，多台 iDRAC 目标统一维护。"/);
+  assert.doesNotMatch(settings, /已接入|PVE 接入|Redfish 接入/);
+
+  assert.match(pveTargetSettings, /const targetStatus = active \? "已配置" : targetsQ\.isLoading \? "读取中" : "未配置";/);
+  assert.match(pveTargetSettings, /当前 PVE 目标/);
+  assert.doesNotMatch(pveTargetSettings, /已接入|当前接入目标/);
 });
 
 test("virtual machine runtime settings can render focused real config panels", () => {

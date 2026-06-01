@@ -60,6 +60,137 @@ func TestPVEGuestPowerActionValidation(t *testing.T) {
 	}
 }
 
+func newPVEAdminTestRouter(app *ServerApp) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(gin.Recovery())
+	router.Use(func(c *gin.Context) {
+		c.Set(transportauthz.GinKeyDashboardRole, core.DashboardRoleAdmin)
+	})
+	api := router.Group("/api")
+	RegisterRoutes(api, app)
+	return router
+}
+
+func TestPVEGuestPowerRejectsMissingConfirmationBeforeClientLookup(t *testing.T) {
+	router := newPVEAdminTestRouter(nil)
+	body := strings.NewReader(`{"node":"pve-a","type":"qemu","action":"stop"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/pve/targets/pve-1/guests/101/power", body)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status=%d body=%s, want %d", w.Code, w.Body.String(), http.StatusBadRequest)
+	}
+	if !strings.Contains(strings.ToLower(w.Body.String()), "confirm") {
+		t.Fatalf("response should mention confirm requirement, got %s", w.Body.String())
+	}
+}
+
+func TestPVETargetMutationsRejectMissingConfirmationBeforeKVLookup(t *testing.T) {
+	cases := []struct {
+		name   string
+		method string
+		path   string
+		body   string
+	}{
+		{
+			name:   "target create",
+			method: http.MethodPost,
+			path:   "/api/pve/targets",
+			body:   `{"id":"pve-1","name":"PVE","baseUrl":"https://pve.example:8006","username":"root@pam","tokenName":"ep","tokenValue":"secret"}`,
+		},
+		{
+			name:   "target update",
+			method: http.MethodPut,
+			path:   "/api/pve/targets/pve-1",
+			body:   `{"name":"PVE","baseUrl":"https://pve.example:8006","username":"root@pam","tokenName":"ep"}`,
+		},
+		{
+			name:   "target delete",
+			method: http.MethodDelete,
+			path:   "/api/pve/targets/pve-1",
+			body:   ``,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			router := newPVEAdminTestRouter(nil)
+			req := httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("status=%d body=%s, want %d", w.Code, w.Body.String(), http.StatusBadRequest)
+			}
+			if !strings.Contains(strings.ToLower(w.Body.String()), "confirm") {
+				t.Fatalf("response should mention confirm requirement, got %s", w.Body.String())
+			}
+		})
+	}
+}
+
+func TestPVEGuestMutationsRejectMissingConfirmationBeforeClientLookup(t *testing.T) {
+	cases := []struct {
+		name   string
+		method string
+		path   string
+		body   string
+	}{
+		{
+			name:   "config update",
+			method: http.MethodPut,
+			path:   "/api/pve/targets/pve-1/guests/101/config?node=pve-a&type=qemu",
+			body:   `{"cores":2}`,
+		},
+		{
+			name:   "disk resize",
+			method: http.MethodPost,
+			path:   "/api/pve/targets/pve-1/guests/101/disks/resize",
+			body:   `{"node":"pve-a","type":"qemu","disk":"scsi0","size":"+10G"}`,
+		},
+		{
+			name:   "snapshot create",
+			method: http.MethodPost,
+			path:   "/api/pve/targets/pve-1/guests/101/snapshots?node=pve-a&type=qemu",
+			body:   `{"snapname":"before-change"}`,
+		},
+		{
+			name:   "snapshot delete",
+			method: http.MethodDelete,
+			path:   "/api/pve/targets/pve-1/guests/101/snapshots/before-change?node=pve-a&type=qemu",
+			body:   ``,
+		},
+		{
+			name:   "snapshot rollback",
+			method: http.MethodPost,
+			path:   "/api/pve/targets/pve-1/guests/101/snapshots/before-change/rollback?node=pve-a&type=qemu",
+			body:   `{}`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			router := newPVEAdminTestRouter(nil)
+			req := httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("status=%d body=%s, want %d", w.Code, w.Body.String(), http.StatusBadRequest)
+			}
+			if !strings.Contains(strings.ToLower(w.Body.String()), "confirm") {
+				t.Fatalf("response should mention confirm requirement, got %s", w.Body.String())
+			}
+		})
+	}
+}
+
 func TestPVEGuestDetailAndMetricsPaths(t *testing.T) {
 	status, config, err := pveGuestDetailPaths("pve-a", "vm", "101")
 	if err != nil {

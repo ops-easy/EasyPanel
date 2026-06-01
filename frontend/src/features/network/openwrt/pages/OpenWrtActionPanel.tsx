@@ -15,7 +15,8 @@ type Props = {
 export default function OpenWrtActionPanel({ target, canWrite, running, onAction }: Props) {
   const [confirmName, setConfirmName] = useState("");
   const disabled = !target || !canWrite || running;
-  const rebootConfirmed = confirmName.trim() === (target?.name ?? "").trim();
+  const actionConfirmed = confirmName.trim() === (target?.name ?? "").trim();
+  const actionDisabled = disabled || !actionConfirmed;
 
   return (
     <section className="rounded-lg min-w-0 overflow-hidden border border-slate-200 bg-white p-4 shadow-sm">
@@ -24,26 +25,26 @@ export default function OpenWrtActionPanel({ target, canWrite, running, onAction
         <h2 className="text-sm font-semibold text-slate-950">OpenWrt 操作</h2>
       </div>
       <div className="grid gap-2">
-        <Button type="button" variant="outline" disabled={disabled} onClick={() => onAction("reload-network")}>
+        <Input
+          value={confirmName}
+          disabled={!target || !canWrite}
+          placeholder={target ? `输入 ${target.name} 确认写入/重载操作` : "选择目标后可操作"}
+          onChange={(e) => setConfirmName(e.target.value)}
+        />
+        <Button type="button" variant="outline" disabled={actionDisabled} onClick={() => onAction("reload-network", true)}>
           {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
           重载网络
         </Button>
-        <Button type="button" variant="outline" disabled={disabled} onClick={() => onAction("reload-wifi")}>
+        <Button type="button" variant="outline" disabled={actionDisabled} onClick={() => onAction("reload-wifi", true)}>
           <Wifi className="mr-2 h-4 w-4" />
           重载 Wi-Fi
         </Button>
-        <Button type="button" variant="outline" disabled={disabled} onClick={() => onAction("restart-dnsmasq")}>
+        <Button type="button" variant="outline" disabled={actionDisabled} onClick={() => onAction("restart-dnsmasq", true)}>
           <RefreshCw className="mr-2 h-4 w-4" />
           重启 dnsmasq
         </Button>
         <div className="grid gap-2 border-t border-slate-100 pt-3">
-          <Input
-            value={confirmName}
-            disabled={!target || !canWrite}
-            placeholder={target ? `输入 ${target.name} 确认重启` : "选择目标后可重启"}
-            onChange={(e) => setConfirmName(e.target.value)}
-          />
-          <Button type="button" variant="destructive" disabled={disabled || !rebootConfirmed} onClick={() => onAction("reboot", true)}>
+          <Button type="button" variant="destructive" disabled={actionDisabled} onClick={() => onAction("reboot", true)}>
             <RotateCcw className="mr-2 h-4 w-4" />
             重启设备
           </Button>

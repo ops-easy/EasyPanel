@@ -52,8 +52,13 @@ import {
   cloudVmAppCenterCanWrite,
   cloudVmHysteriaRevealAllowed,
 } from "@/lib/platform-permissions";
+import {
+  withAppCenterMutationConfirm,
+  withAppCenterMutationConfirmQuery,
+} from "@/features/app-center/lib/appCenterMutationConfirm";
 import CloudVmSshTerminalSheet from "@/features/app-center/cloudvm/components/CloudVmSshTerminalSheet";
 import { toast } from "sonner";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 type EnvVar = { name: string; value: string };
 
@@ -426,7 +431,10 @@ export default function AppCenterCloudVmDetail() {
       if (rp.length > 0) {
         body.rootPassword = rp;
       }
-      return apiPutJson(`/api/app-center/cloud-vm/instances/${id}`, body);
+      return apiPutJson(
+        `/api/app-center/cloud-vm/instances/${id}`,
+        withAppCenterMutationConfirm(body)
+      );
     },
     onSuccess: () => {
       const hadPw = rootPasswordDraft.trim().length >= 8;
@@ -457,7 +465,10 @@ export default function AppCenterCloudVmDetail() {
       const r = await apiPostJson<{
         hysteria2ConfigYaml?: string;
         hysteria2ListenPort?: number;
-      }>(`/api/app-center/cloud-vm/instances/${id}/reveal-hysteria-client`, { password: pw });
+      }>(
+        `/api/app-center/cloud-vm/instances/${id}/reveal-hysteria-client`,
+        withAppCenterMutationConfirm({ password: pw })
+      );
       setHyDraft((h) => ({
         ...h,
         hysteria2ConfigYaml: (r.hysteria2ConfigYaml ?? "").trim(),
@@ -480,7 +491,10 @@ export default function AppCenterCloudVmDetail() {
       if (rp.length < 8) {
         throw new Error("root 密码至少 8 位");
       }
-      return apiPutJson(`/api/app-center/cloud-vm/instances/${id}`, { rootPassword: rp });
+      return apiPutJson(
+        `/api/app-center/cloud-vm/instances/${id}`,
+        withAppCenterMutationConfirm({ rootPassword: rp })
+      );
     },
     onSuccess: () => {
       setRootPasswordDraft("");
@@ -489,6 +503,14 @@ export default function AppCenterCloudVmDetail() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const confirmAndSaveInit = () => {
+    saveInitMut.mutate();
+  };
+
+  const confirmAndSyncRootPassword = () => {
+    saveRootPasswordOnlyMut.mutate();
+  };
 
   const scaleMut = useMutation({
     mutationFn: () => {
@@ -506,7 +528,10 @@ export default function AppCenterCloudVmDetail() {
       if (pvcSize !== (cfg?.pvcSize ?? "").trim()) {
         body.pvcSize = pvcSize;
       }
-      return apiPostJson(`/api/app-center/cloud-vm/instances/${id}/scale`, body);
+      return apiPostJson(
+        `/api/app-center/cloud-vm/instances/${id}/scale`,
+        withAppCenterMutationConfirm(body)
+      );
     },
     onSuccess: () => {
       toast.success("已提交扩容；Deployment 将滚动更新，PVC 扩容依赖 StorageClass 支持在线扩容");
@@ -575,7 +600,7 @@ export default function AppCenterCloudVmDetail() {
     try {
       const r = await apiPostJson<{ newPassword?: string }>(
         `/api/app-center/cloud-vm/instances/${id}/reset-root-password`,
-        {}
+        withAppCenterMutationConfirm({})
       );
       setResetConfirmOpen(false);
       setResetPlain(r.newPassword ?? "");
@@ -595,7 +620,7 @@ export default function AppCenterCloudVmDetail() {
     setDeleteConfirmOpen(false);
     setDeleting(true);
     try {
-      await apiDelete(`/api/app-center/cloud-vm/instances/${id}`);
+      await apiDelete(withAppCenterMutationConfirmQuery(`/api/app-center/cloud-vm/instances/${id}`));
       toast.success("已删除");
       navigate("/cluster/apps/cloud-vm", { replace: true });
     } catch (e) {
@@ -884,7 +909,7 @@ export default function AppCenterCloudVmDetail() {
                 挂载新密码。可与上方脚本<strong>一并保存</strong>，或只填密码后点「仅同步 root 密码」。
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
-                <Button
+                <ConfirmActionButton
                   type="button"
                   size="sm"
                   variant="outline"
@@ -893,21 +918,27 @@ export default function AppCenterCloudVmDetail() {
                     !opReady ||
                     rootPasswordDraft.trim().length < 8
                   }
-                  onClick={() => saveRootPasswordOnlyMut.mutate()}
+                  title="确认同步 root 密码？"
+                  description="将把新的 root 密码写入集群 Secret 和平台加密存储，并滚动重启 Pod。"
+                  confirmLabel="同步"
+                  onConfirm={confirmAndSyncRootPassword}
                 >
                   {saveRootPasswordOnlyMut.isPending ? "同步中…" : "仅同步 root 密码"}
-                </Button>
+                </ConfirmActionButton>
               </div>
             </div>
-            <Button
+            <ConfirmActionButton
               type="button"
               size="sm"
               className="bg-sky-600 hover:bg-sky-700"
               disabled={saveInitMut.isPending || !opReady}
-              onClick={() => saveInitMut.mutate()}
+              title="确认保存并应用？"
+              description="将更新该容器主机的初始化脚本与软件配置，并可能滚动重启 Pod。"
+              confirmLabel="应用"
+              onConfirm={confirmAndSaveInit}
             >
               {saveInitMut.isPending ? "保存中…" : "保存并应用（滚动更新）"}
-            </Button>
+            </ConfirmActionButton>
           </div>
         ) : (
           <pre className="mt-3 max-h-48 overflow-auto rounded-lg border border-slate-100 bg-slate-50 p-3 font-mono text-[11px] text-slate-700 whitespace-pre-wrap">
@@ -931,7 +962,7 @@ export default function AppCenterCloudVmDetail() {
             <p className="text-[11px] text-slate-600">
               仅更新 Secret 与库密文并滚动 Pod；不修改启动命令。
             </p>
-            <Button
+            <ConfirmActionButton
               type="button"
               size="sm"
               variant="outline"
@@ -940,10 +971,13 @@ export default function AppCenterCloudVmDetail() {
                 !opReady ||
                 rootPasswordDraft.trim().length < 8
               }
-              onClick={() => saveRootPasswordOnlyMut.mutate()}
+              title="确认同步 root 密码？"
+              description="将把新的 root 密码写入集群 Secret 和平台加密存储，并滚动重启 Pod。"
+              confirmLabel="同步"
+              onConfirm={confirmAndSyncRootPassword}
             >
               {saveRootPasswordOnlyMut.isPending ? "同步中…" : "仅同步 root 密码"}
-            </Button>
+            </ConfirmActionButton>
           </div>
         ) : null}
       </div>
@@ -1046,15 +1080,18 @@ export default function AppCenterCloudVmDetail() {
                   )}
                 </>
               ) : null}
-              <Button
+              <ConfirmActionButton
                 type="button"
                 size="sm"
                 className="bg-fuchsia-600 hover:bg-fuchsia-700"
                 disabled={saveInitMut.isPending || !opReady}
-                onClick={() => saveInitMut.mutate()}
+                title="确认保存 Hysteria2 客户端？"
+                description="将更新 Hysteria2 客户端配置、初始化脚本和集群 Secret，并可能滚动重启 Pod。"
+                confirmLabel="保存"
+                onConfirm={confirmAndSaveInit}
               >
                 {saveInitMut.isPending ? "保存中…" : "保存 Hysteria2 客户端与初始化脚本"}
-              </Button>
+              </ConfirmActionButton>
             </div>
           ) : (
             <div className="mt-2 space-y-1 text-xs text-slate-500">

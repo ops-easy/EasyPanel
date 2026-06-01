@@ -3,10 +3,12 @@ import { Link, Outlet, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import { ApiHttpError, apiDeleteJson, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
+import { withK8sMutationConfirm, withK8sMutationConfirmQuery } from "@/features/cluster/lib/k8sMutationConfirm";
 import { useAuth } from "@/auth/auth-context";
 import { parseAge } from "./parseAge";
 import { JsonCodeEditor } from "@/shared/ui/JsonCodeEditor";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import {
   Table,
@@ -113,7 +115,7 @@ export function ClusterCustomResourceCrdList() {
   const qc = useQueryClient();
   const [delName, setDelName] = useState<string | null>(null);
   const delMut = useMutation({
-    mutationFn: (name: string) => apiDeleteJson(apiPathCrd(name)),
+    mutationFn: (name: string) => apiDeleteJson(withK8sMutationConfirmQuery(apiPathCrd(name))),
     onSuccess: async () => {
       setDelName(null);
       await qc.invalidateQueries({ queryKey: ["k8s-crds"] });
@@ -263,7 +265,7 @@ export function ClusterCustomResourceInstances() {
         throw new Error("JSON 无效：" + (e as Error).message);
       }
       const qs = nsFilter.trim() ? `?namespace=${encodeURIComponent(nsFilter.trim())}` : "";
-      return apiPostJson(apiPathCrList(crdName) + qs, parsed);
+      return apiPostJson(apiPathCrList(crdName) + qs, withK8sMutationConfirm(parsed));
     },
     onSuccess: async () => {
       setCreateOpen(false);
@@ -381,13 +383,16 @@ export function ClusterCustomResourceInstances() {
             <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
               取消
             </Button>
-            <Button
+            <ConfirmActionButton
               type="button"
-              onClick={() => void createMut.mutateAsync()}
               disabled={createMut.isPending}
+              title="确认创建自定义资源？"
+              description={`将在 CRD ${crdName} 下创建新的自定义资源实例。`}
+              confirmLabel="创建"
+              onConfirm={() => void createMut.mutateAsync()}
             >
               创建
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -428,7 +433,7 @@ export function ClusterCustomResourceDetail() {
   const saveMut = useMutation({
     mutationFn: async () => {
       const obj = JSON.parse(editJson) as Record<string, unknown>;
-      return apiPutJson(apiPathCrOne(crdName, namespaceSeg, objName), obj);
+      return apiPutJson(apiPathCrOne(crdName, namespaceSeg, objName), withK8sMutationConfirm(obj));
     },
     onSuccess: async () => {
       setDirty(false);
@@ -437,7 +442,7 @@ export function ClusterCustomResourceDetail() {
   });
 
   const delMut = useMutation({
-    mutationFn: () => apiDeleteJson(apiPathCrOne(crdName, namespaceSeg, objName)),
+    mutationFn: () => apiDeleteJson(withK8sMutationConfirmQuery(apiPathCrOne(crdName, namespaceSeg, objName))),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["k8s-cr-instances", crdName] });
       void navigate(`/cluster/custom-resources/${encodeURIComponent(crdName)}`);
@@ -586,15 +591,18 @@ export function ClusterCustomResourceDetail() {
             />
             {isAdmin && (
               <div className="flex flex-wrap gap-2">
-                <Button
+                <ConfirmActionButton
                   type="button"
                   size="sm"
                   disabled={!dirty || saveMut.isPending}
-                  onClick={() => void saveMut.mutateAsync()}
+                  title="确认全量替换自定义资源？"
+                  description={`将以当前 JSON 全量替换自定义资源 ${objName}。`}
+                  confirmLabel="替换"
+                  onConfirm={() => void saveMut.mutateAsync()}
                 >
                   <Save className="mr-1 h-4 w-4" />
                   保存（PUT 全量替换）
-                </Button>
+                </ConfirmActionButton>
                 {saveMut.error && (
                   <span className="text-sm text-red-600">
                     {saveMut.error instanceof ApiHttpError

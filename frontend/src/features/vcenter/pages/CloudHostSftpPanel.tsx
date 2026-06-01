@@ -11,7 +11,18 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { apiGetJson } from "@/lib/api";
+import { withHostMutationConfirmQuery } from "@/features/vcenter/lib/hostMutationConfirm";
 import type { CloudHostSSHSettings } from "./CloudHostSshTerminal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/shared/ui/alert-dialog";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
@@ -78,6 +89,7 @@ type CloudHostSftpPanelProps = {
 const CloudHostSftpPanel: React.FC<CloudHostSftpPanelProps> = ({ hostId, displayName }) => {
   const queryClient = useQueryClient();
   const [path, setPath] = useState("/");
+  const [pendingUpload, setPendingUpload] = useState<File | null>(null);
 
   const sshQ = useQuery({
     queryKey: ["cloud-host-ssh-settings", hostId],
@@ -103,7 +115,7 @@ const CloudHostSftpPanel: React.FC<CloudHostSftpPanelProps> = ({ hostId, display
       fd.append("file", file);
       fd.append("path", path);
       const res = await fetch(
-        `${API_BASE}/api/cloud-hosts/${encodeURIComponent(hostId)}/sftp/upload`,
+        `${API_BASE}${withHostMutationConfirmQuery(`/api/cloud-hosts/${encodeURIComponent(hostId)}/sftp/upload`)}`,
         { method: "POST", body: fd, credentials: "same-origin" }
       );
       if (!res.ok) {
@@ -207,12 +219,40 @@ const CloudHostSftpPanel: React.FC<CloudHostSftpPanelProps> = ({ hostId, display
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   e.target.value = "";
-                  if (f) uploadMut.mutate(f);
+                  if (f) setPendingUpload(f);
                 }}
               />
               <FolderUp className="h-3.5 w-3.5" />
               上传到当前目录
             </label>
+            <AlertDialog
+              open={pendingUpload != null}
+              onOpenChange={(open) => {
+                if (!open) setPendingUpload(null);
+              }}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>确认上传文件？</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    将把文件「{pendingUpload?.name ?? ""}」上传到远程主机当前目录 {path}。
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>取消</AlertDialogCancel>
+                  <AlertDialogAction
+                    type="button"
+                    onClick={() => {
+                      const file = pendingUpload;
+                      setPendingUpload(null);
+                      if (file) uploadMut.mutate(file);
+                    }}
+                  >
+                    上传
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
           <p className="text-[11px] text-gray-500">
             点击文件夹进入；文件可下载。上传写入{" "}

@@ -81,6 +81,114 @@ func TestRequireNetworkAdminRejectsCustomNetworkRO(t *testing.T) {
 	}
 }
 
+func newNetworkAdminTestRouter(app *ServerApp) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(gin.Recovery())
+	router.Use(func(c *gin.Context) {
+		c.Set(transportauthz.GinKeyDashboardRole, core.DashboardRoleAdmin)
+	})
+	api := router.Group("/api")
+	RegisterRoutes(api, app)
+	return router
+}
+
+func TestNetworkDeviceMutationsRejectMissingConfirmationBeforeKVLookup(t *testing.T) {
+	cases := []struct {
+		name   string
+		method string
+		path   string
+		body   string
+	}{
+		{
+			name:   "device create",
+			method: http.MethodPost,
+			path:   "/api/network/devices",
+			body:   `{"kind":"openwrt","name":"OpenWrt","apiUrl":"https://router.lan"}`,
+		},
+		{
+			name:   "device update",
+			method: http.MethodPut,
+			path:   "/api/network/devices/openwrt",
+			body:   `{"kind":"openwrt","name":"OpenWrt","apiUrl":"https://router.lan"}`,
+		},
+		{
+			name:   "device delete",
+			method: http.MethodDelete,
+			path:   "/api/network/devices/openwrt",
+			body:   ``,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			router := newNetworkAdminTestRouter(nil)
+			req := httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("status=%d body=%s, want %d", w.Code, w.Body.String(), http.StatusBadRequest)
+			}
+			if !strings.Contains(strings.ToLower(w.Body.String()), "confirm") {
+				t.Fatalf("response should mention confirm requirement, got %s", w.Body.String())
+			}
+		})
+	}
+}
+
+func TestNetworkOperationalMutationsRejectMissingConfirmationBeforeDeviceLookup(t *testing.T) {
+	cases := []struct {
+		name   string
+		method string
+		path   string
+		body   string
+	}{
+		{
+			name:   "OpenWrt action",
+			method: http.MethodPost,
+			path:   "/api/network/devices/openwrt/openwrt/actions",
+			body:   `{"action":"reload-network"}`,
+		},
+		{
+			name:   "OpenWrt config apply",
+			method: http.MethodPost,
+			path:   "/api/network/devices/openwrt/openwrt/config/interfaces/apply",
+			body:   `{"domain":"interfaces","changes":[{"operation":"set","section":"network.lan.ipaddr","value":"192.168.2.1"}]}`,
+		},
+		{
+			name:   "legacy OpenWrt config apply",
+			method: http.MethodPost,
+			path:   "/api/network/devices/openwrt/openwrt/config/apply",
+			body:   `{"changes":[{"operation":"set","section":"network.lan.ipaddr","value":"192.168.2.1"}]}`,
+		},
+		{
+			name:   "iKuai provider action",
+			method: http.MethodPost,
+			path:   "/api/network/devices/ikuai/ikuai/actions",
+			body:   `{"action":"reboot"}`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			router := newNetworkAdminTestRouter(nil)
+			req := httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("status=%d body=%s, want %d", w.Code, w.Body.String(), http.StatusBadRequest)
+			}
+			if !strings.Contains(strings.ToLower(w.Body.String()), "confirm") {
+				t.Fatalf("response should mention confirm requirement, got %s", w.Body.String())
+			}
+		})
+	}
+}
+
 func TestNetworkDevicesCollapseOnePerKind(t *testing.T) {
 	list := []networkmodel.Device{
 		{ID: "ikuai-new", Kind: "ikuai", Name: "iKuai New", PrometheusScope: "network"},
@@ -247,6 +355,32 @@ func TestOpenWrtConfigCommandsSupportDeleteAndCommit(t *testing.T) {
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("preview commands missing %q in:\n%s", want, got)
+		}
+	}
+}
+
+func TestOpenWrtOperationalActionsRequireConfirmation(t *testing.T) {
+	for _, action := range []string{"reload-network", "reload-wifi", "restart-dnsmasq", "reboot"} {
+		if !openWrtActionRequiresConfirm(action) {
+			t.Fatalf("OpenWrt action %q should require explicit confirmation", action)
+		}
+	}
+}
+
+func TestNetworkMutationAuditDetailsAreHumanReadable(t *testing.T) {
+	dev := networkmodel.Device{ID: "ow-1", Kind: "openwrt", Name: "Office Edge", Host: "192.168.1.1"}
+
+	actionDetail := networkActionAuditDetail("openwrt", dev, "reload-network")
+	for _, want := range []string{"OpenWrt", "Office Edge", "ow-1", "reload-network"} {
+		if !strings.Contains(actionDetail, want) {
+			t.Fatalf("network action audit detail missing %q: %s", want, actionDetail)
+		}
+	}
+
+	configDetail := networkConfigAuditDetail("openwrt", dev, "interfaces", 2, "network")
+	for _, want := range []string{"OpenWrt", "Office Edge", "interfaces", "changes=2", "reload=network"} {
+		if !strings.Contains(configDetail, want) {
+			t.Fatalf("network config audit detail missing %q: %s", want, configDetail)
 		}
 	}
 }

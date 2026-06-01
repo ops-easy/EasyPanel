@@ -115,6 +115,7 @@ type opsAIProviderPutBody struct {
 	Endpoint         opsAIProviderPutEndpointBody            `json:"endpoint"`
 	ProviderProfiles map[string]opsAIProviderPutEndpointBody `json:"providerProfiles"`
 	AI               OpsAIInspectConfig                      `json:"ai"`
+	Confirm          bool                                    `json:"confirm"`
 }
 
 func applyOpsAIProviderEndpointPut(cfg Config, cur OpsAIProviderEndpoint, body opsAIProviderPutEndpointBody) (OpsAIProviderEndpoint, error) {
@@ -151,6 +152,9 @@ func handleOpsAIProviderPut(app *ServerApp) gin.HandlerFunc {
 		var body opsAIProviderPutBody
 		if err := c.ShouldBindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "参数无效"})
+			return
+		}
+		if !requireOpsMutationConfirm(c, body.Confirm, "ops AI provider update") {
 			return
 		}
 		cfg := app.Cfg()
@@ -326,6 +330,7 @@ type opsGrafanaPutBody struct {
 	User          string `json:"user"`
 	Password      string `json:"password"`
 	SkipTLSVerify bool   `json:"skipTlsVerify"`
+	Confirm       bool   `json:"confirm"`
 }
 
 func handleOpsGrafanaConfigPut(app *ServerApp) gin.HandlerFunc {
@@ -333,6 +338,9 @@ func handleOpsGrafanaConfigPut(app *ServerApp) gin.HandlerFunc {
 		var body opsGrafanaPutBody
 		if err := c.ShouldBindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "参数无效"})
+			return
+		}
+		if !requireOpsMutationConfirm(c, body.Confirm, "ops Grafana config update") {
 			return
 		}
 		key, err := opsEncryptionKey(app.Cfg())
@@ -372,6 +380,9 @@ func handleOpsGrafanaConfigPut(app *ServerApp) gin.HandlerFunc {
 
 func handleOpsGrafanaSync(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "ops Grafana dashboard sync") {
+			return
+		}
 		cfg := app.Cfg()
 		m, err := loadOpsGrafanaMeta(app.PlatformKV())
 		if err != nil {
@@ -492,9 +503,13 @@ func handleOpsAlertsPut(app *ServerApp) gin.HandlerFunc {
 			ChannelIDs                    []string            `json:"channelIds"`
 			Silences                      []OpsAlertSilence   `json:"silences"`
 			AlertmanagerForwardToChannels *bool               `json:"alertmanagerForwardToChannels"`
+			Confirm                       bool                `json:"confirm"`
 		}
 		if err := c.ShouldBindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "参数无效"})
+			return
+		}
+		if !requireOpsMutationConfirm(c, body.Confirm, "ops alerts update") {
 			return
 		}
 		key, err := opsEncryptionKey(app.Cfg())
@@ -732,6 +747,9 @@ func handleOpsMonitoringPanelsPut(app *ServerApp) gin.HandlerFunc {
 		var body opsMonitoringPanelsPayload
 		if err := c.ShouldBindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "参数无效"})
+			return
+		}
+		if !requireOpsMutationConfirm(c, body.Confirm, "ops monitoring panels update") {
 			return
 		}
 		if err := validateOpsMonitoringCustomPanels(body.Panels); err != nil {

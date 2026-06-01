@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useAppConfig } from "@/hooks/use-app-config";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/shared/ui/button";
@@ -8,7 +9,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/shared/ui/accordion";
-import { apiGetJson, type AppConfig } from "@/lib/api";
+import { apiGetJson } from "@/lib/api";
 import type { VCenterConsoleHtmlResponse, VCenterWebmksResponse } from "./types";
 
 const VCenterConsolePanel: React.FC<{ moref: string }> = ({ moref }) => {
@@ -47,46 +48,25 @@ const VCenterConsolePanel: React.FC<{ moref: string }> = ({ moref }) => {
   const loginUrl = cfg?.vcenterUiLoginUrl ?? "";
   const consoleUrl = consoleHtmlQ.data?.url;
   const clientVmUrl = consoleHtmlQ.data?.vsphereClientUrl;
+  const platformConsolePath = `/cluster/bastion/console/${encodeURIComponent(moref)}`;
 
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-blue-100 bg-blue-50/80 p-4 text-sm text-gray-800">
-        <p className="font-medium text-gray-900">推荐：vSphere 官方网页控制台</p>
+        <p className="font-medium text-gray-900">推荐：站内 WebMKS 控制台</p>
         <p className="mt-2 text-gray-700">
-          <code className="rounded bg-white px-1 text-xs">webconsole.html</code> 的{" "}
-          <code className="rounded bg-white px-1 text-xs">vmId</code> 须为完整 MoURN（
-          <code className="rounded bg-white px-1 text-xs">
-            urn:vmomi:VirtualMachine:vm-2041:&lt;instanceUuid&gt;
-          </code>
-          ），仅 <code className="rounded bg-white px-1 text-xs">vm-2041</code> 会报{" "}
-          <strong>Input is required</strong>。另提供与客户端一致的摘要深链（需已登录 SSO）。
+          平台后端会使用已保存的 vCenter 连接生成控制台 ticket，并通过同源 WebSocket
+          代理到浏览器。正常运维场景优先在 EasyPanel 内完成控制台操作，不需要先进入 vSphere Client。
         </p>
-        <p className="mt-2 text-gray-700">
-          vCenter 通常下发{" "}
-          <code className="rounded bg-white px-1 text-xs">
-            Content-Security-Policy: frame-ancestors &apos;self&apos;
-          </code>
-          ，只允许 <strong>与 vCenter 同源</strong> 的页面嵌入，因此本面板（如 localhost 或其它域名）
-          <strong> 无法在 iframe 里打开 </strong>
-          vSphere，这是服务端安全策略，无法由本应用绕过。请一律使用下方「新窗口打开」。
-        </p>
-        <p className="mt-2 text-gray-700">
-          使用 <strong>Nginx + SSO</strong> 时：先在新标签完成登录，再打开摘要或 webconsole 链接。
-        </p>
-      </div>
-
-      {loginUrl && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => window.open(loginUrl, "_blank", "noopener,noreferrer")}
-          >
-            1. 打开 vCenter 登录（SSO）
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button asChild type="button" className="bg-blue-600 hover:bg-blue-700">
+            <Link to={platformConsolePath}>打开站内 WebMKS 控制台</Link>
           </Button>
-          <span className="text-xs text-gray-500">{loginUrl}</span>
+          <Button type="button" variant="outline" size="sm" onClick={() => copy(proxyWsUrl)}>
+            复制同源代理地址
+          </Button>
         </div>
-      )}
+      </div>
 
       {consoleHtmlQ.isLoading && (
         <p className="text-sm text-gray-500">正在生成控制台链接…</p>
@@ -100,55 +80,44 @@ const VCenterConsolePanel: React.FC<{ moref: string }> = ({ moref }) => {
         <p className="text-xs text-gray-600">{consoleHtmlQ.data.hint}</p>
       )}
 
-      {clientVmUrl && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50/90 p-4 text-sm">
-          <p className="font-medium text-emerald-900">已登录 SSO 时（与本地一致）</p>
-          <p className="mt-1 text-xs text-emerald-800">
-            打开与 vSphere Client 地址栏相同的虚拟机摘要页，再在页面里操作控制台：
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              className="border-emerald-300 bg-white"
-              onClick={() =>
-                window.open(clientVmUrl, "_blank", "noopener,noreferrer")
-              }
-            >
-              打开虚拟机摘要（Client 深链）
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => copy(clientVmUrl)}
-            >
-              复制摘要链接
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {consoleUrl && (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() =>
-              window.open(consoleUrl, "_blank", "noopener,noreferrer")
-            }
-          >
-            新窗口打开 webconsole.html（CloneSession）
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => copy(consoleUrl)}
-          >
-            复制 webconsole 链接
-          </Button>
-        </div>
+      {(loginUrl || clientVmUrl || consoleUrl) && (
+        <Accordion type="single" collapsible className="rounded-lg border border-gray-200">
+          <AccordionItem value="official-links">
+            <AccordionTrigger className="px-4 text-sm">
+              备用：vSphere 官方链接（排障）
+            </AccordionTrigger>
+            <AccordionContent className="space-y-3 px-4 pb-4 text-sm text-gray-600">
+              <p className="text-xs leading-relaxed text-gray-500">
+                仅在站内 WebMKS SDK、CSP 或 SSO 链路需要排查时使用。以下链接不作为日常主路径，
+                避免把虚拟机控制台操作重新分散回 vCenter 后台。
+              </p>
+              {loginUrl ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => copy(loginUrl)}>
+                    复制 vCenter 登录链接
+                  </Button>
+                  <span className="break-all text-xs text-gray-500">{loginUrl}</span>
+                </div>
+              ) : null}
+              {clientVmUrl ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => copy(clientVmUrl)}>
+                    复制虚拟机摘要深链
+                  </Button>
+                  <span className="break-all text-xs text-gray-500">{clientVmUrl}</span>
+                </div>
+              ) : null}
+              {consoleUrl ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => copy(consoleUrl)}>
+                    复制 webconsole 链接
+                  </Button>
+                  <span className="break-all text-xs text-gray-500">{consoleUrl}</span>
+                </div>
+              ) : null}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       )}
 
       <Accordion type="single" collapsible className="rounded-lg border border-gray-200">

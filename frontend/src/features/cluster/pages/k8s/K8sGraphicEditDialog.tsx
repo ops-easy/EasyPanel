@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Progress } from "@/shared/ui/progress";
 import {
   Dialog,
@@ -48,6 +49,7 @@ import {
   workloadApplyPipelineProgress,
   type WorkloadApplyPipelineStep,
 } from "../workloadApplyPipeline";
+import { withK8sMutationConfirm } from "@/features/cluster/lib/k8sMutationConfirm";
 
 export type K8sGraphicKind =
   | "Deployment"
@@ -489,7 +491,7 @@ export function K8sGraphicEditDialog({
           await schedulingPrecheckObject(kind, body.object);
         }
         setSavePipelineStep("apply");
-        return apiPutJson("/api/k8s/object-json", body);
+        return apiPutJson("/api/k8s/object-json", withK8sMutationConfirm(body));
       } finally {
         setSavePipelineStep(null);
       }
@@ -1153,10 +1155,13 @@ export function K8sGraphicEditDialog({
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             取消
           </Button>
-          <Button
+          <ConfirmActionButton
             type="button"
             disabled={(!(svcIsCreate && kind === "Service") && !obj) || saveMut.isPending}
-            onClick={() => void saveMut.mutateAsync()}
+            title="确认保存到 Kubernetes？"
+            description={`将保存 ${svcIsCreate ? `Service ${namespace}/${createSvcName.trim() || "<未命名>"}` : `${kind} ${namespace}/${name}`} 并写入 Kubernetes API。`}
+            confirmLabel="保存"
+            onConfirm={() => void saveMut.mutateAsync()}
           >
             {saveMut.isPending ? (
               <span className="inline-flex items-center gap-1.5">
@@ -1170,7 +1175,7 @@ export function K8sGraphicEditDialog({
             ) : (
               "保存并生效"
             )}
-          </Button>
+          </ConfirmActionButton>
         </DialogFooter>
         {saveMut.isError && (
           <p className="text-sm text-red-600">{(saveMut.error as Error).message}</p>

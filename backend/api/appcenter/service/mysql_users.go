@@ -14,6 +14,7 @@ type appMySQLUserWriteBody struct {
 	Password string `json:"password"`
 	Schema   string `json:"schema"`
 	Role     string `json:"role"`
+	Confirm  bool   `json:"confirm,omitempty"`
 }
 
 func appMySQLSQLString(s string) string {

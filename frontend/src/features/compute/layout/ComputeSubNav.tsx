@@ -5,6 +5,7 @@ import {
   Activity,
   Cloud,
   Database,
+  HardDrive,
   LayoutDashboard,
   Monitor,
   ScanSearch,
@@ -15,10 +16,15 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { useAppConfig } from "@/hooks/use-app-config";
 import { apiGetJson } from "@/lib/api";
+import { workspaceMenuVisible } from "@/lib/platform-permissions";
 import { cn } from "@/lib/utils";
 
 type PVETarget = {
   id: string;
+};
+
+type CloudVmInstancesResponse = {
+  instances?: unknown[];
 };
 
 type ComputeNavLink = {
@@ -62,6 +68,7 @@ const resourceLinks: ComputeNavLink[] = [
 
 const utilityLinks: ComputeNavLink[] = [
   { to: "/cluster/compute/cloud", label: "公有云", icon: Cloud },
+  { to: "/cluster/apps/cloud-vm", label: "容器主机", icon: HardDrive, aliases: ["/cluster/apps/cloud-vm"] },
   { to: "/cluster/compute/bastion", label: "堡垒机", icon: Shield, aliases: ["/cluster/bastion"] },
   { to: "/cluster/compute/tools/ip-scan", label: "IP 扫描", icon: ScanSearch },
   {
@@ -82,6 +89,8 @@ const ComputeSubNav: React.FC = () => {
   const cfgQ = useAppConfig();
   const { status } = useAuth();
   const canFetchPveTargets = status?.loggedIn === true || status?.authRequired === false;
+  const showAppCenter = workspaceMenuVisible(status?.permissions, "appcenter", status?.role);
+  const canFetchCloudVm = canFetchPveTargets && showAppCenter;
   const pveTargetsQ = useQuery({
     queryKey: ["pve-targets-compute-subnav"],
     queryFn: ({ signal }) => apiGetJson<{ targets: PVETarget[] }>("/api/pve/targets", { signal }),
@@ -89,9 +98,18 @@ const ComputeSubNav: React.FC = () => {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
+  const cloudVmQ = useQuery({
+    queryKey: ["compute-subnav-cloud-vm-instances"],
+    queryFn: ({ signal }) => apiGetJson<CloudVmInstancesResponse>("/api/app-center/cloud-vm/instances", { signal }),
+    enabled: canFetchCloudVm,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
 
   const pveTargetCount = pveTargetsQ.data?.targets?.length ?? 0;
-  const providerConfigured = Boolean(cfgQ.data?.vcenterConfigured === true || pveTargetCount > 0);
+  const cloudVmCount = cloudVmQ.data?.instances?.length ?? 0;
+  const hasVirtualizedProviders = Boolean(cfgQ.data?.vcenterConfigured === true || pveTargetCount > 0);
+  const providerConfigured = Boolean(hasVirtualizedProviders || cloudVmCount > 0);
   const links = useMemo<ComputeNavLink[]>(() => {
     const base: ComputeNavLink[] = [
       {
@@ -101,13 +119,16 @@ const ComputeSubNav: React.FC = () => {
         aliases: ["/cluster/compute/vcenter/dashboard", "/cluster/compute/pve/dashboard"],
       },
     ];
-    if (providerConfigured) base.push(...resourceLinks);
+    if (hasVirtualizedProviders) base.push(...resourceLinks);
     base.push(...utilityLinks);
     return base;
-  }, [providerConfigured]);
+  }, [hasVirtualizedProviders]);
 
   return (
-    <div className="flex flex-wrap gap-2 rounded-xl border border-slate-200/80 bg-slate-50/80 p-1.5">
+    <div
+      aria-label={providerConfigured ? "算力导航" : "算力导航（未配置）"}
+      className="flex flex-wrap gap-2 rounded-xl border border-slate-200/80 bg-slate-50/80 p-1.5"
+    >
       {links.map((link) => {
         const active =
           link.to === "/cluster/compute/dashboard"

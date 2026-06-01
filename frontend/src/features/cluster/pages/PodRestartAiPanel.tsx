@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Brain, Loader2 } from "lucide-react";
 import { apiGetJson, apiGetText, apiPostJson, ApiHttpError } from "@/lib/api";
+import { withOpsMutationConfirm } from "@/lib/ops-mutation-confirm";
 
 /** 按 Markdown 标题拆成段落，便于落库与后续统计整合（不增加 OpenClaw 调用次数）。 */
 function splitMarkdownParagraphs(md: string): { heading: string; text: string }[] {
@@ -210,7 +211,7 @@ const PodRestartAiPanel: React.FC<{
         vmLogSample = formatVmLogRowsForPrompt(rows, 130);
         if (rows.length === 0) {
           vmLogHint =
-            "近 6 小时无命中（若已接入 VL，请确认采集链路写入 kubernetes.pod_name / kubernetes.namespace_name）";
+            "近 6 小时无命中（若已配置 VL，请确认采集链路写入 kubernetes.pod_name / kubernetes.namespace_name）";
         }
         if (vl.truncated || (vl.scanWarning && String(vl.scanWarning).trim())) {
           vmLogSample =
@@ -248,7 +249,7 @@ const PodRestartAiPanel: React.FC<{
       setStatusLine("保存分析报告（MySQL / Redis 统计）…");
       try {
         const paragraphs = splitMarkdownParagraphs(replyText);
-        await apiPostJson<{ ok?: boolean; id?: number }>("/api/k8s/pod-restart-ai/reports", {
+        await apiPostJson<{ ok?: boolean; id?: number }>("/api/k8s/pod-restart-ai/reports", withOpsMutationConfirm({
           kind: "pod_analysis",
           namespace,
           pod: podName,
@@ -256,7 +257,7 @@ const PodRestartAiPanel: React.FC<{
           body: replyText,
           paragraphs,
           meta: { restarts, primaryContainer: workContainer },
-        });
+        }));
       } catch (saveErr) {
         // 无 MySQL 时仅提示，不阻断展示结论
         console.warn(saveErr);

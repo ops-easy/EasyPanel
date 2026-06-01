@@ -16,6 +16,7 @@ import {
 } from "@/shared/ui/select";
 import { JsonCodeEditor } from "@/shared/ui/JsonCodeEditor";
 import { apiGetJson, apiPutJson, ApiHttpError } from "@/lib/api";
+import { withAppCenterMutationConfirmQuery } from "@/features/app-center/lib/appCenterMutationConfirm";
 import { toast } from "sonner";
 import {
   type OpenClawImageCatalogResponse,
@@ -128,7 +129,7 @@ export default function AppCenterOpenClawBootstrap() {
       } catch {
         throw new SyntaxError("JSON 格式无效");
       }
-      return apiPutJson<OpenClawImageCatalogResponse>("/api/app-center/openclaw/image-catalog", { catalog });
+      return apiPutJson<OpenClawImageCatalogResponse>(withAppCenterMutationConfirmQuery("/api/app-center/openclaw/image-catalog"), { catalog });
     },
     onSuccess: async () => {
       toast.success("已保存平台镜像目录");
@@ -147,7 +148,7 @@ export default function AppCenterOpenClawBootstrap() {
 
   const saveMut = useMutation({
     mutationFn: () =>
-      apiPutJson("/api/app-center/openclaw/bootstrap", {
+      apiPutJson(withAppCenterMutationConfirmQuery("/api/app-center/openclaw/bootstrap"), {
         bootstrapComplete: true,
         defaultNamespace: ns.trim(),
         defaultRbacPreset,

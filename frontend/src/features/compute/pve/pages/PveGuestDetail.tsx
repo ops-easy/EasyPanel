@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDeleteJson, apiGetJson, apiPostJson, apiPutJson, wsUrlForApiPath } from "@/lib/api";
+import { withPveMutationConfirm } from "@/features/compute/pve/lib/pveMutationConfirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import VCenterSshTerminal from "@/features/vcenter/pages/VCenterSshTerminal";
 import VCenterBastionSftpPanel from "@/features/vcenter/pages/VCenterBastionSftpPanel";
 
@@ -193,18 +195,22 @@ function PveGuestHardwareDialog({
   pending,
   onSaveConfig,
   onResizeDisk,
+  confirmTarget,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   config: Record<string, unknown>;
   pending: boolean;
-  onSaveConfig: (body: Record<string, number>) => void;
-  onResizeDisk: (body: { disk: string; size: string }) => void;
+  onSaveConfig: (body: Record<string, number | boolean>) => void;
+  onResizeDisk: (body: { disk: string; size: string; confirm: boolean }) => void;
+  confirmTarget: string;
 }) {
   const [cores, setCores] = useState("");
   const [memory, setMemory] = useState("");
   const [disk, setDisk] = useState("");
   const [size, setSize] = useState("");
+  const [mutationConfirmName, setMutationConfirmName] = useState("");
+  const mutationConfirmed = mutationConfirmName.trim() === confirmTarget;
 
   useEffect(() => {
     if (!open) return;
@@ -222,7 +228,7 @@ function PveGuestHardwareDialog({
       toast.error("请填写 CPU 或内存");
       return;
     }
-    onSaveConfig(body);
+    onSaveConfig({ ...body, confirm: mutationConfirmed });
   };
 
   const resize = () => {
@@ -230,7 +236,7 @@ function PveGuestHardwareDialog({
       toast.error("请填写磁盘和目标大小");
       return;
     }
-    onResizeDisk({ disk: disk.trim(), size: size.trim() });
+    onResizeDisk({ disk: disk.trim(), size: size.trim(), confirm: mutationConfirmed });
   };
 
   return (
@@ -240,6 +246,22 @@ function PveGuestHardwareDialog({
           <DialogTitle>编辑 PVE Guest 硬件</DialogTitle>
           <DialogDescription>保存后由 PVE 返回异步任务，平台会持续轮询任务状态。</DialogDescription>
         </DialogHeader>
+        <div className="grid gap-3 md:grid-cols-[minmax(0,280px)_1fr] md:items-end">
+          <div className="space-y-1.5">
+            <Label htmlFor="pve-mutation-confirm">确认目标</Label>
+            <Input
+              id="pve-mutation-confirm"
+              className="font-mono"
+              value={mutationConfirmName}
+              onChange={(e) => setMutationConfirmName(e.target.value)}
+              placeholder={confirmTarget}
+              disabled={pending}
+            />
+          </div>
+          <p className="text-xs leading-5 text-slate-500">
+            输入 <span className="font-mono text-slate-800">{confirmTarget}</span> 后保存硬件或扩容磁盘。
+          </p>
+        </div>
         <div className="grid gap-5 md:grid-cols-2">
           <section className="space-y-3">
             <h3 className="text-sm font-semibold text-slate-950">CPU / 内存</h3>
@@ -251,7 +273,7 @@ function PveGuestHardwareDialog({
               <Label>内存 MB</Label>
               <Input className="font-mono" inputMode="numeric" value={memory} onChange={(e) => setMemory(e.target.value)} />
             </div>
-            <Button type="button" className="w-full gap-2" onClick={saveConfig} disabled={pending}>
+            <Button type="button" className="w-full gap-2" onClick={saveConfig} disabled={pending || !mutationConfirmed}>
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               保存配置
             </Button>
@@ -266,7 +288,7 @@ function PveGuestHardwareDialog({
               <Label>目标大小</Label>
               <Input className="font-mono" placeholder="+10G 或 80G" value={size} onChange={(e) => setSize(e.target.value)} />
             </div>
-            <Button type="button" variant="outline" className="w-full gap-2" onClick={resize} disabled={pending}>
+            <Button type="button" variant="outline" className="w-full gap-2" onClick={resize} disabled={pending || !mutationConfirmed}>
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <HardDrive className="h-4 w-4" />}
               提交扩容
             </Button>
@@ -290,19 +312,20 @@ function PveSnapshotsPanel({
   rows: Record<string, unknown>[];
   loading: boolean;
   pending: boolean;
-  onCreate: (body: { snapname: string; description?: string; vmstate?: boolean }) => void;
-  onDelete: (snapname: string) => void;
+  onCreate: (body: { snapname: string; description?: string; vmstate?: boolean; confirm: boolean }) => void;
+  onDelete: (snapname: string, confirm: boolean) => void;
 }) {
   const [snapname, setSnapname] = useState("");
   const [description, setDescription] = useState("");
   const [vmstate, setVmstate] = useState(false);
+  const [deleteConfirmName, setDeleteConfirmName] = useState("");
 
   const create = () => {
     if (!snapname.trim()) {
       toast.error("请填写快照名称");
       return;
     }
-    onCreate({ snapname: snapname.trim(), description: description.trim() || undefined, vmstate });
+    onCreate({ snapname: snapname.trim(), description: description.trim() || undefined, vmstate, confirm: true });
     setSnapname("");
     setDescription("");
     setVmstate(false);
@@ -326,12 +349,34 @@ function PveSnapshotsPanel({
             <span>保存内存</span>
           </div>
         </div>
-        <Button type="button" className="mt-3 gap-2" onClick={create} disabled={pending}>
+        <ConfirmActionButton
+          type="button"
+          className="mt-3 gap-2"
+          disabled={pending}
+          title="确认创建 PVE 快照？"
+          description={`将为当前虚拟机创建快照「${snapname.trim() || "未命名"}」。`}
+          confirmLabel="创建"
+          onConfirm={create}
+        >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           创建快照
-        </Button>
+        </ConfirmActionButton>
       </div>
       <div className="overflow-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="grid gap-3 border-b border-slate-100 p-4 md:grid-cols-[minmax(0,280px)_1fr] md:items-end">
+          <div className="space-y-1.5">
+            <Label htmlFor="pve-snapshot-delete-confirm">删除确认</Label>
+            <Input
+              id="pve-snapshot-delete-confirm"
+              className="font-mono"
+              value={deleteConfirmName}
+              onChange={(e) => setDeleteConfirmName(e.target.value)}
+              placeholder="输入快照名称"
+              disabled={pending}
+            />
+          </div>
+          <p className="text-xs leading-5 text-slate-500">输入快照名称后启用对应删除按钮。</p>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -350,13 +395,14 @@ function PveSnapshotsPanel({
             ) : null}
             {!loading ? rows.map((row) => {
               const name = String(row.name ?? row.snapname ?? "").trim();
+              const deleteConfirmed = deleteConfirmName.trim() === name;
               return (
                 <TableRow key={name || valueText(row.snaptime)}>
                   <TableCell className="font-mono text-xs">{name || "-"}</TableCell>
                   <TableCell className="max-w-xl truncate text-sm">{valueText(row.description)}</TableCell>
                   <TableCell className="font-mono text-xs">{valueText(row.snaptime)}</TableCell>
                   <TableCell className="text-right">
-                    <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-red-700" disabled={!name || pending} onClick={() => onDelete(name)}>
+                    <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-red-700" disabled={!name || pending || !deleteConfirmed} onClick={() => { onDelete(name, true); setDeleteConfirmName(""); }}>
                       <Trash2 className="h-3.5 w-3.5" />
                       删除
                     </Button>
@@ -574,6 +620,7 @@ export default function PveGuestDetail() {
       : "overview";
   const [hardwareOpen, setHardwareOpen] = useState(false);
   const [taskId, setTaskId] = useState("");
+  const [powerConfirmName, setPowerConfirmName] = useState("");
   const bastionTargetId = `pve:${targetId}:${node}:${canonicalGuestType}:${vmid}`;
   const sftpTarget = useMemo(() => ({ kind: "target" as const, targetId: bastionTargetId }), [bastionTargetId]);
   const querySuffix = `node=${encodeURIComponent(node)}&type=${encodeURIComponent(canonicalGuestType)}`;
@@ -637,7 +684,7 @@ export default function PveGuestDetail() {
   };
 
   const configMut = useMutation({
-    mutationFn: (body: Record<string, number>) => apiPutJson<PveTaskEnvelope>(`/api/pve/targets/${encodeURIComponent(targetId)}/guests/${encodeURIComponent(vmid)}/config?${querySuffix}`, body),
+    mutationFn: (body: Record<string, number | boolean>) => apiPutJson<PveTaskEnvelope>(`/api/pve/targets/${encodeURIComponent(targetId)}/guests/${encodeURIComponent(vmid)}/config?${querySuffix}`, body),
     onSuccess: (data) => {
       setHardwareOpen(false);
       submitTask(data, "配置已保存");
@@ -646,29 +693,32 @@ export default function PveGuestDetail() {
   });
 
   const diskMut = useMutation({
-    mutationFn: (body: { disk: string; size: string }) =>
+    mutationFn: (body: { disk: string; size: string; confirm: boolean }) =>
       apiPostJson<PveTaskEnvelope>(`/api/pve/targets/${encodeURIComponent(targetId)}/guests/${encodeURIComponent(vmid)}/disks/resize`, { ...body, node, type: canonicalGuestType }),
     onSuccess: (data) => submitTask(data, "磁盘扩容已提交"),
     onError: (e) => toast.error((e as Error).message),
   });
 
   const powerMut = useMutation({
-    mutationFn: (action: string) =>
-      apiPostJson<PveTaskEnvelope>(`/api/pve/targets/${encodeURIComponent(targetId)}/guests/${encodeURIComponent(vmid)}/power`, { node, type: canonicalGuestType, action }),
-    onSuccess: (data) => submitTask(data, "电源操作已提交"),
+    mutationFn: ({ action, confirm }: { action: string; confirm: boolean }) =>
+      apiPostJson<PveTaskEnvelope>(`/api/pve/targets/${encodeURIComponent(targetId)}/guests/${encodeURIComponent(vmid)}/power`, { node, type: canonicalGuestType, action, confirm }),
+    onSuccess: (data) => {
+      setPowerConfirmName("");
+      submitTask(data, "电源操作已提交");
+    },
     onError: (e) => toast.error((e as Error).message),
   });
 
   const snapshotCreateMut = useMutation({
-    mutationFn: (body: { snapname: string; description?: string; vmstate?: boolean }) =>
-      apiPostJson<PveTaskEnvelope>(snapshotsPath, body),
+    mutationFn: (body: { snapname: string; description?: string; vmstate?: boolean; confirm: boolean }) =>
+      apiPostJson<PveTaskEnvelope>(snapshotsPath, withPveMutationConfirm(body)),
     onSuccess: (data) => submitTask(data, "快照任务已提交"),
     onError: (e) => toast.error((e as Error).message),
   });
 
   const snapshotDeleteMut = useMutation({
-    mutationFn: (snapname: string) =>
-      apiDeleteJson<PveTaskEnvelope>(`/api/pve/targets/${encodeURIComponent(targetId)}/guests/${encodeURIComponent(vmid)}/snapshots/${encodeURIComponent(snapname)}?${querySuffix}`),
+    mutationFn: ({ snapname, confirm }: { snapname: string; confirm: boolean }) =>
+      apiDeleteJson<PveTaskEnvelope>(`/api/pve/targets/${encodeURIComponent(targetId)}/guests/${encodeURIComponent(vmid)}/snapshots/${encodeURIComponent(snapname)}?${querySuffix}&confirm=${confirm ? "true" : "false"}`),
     onSuccess: (data) => submitTask(data, "快照删除已提交"),
     onError: (e) => toast.error((e as Error).message),
   });
@@ -679,6 +729,8 @@ export default function PveGuestDetail() {
   const snapshotRows = useMemo(() => asRows(snapshotsQ.data?.snapshots), [snapshotsQ.data?.snapshots]);
   const loading = detailQ.isLoading || metricsQ.isLoading;
   const guestIpHint = optionalText(status.ip ?? status.ip_address ?? status.ipAddress ?? config.ipconfig0);
+  const powerConfirmTarget = String(config.name ?? status.name ?? vmid).trim() || vmid;
+  const powerConfirmed = powerConfirmName.trim() === powerConfirmTarget;
   const operationPending = configMut.isPending || diskMut.isPending || powerMut.isPending || snapshotCreateMut.isPending || snapshotDeleteMut.isPending || Boolean(taskId);
 
   return (
@@ -747,9 +799,25 @@ export default function PveGuestDetail() {
           </section>
           <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-950">电源操作</h2>
+            <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,280px)_1fr] md:items-end">
+              <div className="space-y-1.5">
+                <Label htmlFor="pve-power-confirm">确认目标</Label>
+                <Input
+                  id="pve-power-confirm"
+                  className="font-mono"
+                  value={powerConfirmName}
+                  onChange={(e) => setPowerConfirmName(e.target.value)}
+                  placeholder={powerConfirmTarget}
+                  disabled={operationPending}
+                />
+              </div>
+              <p className="text-xs leading-5 text-slate-500">
+                输入 <span className="font-mono text-slate-800">{powerConfirmTarget}</span> 后启用电源按钮。
+              </p>
+            </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {["start", "shutdown", "reboot", "stop", "reset"].map((action) => (
-                <Button key={action} type="button" variant="outline" size="sm" disabled={operationPending} onClick={() => powerMut.mutate(action)}>
+                <Button key={action} type="button" variant="outline" size="sm" disabled={operationPending || !powerConfirmed} onClick={() => powerMut.mutate({ action, confirm: powerConfirmed })}>
                   {action}
                 </Button>
               ))}
@@ -788,7 +856,7 @@ export default function PveGuestDetail() {
             loading={snapshotsQ.isLoading}
             pending={operationPending}
             onCreate={(body) => snapshotCreateMut.mutate(body)}
-            onDelete={(snapname) => snapshotDeleteMut.mutate(snapname)}
+            onDelete={(snapname, confirm) => snapshotDeleteMut.mutate({ snapname, confirm })}
           />
         </TabsContent>
 
@@ -821,6 +889,7 @@ export default function PveGuestDetail() {
         pending={operationPending}
         onSaveConfig={(body) => configMut.mutate(body)}
         onResizeDisk={(body) => diskMut.mutate(body)}
+        confirmTarget={powerConfirmTarget}
       />
     </div>
   );

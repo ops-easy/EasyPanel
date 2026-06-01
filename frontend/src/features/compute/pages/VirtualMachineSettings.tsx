@@ -54,7 +54,7 @@ function StatusCard({
       onClick={() => onSelect(section)}
       aria-pressed={active}
       className={cn(
-        "group rounded-xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+        "group rounded-xl border bg-white p-4 text-left shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
         active ? "border-violet-300 ring-1 ring-violet-100" : "border-slate-200"
       )}
     >
@@ -90,7 +90,7 @@ const VirtualMachineSettings: React.FC = () => {
     const configured = provider?.configured === true || fallbackConfigured;
     if (!configured) return { label: "未配置", health: "unknown" as ComputeHealth };
     if (provider?.healthy === false) return { label: "需检查", health: "warning" as ComputeHealth };
-    return { label: "已接入", health: "ok" as ComputeHealth };
+    return { label: "已配置", health: "ok" as ComputeHealth };
   };
   const vcenterStatus = providerStatus("vcenter", cfg?.vcenterConfigured === true);
   const pveStatus = providerStatus("pve");
@@ -112,7 +112,7 @@ const VirtualMachineSettings: React.FC = () => {
       actionLabel: "编辑 vCenter 参数",
     },
     {
-      title: "PVE 接入",
+      title: "PVE 目标",
       description: "Proxmox VE API、虚拟机 / CT、节点、存储和基础电源任务。",
       status: pveStatus.label,
       health: pveStatus.health,
@@ -133,7 +133,7 @@ const VirtualMachineSettings: React.FC = () => {
     },
     {
       title: "iDRAC 配置",
-      description: "宿主机带外 Redfish 接入，多台 iDRAC 目标统一维护。",
+      description: "宿主机带外 Redfish 配置，多台 iDRAC 目标统一维护。",
       status: "可选",
       health: "idle",
       tone: "emerald",
@@ -174,7 +174,7 @@ const VirtualMachineSettings: React.FC = () => {
       <ComputePageHeader
         eyebrow="Compute Config"
         title="配置"
-        description="这里是 vCenter、PVE、监控、iDRAC 和 VMLog 的统一入口。上方接入源状态来自统一资源模型，下面直接维护对应配置。"
+        description="这里是 vCenter、PVE、监控、iDRAC 和 VMLog 的统一入口。上方配置源状态来自统一资源模型，下面直接维护对应配置。"
         refreshing={cfgQ.isLoading || providersQ.isFetching}
         onRefresh={() => {
           void cfgQ.refetch();

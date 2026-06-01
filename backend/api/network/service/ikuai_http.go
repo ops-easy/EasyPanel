@@ -170,10 +170,10 @@ func (c *ikuaiHTTPClient) ApplyChangeSet(ctx context.Context, dev networkmodel.D
 }
 
 func (c *ikuaiHTTPClient) RunAction(ctx context.Context, dev networkmodel.Device, body networkActionRequest) (map[string]any, error) {
-	action := strings.ToLower(strings.TrimSpace(body.Action))
-	if action == "reboot" && !body.Confirm {
-		return nil, errors.New("iKuai reboot requires confirm=true")
+	if !body.Confirm {
+		return nil, errors.New("iKuai action requires confirm=true")
 	}
+	action := strings.ToLower(strings.TrimSpace(body.Action))
 	req := ikuaiActionRequest{}
 	if body.Fields != nil {
 		req = ikuaiActionRequestFromFields(body.Fields)

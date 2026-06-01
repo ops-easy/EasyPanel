@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/auth/auth-context";
 import { apiGetJson, apiPostJson } from "@/lib/api";
+import { withK8sMutationConfirm } from "@/features/cluster/lib/k8sMutationConfirm";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
@@ -94,13 +96,13 @@ const ClusterEtcdPage: React.FC = () => {
     mutationFn: () =>
       apiPostJson<{ jobName?: string; namespace?: string; message?: string; error?: string }>(
         "/api/k8s/etcd/defrag-job",
-        {
+        withK8sMutationConfirm({
           namespace: namespace.trim() || "kube-system",
           etcdEndpoints: endpoints.trim(),
           certHostPath: certHostPath.trim() || "/etc/kubernetes/pki/etcd",
           image: etcdImage.trim() || "registry.k8s.io/etcd:3.5.16-0",
           nodeName: nodeName.trim(),
-        }
+        })
       ),
     onSuccess: (data) => {
       setFeedback(data.message || `已创建 Job ${data.jobName}`);
@@ -376,16 +378,19 @@ const ClusterEtcdPage: React.FC = () => {
               >
                 生成并复制 Job YAML
               </Button>
-              <Button
+              <ConfirmActionButton
                 type="button"
                 disabled={defragMut.isPending || !endpoints.trim()}
-                onClick={() => {
+                title="确认创建 etcd defrag Job？"
+                description="将在集群内创建 Job，连接 etcd 成员执行碎片整理。"
+                confirmLabel="创建"
+                onConfirm={() => {
                   setFeedback(null);
                   defragMut.mutate();
                 }}
               >
                 在集群中创建 defrag Job
-              </Button>
+              </ConfirmActionButton>
             </div>
           </CardContent>
         </Card>

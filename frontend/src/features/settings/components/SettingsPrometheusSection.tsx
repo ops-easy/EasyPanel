@@ -32,6 +32,8 @@ import {
   type PrometheusDiscoverCandidate,
 } from "@/lib/api";
 import { extractErrorMessage } from "@/lib/extract-error-message";
+import { withOpsMutationConfirm } from "@/lib/ops-mutation-confirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 type PromScopeStatus = {
   configured: boolean;
@@ -106,7 +108,7 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
 
   const savePrometheus = async () => {
     try {
-      await apiPostJson("/api/prometheus/source", { baseUrl: promBase.trim(), scope: "k8s" });
+      await apiPostJson("/api/prometheus/source", withOpsMutationConfirm({ baseUrl: promBase.trim(), scope: "k8s" }));
       setPromBase("");
       setSelectedDiscoverId("");
       void queryClient.invalidateQueries({ queryKey: ["prometheus-status"] });
@@ -136,8 +138,8 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
     }
     try {
       const cur = await apiGetJson<Record<string, unknown>>("/api/settings/runtime");
-      await apiPutJson("/api/settings/runtime", { ...cur, prometheusUrlK8s: url });
-      await apiPostJson("/api/prometheus/source", { baseUrl: url, scope: "k8s" });
+      await apiPutJson("/api/settings/runtime", withOpsMutationConfirm({ ...cur, prometheusUrlK8s: url }));
+      await apiPostJson("/api/prometheus/source", withOpsMutationConfirm({ baseUrl: url, scope: "k8s" }));
       void queryClient.invalidateQueries({ queryKey: ["prometheus-status"] });
       void queryClient.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: ["cluster-prometheus-snapshot"] });
@@ -163,9 +165,9 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
     setPromErr(null);
     try {
       const cur = await apiGetJson<Record<string, unknown>>("/api/settings/runtime");
-      await apiPutJson("/api/settings/runtime", { ...cur, prometheusUrlK8s: prom, vmSelectUrlK8s: vm });
+      await apiPutJson("/api/settings/runtime", withOpsMutationConfirm({ ...cur, prometheusUrlK8s: prom, vmSelectUrlK8s: vm }));
       if (prom) {
-        await apiPostJson("/api/prometheus/source", { baseUrl: prom, scope: "k8s" });
+        await apiPostJson("/api/prometheus/source", withOpsMutationConfirm({ baseUrl: prom, scope: "k8s" }));
       }
       void queryClient.invalidateQueries({ queryKey: ["prometheus-status"] });
       void queryClient.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
@@ -183,7 +185,7 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
 
   const clearPrometheus = async () => {
     try {
-      await apiPostJson("/api/prometheus/source", { baseUrl: "", scope: "k8s" });
+      await apiPostJson("/api/prometheus/source", withOpsMutationConfirm({ baseUrl: "", scope: "k8s" }));
       void queryClient.invalidateQueries({ queryKey: ["prometheus-status"] });
       void queryClient.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: ["runtime-status"] });
@@ -425,37 +427,43 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
                     {en ? "Data source" : "监控数据源"}
                   </Button>
                 )}
-                <Button
+                <ConfirmActionButton
                   type="button"
                   size="sm"
                   className="whitespace-nowrap"
                   title={en ? "Save URL (session override)" : "保存地址（进程内覆盖）"}
-                  onClick={() => void savePrometheus()}
+                  description={en ? "Save this Prometheus base URL as a process override." : "将当前 Prometheus 地址保存为进程内覆盖，当前服务重启前生效。"}
+                  confirmLabel={en ? "Save" : "保存"}
+                  onConfirm={() => void savePrometheus()}
                 >
                   {en ? "Save URL" : "保存地址"}
-                </Button>
+                </ConfirmActionButton>
                 {cfg?.setupInitialized && (
-                  <Button
+                  <ConfirmActionButton
                     type="button"
                     size="sm"
                     variant="default"
                     className="whitespace-nowrap"
                     title={en ? "Save and persist to MySQL dynamic config" : "保存并写入 MySQL 动态配置"}
-                    onClick={() => void persistPrometheusToRuntime()}
+                    description={en ? "Persist this monitoring source to the platform runtime config." : "将当前监控数据源写入平台运行时配置，后续查询会按此地址执行。"}
+                    confirmLabel={en ? "Persist" : "写入"}
+                    onConfirm={() => void persistPrometheusToRuntime()}
                   >
                     {en ? "Persist config" : "写入动态配置"}
-                  </Button>
+                  </ConfirmActionButton>
                 )}
-                <Button
+                <ConfirmActionButton
                   type="button"
                   size="sm"
                   variant="outline"
                   className="whitespace-nowrap"
                   title={en ? "Clear session override" : "清除进程内覆盖"}
-                  onClick={() => void clearPrometheus()}
+                  description={en ? "Remove the current process-level Prometheus override." : "将清除当前进程内 Prometheus 覆盖地址，查询会回到运行时配置。"}
+                  confirmLabel={en ? "Clear" : "清除"}
+                  onConfirm={() => void clearPrometheus()}
                 >
                   {en ? "Clear override" : "清除覆盖"}
-                </Button>
+                </ConfirmActionButton>
               </div>
             </CardContent>
           </Card>
@@ -514,9 +522,16 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
                 <Button type="button" variant="outline" onClick={() => setDsOpen(false)}>
                   {en ? "Cancel" : "取消"}
                 </Button>
-                <Button type="button" disabled={dsSaving} onClick={() => void saveDatasourceDialog()}>
+                <ConfirmActionButton
+                  type="button"
+                  disabled={dsSaving}
+                  title={en ? "Save monitoring source?" : "确认保存监控数据源？"}
+                  description={en ? "Persist Prometheus and VictoriaMetrics URLs to MySQL runtime config." : "将 Prometheus / VictoriaMetrics 地址保存到 MySQL 动态配置。"}
+                  confirmLabel={en ? "Save" : "保存"}
+                  onConfirm={() => void saveDatasourceDialog()}
+                >
                   {dsSaving ? (en ? "Saving…" : "保存中…") : en ? "Save to MySQL" : "保存到 MySQL"}
-                </Button>
+                </ConfirmActionButton>
               </DialogFooter>
             </DialogContent>
           </Dialog>

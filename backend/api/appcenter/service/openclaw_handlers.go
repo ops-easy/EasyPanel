@@ -232,6 +232,13 @@ type appOpenClawDeployBody struct {
 }
 
 func handleAppOpenClawK8sDeploy(c *gin.Context, app *ServerApp) {
+	if appCloudVMWriteDenied(c) {
+		RespondAPIPermissionDenied(c)
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw deploy") {
+		return
+	}
 	if app.K8s() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "K8s 未连接"})
 		return
@@ -353,6 +360,7 @@ func handleAppOpenClawK8sDeploy(c *gin.Context, app *ServerApp) {
 		return
 	}
 	mirrorPlatformKVIfDualWrite(app)
+	SetAuditDetail(c, "应用中心 OpenClaw 部署 "+saved.DisplayName+" namespace="+saved.Namespace+" deployment="+saved.DeploymentName)
 	c.JSON(http.StatusOK, gin.H{
 		"instance":          saved,
 		"gatewayToken":      gwPlain,
@@ -489,6 +497,13 @@ func presetToOpenAIBaseURL(preset, override string) string {
 }
 
 func handleAppOpenClawSyncInspect(c *gin.Context, app *ServerApp) {
+	if appCloudVMWriteDenied(c) {
+		RespondAPIPermissionDenied(c)
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw sync to AI inspect") {
+		return
+	}
 	if app.PlatformKV() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "platform_kv 不可用"})
 		return
@@ -539,12 +554,16 @@ func handleAppOpenClawSyncInspect(c *gin.Context, app *ServerApp) {
 		return
 	}
 	mirrorPlatformKVIfDualWrite(app)
+	SetAuditDetail(c, "应用中心 OpenClaw 同步到 AI 巡检 "+inst.DisplayName+" instance="+inst.ID)
 	c.JSON(http.StatusOK, gin.H{"message": "已同步到 AI 巡检 OpenClaw 配置"})
 }
 
 func handleAppOpenClawGatewayImage(c *gin.Context, app *ServerApp) {
 	if appCloudVMWriteDenied(c) {
 		RespondAPIPermissionDenied(c)
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw update gateway image") {
 		return
 	}
 	if app.K8s() == nil {
@@ -591,10 +610,18 @@ func handleAppOpenClawGatewayImage(c *gin.Context, app *ServerApp) {
 		return
 	}
 	mirrorPlatformKVIfDualWrite(app)
+	SetAuditDetail(c, "应用中心 OpenClaw 更新网关镜像 "+inst.DisplayName+" image="+img)
 	c.JSON(http.StatusOK, gin.H{"ok": true, "image": img})
 }
 
 func handleAppOpenClawDelete(c *gin.Context, app *ServerApp) {
+	if appCloudVMWriteDenied(c) {
+		RespondAPIPermissionDenied(c)
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw delete instance") {
+		return
+	}
 	if app.PlatformKV() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "platform_kv 不可用"})
 		return
@@ -629,6 +656,7 @@ func handleAppOpenClawDelete(c *gin.Context, app *ServerApp) {
 	}
 	openClawGatewayHealthEvictInstance(id)
 	mirrorPlatformKVIfDualWrite(app)
+	SetAuditDetail(c, "应用中心 OpenClaw 删除实例 "+inst.DisplayName+" namespace="+inst.Namespace+" deployment="+inst.DeploymentName)
 	c.JSON(http.StatusOK, gin.H{
 		"ok":               true,
 		"k8sAttempted":     k8sAttempted,

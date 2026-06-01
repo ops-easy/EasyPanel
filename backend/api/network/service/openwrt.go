@@ -150,19 +150,24 @@ func handleOpenWrtAction(c *gin.Context, app *ServerApp) {
 	if !requireNetworkAdmin(c) {
 		return
 	}
-	dev, ok := openWrtDeviceForRequest(c, app)
-	if !ok {
-		return
-	}
 	var body openWrtActionRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if strings.EqualFold(strings.TrimSpace(body.Action), "reboot") && !body.Confirm {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "重启 OpenWrt 必须显式 confirm=true"})
+	if _, err := openWrtActionCommand(body.Action); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if openWrtActionRequiresConfirm(body.Action) && !body.Confirm {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "OpenWrt 操作必须显式 confirm=true"})
+		return
+	}
+	dev, ok := openWrtDeviceForRequest(c, app)
+	if !ok {
+		return
+	}
+	setNetworkAuditDetail(c, networkActionAuditDetail(networkDeviceKindOpenWrt, dev, body.Action))
 	out, err := newOpenWrtClient(nil).RunAction(c.Request.Context(), dev, body.Action)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error(), "result": out})
@@ -195,15 +200,20 @@ func handleOpenWrtConfigApply(c *gin.Context, app *ServerApp) {
 	if !requireNetworkAdmin(c) {
 		return
 	}
-	dev, ok := openWrtDeviceForRequest(c, app)
-	if !ok {
-		return
-	}
 	var body openWrtConfigRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if !body.Confirm {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "OpenWrt config apply requires confirm=true"})
+		return
+	}
+	dev, ok := openWrtDeviceForRequest(c, app)
+	if !ok {
+		return
+	}
+	setNetworkAuditDetail(c, networkConfigAuditDetail(networkDeviceKindOpenWrt, dev, "system", len(body.Changes), body.Reload))
 	out, err := newOpenWrtClient(nil).ApplyConfig(c.Request.Context(), dev, body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "result": out})

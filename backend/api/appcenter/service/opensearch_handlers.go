@@ -148,18 +148,22 @@ func handleOpenSearchTemplateCreate(c *gin.Context, app *ServerApp) {
 	if !appOpenSearchRequireWrite(c) {
 		return
 	}
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL"})
-		return
-	}
 	var body struct {
 		Name        string                      `json:"name"`
 		Description string                      `json:"description"`
 		Config      AppOpenSearchTemplateConfig `json:"config"`
+		Confirm     bool                        `json:"confirm,omitempty"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "OpenSearch write template") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL"})
 		return
 	}
 	name := strings.TrimSpace(body.Name)
@@ -196,11 +200,6 @@ func handleOpenSearchTemplateUpdate(c *gin.Context, app *ServerApp) {
 	if !appOpenSearchRequireWrite(c) {
 		return
 	}
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL"})
-		return
-	}
 	id, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
 	if err != nil || id <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的模版 id"})
@@ -210,9 +209,18 @@ func handleOpenSearchTemplateUpdate(c *gin.Context, app *ServerApp) {
 		Name        string                      `json:"name"`
 		Description string                      `json:"description"`
 		Config      AppOpenSearchTemplateConfig `json:"config"`
+		Confirm     bool                        `json:"confirm,omitempty"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "OpenSearch write template") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL"})
 		return
 	}
 	name := strings.TrimSpace(body.Name)
@@ -240,6 +248,9 @@ func handleOpenSearchTemplateUpdate(c *gin.Context, app *ServerApp) {
 
 func handleOpenSearchTemplateDelete(c *gin.Context, app *ServerApp) {
 	if !appOpenSearchRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenSearch delete template") {
 		return
 	}
 	db := app.MySQLDB()
@@ -283,6 +294,9 @@ type openSearchK8sDeployBody struct {
 
 func handleOpenSearchK8sDeploy(c *gin.Context, app *ServerApp) {
 	if !appOpenSearchRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenSearch deploy") {
 		return
 	}
 	k8s := app.K8s()

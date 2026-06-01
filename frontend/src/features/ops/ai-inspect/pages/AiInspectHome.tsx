@@ -16,10 +16,12 @@ import {
 } from "@/shared/ui/select";
 import { CollapsibleManual } from "@/shared/ui/CollapsibleManual";
 import { apiGetJson, apiPostJson, apiPutJson, ApiHttpError } from "@/lib/api";
+import { withOpsMutationConfirm } from "@/lib/ops-mutation-confirm";
 import { ArrowDown, ArrowRight, Bot, ChevronDown, ScrollText, Sparkles, UserRound } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { AIProviderConfigPanel } from "@/features/ops/ai-inspect/components/AIProviderConfigPanel";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { InspectionRunPanel } from "@/features/ops/ai-inspect/components/InspectionRunPanel";
 import { InspectionSchedulePanel } from "@/features/ops/ai-inspect/components/InspectionSchedulePanel";
 import { InspectionScopePanel } from "@/features/ops/ai-inspect/components/InspectionScopePanel";
@@ -277,7 +279,7 @@ const AiInspectHome: React.FC = () => {
   }, [q.data]);
 
   const saveMut = useMutation({
-    mutationFn: (body: Record<string, unknown>) => apiPutJson("/api/ops/ai-provider", body),
+    mutationFn: (body: Record<string, unknown>) => apiPutJson("/api/ops/ai-provider", withOpsMutationConfirm(body)),
     onSuccess: () => {
       toast.success("已保存");
       void qc.invalidateQueries({ queryKey: ["ops-ai-provider"] });
@@ -1210,9 +1212,16 @@ const AiInspectHome: React.FC = () => {
         </InspectionSchedulePanel>
         <InspectionRunPanel>
         <div className="mt-3 flex flex-wrap gap-3">
-          <Button type="button" onClick={() => saveMut.mutate(putBody())} disabled={saveMut.isPending}>
+          <ConfirmActionButton
+            type="button"
+            disabled={saveMut.isPending}
+            title="确认保存 AI Provider？"
+            description="将写入 AI 巡检供应商、模型与凭据配置，后续巡检会使用这些设置。"
+            confirmLabel="保存"
+            onConfirm={() => saveMut.mutate(putBody())}
+          >
             保存配置
-          </Button>
+          </ConfirmActionButton>
           <Button
             type="button"
             variant="secondary"

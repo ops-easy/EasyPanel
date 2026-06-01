@@ -38,6 +38,8 @@ import { podDetailHref, podPhaseBadgeClass } from "./podPhaseStyle";
 import PodLogsSheet from "./PodLogsSheet";
 import { cn } from "@/lib/utils";
 import { formatCpuCores, formatMemBytes } from "@/lib/k8s-metrics-format";
+import { withK8sMutationConfirm, withK8sMutationConfirmQuery } from "@/features/cluster/lib/k8sMutationConfirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 function podMetricKey(p: PodRow): string {
   return `${p.namespace}/${p.name}`;
@@ -287,7 +289,7 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
 
   const applyMut = useMutation({
     mutationFn: (yamlContent: string) =>
-      apiPostJson("/api/k8s/apply-yaml", { yamlContent }),
+      apiPostJson("/api/k8s/apply-yaml", withK8sMutationConfirm({ yamlContent })),
     onSuccess: () => {
       setYamlOpen(false);
       void queryClient.invalidateQueries({ queryKey: ["k8s-pods"] });
@@ -298,7 +300,9 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
   const deleteMut = useMutation({
     mutationFn: ({ namespace: ns, name }: { namespace: string; name: string }) =>
       apiDelete(
-        `/api/k8s/objects/pod/${encodeURIComponent(ns)}/${encodeURIComponent(name)}`
+        withK8sMutationConfirmQuery(
+          `/api/k8s/objects/pod/${encodeURIComponent(ns)}/${encodeURIComponent(name)}`
+        )
       ),
     onSuccess: () => {
       setDelTarget(null);
@@ -615,13 +619,16 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
             <Button type="button" variant="secondary" onClick={() => setYamlOpen(false)}>
               取消
             </Button>
-            <Button
+            <ConfirmActionButton
               type="button"
               disabled={applyMut.isPending}
-              onClick={() => void applyMut.mutateAsync(yamlDraft)}
+              title="确认应用 Pod YAML？"
+              description={`将把 ${yamlMode === "edit" ? "Pod YAML" : "新 Pod YAML"} 写入 Kubernetes API。`}
+              confirmLabel="应用"
+              onConfirm={() => void applyMut.mutateAsync(yamlDraft)}
             >
               {applyMut.isPending ? "提交中…" : "提交应用"}
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
           {applyMut.isError && (
             <p className="text-sm text-red-600">{extractErrorMessage(applyMut.error)}</p>

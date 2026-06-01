@@ -158,13 +158,16 @@ func handlePVETargetCreate(c *gin.Context, app *ServerApp) {
 	if !requirePVEAdmin(c) {
 		return
 	}
-	key, err := pveEncryptionKey(app)
-	if err != nil {
+	var body pveTargetBody
+	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	var body pveTargetBody
-	if err := c.ShouldBindJSON(&body); err != nil {
+	if !requirePVEConfirm(c, body.Confirm, "PVE target create") {
+		return
+	}
+	key, err := pveEncryptionKey(app)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -190,6 +193,14 @@ func handlePVETargetUpdate(c *gin.Context, app *ServerApp) {
 	if !requirePVEAdmin(c) {
 		return
 	}
+	var body pveTargetBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requirePVEConfirm(c, body.Confirm, "PVE target update") {
+		return
+	}
 	key, err := pveEncryptionKey(app)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -203,11 +214,6 @@ func handlePVETargetUpdate(c *gin.Context, app *ServerApp) {
 	cur, _ := findPVETarget(list, c.Param("id"))
 	if cur == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "PVE 目标不存在"})
-		return
-	}
-	var body pveTargetBody
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	target, err := normalizePVETargetFromBody(body, cur, key)
@@ -225,6 +231,9 @@ func handlePVETargetUpdate(c *gin.Context, app *ServerApp) {
 
 func handlePVETargetDelete(c *gin.Context, app *ServerApp) {
 	if !requirePVEAdmin(c) {
+		return
+	}
+	if !requirePVEConfirm(c, pveConfirmed(c.Query("confirm")), "PVE target delete") {
 		return
 	}
 	list, err := loadPVETargets(app.PlatformKV())

@@ -1,8 +1,10 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -80,6 +82,19 @@ func handleHarborIndexStatus(app *ServerApp) gin.HandlerFunc {
 
 func handleHarborIndexSync(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		body := map[string]interface{}{}
+		if c.Request.Body != nil {
+			raw, err := io.ReadAll(c.Request.Body)
+			if err == nil {
+				c.Request.Body = io.NopCloser(bytes.NewReader(raw))
+				if len(bytes.TrimSpace(raw)) > 0 {
+					_ = json.Unmarshal(raw, &body)
+				}
+			}
+		}
+		if !requireHarborMutationConfirm(c, harborMutationConfirmedValue(body["confirm"]), "Harbor image index sync") {
+			return
+		}
 		cfg := app.Cfg()
 		if app.Redis() == nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Redis 未连接，无法写入索引"})

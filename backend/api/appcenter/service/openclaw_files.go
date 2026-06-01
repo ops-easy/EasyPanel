@@ -388,6 +388,9 @@ func handleAppOpenClawFilePut(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw write file") {
+		return
+	}
 	if app.PlatformKV() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "platform_kv 不可用"})
 		return
@@ -438,5 +441,6 @@ func handleAppOpenClawFilePut(c *gin.Context, app *ServerApp) {
 		RespondAPIError500(c, err.Error())
 		return
 	}
+	SetAuditDetail(c, "应用中心 OpenClaw 保存文件 "+inst.DisplayName+" path="+rel)
 	c.JSON(http.StatusOK, gin.H{"ok": true, "path": rel, "bytes": len(body.Content)})
 }

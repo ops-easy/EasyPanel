@@ -198,7 +198,7 @@ func verifySessionToken(token string, key []byte) (user, role, nonce string, err
 		return "", "", "", errors.New("empty user")
 	}
 	if role != DashboardRoleAdmin && role != DashboardRoleViewer {
-		role = DashboardRoleAdmin
+		return "", "", "", errors.New("invalid role")
 	}
 	return user, role, nonce, nil
 }

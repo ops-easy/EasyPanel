@@ -49,7 +49,8 @@ func handleK8sNamespaceStats(c *gin.Context, k8s *kubernetes.Clientset) {
 	if !GuardK8s(c, k8s) {
 		return
 	}
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
+	defer cancel()
 	computedAt := time.Now().UTC().Format(time.RFC3339)
 
 	nsList, err := k8s.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})

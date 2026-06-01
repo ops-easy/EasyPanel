@@ -13,12 +13,14 @@ import {
   ArrowRight,
   CheckCircle2,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
 import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
 import { apiGetJson } from "@/lib/api";
 import { workspaceMenuVisible } from "@/lib/platform-permissions";
 import { cn } from "@/lib/utils";
+import { Button } from "@/shared/ui/button";
 import { type K8sSummary } from "@/features/cluster/pages/types";
 import { type VCenterVMsResponse, type VCenterHostsResponse } from "@/features/vcenter/pages/types";
 import { OBSERVABILITY_INSPECT_WORKSPACE_LABEL } from "@/features/ops/ai-inspect/aiInspectNavigation";
@@ -35,7 +37,7 @@ type AiAlertsGet = {
 };
 
 type AIProviderGet = {
-  endpoint: { enabled: boolean; provider?: string; model?: string; apiKeySet?: boolean };
+  endpoint: { enabled: boolean; apiKeySet?: boolean };
 };
 
 type NetworkDevice = {
@@ -45,6 +47,29 @@ type NetworkDevice = {
 
 type PVETarget = {
   id: string;
+};
+
+type BastionTarget = {
+  id: string;
+  provider: "vcenter" | "pve" | "extra" | string;
+  powerState?: string;
+};
+
+type HubIngressRow = {
+  managed?: boolean;
+};
+
+type DocsListGet = {
+  docs: { id: number; contentKind?: string }[];
+};
+
+type DocsMediaGet = {
+  items: unknown[];
+};
+
+type DocsAttachmentStorageGet = {
+  mode?: string;
+  cos?: { configured?: boolean };
 };
 
 type HubStatusTone = "slate" | "emerald" | "amber" | "cyan" | "teal" | "violet";
@@ -80,13 +105,20 @@ function HubStatusPill({
   );
 }
 
-function StatusBadge({ ok, loading }: { ok: boolean; loading?: boolean }) {
+function StatusBadge({ ok, loading, error, errorLabel = "摘要异常" }: { ok: boolean; loading?: boolean; error?: boolean; errorLabel?: string }) {
   if (loading) {
     return <HubStatusPill tone="slate">检查中…</HubStatusPill>;
   }
+  if (error) {
+    return (
+      <HubStatusPill tone="amber" icon={<AlertCircle size={11} />}>
+        {errorLabel}
+      </HubStatusPill>
+    );
+  }
   return ok ? (
     <HubStatusPill tone="emerald" icon={<CheckCircle2 size={11} />}>
-      已接入
+      已就绪
     </HubStatusPill>
   ) : (
     <HubStatusPill tone="amber" icon={<AlertCircle size={11} />}>
@@ -142,17 +174,40 @@ function fmtMB(mb: number): string {
   return `${mb} MB`;
 }
 
-function formatAIProviderName(provider?: string): string {
-  switch ((provider || "custom").toLowerCase()) {
-    case "openclaw":
-      return "OpenClaw";
-    case "hermes":
-      return "Hermes";
-    case "custom":
-      return "OpenAI 兼容";
-    default:
-      return provider || "AI Provider";
-  }
+function queryCountMetric(
+  query: { isLoading: boolean; isFetching: boolean; isError: boolean },
+  value: number
+): number | string {
+  if (query.isLoading || query.isFetching) return "…";
+  if (query.isError) return "异常";
+  return value;
+}
+
+function queryMySQLBackedCountMetric(
+  query: { isLoading: boolean; isFetching: boolean; isError: boolean },
+  value: number,
+  mysqlChecking: boolean,
+  mysqlUnavailable: boolean
+): number | string {
+  if (mysqlChecking) return "…";
+  if (mysqlUnavailable) return "MySQL 异常";
+  return queryCountMetric(query, value);
+}
+
+function queryTextMetric(
+  query: { isLoading: boolean; isFetching: boolean; isError: boolean },
+  value: string
+): string {
+  if (query.isLoading || query.isFetching) return "…";
+  if (query.isError) return "异常";
+  return value;
+}
+
+function queryConfiguredMetric(
+  query: { isLoading: boolean; isFetching: boolean; isError: boolean },
+  configured: boolean
+): string {
+  return queryTextMetric(query, configured ? "已配置" : "未配置");
 }
 
 const HomeHub: React.FC = () => {
@@ -176,6 +231,10 @@ const HomeHub: React.FC = () => {
   const showAiInspect = workspaceMenuVisible(perm, "aiinspect", hubRole);
   const showDocs = workspaceMenuVisible(perm, "docs", hubRole);
   const showHub = workspaceMenuVisible(perm, "hub", hubRole);
+  const appCenterSummaryEnabled = loggedIn && showAppCenter;
+  const aiInspectSummaryEnabled = loggedIn && showAiInspect;
+  const docsSummaryEnabled = loggedIn && showDocs;
+  const baotaIngressSummaryEnabled = loggedIn && showBaota && cfg?.k8sConfigured === true;
 
   // K8s summary
   const k8sQ = useQuery({
@@ -211,57 +270,61 @@ const HomeHub: React.FC = () => {
   const appStatusQ = useQuery({
     queryKey: ["app-center-redis-status-hub"],
     queryFn: ({ signal }) => apiGetJson<RedisStatus>("/api/app-center/redis/status", { signal }),
+    enabled: appCenterSummaryEnabled,
   });
   const redisQ = useQuery({
     queryKey: ["app-center-redis-instances-hub"],
     queryFn: ({ signal }) =>
       apiGetJson<{ instances: unknown[] }>("/api/app-center/redis/instances", { signal }),
+    enabled: appCenterSummaryEnabled,
   });
   const mysqlQ = useQuery({
     queryKey: ["app-center-mysql-instances-hub"],
     queryFn: ({ signal }) =>
       apiGetJson<{ instances: unknown[] }>("/api/app-center/mysql/instances", { signal }),
+    enabled: appCenterSummaryEnabled,
   });
   const kafkaQ = useQuery({
     queryKey: ["app-center-kafka-instances-hub"],
     queryFn: ({ signal }) =>
       apiGetJson<{ instances: unknown[] }>("/api/app-center/kafka/instances", { signal }),
-    enabled: appStatusQ.data?.mysqlReachable === true,
+    enabled: appCenterSummaryEnabled && appStatusQ.data?.mysqlReachable === true,
   });
   const cloudVmQ = useQuery({
     queryKey: ["app-center-cloud-vm-instances-hub"],
     queryFn: ({ signal }) =>
       apiGetJson<{ instances: unknown[] }>("/api/app-center/cloud-vm/instances", { signal }),
+    enabled: appCenterSummaryEnabled,
   });
   const openClawQ = useQuery({
     queryKey: ["app-center-openclaw-instances-hub"],
     queryFn: ({ signal }) =>
       apiGetJson<{ instances: unknown[] }>("/api/app-center/openclaw/instances", { signal }),
+    enabled: appCenterSummaryEnabled,
   });
   const hermesQ = useQuery({
     queryKey: ["app-center-hermes-instances-hub"],
     queryFn: ({ signal }) =>
       apiGetJson<{ instances: unknown[] }>("/api/app-center/hermes/instances", { signal }),
+    enabled: appCenterSummaryEnabled,
   });
   const openSearchQ = useQuery({
     queryKey: ["app-center-opensearch-instances-hub"],
     queryFn: ({ signal }) =>
       apiGetJson<{ instances: unknown[] }>("/api/app-center/opensearch/instances", { signal }),
+    enabled: appCenterSummaryEnabled,
   });
   const dnsDomainsQ = useQuery({
     queryKey: ["app-center-dns-domains-hub"],
     queryFn: ({ signal }) => apiGetJson<{ domains: unknown[] }>("/api/dns/domains", { signal }),
-    enabled: appStatusQ.data?.mysqlReachable === true,
+    enabled: appCenterSummaryEnabled && appStatusQ.data?.mysqlReachable === true,
   });
 
   // 堡垒机
-  const bastionVmsQ = useQuery({
-    queryKey: ["bastion-vms-hub"],
-    queryFn: ({ signal }) =>
-      apiGetJson<{ vms: { moref: string; name: string; powerState?: string }[]; extraHosts?: { id: string }[] }>(
-        "/api/vcenter/bastion/vms",
-        { signal }
-      ),
+  const bastionTargetsQ = useQuery({
+    queryKey: ["bastion-targets-hub"],
+    queryFn: ({ signal }) => apiGetJson<{ targets: BastionTarget[] }>("/api/bastion/targets", { signal }),
+    enabled: loggedIn && showBastion,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -270,24 +333,24 @@ const HomeHub: React.FC = () => {
   const aiAlertsQ = useQuery({
     queryKey: ["ops-alerts-hub"],
     queryFn: ({ signal }) => apiGetJson<AiAlertsGet>("/api/ops/alerts", { signal }),
-    enabled: loggedIn && isAdmin,
+    enabled: aiInspectSummaryEnabled && isAdmin,
   });
   const aiProviderQ = useQuery({
     queryKey: ["ops-ai-provider-hub"],
     queryFn: ({ signal }) => apiGetJson<AIProviderGet>("/api/ops/ai-provider", { signal }),
-    enabled: loggedIn && isAdmin,
+    enabled: aiInspectSummaryEnabled && isAdmin,
   });
   const aiReportsQ = useQuery({
     queryKey: ["ops-inspect-reports-hub"],
     queryFn: ({ signal }) =>
       apiGetJson<{ reports: unknown[] }>("/api/ops/inspect/reports", { signal }),
-    enabled: loggedIn && isAdmin,
+    enabled: aiInspectSummaryEnabled && isAdmin,
   });
   const aiPanelsQ = useQuery({
     queryKey: ["ops-monitoring-panels-hub"],
     queryFn: ({ signal }) =>
       apiGetJson<{ panels: { id: string }[] }>("/api/ops/monitoring/panels", { signal }),
-    enabled: loggedIn,
+    enabled: aiInspectSummaryEnabled,
   });
   const aiPromQ = useQuery({
     queryKey: ["prometheus-status-hub"],
@@ -296,13 +359,48 @@ const HomeHub: React.FC = () => {
         "/api/prometheus/status",
         { signal }
       ),
-    enabled: loggedIn,
+    enabled: aiInspectSummaryEnabled,
   });
 
   const networkDevicesQ = useQuery({
     queryKey: ["network-devices-hub"],
     queryFn: ({ signal }) => apiGetJson<{ devices: NetworkDevice[] }>("/api/network/devices", { signal }),
     enabled: loggedIn && showNetwork,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const baotaIngressQ = useQuery({
+    queryKey: ["baota-ingresses-hub"],
+    queryFn: ({ signal }) => apiGetJson<HubIngressRow[]>("/api/ingresses", { signal }),
+    enabled: baotaIngressSummaryEnabled,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const docsRegularQ = useQuery({
+    queryKey: ["docs-regular-hub"],
+    queryFn: ({ signal }) => apiGetJson<DocsListGet>("/api/docs?scope=regular", { signal }),
+    enabled: docsSummaryEnabled,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const docsGuidesQ = useQuery({
+    queryKey: ["docs-guides-hub"],
+    queryFn: ({ signal }) => apiGetJson<DocsListGet>("/api/docs?scope=guides", { signal }),
+    enabled: docsSummaryEnabled,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const docsMediaQ = useQuery({
+    queryKey: ["docs-media-hub"],
+    queryFn: ({ signal }) => apiGetJson<DocsMediaGet>("/api/docs/media", { signal }),
+    enabled: docsSummaryEnabled,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const docsStorageQ = useQuery({
+    queryKey: ["docs-attachment-storage-hub"],
+    queryFn: ({ signal }) => apiGetJson<DocsAttachmentStorageGet>("/api/docs/attachment-storage", { signal }),
+    enabled: docsSummaryEnabled && isAdmin,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -330,36 +428,9 @@ const HomeHub: React.FC = () => {
       vcMemFreeMB: memFree,
       nVcVm: vcVmsQ.data?.vms?.length ?? 0,
       nVcHost: hosts.length,
-      vcLoading: vcVmsQ.isLoading || vcHostsQ.isLoading,
+      vcLoading: vcVmsQ.isLoading || vcVmsQ.isFetching || vcHostsQ.isLoading || vcHostsQ.isFetching,
     };
-  }, [vcHostsQ.data?.hosts, vcVmsQ.data?.vms, vcVmsQ.isLoading, vcHostsQ.isLoading]);
-
-  const k8sOk = cfg?.k8sConfigured === true;
-  const vcOk = cfg?.vcenterConfigured === true;
-  const nPveTargets = pveTargetsQ.data?.targets?.length ?? 0;
-  const pveNeedsSetup = !pveTargetsQ.isLoading && nPveTargets === 0;
-  const computeOk = vcOk || nPveTargets > 0;
-  const computeLoading = cfgLoading || (!vcOk && pveTargetsQ.isLoading);
-  const pveHubStatus = pveTargetsQ.isLoading
-    ? "…"
-    : nPveTargets > 0
-      ? nPveTargets
-      : "未配置";
-  const pveHubHint =
-    !pveTargetsQ.isLoading && nPveTargets === 0
-      ? "PVE 未配置：请先在 PVE 目标页登记 Proxmox VE API 地址与凭据，之后节点、虚拟机和存储摘要会自动汇总。"
-      : "";
-  const k8sMetricValue = (value?: number): number | string => {
-    if (cfgLoading) return "…";
-    if (!k8sOk) return 0;
-    if (k8sQ.isLoading) return "…";
-    return value ?? "—";
-  };
-  const baotaTargetOk = cfg?.baotaTargets?.some((t) => Boolean(t.url && t.hasApiKey)) ?? false;
-  const baotaOk = Boolean((cfg?.hasBaotaApiKey && cfg?.baotaUrl) || baotaTargetOk);
-  const baotaReachable = check?.baota.status === "success";
-  const nBaotaTargets = cfg?.baotaTargets?.filter((t) => Boolean(t.url && t.hasApiKey)).length ?? (baotaOk ? 1 : 0);
-  const ddnsOk = Boolean(cfg?.ddnsHost?.trim());
+  }, [vcHostsQ.data?.hosts, vcVmsQ.data?.vms, vcVmsQ.isLoading, vcVmsQ.isFetching, vcHostsQ.isLoading, vcHostsQ.isFetching]);
 
   const { nRedis, nMySQL, nKafka, nCloudVm, nOpenClaw, nHermes, nOpenSearch, nDomains, appCenterTotal } = useMemo(() => {
     const nr = redisQ.data?.instances?.length ?? 0;
@@ -379,7 +450,7 @@ const HomeHub: React.FC = () => {
       nHermes: nh,
       nOpenSearch: nos,
       nDomains: nd,
-      appCenterTotal: nr + nm + nk + nc + no + nh + nos,
+      appCenterTotal: nr + nm + nk + nc + no + nh + nos + nd,
     };
   }, [
     redisQ.data?.instances,
@@ -392,18 +463,115 @@ const HomeHub: React.FC = () => {
     dnsDomainsQ.data?.domains,
   ]);
 
+  const k8sOk = cfg?.k8sConfigured === true;
+  const k8sSummaryLoading = cfgLoading || k8sQ.isLoading || k8sQ.isFetching;
+  const k8sSummaryError = !k8sSummaryLoading && k8sQ.isError;
+  const k8sNeedsSetup = !k8sSummaryLoading && !k8sSummaryError && !k8sOk;
+  const vcOk = cfg?.vcenterConfigured === true;
+  const nPveTargets = pveTargetsQ.data?.targets?.length ?? 0;
+  const pveTargetsLoading = pveTargetsQ.isLoading || pveTargetsQ.isFetching;
+  const computeCloudVmLoading = showAppCenter && (cloudVmQ.isLoading || cloudVmQ.isFetching);
+  const computeOk = vcOk || nPveTargets > 0 || (showAppCenter && nCloudVm > 0);
+  const computeLoading = cfgLoading || vcLoading || pveTargetsLoading || computeCloudVmLoading;
+  const computeSummaryError = vcVmsQ.isError || vcHostsQ.isError || pveTargetsQ.isError || (showAppCenter && cloudVmQ.isError);
+  const computeNeedsSetup = !computeLoading && !computeSummaryError && !computeOk;
+  const vCenterVmMetric = vcOk ? queryCountMetric(vcVmsQ, nVcVm) : "未配置";
+  const vCenterHostMetric = vcOk ? queryCountMetric(vcHostsQ, nVcHost) : "未配置";
+  const pveTargetMetric = pveTargetsLoading
+    ? "…"
+    : pveTargetsQ.isError
+    ? "异常"
+    : nPveTargets > 0
+    ? nPveTargets
+    : "未配置";
+  const pveHubHint =
+    !pveTargetsLoading && nPveTargets === 0 && !vcOk
+      ? "PVE 未配置：请先在 PVE 目标页登记 Proxmox VE API 地址与凭据，之后节点、虚拟机和存储摘要会自动汇总。"
+      : !pveTargetsLoading && nPveTargets === 0
+      ? "当前已配置 vCenter；如需同时纳管 PVE，可在配置页继续追加 Proxmox VE 目标。"
+      : "";
+  const k8sMetricValue = (value?: number): number | string => {
+    if (k8sSummaryLoading) return "…";
+    if (k8sQ.isError) return "异常";
+    if (!k8sOk) return "未配置";
+    return value ?? "—";
+  };
+  const baotaTargetOk = cfg?.baotaTargets?.some((t) => Boolean(t.url && t.hasApiKey)) ?? false;
+  const baotaOk = Boolean((cfg?.hasBaotaApiKey && cfg?.baotaUrl) || baotaTargetOk);
+  const baotaReachable = check?.baota.status === "success";
+  const baotaSummaryLoading = cfgLoading || baotaIngressQ.isLoading || baotaIngressQ.isFetching;
+  const baotaSummaryError = !baotaSummaryLoading && ((baotaOk && !baotaReachable) || baotaIngressQ.isError);
+  const baotaNeedsSetup = !baotaSummaryLoading && !baotaSummaryError && !baotaOk;
+  const baotaStatusErrorLabel = baotaIngressQ.isError ? "路由异常" : "连接异常";
+  const nConfiguredBaotaTargets = cfg?.baotaTargets?.filter((t) => Boolean(t.url && t.hasApiKey)).length ?? 0;
+  const nBaotaTargets = nConfiguredBaotaTargets > 0 ? nConfiguredBaotaTargets : baotaOk ? 1 : 0;
+  const ddnsOk = Boolean(cfg?.ddnsHost?.trim());
+  const baotaIngressRows = baotaIngressQ.data ?? [];
+  const nBaotaIngresses = baotaIngressRows.length;
+  const nBaotaManagedIngresses = baotaIngressRows.filter((row) => row.managed).length;
+  const baotaIngressMetric = baotaSummaryLoading
+    ? "…"
+    : cfg?.k8sConfigured !== true
+    ? "需集群"
+    : baotaIngressQ.isError
+    ? "异常"
+    : nBaotaIngresses;
+  const baotaManagedIngressMetric = baotaSummaryLoading
+    ? "…"
+    : cfg?.k8sConfigured !== true
+    ? "需集群"
+    : baotaIngressQ.isError
+    ? "异常"
+    : nBaotaManagedIngresses;
+
+  const appCenterSummaryQueries = [
+    appStatusQ,
+    redisQ,
+    mysqlQ,
+    kafkaQ,
+    cloudVmQ,
+    openClawQ,
+    hermesQ,
+    openSearchQ,
+    dnsDomainsQ,
+  ];
+  const appCenterSummaryLoading = appCenterSummaryQueries.some((query) => query.isLoading || query.isFetching);
+  const appCenterMySQLChecking = appStatusQ.isLoading || appStatusQ.isFetching;
+  const appCenterMySQLUnavailable = appStatusQ.isError || (appStatusQ.isSuccess && appStatusQ.data?.mysqlReachable === false);
+  const appCenterSummaryError = appCenterSummaryQueries.some((query) => query.isError) || appCenterMySQLUnavailable;
+  const appCenterStatusTone: HubStatusTone = appCenterSummaryLoading
+    ? "slate"
+    : appCenterSummaryError
+    ? "amber"
+    : "emerald";
+  const appCenterStatusLabel = appCenterSummaryLoading
+    ? "检查中…"
+    : appCenterSummaryError
+    ? "摘要异常"
+    : `${appCenterTotal} 资源`;
+  const appCenterStatusIcon = !appCenterSummaryLoading && appCenterSummaryError ? <AlertCircle size={11} /> : undefined;
+
   const networkDevices = networkDevicesQ.data?.devices ?? [];
   const nNetworkDevices = networkDevices.length;
   const nIkuaiDevices = networkDevices.filter((device) => device.kind === "ikuai").length;
   const nOpenWrtDevices = networkDevices.filter((device) => device.kind === "openwrt").length;
-  const openWrtNeedsSetup = !networkDevicesQ.isLoading && nOpenWrtDevices === 0;
-  const openWrtHubStatus = networkDevicesQ.isLoading
+  const networkSummaryError = networkDevicesQ.isError;
+  const networkSummaryLoading = networkDevicesQ.isLoading || networkDevicesQ.isFetching;
+  const networkNeedsSetup = !networkSummaryLoading && !networkSummaryError && nNetworkDevices === 0;
+  const networkIkuaiMetric = queryCountMetric(networkDevicesQ, nIkuaiDevices);
+  const networkOpenWrtMetric = queryCountMetric(networkDevicesQ, nOpenWrtDevices);
+  const networkDeviceMetric = queryCountMetric(networkDevicesQ, nNetworkDevices);
+  const networkDataSourceMetric = networkSummaryLoading
     ? "…"
-    : nOpenWrtDevices > 0
-      ? nOpenWrtDevices
-      : "未配置";
+    : networkDevicesQ.isError
+    ? "异常"
+    : nNetworkDevices > 0
+    ? "已配置"
+    : "未配置";
   const openWrtHubHint =
-    !networkDevicesQ.isLoading && nOpenWrtDevices === 0
+    !networkSummaryLoading && nNetworkDevices === 0
+      ? "请先登记 iKuai 或 OpenWrt 设备，工作台会按设备类型汇总接口、终端、无线和监控数据源。"
+      : !networkSummaryLoading && nOpenWrtDevices === 0
       ? "OpenWrt 未配置：请先登记 OpenWrt 设备的 Prometheus scope、instance 或 job 标签，避免进入子页后才发现没有数据源。"
       : "";
 
@@ -412,7 +580,7 @@ const HomeHub: React.FC = () => {
     nBastionVm,
     nBastionOn,
     nBastionExtra,
-    nBastionDirect,
+    nBastionTargets,
     bastionLoading,
     aiRulesTotal,
     aiRulesOn,
@@ -420,41 +588,41 @@ const HomeHub: React.FC = () => {
     aiReports,
     aiPanels,
     aiProviderEnabled,
-    aiProviderName,
-    aiProviderModel,
     aiPromK8s,
     aiPromVc,
     aiLoading,
   } = useMemo(() => {
-    const bVms = bastionVmsQ.data?.vms ?? [];
+    const bastionTargets = bastionTargetsQ.data?.targets ?? [];
+    const bVms = bastionTargets.filter((target) => target.provider === "vcenter");
     const nBm = bVms.length;
     const nOn = bVms.filter((v) => String(v.powerState).toLowerCase().includes("on")).length;
-    const nExtra = bastionVmsQ.data?.extraHosts?.length ?? 0;
-    /** 堡垒机策略内：同步 VM + 手工额外主机（不含 ESXi/云主机/Redis，避免与下方明细重复计数） */
-    const nBastionDirect = nBm + nExtra;
+    const nExtra = bastionTargets.filter((target) => target.provider === "extra").length;
     const rules = aiAlertsQ.data?.rules ?? [];
     return {
       nBastionVm: nBm,
       nBastionOn: nOn,
       nBastionExtra: nExtra,
-      nBastionDirect,
-      bastionLoading: bastionVmsQ.isLoading,
+      nBastionTargets: bastionTargets.length,
+      bastionLoading: bastionTargetsQ.isLoading || bastionTargetsQ.isFetching,
       aiRulesTotal: rules.length,
       aiRulesOn: rules.filter((r) => r.enabled).length,
       aiChannels: aiAlertsQ.data?.channels?.length ?? 0,
       aiReports: aiReportsQ.data?.reports?.length ?? 0,
       aiPanels: aiPanelsQ.data?.panels?.length ?? 0,
       aiProviderEnabled: aiProviderQ.data?.endpoint?.enabled ?? false,
-      aiProviderName: formatAIProviderName(aiProviderQ.data?.endpoint?.provider),
-      aiProviderModel: aiProviderQ.data?.endpoint?.model,
       aiPromK8s: aiPromQ.data?.scopes?.k8s?.configured ?? false,
       aiPromVc: aiPromQ.data?.scopes?.vcenter?.configured ?? false,
-      aiLoading: aiAlertsQ.isLoading || aiProviderQ.isLoading || aiPanelsQ.isLoading,
+      aiLoading:
+        aiAlertsQ.isLoading || aiAlertsQ.isFetching ||
+        aiProviderQ.isLoading || aiProviderQ.isFetching ||
+        aiPanelsQ.isLoading || aiPanelsQ.isFetching ||
+        aiReportsQ.isLoading || aiReportsQ.isFetching ||
+        aiPromQ.isLoading || aiPromQ.isFetching,
     };
   }, [
-    bastionVmsQ.data?.vms,
-    bastionVmsQ.data?.extraHosts,
-    bastionVmsQ.isLoading,
+    bastionTargetsQ.data?.targets,
+    bastionTargetsQ.isLoading,
+    bastionTargetsQ.isFetching,
     aiAlertsQ.data?.rules,
     aiAlertsQ.data?.channels,
     aiReportsQ.data?.reports,
@@ -462,9 +630,142 @@ const HomeHub: React.FC = () => {
     aiProviderQ.data?.endpoint,
     aiPromQ.data?.scopes,
     aiAlertsQ.isLoading,
+    aiAlertsQ.isFetching,
     aiProviderQ.isLoading,
+    aiProviderQ.isFetching,
     aiPanelsQ.isLoading,
+    aiPanelsQ.isFetching,
+    aiReportsQ.isLoading,
+    aiReportsQ.isFetching,
+    aiPromQ.isLoading,
+    aiPromQ.isFetching,
   ]);
+
+  const appCenterRedisMetric = showAppCenter ? queryCountMetric(redisQ, nRedis) : "受限";
+  const appCenterMySQLMetric = showAppCenter ? queryCountMetric(mysqlQ, nMySQL) : "受限";
+  const appCenterKafkaMetric = showAppCenter ? queryMySQLBackedCountMetric(kafkaQ, nKafka, appCenterMySQLChecking, appCenterMySQLUnavailable) : "受限";
+  const appCenterOpenSearchMetric = showAppCenter ? queryCountMetric(openSearchQ, nOpenSearch) : "受限";
+  const appCenterDomainsMetric = showAppCenter ? queryMySQLBackedCountMetric(dnsDomainsQ, nDomains, appCenterMySQLChecking, appCenterMySQLUnavailable) : "受限";
+  const appCenterCloudVmMetric = showAppCenter ? queryCountMetric(cloudVmQ, nCloudVm) : "受限";
+  const appCenterOpenClawMetric = showAppCenter ? queryCountMetric(openClawQ, nOpenClaw) : "受限";
+  const appCenterHermesMetric = showAppCenter ? queryCountMetric(hermesQ, nHermes) : "受限";
+  const bastionVmMetric = queryCountMetric(bastionTargetsQ, nBastionVm);
+  const bastionExtraHostMetric = queryCountMetric(bastionTargetsQ, nBastionExtra);
+  const bastionPowerOnMetric = queryCountMetric(bastionTargetsQ, nBastionOn);
+  const bastionReady = nBastionTargets + nCloudVm + nRedis + nMySQL > 0;
+  const bastionStatusLoading = bastionLoading || cloudVmQ.isLoading || cloudVmQ.isFetching || redisQ.isLoading || redisQ.isFetching || mysqlQ.isLoading || mysqlQ.isFetching;
+  const bastionSummaryError = bastionTargetsQ.isError || cloudVmQ.isError || redisQ.isError || mysqlQ.isError;
+  const bastionStatusTone: HubStatusTone = bastionStatusLoading
+    ? "slate"
+    : bastionSummaryError
+    ? "amber"
+    : bastionReady
+    ? "teal"
+    : "amber";
+  const bastionStatusLabel = bastionStatusLoading
+    ? "检查中…"
+    : bastionSummaryError
+    ? "摘要异常"
+    : bastionReady
+    ? "已就绪"
+    : "待配置";
+  const bastionNeedsSetup = !bastionStatusLoading && !bastionSummaryError && !bastionReady && isAdmin;
+  const aiWorkspaceReady =
+    aiProviderEnabled ||
+    aiPromK8s ||
+    aiPromVc ||
+    aiPanels > 0 ||
+    aiReports > 0 ||
+    aiRulesTotal > 0 ||
+    aiChannels > 0;
+  const aiWorkspaceRestricted = !isAdmin;
+  const aiSummaryError = !aiWorkspaceRestricted && (aiAlertsQ.isError || aiProviderQ.isError || aiReportsQ.isError || aiPanelsQ.isError || aiPromQ.isError);
+  const aiStatusTone: HubStatusTone = aiWorkspaceRestricted
+    ? "slate"
+    : aiSummaryError
+    ? "amber"
+    : aiWorkspaceReady
+    ? "cyan"
+    : "amber";
+  const aiStatusLabel = aiWorkspaceRestricted
+    ? "受限视图"
+    : aiSummaryError
+    ? "摘要异常"
+    : aiWorkspaceReady
+    ? "已就绪"
+    : "待配置";
+  const aiNeedsSetup = !aiLoading && !aiWorkspaceRestricted && !aiSummaryError && !aiWorkspaceReady;
+  const aiPromK8sMetric = queryConfiguredMetric(aiPromQ, aiPromK8s);
+  const aiPromVcMetric = queryConfiguredMetric(aiPromQ, aiPromVc);
+  const aiRulesMetric = isAdmin ? queryTextMetric(aiAlertsQ, `${aiRulesOn}/${aiRulesTotal}`) : "受限";
+  const aiPanelsMetric = queryCountMetric(aiPanelsQ, aiPanels);
+  const aiReportsMetric = isAdmin ? queryCountMetric(aiReportsQ, aiReports) : "受限";
+  const aiChannelsMetric = isAdmin ? queryCountMetric(aiAlertsQ, aiChannels) : "受限";
+  const nDocsRegular = docsRegularQ.data?.docs?.length ?? 0;
+  const nDocsGuides = docsGuidesQ.data?.docs?.length ?? 0;
+  const nDocsMedia = docsMediaQ.data?.items?.length ?? 0;
+  const docsTotal = nDocsRegular + nDocsGuides;
+  const docsLibraryTotal = docsTotal + nDocsMedia;
+  const docsReady = docsLibraryTotal > 0;
+  const docsSummaryQueries = isAdmin ? [docsRegularQ, docsGuidesQ, docsMediaQ, docsStorageQ] : [docsRegularQ, docsGuidesQ, docsMediaQ];
+  const docsSummaryLoading = docsSummaryQueries.some((query) => query.isLoading || query.isFetching);
+  const docsSummaryError = docsSummaryQueries.some((query) => query.isError);
+  const docsStatusTone: HubStatusTone = docsSummaryLoading
+    ? "slate"
+    : docsSummaryError
+    ? "amber"
+    : docsReady
+    ? "violet"
+    : "amber";
+  const docsStatusLabel = docsSummaryLoading
+    ? "检查中…"
+    : docsSummaryError
+    ? "摘要异常"
+    : docsReady
+    ? `${docsLibraryTotal} 项内容`
+    : "待创建";
+  const docsStorageMetric = !isAdmin
+    ? "受限"
+    : docsStorageQ.isLoading || docsStorageQ.isFetching
+    ? "…"
+    : docsStorageQ.isError
+    ? "异常"
+    : docsStorageQ.data?.mode === "cos" && docsStorageQ.data.cos?.configured
+    ? "COS"
+    : "本地";
+  const docsRegularMetric = queryCountMetric(docsRegularQ, nDocsRegular);
+  const docsGuidesMetric = queryCountMetric(docsGuidesQ, nDocsGuides);
+  const docsMediaMetric = queryCountMetric(docsMediaQ, nDocsMedia);
+  const hubSummaryControls = [
+    runtimeQ,
+    ...(showK8s ? [k8sQ] : []),
+    ...(showVc ? [vcVmsQ, vcHostsQ, pveTargetsQ] : []),
+    ...(appCenterSummaryEnabled
+      ? [
+          appStatusQ,
+          redisQ,
+          mysqlQ,
+          cloudVmQ,
+          openClawQ,
+          hermesQ,
+          openSearchQ,
+        ]
+      : []),
+    ...(appCenterSummaryEnabled && appStatusQ.data?.mysqlReachable === true ? [kafkaQ, dnsDomainsQ] : []),
+    ...(showBastion ? [bastionTargetsQ] : []),
+    ...(showNetwork ? [networkDevicesQ] : []),
+    ...(baotaIngressSummaryEnabled ? [baotaIngressQ] : []),
+    ...(aiInspectSummaryEnabled && isAdmin ? [aiAlertsQ, aiProviderQ, aiReportsQ] : []),
+    ...(aiInspectSummaryEnabled ? [aiPanelsQ, aiPromQ] : []),
+    ...(docsSummaryEnabled ? [docsRegularQ, docsGuidesQ, docsMediaQ] : []),
+    ...(docsSummaryEnabled && isAdmin ? [docsStorageQ] : []),
+  ] as const;
+  const hubRefreshing = hubSummaryControls.some((query) => query.isFetching);
+  const refreshHubSummaries = () => {
+    hubSummaryControls.forEach((query) => {
+      void query.refetch();
+    });
+  };
 
   if (!showHub) {
     return (
@@ -476,23 +777,36 @@ const HomeHub: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">工作台</h1>
-        <p className="mt-1 text-sm text-gray-500">各模块接入状态与资源概览，点击卡片进入对应工作区。</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">工作台</h1>
+          <p className="mt-1 text-sm text-gray-500">各模块配置状态与资源概览，点击卡片进入对应工作区。</p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 shrink-0 gap-1.5 self-start border-slate-200 bg-white text-xs text-slate-700 hover:bg-slate-50"
+          disabled={hubRefreshing}
+          onClick={refreshHubSummaries}
+        >
+          <RefreshCw className={cn("h-3.5 w-3.5", hubRefreshing && "animate-spin")} aria-hidden />
+          刷新摘要
+        </Button>
       </div>
 
       <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {/* Kubernetes */}
         {showK8s && (
           <Link
-            to="/cluster"
+            to={k8sNeedsSetup ? "/cluster/settings" : "/cluster"}
             className={cn(hubCardClass, "hover:border-blue-200")}
           >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white">
                 <Hexagon size={20} strokeWidth={2.2} />
               </div>
-              <StatusBadge ok={k8sOk} loading={cfgLoading} />
+              <StatusBadge ok={k8sOk} loading={k8sSummaryLoading} error={k8sSummaryError} />
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">Kubernetes</h2>
             <p className="mt-0.5 text-xs text-gray-400">集群资源、命名空间与工作负载</p>
@@ -508,7 +822,7 @@ const HomeHub: React.FC = () => {
                 : "请先在集群设置保存 Kubernetes 连接，摘要会自动切换为实时资源数。"}
             </HubCardHint>
             <span className={cn(hubEntryClass, "text-blue-600")}>
-              进入 <ArrowRight size={13} />
+              {k8sNeedsSetup ? "配置集群接入" : "进入"} <ArrowRight size={13} />
             </span>
           </Link>
         )}
@@ -516,40 +830,34 @@ const HomeHub: React.FC = () => {
         {/* 虚拟化与主机 */}
         {showVc && (
           <Link
-            to={pveNeedsSetup ? "/cluster/compute/config" : "/cluster/compute/dashboard"}
+            to={computeNeedsSetup ? "/cluster/compute/config" : "/cluster/compute/dashboard"}
             className={cn(hubCardClass, "hover:border-violet-200")}
           >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-violet-700 text-white">
                 <Monitor size={20} strokeWidth={2.2} />
               </div>
-              {!pveTargetsQ.isLoading && nPveTargets === 0 ? (
-                <HubStatusPill tone="amber" icon={<AlertCircle size={11} />}>
-                  PVE 未配置
-                </HubStatusPill>
-              ) : (
-                <StatusBadge ok={computeOk} loading={computeLoading} />
-              )}
+              <StatusBadge ok={computeOk} loading={computeLoading} error={computeSummaryError} />
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">虚拟化与主机</h2>
             <p className="mt-0.5 text-xs text-gray-400">vCenter、PVE、公有云与堡垒机</p>
             <HubMetricGrid>
-              <MetricItem label="vCenter VM" value={!vcOk || vcLoading ? (vcLoading ? "…" : 0) : nVcVm} />
-              <MetricItem label="ESXi 主机" value={!vcOk || vcLoading ? (vcLoading ? "…" : 0) : nVcHost} />
-              <MetricItem label="PVE 目标" value={pveHubStatus} />
-              <MetricItem label="云主机" value={cloudVmQ.isLoading ? "…" : nCloudVm} />
+              <MetricItem label="vCenter VM" value={vCenterVmMetric} />
+              <MetricItem label="ESXi 主机" value={vCenterHostMetric} />
+              <MetricItem label="PVE 目标" value={pveTargetMetric} />
+              <MetricItem label="云主机" value={appCenterCloudVmMetric} />
             </HubMetricGrid>
             <HubCardHint>
               {pveHubHint
                 ? pveHubHint
                 : !computeOk && !computeLoading
-                ? "请先接入 vCenter 或新增 PVE 目标，摘要会保持同一版式并显示纳管数量。"
+                ? "请先配置 vCenter 或新增 PVE 目标，摘要会保持同一版式并显示纳管数量。"
                 : vcOk && !vcLoading && vcMemTotalMB > 0
                   ? `宿主机内存 ${fmtMB(vcMemUsedMB)} / ${fmtMB(vcMemTotalMB)}，剩余 ${fmtMB(vcMemFreeMB)}。`
                   : "统一汇总 vCenter、PVE、公有云与堡垒机入口，进入后按平台继续展开操作。"}
             </HubCardHint>
             <span className={cn(hubEntryClass, "text-violet-600")}>
-              {pveNeedsSetup ? "配置 PVE 目标" : "进入"} <ArrowRight size={13} />
+              {computeNeedsSetup ? "配置资源源" : "进入"} <ArrowRight size={13} />
             </span>
           </Link>
         )}
@@ -557,37 +865,28 @@ const HomeHub: React.FC = () => {
         {/* 网络设备 */}
         {showNetwork && (
           <Link
-            to={openWrtNeedsSetup ? "/cluster/network/config" : "/cluster/network/dashboard"}
+            to={networkNeedsSetup ? "/cluster/network/config" : "/cluster/network/dashboard"}
             className={cn(hubCardClass, "hover:border-cyan-200")}
           >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-600 to-slate-700 text-white">
                 <Network size={20} strokeWidth={2.2} />
               </div>
-              <HubStatusPill
-                tone={networkDevicesQ.isLoading ? "slate" : nOpenWrtDevices > 0 ? "cyan" : "amber"}
-                icon={!networkDevicesQ.isLoading && nOpenWrtDevices === 0 ? <AlertCircle size={11} /> : undefined}
-              >
-                {networkDevicesQ.isLoading
-                  ? "加载中..."
-                  : nOpenWrtDevices > 0
-                    ? `${nOpenWrtDevices} OpenWrt`
-                    : "OpenWrt 未配置"}
-              </HubStatusPill>
+              <StatusBadge ok={nNetworkDevices > 0} loading={networkSummaryLoading} error={networkSummaryError} />
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">网络设备</h2>
             <p className="mt-0.5 text-xs text-gray-400">iKuai、OpenWrt</p>
             <HubMetricGrid>
-              <MetricItem label="iKuai" value={networkDevicesQ.isLoading ? "…" : nIkuaiDevices} />
-              <MetricItem label="OpenWrt" value={openWrtHubStatus} />
-              <MetricItem label="纳管设备" value={networkDevicesQ.isLoading ? "…" : nNetworkDevices} />
-              <MetricItem label="数据源" value={nNetworkDevices > 0 ? "已接入" : "待接入"} />
+              <MetricItem label="iKuai" value={networkIkuaiMetric} />
+              <MetricItem label="OpenWrt" value={networkOpenWrtMetric} />
+              <MetricItem label="纳管设备" value={networkDeviceMetric} />
+              <MetricItem label="数据源" value={networkDataSourceMetric} />
             </HubMetricGrid>
             <HubCardHint>
               {openWrtHubHint || "网络设备按 iKuai 与 OpenWrt 分组展示，进入后可查看接口、客户端与监控数据源。"}
             </HubCardHint>
             <span className={cn(hubEntryClass, "text-cyan-700")}>
-              {openWrtNeedsSetup ? "配置 OpenWrt" : "进入"} <ArrowRight size={13} />
+              {networkNeedsSetup ? "配置网络接入" : "进入"} <ArrowRight size={13} />
             </span>
           </Link>
         )}
@@ -595,14 +894,14 @@ const HomeHub: React.FC = () => {
         {/* 宝塔 */}
         {showBaota && (
           <Link
-            to="/cluster/baota"
+            to={baotaNeedsSetup ? "/cluster/baota/settings" : "/cluster/baota"}
             className={cn(hubCardClass, "hover:border-amber-200")}
           >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-600 to-orange-600 text-white">
                 <Server size={20} strokeWidth={2.2} />
               </div>
-              <StatusBadge ok={baotaOk} loading={cfgLoading} />
+              <StatusBadge ok={baotaOk} loading={baotaSummaryLoading} error={baotaSummaryError} errorLabel={baotaStatusErrorLabel} />
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">宝塔</h2>
             <p className="mt-0.5 text-xs text-gray-400">Ingress 同步、面板 API 与 DDNS</p>
@@ -610,15 +909,18 @@ const HomeHub: React.FC = () => {
               <MetricItem label="面板 API" value={cfgLoading ? "…" : baotaOk ? (baotaReachable ? "可达" : "异常") : "未配置"} />
               <MetricItem label="DDNS" value={ddnsOk ? "已设置" : "未设置"} />
               <MetricItem label="宝塔实例" value={cfgLoading ? "…" : nBaotaTargets} />
-              <MetricItem label="Ingress" value={baotaOk ? "可同步" : "待配置"} />
+              <MetricItem label="Ingress" value={baotaIngressMetric} />
+              <MetricItem label="托管 Ingress" value={baotaManagedIngressMetric} />
             </HubMetricGrid>
             <HubCardHint>
-              {baotaOk
+              {baotaIngressQ.isError
+                ? "无法读取 Kubernetes Ingress 清单；宝塔面板配置仍可管理，需同步路由时请先检查集群连接。"
+                : baotaOk
                 ? "同步入口、Ingress 列表与宝塔设置使用同一工作区，未连通时会显示异常状态。"
                 : "进入宝塔工作台后会先看到模块 Dashboard，并在其中按需进入宝塔设置。"}
             </HubCardHint>
             <span className={cn(hubEntryClass, "text-amber-700")}>
-              进入 <ArrowRight size={13} />
+              {baotaNeedsSetup ? "配置宝塔接入" : "进入"} <ArrowRight size={13} />
             </span>
           </Link>
         )}
@@ -633,24 +935,27 @@ const HomeHub: React.FC = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 text-white">
                 <AppWindow size={20} strokeWidth={2.2} />
               </div>
-              <HubStatusPill tone="emerald">
-                {appCenterTotal} 实例
+              <HubStatusPill
+                tone={appCenterStatusTone}
+                icon={appCenterStatusIcon}
+              >
+                {appCenterStatusLabel}
               </HubStatusPill>
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">应用中心</h2>
             <p className="mt-0.5 text-xs text-gray-400">Redis、MySQL、Kafka、OpenSearch、DNS、容器主机、OpenClaw、Hermes</p>
             <HubMetricGrid columns="grid-cols-3">
-              <MetricItem label="Redis" value={nRedis} />
-              <MetricItem label="MySQL" value={nMySQL} />
-              <MetricItem label="Kafka" value={nKafka} />
-              <MetricItem label="OpenSearch" value={nOpenSearch} />
-              <MetricItem label="域名" value={nDomains} />
-              <MetricItem label="容器主机" value={nCloudVm} />
-              <MetricItem label="OpenClaw" value={nOpenClaw} />
-              <MetricItem label="Hermes" value={nHermes} />
+              <MetricItem label="Redis" value={appCenterRedisMetric} />
+              <MetricItem label="MySQL" value={appCenterMySQLMetric} />
+              <MetricItem label="Kafka" value={appCenterKafkaMetric} />
+              <MetricItem label="OpenSearch" value={appCenterOpenSearchMetric} />
+              <MetricItem label="域名" value={appCenterDomainsMetric} />
+              <MetricItem label="容器主机" value={appCenterCloudVmMetric} />
+              <MetricItem label="OpenClaw" value={appCenterOpenClawMetric} />
+              <MetricItem label="Hermes" value={appCenterHermesMetric} />
             </HubMetricGrid>
             <HubCardHint>
-              应用中心摘要按顶部与侧栏同一顺序展示，实例数来自各模块登记数据。
+              应用中心摘要按顶部与侧栏同一顺序展示，资源数来自各模块登记数据。
             </HubCardHint>
             <span className={cn(hubEntryClass, "text-emerald-700")}>
               进入 <ArrowRight size={13} />
@@ -661,34 +966,38 @@ const HomeHub: React.FC = () => {
         {/* 堡垒机 */}
         {showBastion && (
           <Link
-            to="/cluster/bastion"
+            to={bastionNeedsSetup ? "/cluster/bastion/admin" : "/cluster/bastion"}
             className={cn(hubCardClass, "hover:border-teal-200")}
           >
             <div className="flex items-center justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-teal-600 to-emerald-800 text-white">
                 <SquareTerminal size={20} strokeWidth={2.2} />
               </div>
-              <HubStatusPill tone={bastionLoading || nBastionDirect === 0 ? "slate" : "teal"}>
-                {bastionLoading ? "加载中…" : `${nBastionDirect} 台堡垒目标`}
+              <HubStatusPill
+                tone={bastionStatusTone}
+                icon={(!bastionStatusLoading && (bastionSummaryError || !bastionReady)) ? <AlertCircle size={11} /> : undefined}
+              >
+                {bastionStatusLabel}
               </HubStatusPill>
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">堡垒机</h2>
-            <p className="mt-0.5 text-xs text-gray-400">统一终端：vCenter SSH/桌面、云主机与 Redis CLI</p>
+            <p className="mt-0.5 text-xs text-gray-400">统一终端：vCenter SSH/桌面、云主机、Redis CLI 与 MySQL SQL</p>
 
             <HubMetricGrid>
-              <MetricItem label="虚拟机" value={bastionLoading ? "…" : nBastionVm} />
-              <MetricItem label="额外主机" value={bastionLoading ? "…" : nBastionExtra} />
-              <MetricItem label="ESXi 主机" value={vcLoading ? "…" : nVcHost} />
-              <MetricItem label="云主机" value={cloudVmQ.isLoading ? "…" : nCloudVm} />
-              <MetricItem label="Redis CLI" value={redisQ.isLoading ? "…" : nRedis} />
-              <MetricItem label="开机 VM" value={bastionLoading ? "…" : nBastionOn} />
+              <MetricItem label="虚拟机" value={bastionVmMetric} />
+              <MetricItem label="额外主机" value={bastionExtraHostMetric} />
+              <MetricItem label="ESXi 主机" value={vCenterHostMetric} />
+              <MetricItem label="云主机" value={appCenterCloudVmMetric} />
+              <MetricItem label="Redis CLI" value={appCenterRedisMetric} />
+              <MetricItem label="MySQL SQL" value={appCenterMySQLMetric} />
+              <MetricItem label="开机 VM" value={bastionPowerOnMetric} />
             </HubMetricGrid>
             <HubCardHint>
-              堡垒机入口统一展示 SSH、远程桌面与 Redis CLI 的可连接目标数量。
+              堡垒机入口统一展示 SSH、远程桌面、Redis CLI 与 MySQL SQL 的可连接目标数量。
             </HubCardHint>
 
             <span className={cn(hubEntryClass, "text-teal-600")}>
-              进入 <ArrowRight size={13} />
+              {bastionNeedsSetup ? "配置堡垒目标" : "进入"} <ArrowRight size={13} />
             </span>
           </Link>
         )}
@@ -696,7 +1005,7 @@ const HomeHub: React.FC = () => {
         {/* 观测与巡检 */}
         {showAiInspect && (
           <Link
-            to="/cluster/ai-inspect/dashboard"
+            to={aiNeedsSetup ? "/cluster/ai-inspect/configure" : "/cluster/ai-inspect/dashboard"}
             className={cn(hubCardClass, "hover:border-cyan-200")}
           >
             <div className="flex items-center justify-between">
@@ -705,31 +1014,32 @@ const HomeHub: React.FC = () => {
               </div>
               {aiLoading ? (
                 <HubStatusPill tone="slate">检查中…</HubStatusPill>
-              ) : isAdmin ? (
-                <HubStatusPill tone={aiProviderEnabled ? "cyan" : "slate"}>
-                  {aiProviderEnabled ? `${aiProviderName}${aiProviderModel ? ` · ${aiProviderModel}` : " · 已启用"}` : "AI Provider 未启用"}
-                </HubStatusPill>
               ) : (
-                <HubStatusPill tone="cyan">已就绪</HubStatusPill>
+                <HubStatusPill
+                  tone={aiStatusTone}
+                  icon={!aiWorkspaceRestricted && (aiSummaryError || !aiWorkspaceReady) ? <AlertCircle size={11} /> : undefined}
+                >
+                  {aiStatusLabel}
+                </HubStatusPill>
               )}
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">{OBSERVABILITY_INSPECT_WORKSPACE_LABEL}</h2>
             <p className="mt-0.5 text-xs text-gray-400">AI Provider 巡检、监控看板、告警通知、日志检索与巡检报告</p>
 
             <HubMetricGrid>
-              <MetricItem label="K8s 数据源" value={aiLoading ? "…" : aiPromK8s ? "已配置" : "未配置"} />
-              <MetricItem label="vCenter 数据源" value={aiLoading ? "…" : aiPromVc ? "已配置" : "未配置"} />
-              <MetricItem label="告警规则" value={isAdmin ? (aiLoading ? "…" : `${aiRulesOn}/${aiRulesTotal}`) : "受限"} />
-              <MetricItem label="监控面板" value={aiLoading ? "…" : aiPanels} />
-              <MetricItem label="巡检报告" value={isAdmin ? (aiLoading ? "…" : aiReports) : "受限"} />
-              <MetricItem label="通知通道" value={isAdmin ? (aiLoading ? "…" : aiChannels) : "受限"} />
+              <MetricItem label="K8s 数据源" value={aiPromK8sMetric} />
+              <MetricItem label="vCenter 数据源" value={aiPromVcMetric} />
+              <MetricItem label="告警规则" value={aiRulesMetric} />
+              <MetricItem label="监控面板" value={aiPanelsMetric} />
+              <MetricItem label="巡检报告" value={aiReportsMetric} />
+              <MetricItem label="通知通道" value={aiChannelsMetric} />
             </HubMetricGrid>
             <HubCardHint>
               观测与巡检摘要统一汇总数据源、监控看板、告警通知、日志检索与巡检报告；配置权限受角色控制。
             </HubCardHint>
 
             <span className={cn(hubEntryClass, "text-cyan-600")}>
-              进入 <ArrowRight size={13} />
+              {aiNeedsSetup ? "配置观测巡检" : "进入"} <ArrowRight size={13} />
             </span>
           </Link>
         )}
@@ -744,20 +1054,27 @@ const HomeHub: React.FC = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-700 to-violet-800 text-white">
                 <Library size={20} strokeWidth={2.2} />
               </div>
-              <HubStatusPill tone="violet">
-                文档中心
+              <HubStatusPill
+                tone={docsStatusTone}
+                icon={!docsSummaryLoading && (docsSummaryError || !docsReady) ? <AlertCircle size={11} /> : undefined}
+              >
+                {docsStatusLabel}
               </HubStatusPill>
             </div>
             <h2 className="mt-4 text-base font-semibold text-gray-900">文档仓库</h2>
             <p className="mt-0.5 text-xs text-gray-400">Markdown 笔记、版本、媒体</p>
             <HubMetricGrid>
-              <MetricItem label="Markdown" value="可用" />
-              <MetricItem label="版本" value="可用" />
-              <MetricItem label="媒体" value="可用" />
-              <MetricItem label="分享" value="可用" />
+              <MetricItem label="Markdown" value={docsRegularMetric} />
+              <MetricItem label="指南" value={docsGuidesMetric} />
+              <MetricItem label="媒体" value={docsMediaMetric} />
+              <MetricItem label="附件存储" value={docsStorageMetric} />
             </HubMetricGrid>
             <HubCardHint>
-              文档仓库使用同一工作台卡片样式，进入后可管理笔记、历史版本、附件与公开分享。
+              {docsSummaryError
+                ? "文档或媒体摘要接口异常；进入后可继续查看编辑器、媒体库与存储配置的详细错误。"
+                : docsReady
+                ? "文档仓库汇总笔记、指南与媒体附件，进入后可继续管理版本、附件与公开分享。"
+                : "还没有沉淀文档；进入后可创建 Markdown 笔记、指南页，并配置媒体附件存储。"}
             </HubCardHint>
             <span className={cn(hubEntryClass, "text-violet-700")}>
               进入 <ArrowRight size={13} />

@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { apiDelete, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import { cloudVmAppCenterCanWrite } from "@/lib/platform-permissions";
+import { withAppCenterMutationConfirmQuery } from "@/features/app-center/lib/appCenterMutationConfirm";
 import HermesExposurePanel from "./HermesExposurePanel";
 import HermesLogsEventsPanel from "./HermesLogsEventsPanel";
 import HermesProbePanel from "./HermesProbePanel";
@@ -127,7 +128,7 @@ const AppCenterHermesDetail: React.FC = () => {
   );
 
   const restartMut = useMutation({
-    mutationFn: () => apiPostJson(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/restart`, {}),
+    mutationFn: () => apiPostJson(withAppCenterMutationConfirmQuery(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/restart`), {}),
     onSuccess: () => {
       toast.success("已触发 Hermes 滚动重启");
       void statusQ.refetch();
@@ -136,7 +137,8 @@ const AppCenterHermesDetail: React.FC = () => {
   });
 
   const saveFileMut = useMutation({
-    mutationFn: () => apiPutJson(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/file`, { content: notes }),
+    mutationFn: () =>
+      apiPutJson(withAppCenterMutationConfirmQuery(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/file`), { content: notes }),
     onSuccess: () => {
       toast.success("Hermes 配置备注已保存");
       void qc.invalidateQueries({ queryKey: ["app-hermes-file", id] });
@@ -151,13 +153,17 @@ const AppCenterHermesDetail: React.FC = () => {
   });
 
   const migrateMut = useMutation({
-    mutationFn: () => apiPostJson<HermesCommandResult>(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/migrate-openclaw`, { preset: "user-data" }),
+    mutationFn: () =>
+      apiPostJson<HermesCommandResult>(
+        withAppCenterMutationConfirmQuery(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/migrate-openclaw`),
+        { preset: "user-data" }
+      ),
     onSuccess: (res) => setLastResult(res),
     onError: (e) => toast.error(String(e)),
   });
 
   const deleteMut = useMutation({
-    mutationFn: () => apiDelete(`/api/app-center/hermes/instances/${encodeURIComponent(id)}`),
+    mutationFn: () => apiDelete(withAppCenterMutationConfirmQuery(`/api/app-center/hermes/instances/${encodeURIComponent(id)}`)),
     onSuccess: () => {
       toast.success("Hermes 实例已删除");
       nav("/cluster/apps/hermes");

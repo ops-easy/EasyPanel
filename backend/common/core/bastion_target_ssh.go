@@ -23,6 +23,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+const defaultBastionPVESSHUser = "root"
+
 func bastionTargetCredentialStoreKey(key BastionTargetKey) string {
 	switch key.Provider {
 	case bastionProviderVCenter:
@@ -86,17 +88,37 @@ func bastionDialSSHToPVE(ctx context.Context, app *ServerApp, targetKey BastionT
 	if app.SSHStore() != nil && kerr == nil && len(encKey) > 0 {
 		st, _ = app.SSHStore().GetVM(ctx, bastionTargetCredentialStoreKey(targetKey), encKey)
 	}
+	merged := mergeBastionPVESSHStored(cfg, st, ov)
+	sshCfg, err := buildSSHClientConfigMerged(cfg, merged)
+	if err != nil {
+		return nil, err
+	}
+	return ssh.Dial("tcp", net.JoinHostPort(addr, strconv.Itoa(merged.Port)), sshCfg)
+}
+
+func mergeBastionPVESSHStored(cfg Config, st *SSHVMStored, ov BastionTargetOverride) *SSHVMStored {
 	merged := cloneSSHVMStored(st)
 	if merged == nil {
 		merged = &SSHVMStored{
-			User:            strings.TrimSpace(cfg.VCenterVMSshUser),
 			Password:        cfg.VCenterVMSshPassword,
 			Port:            cfg.VCenterVMSshPort,
 			InsecureHostKey: cfg.VCenterVMSshInsecureHostKey,
 		}
 	}
+	if cfg.VCenterVMSshInsecureHostKey {
+		merged.InsecureHostKey = true
+	}
+	if strings.TrimSpace(merged.User) == "" {
+		merged.User = strings.TrimSpace(cfg.VCenterVMSshUser)
+	}
 	if strings.TrimSpace(ov.SSHUser) != "" {
 		merged.User = strings.TrimSpace(ov.SSHUser)
+	}
+	if strings.TrimSpace(merged.User) == "" {
+		merged.User = defaultBastionPVESSHUser
+	}
+	if merged.Port <= 0 && cfg.VCenterVMSshPort > 0 {
+		merged.Port = cfg.VCenterVMSshPort
 	}
 	if ov.SSHPort > 0 {
 		merged.Port = ov.SSHPort
@@ -104,11 +126,14 @@ func bastionDialSSHToPVE(ctx context.Context, app *ServerApp, targetKey BastionT
 	if merged.Port <= 0 {
 		merged.Port = 22
 	}
-	sshCfg, err := buildSSHClientConfigMerged(cfg, merged)
-	if err != nil {
-		return nil, err
+	return merged
+}
+
+func bastionPVESSHReady(cfg Config, st *SSHVMStored) bool {
+	if st != nil && (strings.TrimSpace(st.Password) != "" || strings.TrimSpace(st.PrivateKeyPEM) != "") {
+		return true
 	}
-	return ssh.Dial("tcp", net.JoinHostPort(addr, strconv.Itoa(merged.Port)), sshCfg)
+	return strings.TrimSpace(cfg.VCenterVMSshPrivateKeyPath) != "" || cfg.VCenterVMSshPassword != ""
 }
 
 func cloneSSHVMStored(in *SSHVMStored) *SSHVMStored {

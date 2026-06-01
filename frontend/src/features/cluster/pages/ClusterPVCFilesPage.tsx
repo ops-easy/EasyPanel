@@ -57,7 +57,9 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { ApiHttpError, apiGetJson, apiPostJson, apiPostNoBody, apiPutRaw } from "@/lib/api";
+import { withK8sMutationConfirm, withK8sMutationConfirmQuery } from "@/features/cluster/lib/k8sMutationConfirm";
 import { k8sPodExecAllowed } from "@/lib/platform-permissions";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 type Mount = { pod: string; container: string; mountPath: string };
 type ListEntry = { name: string; type: string; size: number };
@@ -114,6 +116,7 @@ const ClusterPVCFilesPage: React.FC = () => {
   const [renameTo, setRenameTo] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteName, setDeleteName] = useState<string | null>(null);
+  const [pendingUpload, setPendingUpload] = useState<File | null>(null);
   const qc = useQueryClient();
 
   const mountsQ = useQuery({
@@ -162,25 +165,33 @@ const ClusterPVCFilesPage: React.FC = () => {
   const writePath = (rel: string) => {
     if (!selected) return "";
     const q = pvcBase(namespace, pvcName, selected, rel);
-    return `/api/k8s/pvc-files/${encodeURIComponent(namespace)}/${encodeURIComponent(pvcName)}/write?${q}`;
+    return withK8sMutationConfirmQuery(
+      `/api/k8s/pvc-files/${encodeURIComponent(namespace)}/${encodeURIComponent(pvcName)}/write?${q}`
+    );
   };
 
   const deletePath = (rel: string) => {
     if (!selected) return "";
     const q = pvcBase(namespace, pvcName, selected, rel);
-    return `/api/k8s/pvc-files/${encodeURIComponent(namespace)}/${encodeURIComponent(pvcName)}/delete?${q}`;
+    return withK8sMutationConfirmQuery(
+      `/api/k8s/pvc-files/${encodeURIComponent(namespace)}/${encodeURIComponent(pvcName)}/delete?${q}`
+    );
   };
 
   const mkdirPostPath = () => {
     if (!selected) return "";
     const q = pvcBase(namespace, pvcName, selected, relPath);
-    return `/api/k8s/pvc-files/${encodeURIComponent(namespace)}/${encodeURIComponent(pvcName)}/mkdir?${q}`;
+    return withK8sMutationConfirmQuery(
+      `/api/k8s/pvc-files/${encodeURIComponent(namespace)}/${encodeURIComponent(pvcName)}/mkdir?${q}`
+    );
   };
 
   const renamePostPath = () => {
     if (!selected) return "";
     const q = pvcBase(namespace, pvcName, selected, relPath);
-    return `/api/k8s/pvc-files/${encodeURIComponent(namespace)}/${encodeURIComponent(pvcName)}/rename?${q}`;
+    return withK8sMutationConfirmQuery(
+      `/api/k8s/pvc-files/${encodeURIComponent(namespace)}/${encodeURIComponent(pvcName)}/rename?${q}`
+    );
   };
 
   const editExtensions = useMemo(() => pvcFileEditorExtensions(editName), [editName]);
@@ -238,7 +249,7 @@ const ClusterPVCFilesPage: React.FC = () => {
 
   const mkdirMut = useMutation({
     mutationFn: async () => {
-      await apiPostJson(mkdirPostPath(), { name: mkdirName.trim() });
+      await apiPostJson(mkdirPostPath(), withK8sMutationConfirm({ name: mkdirName.trim() }));
     },
     onSuccess: () => {
       toast.success("已创建目录");
@@ -251,10 +262,13 @@ const ClusterPVCFilesPage: React.FC = () => {
 
   const renameMut = useMutation({
     mutationFn: async () => {
-      await apiPostJson(renamePostPath(), {
-        from: renameFrom,
-        to: renameTo.trim(),
-      });
+      await apiPostJson(
+        renamePostPath(),
+        withK8sMutationConfirm({
+          from: renameFrom,
+          to: renameTo.trim(),
+        })
+      );
     },
     onSuccess: () => {
       toast.success("已重命名");
@@ -391,7 +405,7 @@ const ClusterPVCFilesPage: React.FC = () => {
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     e.target.value = "";
-                    if (f) uploadMut.mutate(f);
+                    if (f) setPendingUpload(f);
                   }}
                 />
               </label>
@@ -604,13 +618,16 @@ const ClusterPVCFilesPage: React.FC = () => {
               取消
             </Button>
             {canWriteK8s && (
-              <Button
+              <ConfirmActionButton
                 type="button"
                 disabled={saveMut.isPending || editLoading || Boolean(editLoadError)}
-                onClick={() => saveMut.mutate()}
+                title="确认写入 PVC 文件？"
+                description={`将把当前内容写入 PVC 文件 ${editName}。`}
+                confirmLabel="写入"
+                onConfirm={() => saveMut.mutate()}
               >
                 {saveMut.isPending ? "保存中…" : "保存"}
-              </Button>
+              </ConfirmActionButton>
             )}
           </DialogFooter>
         </DialogContent>
@@ -629,13 +646,16 @@ const ClusterPVCFilesPage: React.FC = () => {
             <Button type="button" variant="outline" onClick={() => setMkdirOpen(false)}>
               取消
             </Button>
-            <Button
+            <ConfirmActionButton
               type="button"
               disabled={mkdirMut.isPending || !mkdirName.trim()}
-              onClick={() => mkdirMut.mutate()}
+              title="确认创建 PVC 目录？"
+              description={`将在 PVC ${namespace}/${pvcName} 中创建目录 ${mkdirName.trim()}。`}
+              confirmLabel="创建"
+              onConfirm={() => mkdirMut.mutate()}
             >
               创建
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -653,16 +673,48 @@ const ClusterPVCFilesPage: React.FC = () => {
             <Button type="button" variant="outline" onClick={() => setRenameOpen(false)}>
               取消
             </Button>
-            <Button
+            <ConfirmActionButton
               type="button"
               disabled={renameMut.isPending || !renameTo.trim()}
-              onClick={() => renameMut.mutate()}
+              title="确认重命名 PVC 文件？"
+              description={`将把 PVC 文件 ${renameFrom} 重命名为 ${renameTo.trim()}。`}
+              confirmLabel="重命名"
+              onConfirm={() => renameMut.mutate()}
             >
               确定
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={pendingUpload != null}
+        onOpenChange={(open) => {
+          if (!open) setPendingUpload(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认上传文件？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将把文件「{pendingUpload?.name ?? ""}」上传到 PVC {namespace}/{pvcName} 的当前目录。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              onClick={() => {
+                const file = pendingUpload;
+                setPendingUpload(null);
+                if (file) uploadMut.mutate(file);
+              }}
+            >
+              上传
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>

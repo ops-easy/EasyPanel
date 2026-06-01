@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, ChevronUp, Cpu, Database, HardDrive, Loader2, PlugZap, Plus, Power, RefreshCw, Server, ShieldCheck, Trash2 } from "lucide-react";
+import { Activity, Cpu, Database, HardDrive, Loader2, PlugZap, Power, RefreshCw, Server, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
@@ -15,6 +16,7 @@ import PveTargetForm, {
   type PVETarget,
   type PveTargetFormState,
 } from "@/features/compute/pve/components/PveTargetForm";
+import { withPveMutationConfirm, withPveMutationConfirmQuery } from "@/features/compute/pve/lib/pveMutationConfirm";
 import { singlePveTarget } from "./pveSingleton";
 
 export type PveView = "dashboard" | "targets" | "nodes" | "guests" | "storage" | "tasks";
@@ -241,7 +243,7 @@ function PveWorkspace({ view }: { view: PveView }) {
   const tasks = useMemo(() => pveDataArray<PveRecord>(tasksQ.data?.tasks), [tasksQ.data?.tasks]);
 
   const createMut = useMutation({
-    mutationFn: () => apiPostJson<{ target: PVETarget }>("/api/pve/targets", form),
+    mutationFn: () => apiPostJson<{ target: PVETarget }>("/api/pve/targets", withPveMutationConfirm(form)),
     onSuccess: () => {
       toast.success("PVE 目标已保存");
       setShowCreateForm(false);
@@ -252,7 +254,7 @@ function PveWorkspace({ view }: { view: PveView }) {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => apiDelete(`/api/pve/targets/${encodeURIComponent(id)}`),
+    mutationFn: (id: string) => apiDelete(withPveMutationConfirmQuery(`/api/pve/targets/${encodeURIComponent(id)}`)),
     onSuccess: () => {
       toast.success("PVE 目标已删除");
       void qc.invalidateQueries({ queryKey: ["pve-targets"] });
@@ -268,7 +270,7 @@ function PveWorkspace({ view }: { view: PveView }) {
 
   const powerMut = useMutation({
     mutationFn: (body: { vmid: string; node: string; type: string; action: string }) =>
-      apiPostJson(`/api/pve/targets/${encodeURIComponent(activeId)}/guests/${encodeURIComponent(body.vmid)}/power`, body),
+      apiPostJson(`/api/pve/targets/${encodeURIComponent(activeId)}/guests/${encodeURIComponent(body.vmid)}/power`, withPveMutationConfirm(body)),
     onSuccess: () => {
       toast.success("PVE 电源任务已提交");
       void qc.invalidateQueries({ queryKey: ["pve-summary", activeId] });
@@ -390,85 +392,6 @@ function PveTargetsLoadingPanel() {
   );
 }
 
-function PveSetupPanel({
-  form,
-  setForm,
-  canWrite,
-  pending,
-  onSubmit,
-}: {
-  form: PveTargetFormState;
-  setForm: React.Dispatch<React.SetStateAction<PveTargetFormState>>;
-  canWrite: boolean;
-  pending: boolean;
-  onSubmit: () => void;
-}) {
-  return (
-    <PveTargetForm
-      form={form}
-      setForm={setForm}
-      canWrite={canWrite}
-      pending={pending}
-      onSubmit={onSubmit}
-    />
-  );
-}
-
-function PveLegacyTargetList({
-  targets,
-  activeId,
-  loading,
-  onSelect,
-  canWrite,
-  createOpen,
-  onToggleCreate,
-}: {
-  targets: PVETarget[];
-  activeId: string;
-  loading: boolean;
-  onSelect: (id: string) => void;
-  canWrite: boolean;
-  createOpen: boolean;
-  onToggleCreate: () => void;
-}) {
-  return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-slate-950">已保存目标</h2>
-        {canWrite ? (
-          <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" onClick={onToggleCreate}>
-            {createOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-            {createOpen ? "收起" : "新增目标"}
-          </Button>
-        ) : null}
-      </div>
-      <div className="mt-3 space-y-2">
-        {targets.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => onSelect(t.id)}
-            className={`w-full rounded-lg border px-3 py-3 text-left transition ${activeId === t.id ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white hover:bg-slate-50"}`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="truncate text-sm font-medium text-slate-950">{t.name}</span>
-              <Badge variant={t.passwordSet || t.tokenSecretSet ? "secondary" : "outline"}>
-                {t.passwordSet ? "密码已保存" : t.tokenSecretSet ? "Token 已保存" : "未保存"}
-              </Badge>
-            </div>
-            <p className="mt-1 truncate font-mono text-xs text-slate-500">{t.baseUrl}</p>
-            {t.username || t.tokenId ? <p className="mt-1 truncate font-mono text-xs text-slate-500">{t.username || t.tokenId}</p> : null}
-          </button>
-        ))}
-        {loading ? <p className="rounded-lg border border-dashed border-slate-200 px-3 py-6 text-center text-sm text-slate-500">加载中...</p> : null}
-        {!loading && targets.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-200 px-3 py-6 text-center text-sm text-slate-500">还没有 PVE 目标</p>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
 function PveInstancePanel({
   target,
   canWrite,
@@ -507,10 +430,20 @@ function PveInstancePanel({
               <ShieldCheck className="h-4 w-4" />
               探测
             </Button>
-            <Button variant="outline" size="sm" className="gap-1.5 text-red-700" onClick={() => onDelete(target.id)} disabled={!canWrite || deletePending}>
+            <ConfirmActionButton
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-red-700"
+              disabled={!canWrite || deletePending}
+              title="确认删除 PVE 目标？"
+              description={`将从平台配置中移除「${target.name || target.id}」PVE 连接目标。`}
+              confirmLabel="删除"
+              confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+              onConfirm={() => onDelete(target.id)}
+            >
               <Trash2 className="h-4 w-4" />
               删除
-            </Button>
+            </ConfirmActionButton>
           </>
         ) : null}
         </div>
@@ -633,86 +566,6 @@ function PveConfigurationPanel({ target, loading }: { target?: PVETarget; loadin
   );
 }
 
-function PveTargetsPanel({
-  targets,
-  loading,
-  canWrite,
-  activeId,
-  onSelect,
-  onProbe,
-  onDelete,
-  probePending,
-  deletePending,
-}: {
-  targets: PVETarget[];
-  loading: boolean;
-  canWrite: boolean;
-  activeId: string;
-  onSelect: (id: string) => void;
-  onProbe: (id: string) => void;
-  onDelete: (id: string) => void;
-  probePending: boolean;
-  deletePending: boolean;
-}) {
-  return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h2 className="mb-3 text-sm font-semibold text-slate-950">目标明细</h2>
-      <div className="overflow-auto rounded-lg border border-slate-100">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>名称</TableHead>
-              <TableHead>API 地址</TableHead>
-              <TableHead>账号</TableHead>
-              <TableHead>Prometheus job</TableHead>
-              <TableHead>更新时间</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? <LoadingCell colSpan={6} /> : null}
-            {!loading && targets.length === 0 ? <EmptyCell colSpan={6} label="还没有 PVE 目标" /> : null}
-            {!loading
-              ? targets.map((t) => (
-                  <TableRow key={t.id} className={activeId === t.id ? "bg-amber-50/60" : undefined}>
-                    <TableCell>
-                      <button type="button" onClick={() => onSelect(t.id)} className="text-left font-medium text-slate-950 hover:text-amber-700">
-                        {t.name}
-                      </button>
-                    </TableCell>
-                    <TableCell className="min-w-64 font-mono text-xs">{t.baseUrl}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      <div className="flex flex-col gap-1">
-                        <span>{t.username || t.tokenId || "-"}</span>
-                        <Badge className="w-fit" variant={t.passwordSet || t.tokenSecretSet ? "secondary" : "outline"}>
-                          {t.passwordSet ? t.passwordPreview || "密码已保存" : t.tokenSecretSet ? t.tokenSecretPreview || "Token 已保存" : "未保存"}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{t.prometheusJob || "-"}</TableCell>
-                    <TableCell className="font-mono text-xs">{fmtUpdatedAt(t.updatedAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" className="h-8 gap-1 px-2" disabled={!canWrite || probePending} onClick={() => onProbe(t.id)}>
-                          <ShieldCheck className="h-3.5 w-3.5" />
-                          探测
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-red-700" disabled={!canWrite || deletePending} onClick={() => onDelete(t.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                          删除
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              : null}
-          </TableBody>
-        </Table>
-      </div>
-    </section>
-  );
-}
-
 function PveNodesPanel({ rows, loading, activeId }: { rows: PveRecord[]; loading: boolean; activeId: string }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -825,17 +678,20 @@ function PveGuestsPanel({
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           {["start", "shutdown", "reboot", "stop"].map((action) => (
-                            <Button
+                            <ConfirmActionButton
                               key={action}
                               variant="ghost"
                               size="sm"
                               className="h-8 gap-1 px-2"
                               disabled={!canWrite || !activeId || !vmid || !node || powerPending}
-                              onClick={() => onPower({ vmid, node, type, action })}
+                              title="确认执行 PVE 电源操作？"
+                              description={`将对 ${type} ${node}/${vmid} 执行 ${action} 操作。`}
+                              confirmLabel="执行"
+                              onConfirm={() => onPower({ vmid, node, type, action })}
                             >
                               <Power className="h-3.5 w-3.5" />
                               {action}
-                            </Button>
+                            </ConfirmActionButton>
                           ))}
                         </div>
                       </TableCell>

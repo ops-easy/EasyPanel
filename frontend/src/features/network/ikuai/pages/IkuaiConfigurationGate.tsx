@@ -4,11 +4,12 @@ import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/auth-context";
 import { apiGetJson, apiPostJson } from "@/lib/api";
-import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import NetworkDeviceSetupPanel from "@/features/network/components/NetworkDeviceSetupPanel";
 import { singleNetworkDeviceByKind } from "@/features/network/components/networkDeviceSingleton";
+import { withNetworkMutationConfirm } from "@/features/network/lib/networkMutationConfirm";
 
 type NetworkDevice = {
   id: string;
@@ -46,7 +47,7 @@ export default function IkuaiConfigurationGate({ children }: { children: ReactNo
   );
 
   const upsertIkuaiDevice = useMutation({
-    mutationFn: () => apiPostJson<{ device: NetworkDevice }>("/api/network/devices", form),
+    mutationFn: () => apiPostJson<{ device: NetworkDevice }>("/api/network/devices", withNetworkMutationConfirm(form)),
     onSuccess: () => {
       toast.success("iKuai 实例已保存");
       setForm(defaultForm);
@@ -119,10 +120,17 @@ export default function IkuaiConfigurationGate({ children }: { children: ReactNo
           <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
         </div>
       </div>
-      <Button className="mt-4 gap-2" disabled={!canWrite || upsertIkuaiDevice.isPending} onClick={() => upsertIkuaiDevice.mutate()}>
+      <ConfirmActionButton
+        className="mt-4 gap-2"
+        disabled={!canWrite || upsertIkuaiDevice.isPending}
+        title="确认保存 iKuai 实例？"
+        description="将写入 iKuai 监控 scope、instance/job 标签与备注，iKuai 工作区会按此配置读取。"
+        confirmLabel="保存"
+        onConfirm={() => upsertIkuaiDevice.mutate()}
+      >
         {upsertIkuaiDevice.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
         保存 iKuai 实例
-      </Button>
+      </ConfirmActionButton>
     </NetworkDeviceSetupPanel>
   );
 }

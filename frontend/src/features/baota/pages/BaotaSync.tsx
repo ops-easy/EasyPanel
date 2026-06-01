@@ -13,7 +13,9 @@ import {
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { useAppConfig } from "@/hooks/use-app-config";
 import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
+import { withBaotaMutationConfirm } from "@/features/baota/lib/baotaMutationConfirm";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Progress } from "@/shared/ui/progress";
 
@@ -45,7 +47,7 @@ const BaotaSync: React.FC = () => {
   });
 
   const syncMut = useMutation({
-    mutationFn: () => apiPostJson<BaotaSyncRunRes>("/api/baota/ingress-sync/run", {}),
+    mutationFn: () => apiPostJson<BaotaSyncRunRes>("/api/baota/ingress-sync/run", withBaotaMutationConfirm({})),
     onSuccess: (data) => {
       if (data.ok) {
         toast.success(data.report?.summary ?? "同步已完成");
@@ -102,15 +104,18 @@ const BaotaSync: React.FC = () => {
             <RefreshCw className="mr-2 h-4 w-4" />
             刷新数据
           </Button>
-          <Button
+          <ConfirmActionButton
             type="button"
             size="sm"
             disabled={syncMut.isPending || !baotaConfigured}
-            onClick={() => syncMut.mutate()}
+            title="同步托管 Ingress 到宝塔"
+            description="会把平台内带同步注解的 Ingress 路由下发到宝塔面板，可能新增或更新站点配置。"
+            confirmLabel="立即同步"
+            onConfirm={() => syncMut.mutate()}
           >
             {syncMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
             立即同步到宝塔
-          </Button>
+          </ConfirmActionButton>
         </div>
       </div>
 
@@ -119,7 +124,7 @@ const BaotaSync: React.FC = () => {
           <div>
             <p className="font-semibold">宝塔尚未配置</p>
             <p className="mt-1 text-xs leading-relaxed text-amber-900">
-              系统会带一个默认面板地址占位，但必须在页面保存宝塔面板地址与 API Key 后，Ingress 同步才会启用。
+              系统会带一个默认面板地址初始值；请在页面保存宝塔面板地址与 API Key，Ingress 同步随后启用。
             </p>
           </div>
           <Button asChild size="sm" className="shrink-0 bg-amber-700 hover:bg-amber-800">

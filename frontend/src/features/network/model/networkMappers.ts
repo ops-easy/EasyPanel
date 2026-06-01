@@ -237,7 +237,7 @@ export function mapDeviceRows(input: {
       id: input.ikuaiDevice.id,
       name: input.ikuaiDevice.name || "iKuai",
       address: deviceQueryHint(input.ikuaiDevice),
-      status: input.ikuaiStream?.prometheusConfigured === false ? "指标缺失" : "已接入",
+      status: input.ikuaiStream?.prometheusConfigured === false ? "指标缺失" : "已配置",
       detail: input.ikuaiStream?.exporterKind ? `Exporter ${input.ikuaiStream.exporterKind}` : "Prometheus 数据源",
       updatedAt: input.ikuaiDevice.updatedAt,
       raw: { device: input.ikuaiDevice, stream: input.ikuaiStream },

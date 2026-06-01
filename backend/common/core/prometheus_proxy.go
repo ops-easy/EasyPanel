@@ -448,12 +448,16 @@ func handlePrometheusStatus(c *gin.Context, cfg Config) {
 type prometheusSourceBody struct {
 	BaseURL string `json:"baseUrl"`
 	Scope   string `json:"scope"` // k8s | vcenter | pve | cloud | network | global（默认 global，兼容旧客户端）
+	Confirm bool   `json:"confirm"`
 }
 
 func handlePrometheusSource(c *gin.Context, cfg Config) {
 	var body prometheusSourceBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数无效"})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "Prometheus 数据源覆盖变更") {
 		return
 	}
 	raw := strings.TrimSpace(body.BaseURL)

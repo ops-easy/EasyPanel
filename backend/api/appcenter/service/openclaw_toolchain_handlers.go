@@ -34,6 +34,9 @@ func handleAppOpenClawApplyToolchainPreset(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw apply toolchain preset") {
+		return
+	}
 	if app.PlatformKV() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "platform_kv 不可用"})
 		return
@@ -130,6 +133,7 @@ func handleAppOpenClawApplyToolchainPreset(c *gin.Context, app *ServerApp) {
 	}
 	mirrorPlatformKVIfDualWrite(app)
 
+	SetAuditDetail(c, "应用中心 OpenClaw 应用工具链预设 "+inst.DisplayName+" toolsProfile="+tp)
 	c.JSON(http.StatusOK, gin.H{
 		"ok":             true,
 		"toolsProfile":   tp,

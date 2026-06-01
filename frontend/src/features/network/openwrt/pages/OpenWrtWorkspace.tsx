@@ -22,6 +22,7 @@ import {
 } from "@/features/network/components/NetworkOpsPrimitives";
 import OpenWrtActionPanel from "./OpenWrtActionPanel";
 import OpenWrtInstancePanel, { type OpenWrtTargetForm } from "./OpenWrtTargetPanel";
+import { withNetworkMutationConfirm, withNetworkMutationConfirmQuery } from "@/features/network/lib/networkMutationConfirm";
 
 export type OpenWrtView = "dashboard" | "interfaces" | "clients" | "connections" | "wireless" | "exporter";
 
@@ -208,7 +209,7 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
   const activeId = active?.id ?? "";
 
   const createTarget = useMutation({
-    mutationFn: (body: OpenWrtTargetForm) => apiPostJson("/api/network/devices", { kind: "openwrt", ...body }),
+    mutationFn: (body: OpenWrtTargetForm) => apiPostJson("/api/network/devices", withNetworkMutationConfirm({ kind: "openwrt", ...body })),
     onSuccess: () => {
       toast.success("OpenWrt 目标已保存");
       void qc.invalidateQueries({ queryKey: ["network-devices"] });
@@ -216,7 +217,7 @@ function OpenWrtWorkspace({ view }: { view: OpenWrtView }) {
   });
 
   const deleteTarget = useMutation({
-    mutationFn: (id: string) => apiDelete(`/api/network/devices/${encodeURIComponent(id)}`),
+    mutationFn: (id: string) => apiDelete(withNetworkMutationConfirmQuery(`/api/network/devices/${encodeURIComponent(id)}`)),
     onSuccess: () => {
       toast.success("OpenWrt 目标已删除");
       void qc.invalidateQueries({ queryKey: ["network-devices"] });

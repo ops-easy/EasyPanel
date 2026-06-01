@@ -8,6 +8,8 @@ import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
 import { toast } from "sonner";
 import { apiGetJson, apiPutJson, type RuntimeSettingsDTO } from "@/lib/api";
+import { withOpsMutationConfirm } from "@/lib/ops-mutation-confirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 /**
  * vCenter 未在运行时配置时展示：写入 MySQL 动态配置并触发 Reload。
@@ -91,7 +93,7 @@ const VCenterConnectWizard: React.FC = () => {
       if (rh && rport > 0) {
         payload.redisAddr = "";
       }
-      await apiPutJson("/api/settings/runtime", payload);
+      await apiPutJson("/api/settings/runtime", withOpsMutationConfirm(payload));
       setOk("已保存并重载。");
       toast.success("保存成功");
       await qc.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
@@ -176,7 +178,15 @@ const VCenterConnectWizard: React.FC = () => {
       </div>
       {err && <p className="mt-4 text-sm text-red-600">{err}</p>}
       {ok && <p className="mt-4 text-sm text-emerald-700">{ok}</p>}
-      <Button type="button" className="mt-4" onClick={() => void onSave()} disabled={saving}>
+      <ConfirmActionButton
+        type="button"
+        className="mt-4"
+        disabled={saving}
+        title="确认保存 vCenter 连接？"
+        description="将写入 vCenter 运行时连接配置并触发平台重载，虚拟机资源中心会立即按新配置读取。"
+        confirmLabel="保存"
+        onConfirm={() => void onSave()}
+      >
         {saving ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -188,7 +198,7 @@ const VCenterConnectWizard: React.FC = () => {
             保存并重载
           </>
         )}
-      </Button>
+      </ConfirmActionButton>
     </div>
   );
 };

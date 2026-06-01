@@ -15,6 +15,8 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/auth/auth-context";
 import { ApiHttpError, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
+import { withAccountMutationConfirm } from "@/features/account/lib/accountMutationConfirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 type ProfileDTO = {
   username: string;
@@ -87,7 +89,7 @@ const AccountMyProfile: React.FC = () => {
       return;
     }
 
-    const payload: Record<string, string | undefined> = {};
+    const payload: Record<string, string | boolean | undefined> = {};
     const emailChanged = email.trim() !== (profile.email ?? "").trim();
     if (emailChanged) {
       payload.email = email.trim();
@@ -109,7 +111,7 @@ const AccountMyProfile: React.FC = () => {
 
     setSaving(true);
     try {
-      await apiPutJson("/api/account/profile", payload);
+      await apiPutJson("/api/account/profile", withAccountMutationConfirm(payload));
       toast.success("已保存");
       await load();
       void refetchAuth();
@@ -279,10 +281,17 @@ const AccountMyProfile: React.FC = () => {
             </div>
           </div>
           <div className="mt-5 flex justify-end">
-            <Button type="button" disabled={saving} onClick={() => void onSave()}>
+            <ConfirmActionButton
+              type="button"
+              disabled={saving}
+              title="确认保存账号资料？"
+              description="将更新当前账号的邮箱、头像或本地登录密码，并写入平台用户配置。"
+              confirmLabel="保存"
+              onConfirm={() => void onSave()}
+            >
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               保存
-            </Button>
+            </ConfirmActionButton>
           </div>
         </>
       )}
@@ -317,9 +326,9 @@ const AccountMyProfile: React.FC = () => {
               onClick={async () => {
                 setOidcUnbindBusy(true);
                 try {
-                  await apiPostJson("/api/account/profile/oidc/unbind", {
+                  await apiPostJson("/api/account/profile/oidc/unbind", withAccountMutationConfirm({
                     currentPassword: oidcUnbindPwd,
-                  });
+                  }));
                   toast.success("已取消 OIDC 绑定");
                   setOidcUnbindOpen(false);
                   await load();

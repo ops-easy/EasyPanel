@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -105,14 +106,11 @@ type k8sObjectRevisionRollbackBody struct {
 	Kind       string `json:"kind"`
 	Name       string `json:"name"`
 	RevisionID string `json:"revisionId"`
+	Confirm    bool   `json:"confirm"`
 }
 
 // POST /api/k8s/object-revisions/rollback  body: namespace, kind, name, revisionId
 func handleK8sObjectRevisionRollback(c *gin.Context, app *ServerApp) {
-	k8s := app.K8s()
-	if !GuardK8s(c, k8s) {
-		return
-	}
 	var body k8sObjectRevisionRollbackBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数解析失败: " + err.Error()})
@@ -126,6 +124,14 @@ func handleK8sObjectRevisionRollback(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "需要 namespace, kind, name, revisionId"})
 		return
 	}
+	if !requireK8sMutationConfirm(c, body.Confirm, "Kubernetes 配置回退") {
+		return
+	}
+	k8s := app.K8s()
+	restCfg := app.K8sREST()
+	if !GuardK8sREST(c, k8s, restCfg) {
+		return
+	}
 	yamlStr, _, err := K8sGetObjectRevisionYAML(app, ns, kind, name, id)
 	if err != nil {
 		if errors.Is(err, ErrK8sRevisionNotFound) {
@@ -135,8 +141,9 @@ func handleK8sObjectRevisionRollback(c *gin.Context, app *ServerApp) {
 		RespondAPIError500(c, err.Error())
 		return
 	}
-	ctx := context.TODO()
-	if err := applyOneKubernetesYAML(ctx, k8s, yamlStr, false); err != nil {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 90*time.Second)
+	defer cancel()
+	if err := applyOneKubernetesYAML(ctx, k8s, restCfg, yamlStr, false); err != nil {
 		RespondAPIError500(c, err.Error())
 		return
 	}

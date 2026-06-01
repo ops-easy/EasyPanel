@@ -45,6 +45,10 @@ import {
 } from "@/shared/ui/table";
 import { apiDeleteJson, apiGetJson, apiPostJson, apiPutJson, type AppConfig } from "@/lib/api";
 import { openSearchAppCenterCanWrite } from "@/lib/platform-permissions";
+import {
+  withAppCenterMutationConfirm,
+  withAppCenterMutationConfirmQuery,
+} from "@/features/app-center/lib/appCenterMutationConfirm";
 import { toast } from "sonner";
 
 export type OpenSearchTemplateConfig = {
@@ -182,7 +186,9 @@ const AppCenterOpenSearch: React.FC = () => {
         throw new Error("设置 JSON 无法解析");
       }
       return apiPutJson(
-        `/api/app-center/opensearch/instances/${manageId}/index/settings?index=${encodeURIComponent(idxDetailName)}`,
+        withAppCenterMutationConfirmQuery(
+          `/api/app-center/opensearch/instances/${manageId}/index/settings?index=${encodeURIComponent(idxDetailName)}`
+        ),
         body
       );
     },
@@ -197,7 +203,7 @@ const AppCenterOpenSearch: React.FC = () => {
   const delIdxMut = useMutation({
     mutationFn: (name: string) =>
       apiDeleteJson(
-        `/api/app-center/opensearch/instances/${manageId}/index?index=${encodeURIComponent(name)}`
+        withAppCenterMutationConfirmQuery(`/api/app-center/opensearch/instances/${manageId}/index?index=${encodeURIComponent(name)}`)
       ),
     onSuccess: async () => {
       toast.success("已删除索引");
@@ -211,11 +217,14 @@ const AppCenterOpenSearch: React.FC = () => {
   const pruneMut = useMutation({
     mutationFn: async () => {
       const days = parseInt(pruneDays, 10);
-      return apiPostJson<Record<string, unknown>>(`/api/app-center/opensearch/instances/${manageId}/indices/prune`, {
-        pattern: prunePat.trim(),
-        olderThanDays: Number.isNaN(days) ? 30 : days,
-        dryRun: pruneDry,
-      });
+      return apiPostJson<Record<string, unknown>>(
+        `/api/app-center/opensearch/instances/${manageId}/indices/prune`,
+        withAppCenterMutationConfirm({
+          pattern: prunePat.trim(),
+          olderThanDays: Number.isNaN(days) ? 30 : days,
+          dryRun: pruneDry,
+        })
+      );
     },
     onSuccess: (r) => {
       const dry = Boolean(r.dryRun);
@@ -229,7 +238,7 @@ const AppCenterOpenSearch: React.FC = () => {
   });
 
   const [ns, setNs] = useState("default");
-  const [baseName, setBaseName] = useState("opensearch-demo");
+  const [baseName, setBaseName] = useState("opensearch-main");
   const [templateId, setTemplateId] = useState<number | "">("");
   const [clusterName, setClusterName] = useState("");
   const [svcType, setSvcType] = useState<"clusterip" | "nodeport">("clusterip");
@@ -272,7 +281,7 @@ const AppCenterOpenSearch: React.FC = () => {
         internalDashboards?: string;
         vectorOpenSearchUrl?: string;
         instancePersistError?: string | null;
-      }>("/api/app-center/opensearch/k8s-deploy", body);
+      }>(withAppCenterMutationConfirmQuery("/api/app-center/opensearch/k8s-deploy"), body);
     },
     onSuccess: (r) => {
       toast.success(r.message || "已提交部署");
@@ -321,10 +330,13 @@ const AppCenterOpenSearch: React.FC = () => {
       };
       const body = { name: formName.trim(), description: formDesc.trim(), config: cfg };
       if (editing) {
-        await apiPutJson(`/api/app-center/opensearch/templates/${editing.id}`, body);
+        await apiPutJson(`/api/app-center/opensearch/templates/${editing.id}`, withAppCenterMutationConfirm(body));
         return editing.id;
       }
-      const r = await apiPostJson<{ id: number }>("/api/app-center/opensearch/templates", body);
+      const r = await apiPostJson<{ id: number }>(
+        "/api/app-center/opensearch/templates",
+        withAppCenterMutationConfirm(body)
+      );
       return r.id;
     },
     onSuccess: async () => {
@@ -337,7 +349,7 @@ const AppCenterOpenSearch: React.FC = () => {
   });
 
   const delTplMut = useMutation({
-    mutationFn: (id: number) => apiDeleteJson(`/api/app-center/opensearch/templates/${id}`),
+    mutationFn: (id: number) => apiDeleteJson(withAppCenterMutationConfirmQuery(`/api/app-center/opensearch/templates/${id}`)),
     onSuccess: async () => {
       toast.success("已删除");
       setDeleteId(null);

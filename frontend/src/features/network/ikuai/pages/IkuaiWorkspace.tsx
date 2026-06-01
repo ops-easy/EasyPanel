@@ -75,7 +75,7 @@ const viewMeta: Record<IkuaiView, { title: string; desc: string; icon: typeof Ro
   },
   "vm-mapping": {
     title: "iKuai 终端映射",
-    desc: "用 IP、MAC、主机名和备注建立网络终端视图，替代旧的空映射占位。",
+    desc: "用 IP、MAC、主机名和备注建立网络终端视图，替代旧的空映射表。",
     icon: Network,
   },
 };

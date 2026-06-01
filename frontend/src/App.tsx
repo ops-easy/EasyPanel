@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AppProviders } from "@/app/providers";
 import AppLayout from "@/shared/layout/AppLayout";
 import { AppRouteBoundary } from "@/app/shell/AppRouteBoundary";
@@ -17,8 +17,9 @@ const ClusterRoutesIsland = lazy(() => import("@/app/route-islands/ClusterRoutes
 const DocsRoutesIsland = lazy(() => import("@/app/route-islands/DocsRoutesIsland"));
 
 function AuthedAppShell() {
+  const location = useLocation();
   return (
-    <AppRouteBoundary>
+    <AppRouteBoundary resetKey={location.pathname}>
       <AppLayout />
     </AppRouteBoundary>
   );

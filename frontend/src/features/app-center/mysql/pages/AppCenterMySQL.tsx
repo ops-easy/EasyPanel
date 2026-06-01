@@ -24,11 +24,16 @@ import { useAuth } from "@/auth/auth-context";
 import { useSearchParams } from "react-router-dom";
 import { ApiHttpError, apiDeleteJson, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import { k8sPodExecAllowed, mysqlAppCenterCanWrite, mysqlShowK8sDeployWizard } from "@/lib/platform-permissions";
+import {
+  withAppCenterMutationConfirm,
+  withAppCenterMutationConfirmQuery,
+} from "@/features/app-center/lib/appCenterMutationConfirm";
 import MySQLSqlConsoleSheet from "@/features/app-center/mysql/components/MySQLSqlConsoleSheet";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -325,11 +330,14 @@ export default function AppCenterMySQL() {
   const [external, setExternal] = useState(emptyExternal);
   const createExternalM = useMutation({
     mutationFn: () =>
-      apiPostJson<{ id: number }>("/api/app-center/mysql/instances", {
-        ...external,
-        mode: "external",
-        port: Number(external.port) || 3306,
-      }),
+      apiPostJson<{ id: number }>(
+        "/api/app-center/mysql/instances",
+        withAppCenterMutationConfirm({
+          ...external,
+          mode: "external",
+          port: Number(external.port) || 3306,
+        })
+      ),
     onSuccess: (res) => {
       toast.success("MySQL 实例已登记");
       setExternal(emptyExternal);
@@ -341,7 +349,8 @@ export default function AppCenterMySQL() {
   });
 
   const deleteM = useMutation({
-    mutationFn: (id: number) => apiDeleteJson(`/api/app-center/mysql/instances/${id}`),
+    mutationFn: (id: number) =>
+      apiDeleteJson(withAppCenterMutationConfirmQuery(`/api/app-center/mysql/instances/${id}`)),
     onSuccess: () => {
       toast.success("MySQL 实例已删除");
       setSelectedId(null);
@@ -363,12 +372,15 @@ export default function AppCenterMySQL() {
   const [deploy, setDeploy] = useState(emptyDeploy);
   const deployM = useMutation({
     mutationFn: () =>
-      apiPostJson<{ instanceId?: number; instanceWarning?: string }>("/api/app-center/mysql/k8s-deploy", {
-        ...deploy,
-        templateId: deploy.templateId === "none" ? 0 : Number(deploy.templateId),
-        svcPort: Number(deploy.svcPort) || 3306,
-        nodePortMysql: Number(deploy.nodePortMysql) || 0,
-      }),
+      apiPostJson<{ instanceId?: number; instanceWarning?: string }>(
+        withAppCenterMutationConfirmQuery("/api/app-center/mysql/k8s-deploy"),
+        {
+          ...deploy,
+          templateId: deploy.templateId === "none" ? 0 : Number(deploy.templateId),
+          svcPort: Number(deploy.svcPort) || 3306,
+          nodePortMysql: Number(deploy.nodePortMysql) || 0,
+        }
+      ),
     onSuccess: (res) => {
       toast.success(res.instanceWarning ? `已部署，登记提示：${res.instanceWarning}` : "MySQL 已部署到集群");
       if (res.instanceId) setSelectedId(res.instanceId);
@@ -381,19 +393,22 @@ export default function AppCenterMySQL() {
   const [template, setTemplate] = useState(emptyTemplate);
   const createTplM = useMutation({
     mutationFn: () =>
-      apiPostJson<{ id: number }>("/api/app-center/mysql/templates", {
-        name: template.name,
-        description: template.description,
-        config: {
-          mysqlImage: template.mysqlImage,
-          exporterImage: template.exporterImage,
-          imagePullSecret: template.imagePullSecret,
-          defaultVersion: template.defaultVersion,
-          defaultStorageSize: template.defaultStorageSize,
-          defaultStorageClass: template.defaultStorageClass,
-          defaultEnableExporter: template.defaultEnableExporter,
-        },
-      }),
+      apiPostJson<{ id: number }>(
+        "/api/app-center/mysql/templates",
+        withAppCenterMutationConfirm({
+          name: template.name,
+          description: template.description,
+          config: {
+            mysqlImage: template.mysqlImage,
+            exporterImage: template.exporterImage,
+            imagePullSecret: template.imagePullSecret,
+            defaultVersion: template.defaultVersion,
+            defaultStorageSize: template.defaultStorageSize,
+            defaultStorageClass: template.defaultStorageClass,
+            defaultEnableExporter: template.defaultEnableExporter,
+          },
+        })
+      ),
     onSuccess: () => {
       toast.success("MySQL 模版已创建");
       setTemplate(emptyTemplate);
@@ -407,16 +422,24 @@ export default function AppCenterMySQL() {
   const [confirmMutation, setConfirmMutation] = useState(false);
   const [sqlResult, setSqlResult] = useState<SQLResult | null>(null);
   const queryM = useMutation({
-    mutationFn: () =>
-      apiPostJson<SQLResult>(`/api/app-center/mysql/instances/${selected?.id}/query`, {
+    mutationFn: () => {
+      const payload = {
         sql,
         schema,
         limit: 300,
         confirmMutation,
-      }),
+      };
+      return apiPostJson<SQLResult>(
+        `/api/app-center/mysql/instances/${selected?.id}/query`,
+        confirmMutation ? withAppCenterMutationConfirm(payload) : payload
+      );
+    },
     onSuccess: (res) => setSqlResult(res),
     onError: (err) => toast.error(errMsg(err)),
   });
+  const submitSql = () => {
+    queryM.mutate();
+  };
 
   const runtimeQ = useQuery({
     queryKey: ["app-center-mysql-runtime", selected?.id],
@@ -468,10 +491,13 @@ export default function AppCenterMySQL() {
   const [backup, setBackup] = useState(emptyBackup);
   const createBackupM = useMutation({
     mutationFn: () =>
-      apiPostJson<{ id: number; backupName: string }>(`/api/app-center/mysql/instances/${selected?.id}/backups`, {
-        schema: backup.schema,
-        backupName: backup.backupName,
-      }),
+      apiPostJson<{ id: number; backupName: string }>(
+        `/api/app-center/mysql/instances/${selected?.id}/backups`,
+        withAppCenterMutationConfirm({
+          schema: backup.schema,
+          backupName: backup.backupName,
+        })
+      ),
     onSuccess: (res) => {
       toast.success(`MySQL 备份已完成：${res.backupName}`);
       setBackup((b) => ({ ...b, backupName: "" }));
@@ -481,10 +507,10 @@ export default function AppCenterMySQL() {
   });
   const restoreBackupM = useMutation({
     mutationFn: () =>
-      apiPostJson(`/api/app-center/mysql/instances/${selected?.id}/backups/${backup.restoreBackupId}/restore`, {
-        confirm: true,
-        targetSchema: backup.targetSchema,
-      }),
+      apiPostJson(
+        `/api/app-center/mysql/instances/${selected?.id}/backups/${backup.restoreBackupId}/restore`,
+        withAppCenterMutationConfirm({ targetSchema: backup.targetSchema })
+      ),
     onSuccess: () => {
       toast.success("MySQL 备份已恢复");
       setBackup((b) => ({ ...b, restoreBackupId: "" }));
@@ -492,7 +518,10 @@ export default function AppCenterMySQL() {
     onError: (err) => toast.error(errMsg(err)),
   });
   const deleteBackupM = useMutation({
-    mutationFn: (id: number) => apiDeleteJson(`/api/app-center/mysql/instances/${selected?.id}/backups/${id}`),
+    mutationFn: (id: number) =>
+      apiDeleteJson(
+        withAppCenterMutationConfirmQuery(`/api/app-center/mysql/instances/${selected?.id}/backups/${id}`)
+      ),
     onSuccess: () => {
       toast.success("MySQL 备份已删除");
       qc.invalidateQueries({ queryKey: ["app-center-mysql-backups", selected?.id] });
@@ -503,13 +532,16 @@ export default function AppCenterMySQL() {
   const [userForm, setUserForm] = useState(emptyUser);
   const createUserM = useMutation({
     mutationFn: () =>
-      apiPostJson(`/api/app-center/mysql/instances/${selected?.id}/users`, {
-        username: userForm.username,
-        host: userForm.host,
-        password: userForm.password,
-        schema: userForm.schema,
-        role: userForm.role,
-      }),
+      apiPostJson(
+        `/api/app-center/mysql/instances/${selected?.id}/users`,
+        withAppCenterMutationConfirm({
+          username: userForm.username,
+          host: userForm.host,
+          password: userForm.password,
+          schema: userForm.schema,
+          role: userForm.role,
+        })
+      ),
     onSuccess: () => {
       toast.success("MySQL 用户已创建");
       setUserForm((f) => ({ ...f, username: "", password: "" }));
@@ -519,10 +551,13 @@ export default function AppCenterMySQL() {
   });
   const changePasswordM = useMutation({
     mutationFn: () =>
-      apiPutJson(`/api/app-center/mysql/instances/${selected?.id}/users/${encodeURIComponent(userForm.passwordUser)}/password`, {
-        host: userForm.passwordHost,
-        password: userForm.newPassword,
-      }),
+      apiPutJson(
+        `/api/app-center/mysql/instances/${selected?.id}/users/${encodeURIComponent(userForm.passwordUser)}/password`,
+        withAppCenterMutationConfirm({
+          host: userForm.passwordHost,
+          password: userForm.newPassword,
+        })
+      ),
     onSuccess: () => {
       toast.success("MySQL 用户密码已更新");
       setUserForm((f) => ({ ...f, newPassword: "" }));
@@ -532,7 +567,9 @@ export default function AppCenterMySQL() {
   const deleteUserM = useMutation({
     mutationFn: (u: MySQLUser) =>
       apiDeleteJson(
-        `/api/app-center/mysql/instances/${selected?.id}/users/${encodeURIComponent(u.username)}?host=${encodeURIComponent(u.host)}`
+        withAppCenterMutationConfirmQuery(
+          `/api/app-center/mysql/instances/${selected?.id}/users/${encodeURIComponent(u.username)}?host=${encodeURIComponent(u.host)}`
+        )
       ),
     onSuccess: () => {
       toast.success("MySQL 用户已删除");
@@ -869,19 +906,24 @@ export default function AppCenterMySQL() {
                               <Activity className="h-3.5 w-3.5" />
                               Ping
                             </Button>
-                            <Button
+                            <ConfirmActionButton
                               size="icon"
                               variant="ghost"
                               disabled={!canWrite || deleteM.isPending}
-                              onClick={() => {
-                                const msg = isPlatformMySQL(i)
-                                  ? `删除 ${i.name}？K8s 资源会一并清理，PVC 默认保留。`
-                                  : `删除 ${i.name}？`;
-                                if (window.confirm(msg)) deleteM.mutate(i.id);
-                              }}
+                              aria-label={`删除 ${i.name}`}
+                              title={isPlatformMySQL(i) ? "删除平台 MySQL 实例？" : "删除纳管 MySQL 实例？"}
+                              description={
+                                isPlatformMySQL(i)
+                                  ? `将删除 ${i.name}，并清理对应 K8s 资源；PVC 默认保留。`
+                                  : `将删除 ${i.name} 的纳管记录，不会自动清理外部 MySQL。`
+                              }
+                              confirmLabel="删除实例"
+                              confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                              onConfirm={() => deleteM.mutate(i.id)}
                             >
                               <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
+                              <span className="sr-only">删除</span>
+                            </ConfirmActionButton>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -923,22 +965,25 @@ export default function AppCenterMySQL() {
                       实例 ID {selected.id} · {endpointOf(selected)} · 默认库 {selected.summary.defaultSchema || "-"}
                     </CardDescription>
                   </div>
-                  <Button
+                  <ConfirmActionButton
                     type="button"
                     variant="outline"
                     size="sm"
                     className="gap-1.5 border-red-200 text-red-700 hover:bg-red-50"
                     disabled={!canWrite || deleteM.isPending}
-                    onClick={() => {
-                      const msg = isPlatformMySQL(selected)
-                        ? `释放 ${selected.name}？K8s 资源会一并清理，PVC 默认保留。`
-                        : `释放 ${selected.name}？`;
-                      if (window.confirm(msg)) deleteM.mutate(selected.id);
-                    }}
+                    title={isPlatformMySQL(selected) ? "释放平台 MySQL 实例？" : "释放纳管 MySQL 实例？"}
+                    description={
+                      isPlatformMySQL(selected)
+                        ? `将释放 ${selected.name}，并清理对应 K8s 资源；PVC 默认保留。`
+                        : `将释放 ${selected.name} 的纳管记录，不会自动清理外部 MySQL。`
+                    }
+                    confirmLabel="释放实例"
+                    confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                    onConfirm={() => deleteM.mutate(selected.id)}
                   >
                     <Trash2 className="h-4 w-4" />
                     释放实例
-                  </Button>
+                  </ConfirmActionButton>
                 </CardHeader>
                 <CardContent className="px-0 pb-5 pt-0">
                   {isPlatformMySQL(selected) ? (
@@ -1059,10 +1104,24 @@ export default function AppCenterMySQL() {
                               <Checkbox checked={confirmMutation} onCheckedChange={(v) => setConfirmMutation(v === true)} />
                               允许写操作
                             </label>
-                            <Button disabled={!selected || queryM.isPending} className="gap-2" onClick={() => queryM.mutate()}>
-                              {queryM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                              执行
-                            </Button>
+                            {confirmMutation ? (
+                              <ConfirmActionButton
+                                disabled={!selected || queryM.isPending}
+                                className="gap-2"
+                                title="确认执行写 SQL？"
+                                description={`将在 MySQL 实例「${selected?.name ?? "未选择"}」执行允许写操作的 SQL，可能直接改变数据。`}
+                                confirmLabel="执行"
+                                onConfirm={submitSql}
+                              >
+                                {queryM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                                执行
+                              </ConfirmActionButton>
+                            ) : (
+                              <Button disabled={!selected || queryM.isPending} className="gap-2" onClick={submitSql}>
+                                {queryM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                                执行
+                              </Button>
+                            )}
                           </div>
                           {sqlResult ? (
                             <div className="rounded-lg border border-slate-200">
@@ -1173,16 +1232,20 @@ export default function AppCenterMySQL() {
                                   <TableCell>{u.plugin ?? "-"}</TableCell>
                                   <TableCell>{u.accountLocked ? "是" : "否"}</TableCell>
                                   <TableCell>
-                                    <Button
+                                    <ConfirmActionButton
                                       size="icon"
                                       variant="ghost"
                                       disabled={!canWrite || deleteUserM.isPending}
-                                      onClick={() => {
-                                        if (window.confirm(`删除 MySQL 用户 ${u.username}@${u.host}？`)) deleteUserM.mutate(u);
-                                      }}
+                                      aria-label={`删除 MySQL 用户 ${u.username}@${u.host}`}
+                                      title="删除 MySQL 用户？"
+                                      description={`将删除 ${u.username}@${u.host}，该账号将无法继续连接实例。`}
+                                      confirmLabel="删除用户"
+                                      confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                                      onConfirm={() => deleteUserM.mutate(u)}
                                     >
                                       <Trash2 className="h-4 w-4 text-red-600" />
-                                    </Button>
+                                      <span className="sr-only">删除</span>
+                                    </ConfirmActionButton>
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -1223,16 +1286,18 @@ export default function AppCenterMySQL() {
                             <Field label="目标 Schema">
                               <Input value={backup.targetSchema} onChange={(e) => setBackup({ ...backup, targetSchema: e.target.value })} />
                             </Field>
-                            <Button
+                            <ConfirmActionButton
                               className="w-full"
                               variant="outline"
                               disabled={!canWrite || !backup.restoreBackupId || restoreBackupM.isPending}
-                              onClick={() => {
-                                if (window.confirm("确认恢复该备份到目标 Schema？")) restoreBackupM.mutate();
-                              }}
+                              title="恢复 MySQL 备份？"
+                              description={`将把备份 #${backup.restoreBackupId || "-"} 恢复到目标 Schema「${backup.targetSchema || "-"}」，可能覆盖现有数据。`}
+                              confirmLabel="恢复备份"
+                              confirmButtonClassName="bg-amber-600 text-white hover:bg-amber-700"
+                              onConfirm={() => restoreBackupM.mutate()}
                             >
                               恢复
-                            </Button>
+                            </ConfirmActionButton>
                           </div>
                         </Panel>
                       </div>
@@ -1266,16 +1331,20 @@ export default function AppCenterMySQL() {
                                   <TableCell>{formatBytes(b.sizeBytes)}</TableCell>
                                   <TableCell>{formatDate(b.finishedAt)}</TableCell>
                                   <TableCell>
-                                    <Button
+                                    <ConfirmActionButton
                                       size="icon"
                                       variant="ghost"
                                       disabled={!canWrite || deleteBackupM.isPending}
-                                      onClick={() => {
-                                        if (window.confirm(`删除备份 ${b.backupName}？`)) deleteBackupM.mutate(b.id);
-                                      }}
+                                      aria-label={`删除备份 ${b.backupName}`}
+                                      title="删除 MySQL 备份？"
+                                      description={`将删除备份「${b.backupName}」的记录与可恢复数据，此操作不可恢复。`}
+                                      confirmLabel="删除备份"
+                                      confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                                      onConfirm={() => deleteBackupM.mutate(b.id)}
                                     >
                                       <Trash2 className="h-4 w-4 text-red-600" />
-                                    </Button>
+                                      <span className="sr-only">删除</span>
+                                    </ConfirmActionButton>
                                   </TableCell>
                                 </TableRow>
                               ))}

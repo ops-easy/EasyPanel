@@ -245,6 +245,28 @@ func dnsDomainGet(ctx context.Context, db *sql.DB, id int) (*DnsDomain, error) {
 	return &d, nil
 }
 
+func dnsDomainNamesByAccount(ctx context.Context, db *sql.DB, accountID int) ([]string, error) {
+	rows, err := db.QueryContext(ctx, `
+		SELECT name FROM dns_domains
+		WHERE account_id=?
+		ORDER BY CHAR_LENGTH(name) DESC, name ASC`, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		if name = strings.TrimSpace(name); name != "" {
+			out = append(out, name)
+		}
+	}
+	return out, rows.Err()
+}
+
 func dnsDomainInsert(ctx context.Context, db *sql.DB, name string, accountID int, icpBeian, expireAt, remark, createdBy string) (int64, error) {
 	var exp interface{}
 	if expireAt != "" {
@@ -436,6 +458,13 @@ func dnsFailoverLogInsert(ctx context.Context, db *sql.DB, taskID int, action, o
 	return err
 }
 
+func dnsFailoverMarkCheck(ctx context.Context, db *sql.DB, taskID int, lastStatus string, errorCount int) error {
+	_, err := db.ExecContext(ctx,
+		`UPDATE dns_failover_tasks SET last_check_at=NOW(), last_status=?, error_count=?, updated_at=NOW() WHERE id=?`,
+		lastStatus, errorCount, taskID)
+	return err
+}
+
 // ─────────────────────────── scheduled ───────────────────────────
 
 func dnsScheduledList(ctx context.Context, db *sql.DB) ([]DnsScheduledTask, error) {
@@ -479,7 +508,14 @@ func dnsScheduledInsert(ctx context.Context, db *sql.DB, t DnsScheduledTask) (in
 }
 
 func dnsScheduledDelete(ctx context.Context, db *sql.DB, id int) error {
-	_, err := db.ExecContext(ctx, `DELETE FROM dns_scheduled_tasks WHERE id=?`, id)
+	_, err := db.ExecContext(ctx, `DELETE FROM dns_scheduled_tasks WHERE id=? AND status='pending'`, id)
+	return err
+}
+
+func dnsScheduledMarkResult(ctx context.Context, db *sql.DB, id int, status, message string) error {
+	_, err := db.ExecContext(ctx,
+		`UPDATE dns_scheduled_tasks SET status=?, executed_at=NOW(), message=? WHERE id=? AND status='pending'`,
+		status, message, id)
 	return err
 }
 

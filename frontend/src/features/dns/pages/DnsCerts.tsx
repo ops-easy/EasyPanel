@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Loader2, Plus, RefreshCw, Server, ShieldCheck, Trash2, Zap } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
@@ -10,8 +11,10 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescript
 import { Badge } from "@/shared/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { Textarea } from "@/shared/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { apiDeleteJson, apiGetJson, apiPatchJson, apiPostJson } from "@/lib/api";
 import { dnsEffectiveDateLabel } from "@/features/dns/pages/dns-date-utils";
+import { withDnsMutationConfirm, withDnsMutationConfirmQuery } from "@/features/dns/lib/dnsMutationConfirm";
 import { useAuth } from "@/auth/auth-context";
 import { toast } from "sonner";
 
@@ -24,6 +27,12 @@ type CertOrder = {
   baotaSiteName?: string;
   autoPushBaota?: boolean;
   createdBy: string; createdAt: string;
+};
+
+type Account = {
+  id: number;
+  name: string;
+  provider: string;
 };
 
 function fmtErr(e: unknown) { return (e as Error).message ?? String(e); }
@@ -40,11 +49,11 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 type FormState = {
-  name: string; domains: string; email: string; autoRenew: boolean;
+  name: string; domains: string; email: string; accountId: number; autoRenew: boolean;
   baotaSiteName: string; autoPushBaota: boolean;
 };
-const defaultForm = (): FormState => ({
-  name: "", domains: "", email: "", autoRenew: true,
+const defaultForm = (accountId = 0): FormState => ({
+  name: "", domains: "", email: "", accountId, autoRenew: true,
   baotaSiteName: "", autoPushBaota: false,
 });
 
@@ -58,6 +67,13 @@ export default function DnsCerts() {
     queryFn: ({ signal }) => apiGetJson<{ certs: CertOrder[] }>("/api/dns/certs", { signal }),
   });
   const certs = listQ.data?.certs ?? [];
+  const accountsQ = useQuery({
+    queryKey: ["dns-accounts"],
+    queryFn: ({ signal }) => apiGetJson<{ accounts: Account[] }>("/api/dns/accounts", { signal }),
+  });
+  const certificateAccounts = (accountsQ.data?.accounts ?? []).filter(
+    (account) => !["manual", "custom", ""].includes(account.provider),
+  );
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormState>(defaultForm());
@@ -75,16 +91,25 @@ export default function DnsCerts() {
     }
   }, [baotaDlg]);
 
+  const openCreate = () => {
+    setForm(defaultForm(certificateAccounts[0]?.id ?? 0));
+    setDialogOpen(true);
+  };
+
   const saveMut = useMutation({
     mutationFn: () =>
-      apiPostJson("/api/dns/certs", {
-        name: form.name,
-        domains: form.domains.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean),
-        email: form.email,
-        autoRenew: form.autoRenew,
-        baotaSiteName: form.baotaSiteName.trim(),
-        autoPushBaota: form.autoPushBaota,
-      }),
+      apiPostJson(
+        "/api/dns/certs",
+        withDnsMutationConfirm({
+          name: form.name,
+          accountId: form.accountId,
+          domains: form.domains.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean),
+          email: form.email,
+          autoRenew: form.autoRenew,
+          baotaSiteName: form.baotaSiteName.trim(),
+          autoPushBaota: form.autoPushBaota,
+        })
+      ),
     onSuccess: () => {
       toast.success("证书申请单已创建");
       setDialogOpen(false);
@@ -94,7 +119,7 @@ export default function DnsCerts() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => apiDeleteJson(`/api/dns/certs/${id}`),
+    mutationFn: (id: number) => apiDeleteJson(withDnsMutationConfirmQuery(`/api/dns/certs/${id}`)),
     onSuccess: () => {
       toast.success("证书已删除");
       setDeleteID(null);
@@ -107,8 +132,10 @@ export default function DnsCerts() {
     mutationFn: async () => {
       if (!baotaDlg) throw new Error("未选择证书");
       await apiPatchJson(`/api/dns/certs/${baotaDlg.id}/baota`, {
-        baotaSiteName: baotaSiteDraft.trim(),
-        autoPushBaota: baotaPushDraft,
+        ...withDnsMutationConfirm({
+          baotaSiteName: baotaSiteDraft.trim(),
+          autoPushBaota: baotaPushDraft,
+        }),
       });
     },
     onSuccess: () => {
@@ -123,7 +150,9 @@ export default function DnsCerts() {
     mutationFn: async () => {
       if (!baotaDlg) throw new Error("未选择证书");
       return apiPostJson<{ message: string }>(`/api/dns/certs/${baotaDlg.id}/push-baota`, {
-        siteName: baotaSiteDraft.trim(),
+        ...withDnsMutationConfirm({
+          siteName: baotaSiteDraft.trim(),
+        }),
       });
     },
     onSuccess: (r) => {
@@ -136,7 +165,7 @@ export default function DnsCerts() {
   const applyCert = async (id: number) => {
     setApplyingID(id);
     try {
-      const r = await apiPostJson<{ message: string }>(`/api/dns/certs/${id}/apply`, {});
+      const r = await apiPostJson<{ message: string }>(`/api/dns/certs/${id}/apply`, withDnsMutationConfirm({}));
       toast.info(r.message, { duration: 8000 });
       void qc.invalidateQueries({ queryKey: ["dns-certs"] });
     } catch (e) {
@@ -200,7 +229,7 @@ export default function DnsCerts() {
             <RefreshCw className="h-4 w-4" />
           </Button>
           {!isViewer && (
-            <Button size="sm" onClick={() => { setForm(defaultForm()); setDialogOpen(true); }} className="gap-1.5">
+            <Button size="sm" onClick={openCreate} className="gap-1.5">
               <Plus className="h-4 w-4" /> 申请证书
             </Button>
           )}
@@ -211,7 +240,7 @@ export default function DnsCerts() {
       <div className="space-y-2 rounded-xl border border-blue-100 bg-blue-50/80 px-4 py-3 text-sm text-blue-900">
         <p>
           <strong>DNS-01 验证</strong> — 证书申请将通过向 DNS 服务商自动添加 <code>_acme-challenge</code> TXT 记录完成验证。
-          确保域名已绑定支持 API 写入的服务商账号（Cloudflare / 阿里云 / 腾讯云）。
+          请在申请单中选择支持 API 写入的服务商账号（Cloudflare / 阿里云 / 腾讯云 / DNSPod）。
         </p>
         <p className="border-t border-blue-200/60 pt-2 text-blue-950/90">
           <strong>宝塔 SSL</strong> — 已签发证书可在此页一键部署到宝塔网站（调用面板 API，与 Ingress 菜单无关）。
@@ -277,13 +306,20 @@ export default function DnsCerts() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {cert.status !== "issued" && !isViewer && (
-                          <Button variant="outline" size="sm" disabled={applyingID === cert.id}
-                            onClick={() => void applyCert(cert.id)}>
+                          <ConfirmActionButton
+                            variant="outline"
+                            size="sm"
+                            disabled={applyingID === cert.id}
+                            title="开始签发 SSL 证书"
+                            description="签发过程会自动写入并清理 DNS-01 TXT 记录，请确认 DNS 账号仍可写入。"
+                            confirmLabel="开始签发"
+                            onConfirm={() => void applyCert(cert.id)}
+                          >
                             {applyingID === cert.id
                               ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               : <Zap className="h-3.5 w-3.5" />}
                             <span className="ml-1.5 hidden sm:inline">申请</span>
-                          </Button>
+                          </ConfirmActionButton>
                         )}
                         {cert.status === "issued" && (
                           <Button variant="outline" size="sm" onClick={() => void viewDetail(cert)}>
@@ -328,6 +364,27 @@ export default function DnsCerts() {
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
+              <Label>DNS 服务商账号</Label>
+              <Select value={form.accountId ? String(form.accountId) : ""}
+                onValueChange={(v) => setForm((f) => ({ ...f, accountId: Number(v) }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择 DNS 服务商账号" />
+                </SelectTrigger>
+                <SelectContent>
+                  {certificateAccounts.map((account) => (
+                    <SelectItem key={account.id} value={String(account.id)}>
+                      {account.name} · {account.provider}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {certificateAccounts.length === 0 ? (
+                <p className="text-xs text-amber-600">请先在「服务商账号」接入一个支持 API 写入的 DNS 账号。</p>
+              ) : (
+                <p className="text-xs text-slate-500">用于自动写入和清理 DNS-01 TXT 验证记录。</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
               <Label>域名列表</Label>
               <Textarea
                 placeholder={"example.com\n*.example.com\nwww.example.com"}
@@ -367,18 +424,22 @@ export default function DnsCerts() {
                   onCheckedChange={(v) => setForm((f) => ({ ...f, autoPushBaota: v }))}
                 />
                 <Label htmlFor="auto-push-baota-create" className="cursor-pointer text-xs leading-snug">
-                  签发成功后自动推送到宝塔（需配置 BAOTA_URL / BAOTA_API_KEY；完整签发流程就绪后生效）
+                  签发成功后自动推送到宝塔（需配置 BAOTA_URL / BAOTA_API_KEY）
                 </Label>
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
-            <Button onClick={() => saveMut.mutate()}
-              disabled={saveMut.isPending || !form.name || !form.domains}>
+            <ConfirmActionButton
+              title="创建 SSL 证书申请单"
+              description="申请单会保存域名、邮箱、DNS 账号和宝塔推送设置，后续可在平台内签发与部署。"
+              confirmLabel="创建申请单"
+              onConfirm={() => saveMut.mutate()}
+              disabled={saveMut.isPending || !form.name || !form.domains || !form.accountId}>
               {saveMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               创建申请单
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -407,7 +468,7 @@ export default function DnsCerts() {
                 onCheckedChange={(v) => setBaotaPushDraft(v)}
               />
               <Label htmlFor="auto-push-baota-dlg" className="cursor-pointer text-sm leading-snug">
-                签发成功后自动推送到宝塔（自动化签发就绪后生效）
+                签发成功后自动推送到宝塔
               </Label>
             </div>
             <p className="text-xs text-slate-500">
@@ -416,19 +477,28 @@ export default function DnsCerts() {
           </div>
           <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={() => setBaotaDlg(null)}>关闭</Button>
-            <Button
+            <ConfirmActionButton
               variant="secondary"
               disabled={!baotaDlg || patchBaotaMut.isPending}
-              onClick={() => patchBaotaMut.mutate()}
+              title="保存宝塔关联设置"
+              description="会更新证书与宝塔站点名、自动推送开关的关联关系。"
+              confirmLabel="保存关联"
+              onConfirm={() => patchBaotaMut.mutate()}
             >
               {patchBaotaMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               保存关联
-            </Button>
+            </ConfirmActionButton>
             {baotaDlg?.status === "issued" && (
-              <Button disabled={pushBaotaMut.isPending} onClick={() => pushBaotaMut.mutate()}>
+              <ConfirmActionButton
+                disabled={pushBaotaMut.isPending}
+                title="部署证书到宝塔站点"
+                description="会调用宝塔面板 API，把当前证书和私钥部署到指定站点。"
+                confirmLabel="立即部署"
+                onConfirm={() => pushBaotaMut.mutate()}
+              >
                 {pushBaotaMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 立即部署证书
-              </Button>
+              </ConfirmActionButton>
             )}
           </DialogFooter>
         </DialogContent>

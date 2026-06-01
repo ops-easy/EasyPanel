@@ -788,6 +788,7 @@ type opsVmLogVmShipperBody struct {
 	OpenSearchIndexPrefix string `json:"openSearchIndexPrefix,omitempty"`
 	OpenSearchUser        string `json:"openSearchUser,omitempty"`
 	OpenSearchPassword    string `json:"openSearchPassword,omitempty"`
+	Confirm               bool   `json:"confirm"`
 }
 
 type vmShipperOpenSearchOpts struct {
@@ -1284,6 +1285,9 @@ func handleOpsVmLogVmShipperScript(app *ServerApp) gin.HandlerFunc {
 		var body opsVmLogVmShipperBody
 		if err := c.ShouldBindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if !requireOpsMutationConfirm(c, body.Confirm, "VictoriaLogs VM shipper apply") {
 			return
 		}
 		vlBase, paths, logSrc, warn, err := vmShipperResolveRequest(app, body)

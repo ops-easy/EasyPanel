@@ -4,8 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Box, ChevronRight, Copy, Loader2 } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
 import { ApiHttpError, apiGetJson, apiPostJson } from "@/lib/api";
+import { withK8sMutationConfirm } from "@/features/cluster/lib/k8sMutationConfirm";
 import { parseAge } from "./parseAge";
 import { cn } from "@/lib/utils";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import {
   Table,
   TableBody,
@@ -95,10 +97,13 @@ const ClusterRBAC: React.FC = () => {
 
   const createMut = useMutation({
     mutationFn: () =>
-      apiPostJson<GlobalReadUserRes>("/api/k8s/rbac/quick-readonly-user", {
-        ensureSuperReaderClusterRole: optEnsureSuperReader,
-        useKubeSystem: optKubeSystem,
-      }),
+      apiPostJson<GlobalReadUserRes>(
+        "/api/k8s/rbac/quick-readonly-user",
+        withK8sMutationConfirm({
+          ensureSuperReaderClusterRole: optEnsureSuperReader,
+          useKubeSystem: optKubeSystem,
+        })
+      ),
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ["k8s-rbac"] });
       const sum =
@@ -178,15 +183,18 @@ const ClusterRBAC: React.FC = () => {
                 </div>
               </div>
             </div>
-            <Button
+            <ConfirmActionButton
               type="button"
               disabled={createMut.isPending}
-              onClick={() => createMut.mutate()}
+              title="确认创建只读访问凭据？"
+              description="将在集群内创建只读 ServiceAccount、ClusterRole/Binding 和 token Secret。"
+              confirmLabel="创建"
+              onConfirm={() => createMut.mutate()}
               className="gap-2"
             >
               {createMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               一键创建并下载 kubeconfig
-            </Button>
+            </ConfirmActionButton>
           </CardContent>
         </Card>
       )}

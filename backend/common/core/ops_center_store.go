@@ -154,7 +154,8 @@ type OpsMonitoringCustomPanel struct {
 }
 
 type opsMonitoringPanelsPayload struct {
-	Panels []OpsMonitoringCustomPanel `json:"panels"`
+	Panels  []OpsMonitoringCustomPanel `json:"panels"`
+	Confirm bool                       `json:"confirm"`
 }
 
 // OpsGrafanaMeta 同步索引（完整 JSON 在 dataDir/ops_grafana/<uid>.json）。

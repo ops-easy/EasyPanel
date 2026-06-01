@@ -193,6 +193,9 @@ func handleAlertmanagerWebhook(app *ServerApp) gin.HandlerFunc {
 
 func handleOpsAlertsAlertmanagerWebhookRegenerate(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "ops alertmanager webhook regenerate") {
+			return
+		}
 		base := strings.TrimRight(strings.TrimSpace(app.Cfg().PlatformPublicURL), "/")
 		if base == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "请先配置平台对外 URL（PLATFORM_PUBLIC_URL 或运行时 platformPublicUrl），否则无法生成可访问的 Webhook 地址。"})

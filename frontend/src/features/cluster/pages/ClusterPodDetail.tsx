@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Copy, ExternalLink, FileText, Terminal, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, FileText, Maximize2, Terminal, Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -29,6 +29,7 @@ import { YamlCodeBlock } from "@/shared/ui/YamlCodeBlock";
 import PodLogsSheet from "./PodLogsSheet";
 import PodRestartAiPanel from "./PodRestartAiPanel";
 import { cn } from "@/lib/utils";
+import { withK8sMutationConfirmQuery } from "@/features/cluster/lib/k8sMutationConfirm";
 
 type PodEventRow = {
   type: string;
@@ -280,7 +281,7 @@ function PodContainersActionCard({
         </div>
         <CardDescription>
           {showTerminal
-            ? "弹窗终端或新标签全屏页（样式参考 Orion Visor 终端布局）。亦可复制下方 kubectl 在本地执行。"
+            ? "弹窗终端或站内全屏终端页（样式参考 Orion Visor 终端布局）。亦可复制下方 kubectl 在本地执行。"
             : "当前账号无 Pod 终端权限，仅可查看日志。"}
         </CardDescription>
       </CardHeader>
@@ -335,14 +336,10 @@ function PodContainersActionCard({
                       终端
                     </Button>
                     <Button asChild size="sm" variant="outline" className="gap-1">
-                      <a
-                        href={clusterPodTerminalHref(namespace, podName, c.name)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        新页面
-                      </a>
+                      <Link to={clusterPodTerminalHref(namespace, podName, c.name)}>
+                        <Maximize2 className="h-3.5 w-3.5" />
+                        全屏终端
+                      </Link>
                     </Button>
                   </>
                 ) : null}
@@ -404,7 +401,7 @@ const ClusterPodDetail: React.FC = () => {
   });
 
   const deleteMut = useMutation({
-    mutationFn: () => apiDelete(podApiPath(namespace, name)),
+    mutationFn: () => apiDelete(withK8sMutationConfirmQuery(podApiPath(namespace, name))),
     onSuccess: () => {
       setDelOpen(false);
       void queryClient.invalidateQueries({ queryKey: ["k8s-pods"] });

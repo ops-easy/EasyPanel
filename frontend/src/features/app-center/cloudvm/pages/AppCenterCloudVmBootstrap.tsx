@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { apiGetJson, apiPutJson } from "@/lib/api";
+import { withAppCenterMutationConfirmQuery } from "@/features/app-center/lib/appCenterMutationConfirm";
 import { toast } from "sonner";
 
 const CLOUD_VM_LIST_PATH = "/cluster/apps/cloud-vm";
@@ -88,7 +89,7 @@ export default function AppCenterCloudVmBootstrap() {
 
   const saveMut = useMutation({
     mutationFn: () =>
-      apiPutJson("/api/app-center/cloud-vm/bootstrap", {
+      apiPutJson(withAppCenterMutationConfirmQuery("/api/app-center/cloud-vm/bootstrap"), {
         bootstrapComplete: true,
         defaultNamespace: ns.trim() || "easypanel-cloud-vm",
         defaultAccessNodeName: accessNode.trim(),

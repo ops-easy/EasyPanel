@@ -14,6 +14,8 @@ import { Textarea } from "@/shared/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/collapsible";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { withHostMutationConfirm } from "@/features/vcenter/lib/hostMutationConfirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 type ExtraHostRow = {
   id: string;
@@ -496,7 +498,7 @@ const VCenterBastionAdmin: React.FC = () => {
         seenTargetRdp.add(lk);
       }
       const pNum = Math.min(65535, Math.max(1, parseInt(String(nativeSshPort).trim(), 10) || 2222));
-      await apiPutJson("/api/vcenter/bastion/policy", {
+      await apiPutJson("/api/vcenter/bastion/policy", withHostMutationConfirm({
         enableAcl,
         userVms,
         extraHosts,
@@ -508,7 +510,7 @@ const VCenterBastionAdmin: React.FC = () => {
         targetRdpWebEmbeds,
         nativeSshEnabled,
         nativeSshPort: pNum,
-      });
+      }));
     },
     onSuccess: async () => {
       toast.success("堡垒机策略已保存");
@@ -641,7 +643,7 @@ const VCenterBastionAdmin: React.FC = () => {
                 粘贴到映射表。
               </p>
               <p className="mt-2 font-mono text-[10px] text-slate-600">
-                占位示例：https://jump.example.com/luna/…（按你的域名与路径替换）
+                填写格式：https://jump.example.com/luna/…（按你的域名与路径替换）
               </p>
               <p className="mt-2 text-slate-600">
                 非 vCenter 的 Windows 机器可在「额外主机」里选择 Windows 类型，并在同一字段填写 JumpServer RDP 网页 URL。
@@ -1570,14 +1572,17 @@ const VCenterBastionAdmin: React.FC = () => {
             </div>
           </div>
 
-          <Button
+          <ConfirmActionButton
             type="button"
             className="w-full bg-emerald-700 text-white hover:bg-emerald-600"
             disabled={savePolicy.isPending}
-            onClick={() => savePolicy.mutate()}
+            title="确认保存堡垒机访问策略？"
+            description="将更新堡垒机目标访问、代理、凭据策略与安全边界配置。"
+            confirmLabel="保存"
+            onConfirm={() => savePolicy.mutate()}
           >
             {savePolicy.isPending ? "保存中…" : "保存策略"}
-          </Button>
+          </ConfirmActionButton>
         </div>
         </div>
       </div>

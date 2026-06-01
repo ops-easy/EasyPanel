@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { apiDeleteJson, apiGetJson, apiPostJson, apiPutJson, API_BASE } from "@/lib/api";
@@ -21,6 +22,7 @@ import { formatDateTimeShanghai } from "@/lib/datetime-cn";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/auth-context";
 import { DocsVaultShell } from "@/features/docs/pages/docs-vault-shell";
+import { withOpsMutationConfirm, withOpsMutationConfirmQuery } from "@/lib/ops-mutation-confirm";
 
 type AttachmentStoragePayload = {
   mode?: string;
@@ -94,14 +96,14 @@ export default function DocsMedia() {
 
   const saveMut = useMutation({
     mutationFn: () =>
-      apiPutJson<{ ok?: boolean }>("/api/docs/attachment-storage", {
+      apiPutJson<{ ok?: boolean }>("/api/docs/attachment-storage", withOpsMutationConfirm({
         secretId: secretId.trim(),
         secretKey: secretKey.trim(),
         bucket: bucket.trim(),
         region: region.trim(),
         prefix: prefix.trim(),
         publicBase: publicBase.trim(),
-      }),
+      })),
     onSuccess: () => {
       toast.success("COS 配置已保存，新上传将写入对象存储");
       void qc.invalidateQueries({ queryKey: ["docs-attachment-storage"] });
@@ -126,7 +128,7 @@ export default function DocsMedia() {
   });
 
   const clearKvMut = useMutation({
-    mutationFn: () => apiDeleteJson<{ ok?: boolean }>("/api/docs/attachment-storage/cos"),
+    mutationFn: () => apiDeleteJson<{ ok?: boolean }>(withOpsMutationConfirmQuery("/api/docs/attachment-storage/cos")),
     onSuccess: () => {
       toast.success("已清除控制台中的 COS 配置");
       void qc.invalidateQueries({ queryKey: ["docs-attachment-storage"] });
@@ -137,7 +139,7 @@ export default function DocsMedia() {
 
   const delMut = useMutation({
     mutationFn: async (id: number) => {
-      const r = await fetch(`${API_BASE}/api/docs/media/${id}`, {
+      const r = await fetch(`${API_BASE}${withOpsMutationConfirmQuery(`/api/docs/media/${id}`)}`, {
         method: "DELETE",
         credentials: API_BASE ? "include" : "same-origin",
       });
@@ -377,33 +379,32 @@ export default function DocsMedia() {
                   {testMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   测试连接
                 </Button>
-                <Button
+                <ConfirmActionButton
                   type="button"
                   disabled={formBusy || !bucket.trim() || !region.trim()}
-                  onClick={() => saveMut.mutate()}
+                  title="保存文档附件 COS 配置？"
+                  description="保存后，新上传的文档附件会优先使用控制台中的 COS 参数；请确认 Bucket、Region 与访问密钥已经核对。"
+                  confirmLabel="保存配置"
+                  onConfirm={() => saveMut.mutate()}
                   className="gap-1.5 bg-violet-600 hover:bg-violet-700"
                 >
                   {saveMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   保存配置
-                </Button>
+                </ConfirmActionButton>
                 {cosSource === "kv" ? (
-                  <Button
+                  <ConfirmActionButton
                     type="button"
                     variant="outline"
                     className="text-red-700 hover:bg-red-50"
                     disabled={clearKvMut.isPending}
-                    onClick={() => {
-                      if (
-                        confirm(
-                          "确定清除控制台中的 COS 配置？清除后若环境变量未配置，将使用本地存储。"
-                        )
-                      ) {
-                        clearKvMut.mutate();
-                      }
-                    }}
+                    title="清除控制台 COS 配置？"
+                    description="清除后若环境变量未配置，文档附件会回退到本地存储；已上传对象不会被自动迁移。"
+                    confirmLabel="清除配置"
+                    confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                    onConfirm={() => clearKvMut.mutate()}
                   >
                     清除控制台 COS
-                  </Button>
+                  </ConfirmActionButton>
                 ) : null}
               </div>
               <p className="text-xs text-slate-600">
@@ -517,18 +518,22 @@ export default function DocsMedia() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Button
+                      <ConfirmActionButton
                         type="button"
                         variant="destructive"
                         size="sm"
                         className="h-9 gap-1.5 px-3"
                         disabled={delMut.isPending}
-                        onClick={() => {
-                          if (confirm(`确定删除「${r.origName}」？不可恢复。`)) delMut.mutate(r.id);
-                        }}
+                        aria-label={`删除 ${r.origName}`}
+                        title="删除附件？"
+                        description={`将删除「${r.origName}」的附件记录与存储对象，此操作不可恢复。`}
+                        confirmLabel="删除附件"
+                        confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                        onConfirm={() => delMut.mutate(r.id)}
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
+                        <span className="sr-only">删除</span>
+                      </ConfirmActionButton>
                     </td>
                   </tr>
                 );

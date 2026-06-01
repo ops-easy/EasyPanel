@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  ExternalLink,
+  Copy,
   Home,
   Monitor,
   Search,
@@ -18,10 +18,12 @@ import {
 import { useAuth } from "@/auth/auth-context";
 import { apiDelete, apiGetJson, apiPutJson, type AppConfig } from "@/lib/api";
 import { menuItemVisible, moduleVisible } from "@/lib/platform-permissions";
+import { withHostMutationConfirm, withHostMutationConfirmQuery } from "@/features/vcenter/lib/hostMutationConfirm";
 import CloudVmSshTerminalSheet from "@/features/app-center/cloudvm/components/CloudVmSshTerminalSheet";
 import MySQLSqlConsoleSheet from "@/features/app-center/mysql/components/MySQLSqlConsoleSheet";
 import RedisCliTerminalSheet from "@/features/app-center/redis/components/RedisCliTerminalSheet";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import {
@@ -658,7 +660,7 @@ const VCenterBastion: React.FC = () => {
     }
     setTargetSshSettingsSaving(true);
     try {
-      await apiPutJson(bastionTargetSSHSettingsPath(selectedTarget.id), body);
+      await apiPutJson(bastionTargetSSHSettingsPath(selectedTarget.id), withHostMutationConfirm(body));
       toast.success("PVE SSH 设置已保存");
       await targetSshSettingsQ.refetch();
       setTargetSshSettingsOpen(false);
@@ -673,7 +675,7 @@ const VCenterBastion: React.FC = () => {
     if (!selectedTarget) return;
     setTargetSshSettingsSaving(true);
     try {
-      await apiDelete(bastionTargetSSHSettingsPath(selectedTarget.id));
+      await apiDelete(withHostMutationConfirmQuery(bastionTargetSSHSettingsPath(selectedTarget.id)));
       toast.success("PVE SSH 设置已清空");
       setTargetSshSettingsForm(EMPTY_TARGET_SSH_FORM);
       await targetSshSettingsQ.refetch();
@@ -702,7 +704,7 @@ const VCenterBastion: React.FC = () => {
             className="h-8 px-2 text-[#8c8c8c] hover:bg-[#1f1f1f] hover:text-[#ffffff]"
             asChild
           >
-            <Link to="/" title="工作台">
+            <Link to={BASTION_ROUTE_BASE} title="返回堡垒机控制台" aria-label="返回堡垒机控制台">
               <Home className="size-4" />
             </Link>
           </Button>
@@ -1116,11 +1118,16 @@ const VCenterBastion: React.FC = () => {
                       size="sm"
                       variant="outline"
                       className="h-7 border-[#3c3c3c] bg-[#1e1e1e] px-2 text-xs text-[#cccccc] hover:bg-[#2d2d2d]"
-                      onClick={() => window.open(effectiveRdpWebUrl, "_blank", "noopener,noreferrer")}
-                      title="主区域已内嵌；若嵌入被拦截可点此"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(effectiveRdpWebUrl).then(
+                          () => toast.success("已复制 JumpServer RDP 备用链接"),
+                          () => toast.error("复制失败，请手动复制主区域中的地址")
+                        );
+                      }}
+                      title="主区域已内嵌；若目标页面限制嵌入，可复制备用链接后在受控环境中打开"
                     >
-                      <ExternalLink className="mr-1 size-3" />
-                      新标签打开
+                      <Copy className="mr-1 size-3" />
+                      复制备用链接
                     </Button>
                   ) : null}
                 </div>
@@ -1363,7 +1370,7 @@ const VCenterBastion: React.FC = () => {
                       若页面空白，多为 JumpServer 返回了{" "}
                       <span className="font-mono text-slate-500">X-Frame-Options</span> /{" "}
                       <span className="font-mono text-slate-500">CSP</span>
-                      拒绝嵌入，请使用顶栏「新标签打开」在独立标签登录 JumpServer。
+                      拒绝嵌入，请使用顶栏「复制备用链接」复制地址后在受控环境中登录 JumpServer。
                     </p>
                   </div>
                 ) : null}
@@ -1512,23 +1519,30 @@ const VCenterBastion: React.FC = () => {
               </p>
 
               <DialogFooter>
-                <Button
+                <ConfirmActionButton
                   type="button"
                   variant="outline"
                   className="border-red-900/70 bg-red-950/20 text-red-100 hover:bg-red-950/40"
                   disabled={targetSshSettingsSaving}
-                  onClick={clearTargetSshSettings}
+                  title="确认清空 PVE SSH 设置？"
+                  description="将删除该目标的独立 SSH 凭据和覆盖配置，后续会回退到全局凭据或自动探测。"
+                  confirmLabel="清空"
+                  confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                  onConfirm={clearTargetSshSettings}
                 >
                   清空
-                </Button>
-                <Button
+                </ConfirmActionButton>
+                <ConfirmActionButton
                   type="button"
                   variant="secondary"
                   disabled={targetSshSettingsSaving || targetSshSettingsQ.isLoading}
-                  onClick={saveTargetSshSettings}
+                  title="确认保存 PVE SSH 设置？"
+                  description="将保存当前 PVE 目标的 SSH Host、端口、用户和凭据覆盖配置。"
+                  confirmLabel="保存"
+                  onConfirm={saveTargetSshSettings}
                 >
                   {targetSshSettingsSaving ? "保存中..." : "保存设置"}
-                </Button>
+                </ConfirmActionButton>
               </DialogFooter>
             </div>
           ) : null}

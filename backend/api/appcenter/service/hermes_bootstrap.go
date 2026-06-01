@@ -16,6 +16,9 @@ func handleAppHermesBootstrapPut(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Hermes bootstrap") {
+		return
+	}
 	var body HermesBootstrap
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -41,5 +44,6 @@ func handleAppHermesBootstrapPut(c *gin.Context, app *ServerApp) {
 		return
 	}
 	mirrorPlatformKVIfDualWrite(app)
+	SetAuditDetail(c, "应用中心 Hermes 更新引导配置 namespace="+body.DefaultNamespace+" mode="+body.DefaultMode+" image="+body.DefaultImage)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }

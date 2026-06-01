@@ -12,13 +12,22 @@ test("compute dashboard is an operations overview instead of only entry cards", 
   assert.match(dashboard, /ComputePageHeader/);
   assert.match(dashboard, /ComputeProviderHealthStrip/);
   assert.match(dashboard, /\/api\/compute\/summary/);
+  assert.match(dashboard, /queryKey: \["compute-dashboard-cloud-vm-instances"\]/);
+  assert.match(dashboard, /\/api\/app-center\/cloud-vm\/instances/);
+  assert.match(dashboard, /const cloudVmCount = cloudVmQ\.data\?\.instances\?\.length \?\? 0;/);
+  assert.match(dashboard, /const hasVirtualizedProviders = providers\.some\(\(provider\) => provider\.configured === true\);/);
+  assert.match(dashboard, /const providerConfigured = hasVirtualizedProviders \|\| cloudVmCount > 0;/);
+  assert.match(dashboard, /const computePrimaryPath = hasVirtualizedProviders\s+\? "\/cluster\/compute\/guests"\s+:\s+cloudVmCount > 0\s+\? "\/cluster\/apps\/cloud-vm"\s+:\s+"\/cluster\/compute\/config";/);
   assert.match(dashboard, /虚拟化 Dashboard/);
   assert.match(dashboard, /今日关注/);
   assert.match(dashboard, /异常资源/);
   assert.match(dashboard, /容量热点/);
   assert.match(dashboard, /最近活动/);
   assert.match(dashboard, /资源入口/);
-  assert.match(dashboard, /先接入 vCenter 或 PVE/);
+  assert.match(dashboard, /先配置 vCenter、PVE 或容器主机/);
+  assert.match(dashboard, /vCenter、PVE 与容器主机的可用配置/);
+  assert.doesNotMatch(dashboard, /先接入|等待接入|接入源/);
+  assert.match(dashboard, /to="\/cluster\/apps\/cloud-vm"/);
   assert.match(dashboard, /to="\/cluster\/compute\/config"/);
 });
 
@@ -29,6 +38,6 @@ test("compute dashboard shared components exist", () => {
   const healthStrip = read("../src/features/compute/components/ComputeProviderHealthStrip.tsx");
   assert.match(healthStrip, /vCenter/);
   assert.match(healthStrip, /PVE/);
-  assert.match(healthStrip, /已接入/);
-  assert.match(healthStrip, /未接入/);
+  assert.match(healthStrip, /已配置/);
+  assert.match(healthStrip, /未配置/);
 });

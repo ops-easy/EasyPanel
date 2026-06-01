@@ -132,17 +132,21 @@ type adminUserCreateBody struct {
 	PermissionsJSON   *string `json:"permissionsJson"`
 	AllowedLoginIPs   *string `json:"allowedLoginIps"`
 	AllowMultiIPLogin *bool   `json:"allowMultiIpLogin"`
+	Confirm           bool    `json:"confirm"`
 }
 
 func handleAdminUsersCreate(c *gin.Context, app *ServerApp) {
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未配置 MySQL"})
-		return
-	}
 	var body adminUserCreateBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "platform user create") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未配置 MySQL"})
 		return
 	}
 	u := strings.TrimSpace(body.Username)
@@ -223,14 +227,10 @@ type adminUserUpdateBody struct {
 	PermissionsJSON   *string `json:"permissionsJson"`
 	AllowedLoginIPs   *string `json:"allowedLoginIps"`
 	AllowMultiIPLogin *bool   `json:"allowMultiIpLogin"`
+	Confirm           bool    `json:"confirm"`
 }
 
 func handleAdminUsersUpdate(c *gin.Context, app *ServerApp) {
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未配置 MySQL"})
-		return
-	}
 	id, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
 	if err != nil || id <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 id"})
@@ -239,6 +239,14 @@ func handleAdminUsersUpdate(c *gin.Context, app *ServerApp) {
 	var body adminUserUpdateBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "platform user update") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未配置 MySQL"})
 		return
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 20*time.Second)
@@ -385,6 +393,9 @@ func adminChangeRemovesLastAccess(db *sql.DB, ctx context.Context, cfg Config) (
 }
 
 func handleAdminUsersDelete(c *gin.Context, app *ServerApp) {
+	if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "platform user delete") {
+		return
+	}
 	db := app.MySQLDB()
 	if db == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未配置 MySQL"})
@@ -438,17 +449,21 @@ func handleAdminUsersDelete(c *gin.Context, app *ServerApp) {
 type adminOIDCUnbindBody struct {
 	Username         string `json:"username" binding:"required"`
 	OperatorPassword string `json:"operatorPassword" binding:"required"`
+	Confirm          bool   `json:"confirm"`
 }
 
 func handleAdminUserOIDCUnbind(c *gin.Context, app *ServerApp) {
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未配置 MySQL"})
-		return
-	}
 	var body adminOIDCUnbindBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON 无效: " + err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "platform user OIDC unbind") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未配置 MySQL"})
 		return
 	}
 	target := strings.TrimSpace(body.Username)

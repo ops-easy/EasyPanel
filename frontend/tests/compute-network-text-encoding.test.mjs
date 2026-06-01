@@ -42,8 +42,8 @@ const requiredPhrases = new Map([
     ["网络资源中心", "设备、接口、终端、无线、防火墙和监控", "打开配置", "路由器配置接管", "iKuai 数据源", "OpenWrt 接入"],
   ],
   [
-    "src/features/compute/pages/PVEPage.tsx",
-    ["PVE 纳管", "新增 PVE 目标", "虚拟机与容器", "PVE API 连通"],
+    "src/features/compute/pve/pages/PveWorkspace.tsx",
+    ["PVE 总览", "PVE 配置", "虚拟机 / CT", "PVE API 连通"],
   ],
   [
     "src/features/cluster/pages/ToolNetworkIpScan.tsx",

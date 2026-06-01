@@ -126,7 +126,7 @@ export default function DnsDashboard() {
           { title: "添加服务商账号", desc: "接入 Cloudflare、阿里云、腾讯云等 DNS 服务商", to: "/cluster/apps/dns/accounts", icon: KeyRound, color: "from-blue-500 to-blue-600" },
           { title: "管理域名", desc: "添加并管理托管域名，同步解析记录", to: "/cluster/apps/dns/domains", icon: Globe, color: "from-violet-500 to-violet-600" },
           { title: "SSL 证书", desc: "通过 DNS-01 验证申请 Let's Encrypt 免费证书", to: "/cluster/apps/dns/certs", icon: ShieldCheck, color: "from-teal-500 to-teal-600" },
-          { title: "健康监测", desc: "配置 HTTP/TCP 探针，故障时自动切换 DNS 记录", to: "/cluster/apps/dns/failover", icon: Activity, color: "from-amber-500 to-amber-600" },
+          { title: "健康监测", desc: "配置 HTTP/HTTPS/TCP/Ping 探针，故障时自动切换 DNS 记录", to: "/cluster/apps/dns/failover", icon: Activity, color: "from-amber-500 to-amber-600" },
           { title: "定时任务", desc: "在指定时间暂停、启用或修改解析记录", to: "/cluster/apps/dns/scheduled", icon: Calendar, color: "from-orange-500 to-orange-600" },
           { title: "解析记录", desc: "查看并管理所有域名的 A/CNAME/MX/TXT 等记录", to: "/cluster/apps/dns/records", icon: Server, color: "from-emerald-500 to-emerald-600" },
         ].map((item) => {

@@ -17,6 +17,7 @@ import { apiPostJson } from "@/lib/api";
 import { defaultK8sIngressYamlExample } from "@/lib/buildK8sIngressYaml";
 import { DDNS_HELP } from "@/lib/ddns-help";
 import IngressGraphicalForm from "@/features/cluster/components/IngressGraphicalForm";
+import { withK8sMutationConfirm } from "@/features/cluster/lib/k8sMutationConfirm";
 
 interface PublishIngressProps {
   onApplied: () => void;
@@ -38,9 +39,10 @@ const PublishIngress: React.FC<PublishIngressProps> = ({ onApplied }) => {
     setSubmitting(true);
     setMessage(null);
     try {
-      const res = await apiPostJson<{ message: string }>("/api/ingress/yaml", {
-        yamlContent: content,
-      });
+      const res = await apiPostJson<{ message: string }>(
+        "/api/ingress/yaml",
+        withK8sMutationConfirm({ yamlContent: content })
+      );
       setMessage(res.message ?? "已应用");
       void queryClient.invalidateQueries({ queryKey: ["ingresses-all"] });
       onApplied();

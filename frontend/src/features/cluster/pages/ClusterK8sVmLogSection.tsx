@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { APP_CONFIG_QUERY_KEY } from "@/hooks/use-app-config";
+import { withOpsMutationConfirm } from "@/lib/ops-mutation-confirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardCopy, Loader2, Save } from "lucide-react";
 import { apiGetJson, apiPostJson, apiPutJson, type RuntimeSettingsDTO } from "@/lib/api";
+import { withK8sMutationConfirm } from "@/features/cluster/lib/k8sMutationConfirm";
 import { useAuth } from "@/auth/auth-context";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -128,7 +131,7 @@ const ClusterK8sVmLogSection: React.FC = () => {
     setSaving(true);
     try {
       const payload = { ...form } as Record<string, unknown>;
-      await apiPutJson("/api/settings/runtime", payload);
+      await apiPutJson("/api/settings/runtime", withOpsMutationConfirm(payload));
       toast.success("已保存 VictoriaLogs 地址");
       void qc.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
       void qc.invalidateQueries({ queryKey: ["runtime-status"] });
@@ -166,15 +169,18 @@ const ClusterK8sVmLogSection: React.FC = () => {
         runtimePatched?: boolean;
         patchError?: string;
         verification?: VmLogAddonVerification;
-      }>("/api/k8s/addons/victoria-logs/install", {
-        namespace: installNamespace,
-        releaseName: installRelease,
-        retentionDays: installRetentionDays,
-        storageClassName: installStorageClassName,
-        storageSize: installStorageSize,
-        collectorEnabled,
-        autoWriteRuntime,
-      });
+      }>(
+        "/api/k8s/addons/victoria-logs/install",
+        withK8sMutationConfirm({
+          namespace: installNamespace,
+          releaseName: installRelease,
+          retentionDays: installRetentionDays,
+          storageClassName: installStorageClassName,
+          storageSize: installStorageSize,
+          collectorEnabled,
+          autoWriteRuntime,
+        })
+      );
       if (res.verification) setVerification(res.verification);
       if (res.victoriaLogsUrl) setForm((prev) => (prev ? { ...prev, victoriaLogsUrl: res.victoriaLogsUrl } : prev));
       if (res.runtimePatched && res.victoriaLogsUrl) {
@@ -303,10 +309,17 @@ const ClusterK8sVmLogSection: React.FC = () => {
                 <p className="mt-2 break-all font-mono text-[11px] text-cyan-900">{addonsQ.data.victoriaLogs.internalUrl}</p>
               ) : null}
               <div className="mt-3 flex flex-wrap gap-2">
-                <Button type="button" disabled={!isAdmin || installing || verifying} onClick={() => void installVictoriaLogs()}>
+                <ConfirmActionButton
+                  type="button"
+                  disabled={!isAdmin || installing || verifying}
+                  title="确认安装或升级 VictoriaLogs？"
+                  description="将在集群内安装或升级 VictoriaLogs 与采集组件，并写入相关 Kubernetes 资源。"
+                  confirmLabel="安装/升级"
+                  onConfirm={() => void installVictoriaLogs()}
+                >
                   {installing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   安装 / 升级 VictoriaLogs
-                </Button>
+                </ConfirmActionButton>
                 <Button type="button" variant="outline" disabled={verifying || installing} onClick={() => void verifyVictoriaLogs()}>
                   {verifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   自检
@@ -428,10 +441,17 @@ const ClusterK8sVmLogSection: React.FC = () => {
             </div>
 
             {isAdmin ? (
-              <Button type="button" disabled={saving} onClick={() => void onSave()}>
+              <ConfirmActionButton
+                type="button"
+                disabled={saving}
+                title="确认保存 VictoriaLogs 运行时？"
+                description="将保存 VictoriaLogs 查询地址、保留期与采集器下载配置到平台运行时。"
+                confirmLabel="保存"
+                onConfirm={() => void onSave()}
+              >
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 保存到运行时
-              </Button>
+              </ConfirmActionButton>
             ) : (
               <p className="text-xs text-slate-500">仅管理员可修改并保存。</p>
             )}

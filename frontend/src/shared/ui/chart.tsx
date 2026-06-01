@@ -47,7 +47,7 @@ function ChartContainer({
   >["children"]
 }) {
   const uniqueId = React.useId()
-  const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
+  const chartId = `chart-${toChartCssName(id || uniqueId.replace(/:/g, "")) || "chart"}`
 
   return (
     <ChartContext.Provider value={{ config }}>
@@ -84,14 +84,17 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
         __html: Object.entries(THEMES)
           .map(
             ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
+${prefix} [data-chart="${id}"] {
 ${colorConfig
   .map(([key, itemConfig]) => {
+    const cssKey = toChartCssName(key)
     const color =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
       itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
+    if (!cssKey || !isSafeChartColorValue(color)) return null
+    return `  --color-${cssKey}: ${color.trim()};`
   })
+  .filter(Boolean)
   .join("\n")}
 }
 `
@@ -100,6 +103,18 @@ ${colorConfig
       }}
     />
   )
+}
+
+function toChartCssName(value: string) {
+  return value.trim().replace(/[^a-zA-Z0-9_-]/g, "-")
+}
+
+function isSafeChartColorValue(value: string | undefined): value is string {
+  const color = value?.trim()
+  if (!color) return false
+  if (/[;{}<>]/.test(color)) return false
+  if (/\b(?:url|expression)\s*\(/i.test(color)) return false
+  return true
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip
@@ -234,7 +249,7 @@ function ChartTooltipContent({
                           {itemConfig?.label || item.name}
                         </span>
                       </div>
-                      {item.value && (
+                      {item.value != null && (
                         <span className="text-foreground font-mono font-medium tabular-nums">
                           {item.value.toLocaleString()}
                         </span>

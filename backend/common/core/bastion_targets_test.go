@@ -60,6 +60,42 @@ func TestBastionTargetSSHStoreKey(t *testing.T) {
 	}
 }
 
+func TestBastionPVESSHDefaultsToRoot(t *testing.T) {
+	merged := mergeBastionPVESSHStored(Config{}, nil, BastionTargetOverride{})
+	if merged.User != "root" {
+		t.Fatalf("PVE SSH user=%q, want root", merged.User)
+	}
+	if merged.Port != 22 {
+		t.Fatalf("PVE SSH port=%d, want 22", merged.Port)
+	}
+}
+
+func TestBastionPVESSHReadyWithGlobalAuthWithoutGlobalUser(t *testing.T) {
+	cfg := Config{VCenterVMSshPassword: "secret"}
+	if !bastionPVESSHReady(cfg, nil) {
+		t.Fatal("PVE SSH should be ready when global auth exists and the PVE default user can be used")
+	}
+}
+
+func TestBastionPVESSHOverrideBeatsDefaultUser(t *testing.T) {
+	merged := mergeBastionPVESSHStored(Config{}, nil, BastionTargetOverride{SSHUser: "ubuntu"})
+	if merged.User != "ubuntu" {
+		t.Fatalf("PVE SSH user=%q, want ubuntu", merged.User)
+	}
+}
+
+func TestBastionPVESSHMergeLegacyStoredRecordKeepsGlobalHostKeyMode(t *testing.T) {
+	cfg := Config{VCenterVMSshPassword: "secret", VCenterVMSshInsecureHostKey: true}
+	legacy := &SSHVMStored{User: "root", Password: "secret", Port: 22}
+	merged := mergeBastionPVESSHStored(cfg, legacy, BastionTargetOverride{})
+	if !merged.InsecureHostKey {
+		t.Fatal("legacy PVE SSH records should inherit the global host key mode")
+	}
+	if _, err := buildSSHClientConfigMerged(cfg, merged); err != nil {
+		t.Fatalf("merged legacy PVE SSH settings should build an SSH client config: %v", err)
+	}
+}
+
 func TestNormalizeBastionPolicyTargetFields(t *testing.T) {
 	groups := normalizeBastionTargetGroups([]BastionManualTargetGroup{
 		{Name: " core ", TargetIDs: []string{"pve:t1:n1:qemu:101", "PVE:t1:n1:QEMU:101", "extra:Router", ""}},

@@ -70,6 +70,9 @@ func handleAppHermesDeploy(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Hermes deploy") {
+		return
+	}
 	if app.K8s() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "K8s 未连接"})
 		return
@@ -223,6 +226,7 @@ func handleAppHermesDeploy(c *gin.Context, app *ServerApp) {
 		RespondAPIError500(c, err.Error())
 		return
 	}
+	SetAuditDetail(c, "应用中心 Hermes 部署 "+inst.DisplayName+" namespace="+ns+" deployment="+dep)
 	c.JSON(http.StatusOK, gin.H{"instance": inst, "apiServerKey": secretPlain["API_SERVER_KEY"]})
 }
 
@@ -282,6 +286,9 @@ func handleAppHermesRestart(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Hermes restart") {
+		return
+	}
 	inst, ok := loadHermesInstanceByParam(c, app)
 	if !ok {
 		return
@@ -292,6 +299,7 @@ func handleAppHermesRestart(c *gin.Context, app *ServerApp) {
 		RespondAPIError500(c, err.Error())
 		return
 	}
+	SetAuditDetail(c, "应用中心 Hermes 滚动重启 "+inst.DisplayName+" namespace="+inst.Namespace+" deployment="+inst.DeploymentName)
 	c.JSON(http.StatusOK, gin.H{"ok": true, "message": "已触发 Hermes Deployment 滚动重启"})
 }
 
@@ -328,6 +336,9 @@ func handleAppHermesMigrateDryRun(c *gin.Context, app *ServerApp) {
 func handleAppHermesMigrate(c *gin.Context, app *ServerApp) {
 	if getDashboardRoleFromGin(c) != DashboardRoleAdmin {
 		RespondAPIPermissionDenied(c)
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Hermes migrate OpenClaw data") {
 		return
 	}
 	var body struct {
@@ -374,6 +385,11 @@ func runHermesMigration(c *gin.Context, app *ServerApp, opts hermesMigrationOpti
 			"dryRun":    opts.DryRun,
 		})
 		return
+	}
+	if opts.DryRun {
+		SetAuditDetail(c, "应用中心 Hermes 迁移 OpenClaw 数据演练 "+inst.DisplayName+" namespace="+inst.Namespace+" deployment="+inst.DeploymentName)
+	} else {
+		SetAuditDetail(c, "应用中心 Hermes 迁移 OpenClaw 数据 "+inst.DisplayName+" namespace="+inst.Namespace+" deployment="+inst.DeploymentName)
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"ok":        true,
@@ -439,6 +455,9 @@ func handleAppHermesDelete(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Hermes delete instance") {
+		return
+	}
 	list, err := loadHermesInstances(app.PlatformKV())
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
@@ -463,6 +482,9 @@ func handleAppHermesDelete(c *gin.Context, app *ServerApp) {
 	if err := saveHermesInstances(app.PlatformKV(), out); err != nil {
 		RespondAPIError500(c, err.Error())
 		return
+	}
+	if deleted != nil {
+		SetAuditDetail(c, "应用中心 Hermes 删除实例 "+deleted.DisplayName+" namespace="+deleted.Namespace+" deployment="+deleted.DeploymentName)
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
@@ -596,6 +618,9 @@ func handleAppHermesFilePut(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Hermes write file") {
+		return
+	}
 	inst, ok := loadHermesInstanceByParam(c, app)
 	if !ok {
 		return
@@ -626,6 +651,7 @@ func handleAppHermesFilePut(c *gin.Context, app *ServerApp) {
 		RespondAPIError500(c, err.Error())
 		return
 	}
+	SetAuditDetail(c, "应用中心 Hermes 保存备注 "+inst.DisplayName+" namespace="+inst.Namespace+" configMap="+inst.ConfigMapName)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 

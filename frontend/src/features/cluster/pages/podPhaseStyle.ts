@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
-export function podPhaseBadgeClass(phase: string) {
-  const p = phase.toLowerCase();
+export function podPhaseBadgeClass(phase?: string) {
+  const p = String(phase ?? "").toLowerCase();
   if (p === "running")
     return cn(
       "border-emerald-200/80 bg-emerald-50 text-emerald-900 shadow-none",

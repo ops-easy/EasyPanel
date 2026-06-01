@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	corev1 "k8s.io/api/core/v1"
@@ -516,7 +517,8 @@ func handleK8sResourceRelations(c *gin.Context, k8s *kubernetes.Clientset) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "需要 query: namespace, kind, name"})
 		return
 	}
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
+	defer cancel()
 	out := k8sResourceRelationsResponse{}
 
 	switch kind {

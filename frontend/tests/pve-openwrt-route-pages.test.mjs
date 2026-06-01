@@ -30,12 +30,22 @@ const openWrtPageNames = [
 ];
 
 test("PVE 子路由页面不再复用同一个 PVEPage 占位页", () => {
+  assert.equal(existsSync(new URL("../src/features/compute/pages/PVEPage.tsx", import.meta.url)), false);
+
   for (const page of pvePageNames) {
     const source = read(`../src/features/compute/pve/pages/${page}.tsx`);
     assert.doesNotMatch(source, /import\s+PVEPage\s+from\s+["']\.\.\/\.\.\/pages\/PVEPage["']/);
     assert.doesNotMatch(source, /export\s+default\s+PVEPage/);
     assert.match(source, new RegExp(`function\\s+${page}\\b|const\\s+${page}\\b`));
   }
+});
+
+test("PVE workspace has no stale standalone target-list implementation", () => {
+  const source = read("../src/features/compute/pve/pages/PveWorkspace.tsx");
+
+  assert.doesNotMatch(source, /function\s+PveSetupPanel\b/);
+  assert.doesNotMatch(source, /function\s+PveLegacyTargetList\b/);
+  assert.doesNotMatch(source, /function\s+PveTargetsPanel\b/);
 });
 
 test("OpenWrt 子路由页面不再互相 re-export 仪表盘占位页", () => {

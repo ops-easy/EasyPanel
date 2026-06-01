@@ -92,6 +92,9 @@ func handleAppHermesExposurePut(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Hermes update exposure") {
+		return
+	}
 	inst, ok := loadHermesInstanceByParam(c, app)
 	if !ok {
 		return
@@ -165,6 +168,7 @@ func handleAppHermesExposurePut(c *gin.Context, app *ServerApp) {
 		RespondAPIError500(c, err.Error())
 		return
 	}
+	SetAuditDetail(c, "应用中心 Hermes 更新暴露方式 "+saved.DisplayName+" exposeMode="+saved.ExposeMode+" ingressHost="+saved.IngressHost)
 	c.JSON(http.StatusOK, gin.H{"instance": saved})
 }
 

@@ -15,6 +15,7 @@ type bastionTargetSSHPutBody struct {
 	Port            *int    `json:"port"`
 	InsecureHostKey *bool   `json:"insecureHostKey"`
 	SSHHost         *string `json:"sshHost"`
+	Confirm         bool    `json:"confirm"`
 }
 
 func bastionTargetFromQuery(c *gin.Context) (BastionTargetKey, bool) {
@@ -74,6 +75,10 @@ func handleGetBastionTargetSSHSettings(c *gin.Context, app *ServerApp) {
 	if rec == nil || strings.TrimSpace(rec.User) == "" {
 		if override.SSHUser != "" {
 			out["user"] = override.SSHUser
+		} else if strings.TrimSpace(cfg.VCenterVMSshUser) != "" {
+			out["user"] = cfg.VCenterVMSshUser
+		} else if targetKey.Provider == bastionProviderPVE {
+			out["user"] = defaultBastionPVESSHUser
 		} else {
 			out["user"] = cfg.VCenterVMSshUser
 		}
@@ -81,6 +86,10 @@ func handleGetBastionTargetSSHSettings(c *gin.Context, app *ServerApp) {
 	if rec == nil || rec.Port <= 0 {
 		if override.SSHPort > 0 {
 			out["port"] = override.SSHPort
+		} else if cfg.VCenterVMSshPort > 0 {
+			out["port"] = cfg.VCenterVMSshPort
+		} else if targetKey.Provider == bastionProviderPVE {
+			out["port"] = 22
 		} else {
 			out["port"] = cfg.VCenterVMSshPort
 		}
@@ -88,7 +97,11 @@ func handleGetBastionTargetSSHSettings(c *gin.Context, app *ServerApp) {
 	if rec == nil {
 		out["insecureHostKey"] = cfg.VCenterVMSshInsecureHostKey
 	}
-	out["canConnect"] = cfg.vCenterVMSshConfigured() || (rec != nil && rec.hasAuth())
+	if targetKey.Provider == bastionProviderPVE {
+		out["canConnect"] = bastionPVESSHReady(cfg, rec)
+	} else {
+		out["canConnect"] = cfg.vCenterVMSshConfigured() || (rec != nil && rec.hasAuth())
+	}
 	c.JSON(http.StatusOK, out)
 }
 
@@ -97,12 +110,15 @@ func handlePutBastionTargetSSHSettings(c *gin.Context, app *ServerApp) {
 	if !ok {
 		return
 	}
-	if vcenterBastionAbortIfForbiddenTarget(c, app, targetKey.Canonical) {
-		return
-	}
 	var body bastionTargetSSHPutBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "bastion target SSH settings update") {
+		return
+	}
+	if vcenterBastionAbortIfForbiddenTarget(c, app, targetKey.Canonical) {
 		return
 	}
 	if app.PlatformKV() != nil && (body.SSHHost != nil || body.Port != nil || strings.TrimSpace(body.User) != "") {
@@ -163,6 +179,9 @@ func handlePutBastionTargetSSHSettings(c *gin.Context, app *ServerApp) {
 func handleDeleteBastionTargetSSHSettings(c *gin.Context, app *ServerApp) {
 	targetKey, ok := bastionTargetFromQuery(c)
 	if !ok {
+		return
+	}
+	if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "bastion target SSH settings delete") {
 		return
 	}
 	if vcenterBastionAbortIfForbiddenTarget(c, app, targetKey.Canonical) {

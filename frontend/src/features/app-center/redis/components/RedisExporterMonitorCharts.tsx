@@ -20,10 +20,14 @@ function parseMatrixFirstSeries(data: unknown): { t: number; v: number }[] {
   if (d?.status !== "success") return [];
   const vals = d?.data?.result?.[0]?.values;
   if (!vals?.length) return [];
-  return vals.map(([ts, sv]) => ({
-    t: ts * 1000,
-    v: parseFloat(String(sv)) || 0,
-  }));
+  const points: { t: number; v: number }[] = [];
+  for (const [ts, sv] of vals) {
+    const t = typeof ts === "number" ? ts : Number.parseFloat(String(ts));
+    const v = Number.parseFloat(String(sv));
+    if (!Number.isFinite(t) || !Number.isFinite(v)) continue;
+    points.push({ t: t * 1000, v });
+  }
+  return points;
 }
 
 function buildPodSelector(namespace: string, deploymentName: string) {

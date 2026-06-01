@@ -42,3 +42,31 @@ test("PVE console embeds a noVNC client instead of only exposing proxy URLs", ()
   assert.doesNotMatch(guest, /console\/ticket`[\s\S]*width:/);
   assert.doesNotMatch(guest, /console\/ticket`[\s\S]*height:/);
 });
+
+test("PVE power operations require typed guest confirmation and send confirm flag", () => {
+  const guest = read("../src/features/compute/pve/pages/PveGuestDetail.tsx");
+
+  assert.match(guest, /const \[powerConfirmName, setPowerConfirmName\] = useState\(""\);/);
+  assert.match(guest, /const powerConfirmTarget = String\(config\.name \?\? status\.name \?\? vmid\)\.trim\(\) \|\| vmid;/);
+  assert.match(guest, /const powerConfirmed = powerConfirmName\.trim\(\) === powerConfirmTarget;/);
+  assert.match(guest, /apiPostJson<PveTaskEnvelope>[\s\S]*\{ node, type: canonicalGuestType, action, confirm \}/);
+  assert.match(guest, /disabled=\{operationPending \|\| !powerConfirmed\}/);
+  assert.match(guest, /powerMut\.mutate\(\{ action, confirm: powerConfirmed \}\)/);
+  assert.doesNotMatch(guest, /powerMut\.mutate\(action\)/);
+});
+
+test("PVE hardware disk and snapshot mutations require explicit confirmation", () => {
+  const guest = read("../src/features/compute/pve/pages/PveGuestDetail.tsx");
+
+  assert.match(guest, /const \[mutationConfirmName, setMutationConfirmName\] = useState\(""\);/);
+  assert.match(guest, /const mutationConfirmed = mutationConfirmName\.trim\(\) === confirmTarget;/);
+  assert.match(guest, /onSaveConfig: \(body: Record<string, number \| boolean>\) => void;/);
+  assert.match(guest, /onResizeDisk: \(body: \{ disk: string; size: string; confirm: boolean \}\) => void;/);
+  assert.match(guest, /onSaveConfig\(\{ \.\.\.body, confirm: mutationConfirmed \}\);/);
+  assert.match(guest, /onResizeDisk\(\{ disk: disk\.trim\(\), size: size\.trim\(\), confirm: mutationConfirmed \}\);/);
+  assert.match(guest, /disabled=\{pending \|\| !mutationConfirmed\}/);
+  assert.match(guest, /const \[deleteConfirmName, setDeleteConfirmName\] = useState\(""\);/);
+  assert.match(guest, /const deleteConfirmed = deleteConfirmName\.trim\(\) === name;/);
+  assert.match(guest, /onDelete\(name, true\);/);
+  assert.match(guest, /confirm=\$\{confirm \? "true" : "false"\}/);
+});

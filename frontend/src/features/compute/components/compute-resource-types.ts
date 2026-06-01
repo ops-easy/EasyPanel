@@ -65,6 +65,7 @@ export const computeProviderLabels: Record<string, string> = {
   all: "全部来源",
   vcenter: "vCenter",
   pve: "PVE",
+  "cloud-vm": "容器主机",
 };
 
 export const computeHealthLabels: Record<string, string> = {
@@ -75,4 +76,3 @@ export const computeHealthLabels: Record<string, string> = {
   critical: "异常",
   unknown: "未知",
 };
-

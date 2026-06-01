@@ -14,6 +14,7 @@ import {
 } from "@/lib/kafka-throttle-verify";
 import { useAuth } from "@/auth/auth-context";
 import { cloudVmAppCenterCanWrite } from "@/lib/platform-permissions";
+import { withAppCenterMutationConfirmQuery } from "@/features/app-center/lib/appCenterMutationConfirm";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
@@ -185,7 +186,10 @@ export function KafkaThrottleWorkspace({
         leaderReplicationThrottledRate: l,
         followerReplicationThrottledRate: f,
       };
-      await apiPutJson(`/api/app-center/kafka/instances/${instanceId}/topics/${encodeURIComponent(topic)}/throttle`, want);
+      await apiPutJson(
+        withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/topics/${encodeURIComponent(topic)}/throttle`),
+        want
+      );
       await verifyTopicThrottleAfterPut(instanceId, topic, want);
       return want;
     },
@@ -205,11 +209,14 @@ export function KafkaThrottleWorkspace({
       const u = quotaUserInput.trim();
       const pr = parseKafkaThrottleRate(quotaProdIn);
       const cr = parseKafkaThrottleRate(quotaConsIn);
-      await apiPutJson(`/api/app-center/kafka/instances/${instanceId}/quotas`, {
-        user: u,
-        producerByteRate: pr,
-        consumerByteRate: cr,
-      });
+      await apiPutJson(
+        withAppCenterMutationConfirmQuery(`/api/app-center/kafka/instances/${instanceId}/quotas`),
+        {
+          user: u,
+          producerByteRate: pr,
+          consumerByteRate: cr,
+        }
+      );
       await verifyQuotaAfterPut(instanceId, u, pr, cr);
       return { user: u, pr, cr };
     },

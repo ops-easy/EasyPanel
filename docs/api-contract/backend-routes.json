@@ -67,13 +67,13 @@
       "method": "POST",
       "pathPattern": "/api/admin/users/totp/disable",
       "sourceFile": "backend/common/core/admin_totp_handlers.go",
-      "sourceLine": 34
+      "sourceLine": 35
     },
     {
       "method": "POST",
       "pathPattern": "/api/admin/users/totp/provision",
       "sourceFile": "backend/common/core/admin_totp_handlers.go",
-      "sourceLine": 33
+      "sourceLine": 34
     },
     {
       "method": "GET",
@@ -1225,79 +1225,79 @@
       "method": "GET",
       "pathPattern": "/api/cloud-hosts",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 552
+      "sourceLine": 562
     },
     {
       "method": "POST",
       "pathPattern": "/api/cloud-hosts",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 553
+      "sourceLine": 563
     },
     {
       "method": "DELETE",
       "pathPattern": "/api/cloud-hosts/:id",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 564
+      "sourceLine": 574
     },
     {
       "method": "PUT",
       "pathPattern": "/api/cloud-hosts/:id",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 563
+      "sourceLine": 573
     },
     {
       "method": "GET",
       "pathPattern": "/api/cloud-hosts/:id/listening-ports",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 555
+      "sourceLine": 565
     },
     {
       "method": "GET",
       "pathPattern": "/api/cloud-hosts/:id/sftp/download",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 561
+      "sourceLine": 571
     },
     {
       "method": "GET",
       "pathPattern": "/api/cloud-hosts/:id/sftp/list",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 560
+      "sourceLine": 570
     },
     {
       "method": "POST",
       "pathPattern": "/api/cloud-hosts/:id/sftp/upload",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 562
+      "sourceLine": 572
     },
     {
       "method": "DELETE",
       "pathPattern": "/api/cloud-hosts/:id/ssh-settings",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 559
+      "sourceLine": 569
     },
     {
       "method": "GET",
       "pathPattern": "/api/cloud-hosts/:id/ssh-settings",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 557
+      "sourceLine": 567
     },
     {
       "method": "PUT",
       "pathPattern": "/api/cloud-hosts/:id/ssh-settings",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 558
+      "sourceLine": 568
     },
     {
       "method": "GET",
       "pathPattern": "/api/cloud-hosts/:id/ssh/ws",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 556
+      "sourceLine": 566
     },
     {
       "method": "GET",
       "pathPattern": "/api/cloud-hosts/metrics-snapshot",
       "sourceFile": "backend/common/core/cloud_hosts_handlers.go",
-      "sourceLine": 554
+      "sourceLine": 564
     },
     {
       "method": "GET",
@@ -1339,217 +1339,217 @@
       "method": "GET",
       "pathPattern": "/api/config",
       "sourceFile": "backend/common/core/settings_routes.go",
-      "sourceLine": 6
+      "sourceLine": 21
     },
     {
       "method": "GET",
       "pathPattern": "/api/dns/accounts",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 30
+      "sourceLine": 32
     },
     {
       "method": "POST",
       "pathPattern": "/api/dns/accounts",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 31
+      "sourceLine": 33
     },
     {
       "method": "DELETE",
+      "pathPattern": "/api/dns/accounts/:id",
+      "sourceFile": "backend/api/dns/controller/handlers.go",
+      "sourceLine": 36
+    },
+    {
+      "method": "GET",
       "pathPattern": "/api/dns/accounts/:id",
       "sourceFile": "backend/api/dns/controller/handlers.go",
       "sourceLine": 34
     },
     {
-      "method": "GET",
-      "pathPattern": "/api/dns/accounts/:id",
-      "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 32
-    },
-    {
       "method": "PUT",
       "pathPattern": "/api/dns/accounts/:id",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 33
+      "sourceLine": 35
     },
     {
       "method": "POST",
       "pathPattern": "/api/dns/accounts/:id/sync-domains",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 36
+      "sourceLine": 38
     },
     {
       "method": "POST",
       "pathPattern": "/api/dns/accounts/:id/test",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 35
+      "sourceLine": 37
     },
     {
       "method": "GET",
       "pathPattern": "/api/dns/certs",
-      "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 67
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/dns/certs",
-      "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 68
-    },
-    {
-      "method": "DELETE",
-      "pathPattern": "/api/dns/certs/:id",
-      "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 70
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/dns/certs/:id",
       "sourceFile": "backend/api/dns/controller/handlers.go",
       "sourceLine": 69
     },
     {
       "method": "POST",
-      "pathPattern": "/api/dns/certs/:id/apply",
+      "pathPattern": "/api/dns/certs",
+      "sourceFile": "backend/api/dns/controller/handlers.go",
+      "sourceLine": 70
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/dns/certs/:id",
+      "sourceFile": "backend/api/dns/controller/handlers.go",
+      "sourceLine": 72
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/dns/certs/:id",
       "sourceFile": "backend/api/dns/controller/handlers.go",
       "sourceLine": 71
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/certs/:id/apply",
+      "sourceFile": "backend/api/dns/controller/handlers.go",
+      "sourceLine": 73
     },
     {
       "method": "PATCH",
       "pathPattern": "/api/dns/certs/:id/baota",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 72
+      "sourceLine": 74
     },
     {
       "method": "POST",
       "pathPattern": "/api/dns/certs/:id/push-baota",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 73
+      "sourceLine": 75
     },
     {
       "method": "GET",
       "pathPattern": "/api/dns/domains",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 39
+      "sourceLine": 41
     },
     {
       "method": "POST",
       "pathPattern": "/api/dns/domains",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 40
+      "sourceLine": 42
     },
     {
       "method": "DELETE",
+      "pathPattern": "/api/dns/domains/:id",
+      "sourceFile": "backend/api/dns/controller/handlers.go",
+      "sourceLine": 45
+    },
+    {
+      "method": "GET",
       "pathPattern": "/api/dns/domains/:id",
       "sourceFile": "backend/api/dns/controller/handlers.go",
       "sourceLine": 43
     },
     {
-      "method": "GET",
-      "pathPattern": "/api/dns/domains/:id",
-      "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 41
-    },
-    {
       "method": "PUT",
       "pathPattern": "/api/dns/domains/:id",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 42
+      "sourceLine": 44
     },
     {
       "method": "GET",
-      "pathPattern": "/api/dns/domains/:id/records",
-      "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 46
-    },
-    {
-      "method": "POST",
       "pathPattern": "/api/dns/domains/:id/records",
       "sourceFile": "backend/api/dns/controller/handlers.go",
       "sourceLine": 48
     },
     {
-      "method": "DELETE",
-      "pathPattern": "/api/dns/domains/:id/records/:rid",
+      "method": "POST",
+      "pathPattern": "/api/dns/domains/:id/records",
       "sourceFile": "backend/api/dns/controller/handlers.go",
       "sourceLine": 50
     },
     {
-      "method": "PUT",
+      "method": "DELETE",
       "pathPattern": "/api/dns/domains/:id/records/:rid",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 49
+      "sourceLine": 52
     },
     {
-      "method": "POST",
-      "pathPattern": "/api/dns/domains/:id/records/:rid/status",
+      "method": "PUT",
+      "pathPattern": "/api/dns/domains/:id/records/:rid",
       "sourceFile": "backend/api/dns/controller/handlers.go",
       "sourceLine": 51
     },
     {
       "method": "POST",
+      "pathPattern": "/api/dns/domains/:id/records/:rid/status",
+      "sourceFile": "backend/api/dns/controller/handlers.go",
+      "sourceLine": 53
+    },
+    {
+      "method": "POST",
       "pathPattern": "/api/dns/domains/:id/records/sync",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 47
+      "sourceLine": 49
     },
     {
       "method": "GET",
       "pathPattern": "/api/dns/failover",
-      "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 54
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/dns/failover",
-      "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 55
-    },
-    {
-      "method": "DELETE",
-      "pathPattern": "/api/dns/failover/:id",
-      "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 57
-    },
-    {
-      "method": "PUT",
-      "pathPattern": "/api/dns/failover/:id",
       "sourceFile": "backend/api/dns/controller/handlers.go",
       "sourceLine": 56
     },
     {
       "method": "POST",
-      "pathPattern": "/api/dns/failover/:id/check",
+      "pathPattern": "/api/dns/failover",
+      "sourceFile": "backend/api/dns/controller/handlers.go",
+      "sourceLine": 57
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/dns/failover/:id",
       "sourceFile": "backend/api/dns/controller/handlers.go",
       "sourceLine": 59
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/dns/failover/:id",
+      "sourceFile": "backend/api/dns/controller/handlers.go",
+      "sourceLine": 58
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/dns/failover/:id/check",
+      "sourceFile": "backend/api/dns/controller/handlers.go",
+      "sourceLine": 61
     },
     {
       "method": "GET",
       "pathPattern": "/api/dns/failover/:id/logs",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 58
+      "sourceLine": 60
     },
     {
       "method": "GET",
       "pathPattern": "/api/dns/scheduled",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 62
+      "sourceLine": 64
     },
     {
       "method": "POST",
       "pathPattern": "/api/dns/scheduled",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 63
+      "sourceLine": 65
     },
     {
       "method": "DELETE",
       "pathPattern": "/api/dns/scheduled/:id",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 64
+      "sourceLine": 66
     },
     {
       "method": "GET",
       "pathPattern": "/api/dns/status",
       "sourceFile": "backend/api/dns/controller/handlers.go",
-      "sourceLine": 27
+      "sourceLine": 29
     },
     {
       "method": "GET",
@@ -1831,91 +1831,91 @@
       "method": "POST",
       "pathPattern": "/api/k8s/addons/dashboard-monitoring/install",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 81
+      "sourceLine": 91
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/addons/dashboard-monitoring/verify",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 80
+      "sourceLine": 90
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/addons/ingress-nginx/controller-node",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 79
+      "sourceLine": 87
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/addons/ingress-nginx/host-ports",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 78
+      "sourceLine": 84
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/addons/ingress-nginx/install",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 76
+      "sourceLine": 78
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/addons/ingress-nginx/uninstall",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 77
+      "sourceLine": 81
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/addons/ingress-nginx/verify",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 75
+      "sourceLine": 77
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/addons/kube-prometheus-stack/install",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 83
+      "sourceLine": 95
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/addons/kube-prometheus-stack/sync-runtime",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 84
+      "sourceLine": 98
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/addons/kube-prometheus-stack/verify",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 82
+      "sourceLine": 94
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/addons/status",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 74
+      "sourceLine": 76
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/addons/victoria-logs/install",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 86
+      "sourceLine": 102
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/addons/victoria-logs/verify",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 85
+      "sourceLine": 101
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 104
+      "sourceLine": 132
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/configmaps",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 102
+      "sourceLine": 130
     },
     {
       "method": "GET",
@@ -1969,19 +1969,19 @@
       "method": "GET",
       "pathPattern": "/api/k8s/daemonsets",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 91
+      "sourceLine": 111
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/deployments",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 88
+      "sourceLine": 106
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/deployments/:namespace/:name/restart",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 89
+      "sourceLine": 107
     },
     {
       "method": "POST",
@@ -1993,7 +1993,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/etcd/defrag-job-yaml",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 49
+      "sourceLine": 51
     },
     {
       "method": "GET",
@@ -2005,7 +2005,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/ingresses",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 73
+      "sourceLine": 75
     },
     {
       "method": "GET",
@@ -2029,121 +2029,121 @@
       "method": "GET",
       "pathPattern": "/api/k8s/object-json",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 106
+      "sourceLine": 134
     },
     {
       "method": "PUT",
       "pathPattern": "/api/k8s/object-json",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 107
+      "sourceLine": 135
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/object-revisions",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 108
+      "sourceLine": 136
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/object-revisions/diff",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 110
+      "sourceLine": 138
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/object-revisions/rollback",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 111
+      "sourceLine": 139
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/object-revisions/yaml",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 109
+      "sourceLine": 137
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 105
+      "sourceLine": 133
     },
     {
       "method": "DELETE",
       "pathPattern": "/api/k8s/objects/:kind/:namespace/:name",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 112
+      "sourceLine": 142
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pod-restart-ai/correlation-latest",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 61
+      "sourceLine": 63
     },
     {
       "method": "GET",
-      "pathPattern": "/api/k8s/pod-restart-ai/reports",
-      "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 58
-    },
-    {
-      "method": "POST",
       "pathPattern": "/api/k8s/pod-restart-ai/reports",
       "sourceFile": "backend/common/core/k8s_routes.go",
       "sourceLine": 60
     },
     {
+      "method": "POST",
+      "pathPattern": "/api/k8s/pod-restart-ai/reports",
+      "sourceFile": "backend/common/core/k8s_routes.go",
+      "sourceLine": 62
+    },
+    {
       "method": "DELETE",
       "pathPattern": "/api/k8s/pod-restart-ai/reports/:id",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 59
+      "sourceLine": 61
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pod-restart-ai/rollup-summary",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 62
+      "sourceLine": 64
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pod-restart-insights",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 57
+      "sourceLine": 59
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pod-restarts",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 56
+      "sourceLine": 58
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pods",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 71
+      "sourceLine": 73
     },
     {
       "method": "DELETE",
       "pathPattern": "/api/k8s/pods/:namespace/:name",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 55
+      "sourceLine": 57
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pods/:namespace/:name",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 54
+      "sourceLine": 56
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pods/:namespace/:name/exec/ws",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 52
+      "sourceLine": 54
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pods/:namespace/:name/logs",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 53
+      "sourceLine": 55
     },
     {
       "method": "GET",
@@ -2173,13 +2173,13 @@
       "method": "GET",
       "pathPattern": "/api/k8s/prometheus/kubesphere-charts",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 50
+      "sourceLine": 52
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/prometheus/kubesphere-snapshot",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 51
+      "sourceLine": 53
     },
     {
       "method": "GET",
@@ -2191,55 +2191,55 @@
       "method": "POST",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/delete",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 98
+      "sourceLine": 120
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/list",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 95
+      "sourceLine": 115
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/mkdir",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 99
+      "sourceLine": 123
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/mounts",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 94
+      "sourceLine": 114
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/read",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 96
+      "sourceLine": 116
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/rename",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 100
+      "sourceLine": 126
     },
     {
       "method": "PUT",
       "pathPattern": "/api/k8s/pvc-files/:namespace/:pvcName/write",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 97
+      "sourceLine": 117
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/pvcs",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 92
+      "sourceLine": 112
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/pvcs/:namespace/:name/expand",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 93
+      "sourceLine": 113
     },
     {
       "method": "GET",
@@ -2269,31 +2269,31 @@
       "method": "GET",
       "pathPattern": "/api/k8s/resource-relations",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 87
+      "sourceLine": 105
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/secrets",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 103
+      "sourceLine": 131
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/services",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 72
+      "sourceLine": 74
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/statefulsets",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 90
+      "sourceLine": 110
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/storage-classes",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 101
+      "sourceLine": 129
     },
     {
       "method": "GET",
@@ -2305,25 +2305,25 @@
       "method": "POST",
       "pathPattern": "/api/k8s/workloads/patch-container-resources",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 68
+      "sourceLine": 70
     },
     {
       "method": "GET",
       "pathPattern": "/api/k8s/workloads/resource-advisory",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 63
+      "sourceLine": 65
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/workloads/scheduling-check",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 66
+      "sourceLine": 68
     },
     {
       "method": "POST",
       "pathPattern": "/api/k8s/workloads/scheduling-check-yaml",
       "sourceFile": "backend/common/core/k8s_routes.go",
-      "sourceLine": 67
+      "sourceLine": 69
     },
     {
       "method": "GET",
@@ -2785,157 +2785,157 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets",
       "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 28
+      "sourceLine": 30
     },
     {
       "method": "POST",
       "pathPattern": "/api/pve/targets",
       "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 29
-    },
-    {
-      "method": "DELETE",
-      "pathPattern": "/api/pve/targets/:id",
-      "sourceFile": "backend/api/pve/service/routes.go",
       "sourceLine": 31
     },
     {
-      "method": "PUT",
+      "method": "DELETE",
       "pathPattern": "/api/pve/targets/:id",
       "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 30
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/pve/targets/:id/guests",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 37
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/pve/targets/:id/guests/:vmid",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 42
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/pve/targets/:id/guests/:vmid/config",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 44
+      "sourceLine": 33
     },
     {
       "method": "PUT",
-      "pathPattern": "/api/pve/targets/:id/guests/:vmid/config",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 45
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/pve/targets/:id/guests/:vmid/console/ticket",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 51
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/pve/targets/:id/guests/:vmid/console/ws",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 52
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/pve/targets/:id/guests/:vmid/disks/resize",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 46
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/pve/targets/:id/guests/:vmid/metrics",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 43
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/pve/targets/:id/guests/:vmid/power",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 53
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/pve/targets/:id/guests/:vmid/snapshots",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 47
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/pve/targets/:id/guests/:vmid/snapshots",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 48
-    },
-    {
-      "method": "DELETE",
-      "pathPattern": "/api/pve/targets/:id/guests/:vmid/snapshots/:snapname",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 50
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/pve/targets/:id/guests/:vmid/snapshots/:snapname/rollback",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 49
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/pve/targets/:id/nodes",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 34
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/pve/targets/:id/nodes/:node",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 35
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/pve/targets/:id/nodes/:node/metrics",
-      "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 36
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/pve/targets/:id/probe",
+      "pathPattern": "/api/pve/targets/:id",
       "sourceFile": "backend/api/pve/service/routes.go",
       "sourceLine": 32
     },
     {
       "method": "GET",
-      "pathPattern": "/api/pve/targets/:id/storage",
+      "pathPattern": "/api/pve/targets/:id/guests",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 39
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 44
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/config",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 46
+    },
+    {
+      "method": "PUT",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/config",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 47
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/console/ticket",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 53
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/console/ws",
       "sourceFile": "backend/api/pve/service/routes.go",
       "sourceLine": 54
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/disks/resize",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 48
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/metrics",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 45
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/power",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 55
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/snapshots",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 49
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/snapshots",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 50
+    },
+    {
+      "method": "DELETE",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/snapshots/:snapname",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 52
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:id/guests/:vmid/snapshots/:snapname/rollback",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 51
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/nodes",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 36
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/nodes/:node",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 37
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/nodes/:node/metrics",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 38
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:id/probe",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 34
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/pve/targets/:id/storage",
+      "sourceFile": "backend/api/pve/service/routes.go",
+      "sourceLine": 56
     },
     {
       "method": "GET",
       "pathPattern": "/api/pve/targets/:id/summary",
       "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 33
+      "sourceLine": 35
     },
     {
       "method": "GET",
       "pathPattern": "/api/pve/targets/:id/tasks",
       "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 59
+      "sourceLine": 61
     },
     {
       "method": "GET",
       "pathPattern": "/api/pve/targets/:id/tasks/:upid/status",
       "sourceFile": "backend/api/pve/service/routes.go",
-      "sourceLine": 60
+      "sourceLine": 62
     },
     {
       "method": "GET",
       "pathPattern": "/api/runtime/status",
       "sourceFile": "backend/common/core/settings_routes.go",
-      "sourceLine": 7
+      "sourceLine": 22
     },
     {
       "method": "GET",
@@ -2947,13 +2947,13 @@
       "method": "GET",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "backend/common/core/settings_routes.go",
-      "sourceLine": 9
+      "sourceLine": 24
     },
     {
       "method": "PUT",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "backend/common/core/settings_routes.go",
-      "sourceLine": 10
+      "sourceLine": 25
     },
     {
       "method": "POST",
@@ -2977,31 +2977,31 @@
       "method": "GET",
       "pathPattern": "/api/system/check",
       "sourceFile": "backend/common/core/settings_routes.go",
-      "sourceLine": 8
+      "sourceLine": 23
     },
     {
       "method": "GET",
       "pathPattern": "/api/toolbox/ip-scan/config",
       "sourceFile": "backend/api/tool/controller/ip_scan.go",
-      "sourceLine": 85
+      "sourceLine": 108
     },
     {
       "method": "PUT",
       "pathPattern": "/api/toolbox/ip-scan/config",
       "sourceFile": "backend/api/tool/controller/ip_scan.go",
-      "sourceLine": 86
+      "sourceLine": 109
     },
     {
       "method": "GET",
       "pathPattern": "/api/toolbox/ip-scan/history",
       "sourceFile": "backend/api/tool/controller/ip_scan.go",
-      "sourceLine": 88
+      "sourceLine": 111
     },
     {
       "method": "POST",
       "pathPattern": "/api/toolbox/ip-scan/run",
       "sourceFile": "backend/api/tool/controller/ip_scan.go",
-      "sourceLine": 87
+      "sourceLine": 110
     },
     {
       "method": "GET",

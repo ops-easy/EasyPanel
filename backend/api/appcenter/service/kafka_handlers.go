@@ -315,18 +315,22 @@ func handleKafkaTemplateCreate(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL 未连接"})
-		return
-	}
 	var body struct {
 		Name        string                 `json:"name"`
 		Description string                 `json:"description,omitempty"`
 		Config      AppKafkaTemplateConfig `json:"config"`
+		Confirm     bool                   `json:"confirm,omitempty"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "Kafka write template") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL 未连接"})
 		return
 	}
 	appKafkaTemplateDefaults(&body.Config)
@@ -351,11 +355,6 @@ func handleKafkaTemplateUpdate(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL 未连接"})
-		return
-	}
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 id"})
@@ -365,9 +364,18 @@ func handleKafkaTemplateUpdate(c *gin.Context, app *ServerApp) {
 		Name        string                 `json:"name"`
 		Description string                 `json:"description,omitempty"`
 		Config      AppKafkaTemplateConfig `json:"config"`
+		Confirm     bool                   `json:"confirm,omitempty"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "Kafka write template") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL 未连接"})
 		return
 	}
 	appKafkaTemplateDefaults(&body.Config)
@@ -389,6 +397,9 @@ func handleKafkaTemplateUpdate(c *gin.Context, app *ServerApp) {
 func handleKafkaTemplateDelete(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
 		RespondAPIPermissionDenied(c)
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka delete template") {
 		return
 	}
 	db := app.MySQLDB()
@@ -446,6 +457,9 @@ func validateKafkaSaslMechanism(m string) error {
 
 func handleKafkaK8sDeploy(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka deploy") {
 		return
 	}
 	k8s := app.K8s()
@@ -687,6 +701,9 @@ func handleKafkaInstanceExposurePut(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka update exposure") {
+		return
+	}
 	k8s := app.K8s()
 	if !GuardK8s(c, k8s) {
 		return
@@ -835,6 +852,9 @@ func handleKafkaTopicCreate(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka create topic") {
+		return
+	}
 	_, x := kafkaLoadInstanceClient(c, app)
 	if x == nil {
 		return
@@ -865,6 +885,9 @@ func handleKafkaTopicCreate(c *gin.Context, app *ServerApp) {
 
 func handleKafkaTopicDelete(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka delete topic") {
 		return
 	}
 	_, x := kafkaLoadInstanceClient(c, app)
@@ -902,6 +925,9 @@ func handleKafkaACLList(c *gin.Context, app *ServerApp) {
 
 func handleKafkaACLCreate(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka create ACL") {
 		return
 	}
 	_, x := kafkaLoadInstanceClient(c, app)
@@ -952,6 +978,9 @@ func handleKafkaACLCreate(c *gin.Context, app *ServerApp) {
 
 func handleKafkaACLDelete(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka delete ACL") {
 		return
 	}
 	_, x := kafkaLoadInstanceClient(c, app)
@@ -1012,6 +1041,9 @@ func handleKafkaScramUserCreate(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka create SCRAM user") {
+		return
+	}
 	st, x := kafkaLoadInstanceClient(c, app)
 	if x == nil {
 		return
@@ -1037,6 +1069,9 @@ func handleKafkaScramUserDelete(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka delete SCRAM user") {
+		return
+	}
 	st, x := kafkaLoadInstanceClient(c, app)
 	if x == nil {
 		return
@@ -1058,6 +1093,9 @@ func handleKafkaScramUserDelete(c *gin.Context, app *ServerApp) {
 
 func handleKafkaInstanceDelete(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka delete instance") {
 		return
 	}
 	db := app.MySQLDB()
@@ -1161,6 +1199,9 @@ func handleKafkaTopicConfigsPost(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka update topic configs") {
+		return
+	}
 	topic := kafkaTopicNameFromParam(c)
 	if topic == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "topic 不能为空"})
@@ -1188,6 +1229,9 @@ func handleKafkaTopicConfigsPost(c *gin.Context, app *ServerApp) {
 
 func handleKafkaTopicProduce(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka produce message") {
 		return
 	}
 	topic := kafkaTopicNameFromParam(c)
@@ -1294,6 +1338,9 @@ func handleKafkaClientQuotaSet(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka set client quota") {
+		return
+	}
 	_, x := kafkaLoadInstanceClient(c, app)
 	if x == nil {
 		return
@@ -1337,6 +1384,9 @@ func handleKafkaTopicThrottlePut(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka set topic throttle") {
+		return
+	}
 	topic := kafkaTopicNameFromParam(c)
 	if topic == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "topic 不能为空"})
@@ -1362,6 +1412,9 @@ func handleKafkaTopicThrottlePut(c *gin.Context, app *ServerApp) {
 
 func handleKafkaPerfTestStart(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka start perf test") {
 		return
 	}
 	st, x := kafkaLoadInstanceClient(c, app)
@@ -1447,6 +1500,9 @@ func handleKafkaPerfTestReport(c *gin.Context, app *ServerApp) {
 
 func handleKafkaPerfTestDelete(c *gin.Context, app *ServerApp) {
 	if !appKafkaRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Kafka delete perf test") {
 		return
 	}
 	st, x := kafkaLoadInstanceClient(c, app)

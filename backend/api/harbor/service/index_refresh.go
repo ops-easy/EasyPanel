@@ -173,8 +173,7 @@ func HarborIndexSyncAsync(app *ServerApp) bool {
 	}
 	go func() {
 		defer harborIndexRunning.Store(false)
-		timeout := time.Duration(harborIndexCrawlTimeoutSec()) * time.Second
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), HarborIndexCrawlTimeout())
 		defer cancel()
 		harborIndexRefreshInner(ctx, app)
 	}()

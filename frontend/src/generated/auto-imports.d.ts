@@ -164,6 +164,7 @@ declare global {
   const Search: typeof import('lucide-react').Search
   const SearchCheck: typeof import('lucide-react').SearchCheck
   const SearchIcon: typeof import('lucide-react').SearchIcon
+  const SearchX: typeof import('lucide-react').SearchX
   const Send: typeof import('lucide-react').Send
   const Server: typeof import('lucide-react').Server
   const ServerCog: typeof import('lucide-react').ServerCog

@@ -13,9 +13,9 @@ export type AccessHealthItem = {
 };
 
 const statusMeta: Record<AccessHealthStatus, { label: string; className: string; icon: typeof CheckCircle2 }> = {
-  ok: { label: "已接入", className: "border-emerald-200 bg-emerald-50 text-emerald-800", icon: CheckCircle2 },
+  ok: { label: "已配置", className: "border-emerald-200 bg-emerald-50 text-emerald-800", icon: CheckCircle2 },
   warn: { label: "需确认", className: "border-amber-200 bg-amber-50 text-amber-800", icon: AlertTriangle },
-  missing: { label: "未接入", className: "border-rose-200 bg-rose-50 text-rose-800", icon: XCircle },
+  missing: { label: "未配置", className: "border-rose-200 bg-rose-50 text-rose-800", icon: XCircle },
   unknown: { label: "待检测", className: "border-slate-200 bg-slate-50 text-slate-700", icon: CircleIcon },
 };
 

@@ -31,7 +31,71 @@ func getVCenterVMObject(c *gin.Context, vc *vCenterClient) (*object.VirtualMachi
 	return vm, ctx, nil
 }
 
+type vCenterVMPowerBody struct {
+	Action  string `json:"action"`
+	Confirm bool   `json:"confirm"`
+}
+
+func normalizeVCenterVMPowerAction(action string) (canonical string, guestOnly string, err error) {
+	switch strings.ToLower(strings.TrimSpace(action)) {
+	case "":
+		return "", "", fmt.Errorf("action 不能为空")
+	case "on", "poweron", "power-on", "start":
+		return "on", "", nil
+	case "off", "poweroff", "power-off", "stop":
+		return "off", "", nil
+	case "suspend":
+		return "suspend", "", nil
+	case "reset":
+		return "reset", "", nil
+	case "shutdown_guest", "shutdown-guest", "shutdownguest", "guest_shutdown":
+		return "shutdown_guest", "shutdownGuest", nil
+	case "reboot_guest", "reboot-guest", "rebootguest", "guest_reboot":
+		return "reboot_guest", "rebootGuest", nil
+	case "standby_guest", "standby-guest", "standbyguest":
+		return "standby_guest", "standbyGuest", nil
+	default:
+		return "", "", fmt.Errorf("未知 action，支持: on, off, suspend, reset, shutdown_guest, reboot_guest, standby_guest")
+	}
+}
+
+func vCenterVMPowerActionRequiresConfirm(action string) bool {
+	_, _, err := normalizeVCenterVMPowerAction(action)
+	return err == nil
+}
+
+func vCenterQueryConfirmed(raw string) bool {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "1", "true", "yes", "y":
+		return true
+	default:
+		return false
+	}
+}
+
+func requireVCenterConfirm(c *gin.Context, confirmed bool, label string) bool {
+	if confirmed {
+		return true
+	}
+	c.JSON(http.StatusBadRequest, gin.H{"error": label + " 需要显式 confirm=true"})
+	return false
+}
+
 func handleVCenterVMPower(c *gin.Context, app *ServerApp) {
+	var body vCenterVMPowerBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求体须为 JSON，且包含 action"})
+		return
+	}
+	action, guestOnly, err := normalizeVCenterVMPowerAction(body.Action)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if vCenterVMPowerActionRequiresConfirm(action) && !body.Confirm {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "vCenter 电源操作需要显式 confirm=true"})
+		return
+	}
 	vc := app.VCenter()
 	vm, ctx, err := getVCenterVMObject(c, vc)
 	if err != nil {
@@ -40,18 +104,6 @@ func handleVCenterVMPower(c *gin.Context, app *ServerApp) {
 			return
 		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	var body struct {
-		Action string `json:"action"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请求体须为 JSON，且包含 action"})
-		return
-	}
-	action := strings.ToLower(strings.TrimSpace(body.Action))
-	if action == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "action 不能为空"})
 		return
 	}
 	tpl, err := vm.IsTemplate(ctx)
@@ -65,26 +117,16 @@ func handleVCenterVMPower(c *gin.Context, app *ServerApp) {
 	}
 
 	var run func(context.Context) (*object.Task, error)
-	var guestOnly string
 
 	switch action {
-	case "on", "poweron", "power-on", "start":
+	case "on":
 		run = vm.PowerOn
-	case "off", "poweroff", "power-off", "stop":
+	case "off":
 		run = vm.PowerOff
 	case "suspend":
 		run = vm.Suspend
 	case "reset":
 		run = vm.Reset
-	case "shutdown_guest", "shutdown-guest", "shutdownguest", "guest_shutdown":
-		guestOnly = "shutdownGuest"
-	case "reboot_guest", "reboot-guest", "rebootguest", "guest_reboot":
-		guestOnly = "rebootGuest"
-	case "standby_guest", "standby-guest", "standbyguest":
-		guestOnly = "standbyGuest"
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "未知 action，支持: on, off, suspend, reset, shutdown_guest, reboot_guest, standby_guest"})
-		return
 	}
 
 	if guestOnly != "" {
@@ -161,6 +203,18 @@ func handleVCenterTaskStatus(c *gin.Context, vc *vCenterClient) {
 }
 
 func handleVCenterVMHardware(c *gin.Context, app *ServerApp) {
+	var body struct {
+		NumCPU   *int32 `json:"numCpu"`
+		MemoryMB *int64 `json:"memoryMB"`
+		Confirm  bool   `json:"confirm"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求体须为 JSON"})
+		return
+	}
+	if !requireVCenterConfirm(c, body.Confirm, "vCenter 虚拟机硬件变更") {
+		return
+	}
 	vc := app.VCenter()
 	vm, ctx, err := getVCenterVMObject(c, vc)
 	if err != nil {
@@ -169,14 +223,6 @@ func handleVCenterVMHardware(c *gin.Context, app *ServerApp) {
 			return
 		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	var body struct {
-		NumCPU   *int32 `json:"numCpu"`
-		MemoryMB *int64 `json:"memoryMB"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请求体须为 JSON"})
 		return
 	}
 	tpl, err := vm.IsTemplate(ctx)
@@ -231,6 +277,18 @@ func handleVCenterVMHardware(c *gin.Context, app *ServerApp) {
 }
 
 func handleVCenterVMDiskExpand(c *gin.Context, app *ServerApp) {
+	var body struct {
+		DeviceKey int32   `json:"deviceKey"`
+		TotalGiB  float64 `json:"totalGiB"`
+		Confirm   bool    `json:"confirm"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求体须为 JSON，包含 deviceKey 与 totalGiB"})
+		return
+	}
+	if !requireVCenterConfirm(c, body.Confirm, "vCenter 虚拟机磁盘扩容") {
+		return
+	}
 	vc := app.VCenter()
 	vm, ctx, err := getVCenterVMObject(c, vc)
 	if err != nil {
@@ -239,14 +297,6 @@ func handleVCenterVMDiskExpand(c *gin.Context, app *ServerApp) {
 			return
 		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	var body struct {
-		DeviceKey int32   `json:"deviceKey"`
-		TotalGiB  float64 `json:"totalGiB"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请求体须为 JSON，包含 deviceKey 与 totalGiB"})
 		return
 	}
 	if body.DeviceKey == 0 {

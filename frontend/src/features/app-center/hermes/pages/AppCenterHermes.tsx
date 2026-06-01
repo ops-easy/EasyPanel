@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { apiDelete, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
 import { cloudVmAppCenterCanWrite } from "@/lib/platform-permissions";
+import { withAppCenterMutationConfirmQuery } from "@/features/app-center/lib/appCenterMutationConfirm";
 import { HERMES_DEFAULT_IMAGE, normalizeHermesImage } from "../hermesImage";
 
 type HermesBootstrap = {
@@ -192,7 +193,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
 
   const saveBootMut = useMutation({
     mutationFn: () =>
-      apiPutJson<HermesBootstrap>("/api/app-center/hermes/bootstrap", {
+      apiPutJson<HermesBootstrap>(withAppCenterMutationConfirmQuery("/api/app-center/hermes/bootstrap"), {
         ...(boot ?? {}),
         bootstrapComplete: true,
         defaultNamespace: form.namespace,
@@ -211,15 +212,18 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
 
   const deployMut = useMutation({
     mutationFn: () =>
-      apiPostJson<{ instance: HermesInstance; apiServerKey?: string }>("/api/app-center/hermes/k8s-deploy", {
-        ...form,
-        image: normalizeHermesImage(form.image) || HERMES_DEFAULT_IMAGE,
-        nodePort: Number(form.nodePort) || 0,
-        replicas: Number(form.replicas) || 1,
-        secretPlaintext: {
-          API_SERVER_KEY: apiKey,
-        },
-      }),
+      apiPostJson<{ instance: HermesInstance; apiServerKey?: string }>(
+        withAppCenterMutationConfirmQuery("/api/app-center/hermes/k8s-deploy"),
+        {
+          ...form,
+          image: normalizeHermesImage(form.image) || HERMES_DEFAULT_IMAGE,
+          nodePort: Number(form.nodePort) || 0,
+          replicas: Number(form.replicas) || 1,
+          secretPlaintext: {
+            API_SERVER_KEY: apiKey,
+          },
+        }
+      ),
     onSuccess: (res) => {
       toast.success(res.apiServerKey ? "Hermes 已部署，API Server Key 已写入 Secret" : "Hermes 已部署");
       setApiKey("");
@@ -232,7 +236,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => apiDelete(`/api/app-center/hermes/instances/${encodeURIComponent(id)}`),
+    mutationFn: (id: string) => apiDelete(withAppCenterMutationConfirmQuery(`/api/app-center/hermes/instances/${encodeURIComponent(id)}`)),
     onSuccess: () => {
       toast.success("Hermes 实例已删除");
       void qc.invalidateQueries({ queryKey: ["app-hermes-instances"] });
@@ -242,7 +246,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
   });
 
   const restartMut = useMutation({
-    mutationFn: (id: string) => apiPostJson(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/restart`, {}),
+    mutationFn: (id: string) => apiPostJson(withAppCenterMutationConfirmQuery(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/restart`), {}),
     onSuccess: () => {
       toast.success("已触发 Hermes 滚动重启");
       void qc.invalidateQueries({ queryKey: ["app-hermes-k8s-status"] });
@@ -251,7 +255,8 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
   });
 
   const saveNotesMut = useMutation({
-    mutationFn: (id: string) => apiPutJson(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/file`, { content: notes }),
+    mutationFn: (id: string) =>
+      apiPutJson(withAppCenterMutationConfirmQuery(`/api/app-center/hermes/instances/${encodeURIComponent(id)}/file`), { content: notes }),
     onSuccess: () => toast.success("Hermes 备注已写入 ConfigMap"),
     onError: (e) => toast.error(String(e)),
   });
@@ -268,7 +273,7 @@ const AppCenterHermes: React.FC<{ initialTab?: HermesPageTab }> = ({ initialTab 
   if (boot && !boot.bootstrapComplete && !canWrite) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        Hermes 尚未完成首次引导。请联系管理员打开{" "}
+        Hermes 尚未配置部署模式。请联系管理员打开{" "}
         <Link to={HERMES_BOOTSTRAP_PATH} className="font-mono font-semibold underline">
           {HERMES_BOOTSTRAP_PATH}
         </Link>{" "}

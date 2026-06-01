@@ -42,6 +42,10 @@ import {
 } from "@/shared/ui/table";
 import { apiDeleteJson, apiGetJson, apiPostJson, apiPutJson, type AppConfig } from "@/lib/api";
 import { redisAppCenterCanWrite } from "@/lib/platform-permissions";
+import {
+  withAppCenterMutationConfirm,
+  withAppCenterMutationConfirmQuery,
+} from "@/features/app-center/lib/appCenterMutationConfirm";
 import { toast } from "sonner";
 
 export type RedisTemplateConfig = {
@@ -166,10 +170,13 @@ const AppCenterRedisTemplates: React.FC<AppCenterRedisTemplatesProps> = ({
       else delete cfg.defaultAppendonly;
       const body = { name: formName.trim(), description: formDesc.trim(), config: cfg };
       if (editing) {
-        await apiPutJson(`/api/app-center/redis/templates/${editing.id}`, body);
+        await apiPutJson(`/api/app-center/redis/templates/${editing.id}`, withAppCenterMutationConfirm(body));
         return editing.id;
       }
-      const r = await apiPostJson<{ id: number }>("/api/app-center/redis/templates", body);
+      const r = await apiPostJson<{ id: number }>(
+        "/api/app-center/redis/templates",
+        withAppCenterMutationConfirm(body)
+      );
       return r.id;
     },
     onSuccess: async (id) => {
@@ -185,7 +192,7 @@ const AppCenterRedisTemplates: React.FC<AppCenterRedisTemplatesProps> = ({
   });
 
   const delMut = useMutation({
-    mutationFn: (id: number) => apiDeleteJson(`/api/app-center/redis/templates/${id}`),
+    mutationFn: (id: number) => apiDeleteJson(withAppCenterMutationConfirmQuery(`/api/app-center/redis/templates/${id}`)),
     onSuccess: async () => {
       toast.success("已删除");
       setDeleteId(null);

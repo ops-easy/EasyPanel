@@ -180,6 +180,9 @@ func handleCloudHostSFTPUpload(c *gin.Context, app *ServerApp) {
 	id := strings.TrimSpace(c.Param("id"))
 	ctx := c.Request.Context()
 
+	if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "cloud host SFTP upload") {
+		return
+	}
 	host, err := getCloudHostByID(app, id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})

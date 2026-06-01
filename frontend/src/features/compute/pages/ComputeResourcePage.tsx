@@ -190,7 +190,7 @@ const ComputeResourcePage: React.FC<ComputeResourcePageProps> = ({ view }) => {
           <p className="mt-1 text-sm font-semibold tabular-nums text-rose-700">{rows.filter((row) => row.health === "critical").length}</p>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
-          <p className="text-[11px] text-slate-500">健康示例</p>
+          <p className="text-[11px] text-slate-500">状态概览</p>
           <div className="mt-1"><ComputeStatusBadge health="ok" statusLabel="正常" /></div>
         </div>
       </section>
@@ -206,8 +206,8 @@ const ComputeResourcePage: React.FC<ComputeResourcePageProps> = ({ view }) => {
 
       {configuredProviders.length === 0 && !providersQ.isLoading ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-          <p className="text-sm font-medium text-slate-900">还没有接入 vCenter 或 PVE</p>
-          <p className="mt-2 text-sm text-slate-500">请先在配置页添加接入源，资源对象导航会在接入后成为日常入口。</p>
+          <p className="text-sm font-medium text-slate-900">还没有配置 vCenter 或 PVE</p>
+          <p className="mt-2 text-sm text-slate-500">请先在配置页添加资源源，资源对象导航会在配置后成为日常入口。</p>
           <Button asChild className="mt-4 bg-violet-600 hover:bg-violet-700">
             <Link to="/cluster/compute/config">打开配置</Link>
           </Button>

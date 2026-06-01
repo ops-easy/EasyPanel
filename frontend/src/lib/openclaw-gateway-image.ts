@@ -1,4 +1,4 @@
-/** 未配置本地预设时的占位默认值（可改为你的 Harbor 后保存预设） */
+/** 未配置本地预设时使用的默认镜像（可改为你的 Harbor 后保存预设） */
 export const OPENCLAW_IMAGE_DEFAULT_FULL = "ghcr.io/openclaw/openclaw:main";
 export const OPENCLAW_IMAGE_DEFAULT_SLIM = "ghcr.io/openclaw/openclaw:slim";
 

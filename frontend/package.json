@@ -10,13 +10,15 @@
     "check:api": "node ../scripts/check-api-contract.mjs && node --test tests/api-contract.test.mjs",
     "check:bundle": "node ../scripts/check-web-bundle-budget.mjs",
     "check:deploy": "node ../scripts/check-web-deploy-smoke.mjs",
+    "check:render": "node ../scripts/generate-demo-assets.mjs --render-smoke",
     "check:text": "node --test tests/compute-network-text-encoding.test.mjs",
-    "check": "npm run lint && npm run check:api && npm run build && npm run test && npm run check:bundle && npm run check:deploy",
+    "check": "npm run lint && npm run check:api && npm run build && npm run check:render && npm run test && npm run check:bundle && npm run check:deploy",
     "dev": "vite",
     "lint": "eslint .",
     "preview": "vite preview",
     "smoke:deploy": "node ../scripts/smoke-deploy.mjs",
     "smoke:dist": "node ../scripts/smoke-web-dist.mjs",
+    "smoke:render": "npm run check:render",
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {

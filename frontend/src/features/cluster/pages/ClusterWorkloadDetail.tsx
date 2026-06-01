@@ -40,6 +40,8 @@ import {
   workloadApplyPipelineProgress,
   type WorkloadApplyPipelineStep,
 } from "./workloadApplyPipeline";
+import { withK8sMutationConfirm, withK8sMutationConfirmQuery } from "@/features/cluster/lib/k8sMutationConfirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 const TAB_QUERY = "tab";
 
@@ -176,7 +178,9 @@ export const ClusterWorkloadDetail: React.FC<ClusterWorkloadDetailProps> = ({
   const restartPodsMut = useMutation({
     mutationFn: () =>
       apiPostJson<{ message?: string; restartedAt?: string }>(
-        `/api/k8s/deployments/${encodeURIComponent(namespace)}/${encodeURIComponent(workloadName)}/restart`,
+        withK8sMutationConfirmQuery(
+          `/api/k8s/deployments/${encodeURIComponent(namespace)}/${encodeURIComponent(workloadName)}/restart`
+        ),
         {}
       ),
     onSuccess: (data) => {
@@ -207,7 +211,7 @@ export const ClusterWorkloadDetail: React.FC<ClusterWorkloadDetailProps> = ({
           }
         }
         setApplyPipelineStep("apply");
-        return apiPostJson("/api/k8s/apply-yaml", { yamlContent });
+        return apiPostJson("/api/k8s/apply-yaml", withK8sMutationConfirm({ yamlContent }));
       } finally {
         setApplyPipelineStep(null);
       }
@@ -296,22 +300,16 @@ export const ClusterWorkloadDetail: React.FC<ClusterWorkloadDetailProps> = ({
         </div>
         <div className="flex flex-wrap gap-2">
           {segment === "deployments" ? (
-            <Button
+            <ConfirmActionButton
               type="button"
               variant="outline"
               size="sm"
               className="h-9 gap-1.5"
               disabled={!row || restartPodsMut.isPending}
-              onClick={() => {
-                if (
-                  !window.confirm(
-                    "确定要重建此 Deployment 下的 Pod？\n将更新 Pod 模板的重启时间并触发滚动更新（与 kubectl rollout restart 效果相同）。"
-                  )
-                ) {
-                  return;
-                }
-                void restartPodsMut.mutateAsync();
-              }}
+              title="确认重建 Pod？"
+              description={`将滚动重启 Deployment ${namespace}/${workloadName}。`}
+              confirmLabel="重建"
+              onConfirm={() => void restartPodsMut.mutateAsync()}
             >
               {restartPodsMut.isPending ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -319,7 +317,7 @@ export const ClusterWorkloadDetail: React.FC<ClusterWorkloadDetailProps> = ({
                 <RotateCcw className="h-3.5 w-3.5" />
               )}
               重建 Pod
-            </Button>
+            </ConfirmActionButton>
           ) : null}
           <Button
             type="button"
@@ -535,11 +533,14 @@ export const ClusterWorkloadDetail: React.FC<ClusterWorkloadDetailProps> = ({
             {yamlLoadQ.data?.yaml && (
               <>
                 <div className="flex flex-wrap gap-2">
-                  <Button
+                  <ConfirmActionButton
                     type="button"
                     size="sm"
                     disabled={applyMut.isPending}
-                    onClick={() => void applyMut.mutateAsync(yamlTab.buffer)}
+                    title="确认应用工作负载 YAML？"
+                    description={`将把 ${kindTitle} ${namespace}/${workloadName} 的 YAML 写入 Kubernetes API。`}
+                    confirmLabel="应用"
+                    onConfirm={() => void applyMut.mutateAsync(yamlTab.buffer)}
                   >
                     {applyMut.isPending ? (
                       <span className="inline-flex items-center gap-1.5">
@@ -551,7 +552,7 @@ export const ClusterWorkloadDetail: React.FC<ClusterWorkloadDetailProps> = ({
                     ) : (
                       "提交应用"
                     )}
-                  </Button>
+                  </ConfirmActionButton>
                   <Button
                     type="button"
                     size="sm"
@@ -644,10 +645,13 @@ export const ClusterWorkloadDetail: React.FC<ClusterWorkloadDetailProps> = ({
             <Button type="button" variant="secondary" onClick={() => setYamlOpen(false)}>
               取消
             </Button>
-            <Button
+            <ConfirmActionButton
               type="button"
               disabled={applyMut.isPending}
-              onClick={() => void applyMut.mutateAsync(yamlDraft)}
+              title="确认应用工作负载 YAML？"
+              description={`将把 ${kindTitle} ${namespace}/${workloadName} 的当前 YAML 写入 Kubernetes API。`}
+              confirmLabel="应用"
+              onConfirm={() => void applyMut.mutateAsync(yamlDraft)}
             >
               {applyMut.isPending ? (
                 <span className="inline-flex items-center gap-1.5">
@@ -659,7 +663,7 @@ export const ClusterWorkloadDetail: React.FC<ClusterWorkloadDetailProps> = ({
               ) : (
                 "提交应用"
               )}
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
           {applyMut.isError && (
             <p className="text-sm text-red-600">

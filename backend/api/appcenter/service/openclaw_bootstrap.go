@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -111,6 +112,9 @@ func handleAppOpenClawBootstrapPut(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw bootstrap") {
+		return
+	}
 	if app.PlatformKV() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "platform_kv 不可用"})
 		return
@@ -157,5 +161,6 @@ func handleAppOpenClawBootstrapPut(c *gin.Context, app *ServerApp) {
 		return
 	}
 	mirrorPlatformKVIfDualWrite(app)
+	SetAuditDetail(c, "应用中心 OpenClaw 更新引导配置 namespace="+body.DefaultNamespace+" rbac="+body.DefaultRBACPreset+" modes="+strconv.Itoa(len(body.Modes)))
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }

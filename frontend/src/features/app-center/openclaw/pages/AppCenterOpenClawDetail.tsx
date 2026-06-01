@@ -24,6 +24,7 @@ import { Textarea } from "@/shared/ui/textarea";
 import { ApiHttpError, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import { copyToClipboardSafe } from "@/lib/clipboard";
 import { formatDateTimeShanghai } from "@/lib/datetime-cn";
+import { withAppCenterMutationConfirmQuery } from "@/features/app-center/lib/appCenterMutationConfirm";
 import { OpenClawChat404RemedyPanel } from "@/features/app-center/openclaw/components/OpenClawChat404Remedy";
 import { OpenClawChat5xxRemedyPanel } from "@/features/app-center/openclaw/components/OpenClawChat5xxRemedy";
 import {
@@ -253,10 +254,15 @@ function OpenClawFilePanel(props: {
 
   const saveMut = useMutation({
     mutationFn: () =>
-      apiPutJson(`/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/file`, {
-        path: filePath,
-        content: draft,
-      }),
+      apiPutJson(
+        withAppCenterMutationConfirmQuery(
+          `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/file`
+        ),
+        {
+          path: filePath,
+          content: draft,
+        }
+      ),
     onSuccess: () => {
       toast.success("已保存到 PVC（持久卷）");
       void qc.invalidateQueries({ queryKey: ["app-openclaw-file", instanceId, filePath] });
@@ -556,7 +562,9 @@ const AppCenterOpenClawDetail: React.FC = () => {
   const rbacPresetMut = useMutation({
     mutationFn: () =>
       apiPostJson<{ ok?: boolean; gatewayRestart?: boolean }>(
-        `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/rbac-preset`,
+        withAppCenterMutationConfirmQuery(
+          `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/rbac-preset`
+        ),
         { preset: rbacDraft }
       ),
     onSuccess: (data) => {
@@ -585,12 +593,17 @@ const AppCenterOpenClawDetail: React.FC = () => {
 
   const applyToolchainMut = useMutation({
     mutationFn: () =>
-      apiPostJson<{ ok?: boolean }>(`/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/apply-toolchain-preset`, {
-        toolsProfile: toolsProfileManage,
-        promptPacks: Object.entries(promptPackManage)
-          .filter(([, on]) => on)
-          .map(([id]) => id),
-      }),
+      apiPostJson<{ ok?: boolean }>(
+        withAppCenterMutationConfirmQuery(
+          `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/apply-toolchain-preset`
+        ),
+        {
+          toolsProfile: toolsProfileManage,
+          promptPacks: Object.entries(promptPackManage)
+            .filter(([, on]) => on)
+            .map(([id]) => id),
+        }
+      ),
     onSuccess: async () => {
       toast.success("已更新工具链与提示词，并已触发网关滚动重启");
       await qc.invalidateQueries({ queryKey: ["app-openclaw-instances"] });
@@ -604,7 +617,9 @@ const AppCenterOpenClawDetail: React.FC = () => {
   const applyUpstreamRuntimeMut = useMutation({
     mutationFn: () =>
       apiPostJson<OpenClawApplyUpstreamRuntimeResp>(
-        `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/apply-upstream-runtime`,
+        withAppCenterMutationConfirmQuery(
+          `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/apply-upstream-runtime`
+        ),
         {
           chatModel: modelDraft.trim(),
           openaiBaseUrl: upstreamBaseDraft.trim(),
@@ -639,7 +654,9 @@ const AppCenterOpenClawDetail: React.FC = () => {
   const egressMut = useMutation({
     mutationFn: () =>
       apiPostJson<{ ok?: boolean; effectiveHttpProxyUrl?: string }>(
-        `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/egress-proxy`,
+        withAppCenterMutationConfirmQuery(
+          `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/egress-proxy`
+        ),
         {
           httpProxyUrl: httpProxyDraft.trim(),
           egressCloudVmId: egressVmDraft.trim(),
@@ -674,10 +691,15 @@ const AppCenterOpenClawDetail: React.FC = () => {
 
   const telegramSaveMut = useMutation({
     mutationFn: () =>
-      apiPutJson(`/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/telegram-settings`, {
-        telegramEnabled: tgEnabledDraft,
-        telegramBotToken: tgTokenDraft.trim(),
-      }),
+      apiPutJson(
+        withAppCenterMutationConfirmQuery(
+          `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/telegram-settings`
+        ),
+        {
+          telegramEnabled: tgEnabledDraft,
+          telegramBotToken: tgTokenDraft.trim(),
+        }
+      ),
     onSuccess: () => {
       toast.success("已保存 Telegram 设置（Token 存 MySQL）");
       setTgTokenDraft("");
@@ -690,7 +712,9 @@ const AppCenterOpenClawDetail: React.FC = () => {
   const gatewayImageMut = useMutation({
     mutationFn: () =>
       apiPostJson<{ ok?: boolean; image?: string }>(
-        `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/gateway-image`,
+        withAppCenterMutationConfirmQuery(
+          `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/gateway-image`
+        ),
         { image: imgDraft.trim() }
       ),
     onSuccess: async () => {
@@ -728,7 +752,9 @@ const AppCenterOpenClawDetail: React.FC = () => {
   const telegramApplyMut = useMutation({
     mutationFn: () =>
       apiPostJson<{ ok?: boolean; message?: string; httpProxyMerged?: boolean }>(
-        `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/apply-telegram-to-openclaw-json`,
+        withAppCenterMutationConfirmQuery(
+          `/api/app-center/openclaw/instances/${encodeURIComponent(instanceId)}/apply-telegram-to-openclaw-json`
+        ),
         {}
       ),
     onSuccess: (data) => {
@@ -774,7 +800,7 @@ const AppCenterOpenClawDetail: React.FC = () => {
   if (bootstrapQ.data && !bootstrapQ.data.bootstrapComplete) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        OpenClaw 部署模式尚未完成首次引导。{isAdmin ? "请打开" : "请联系管理员打开"}{" "}
+        OpenClaw 尚未配置部署模式。{isAdmin ? "请打开" : "请联系管理员打开"}{" "}
         <Link to={OPENCLAW_BOOTSTRAP_PATH} className="font-mono font-semibold underline">
           {OPENCLAW_BOOTSTRAP_PATH}
         </Link>

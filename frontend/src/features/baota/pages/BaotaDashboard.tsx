@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  ExternalLink,
+  ArrowRight,
   Globe,
   KeyRound,
   Loader2,
@@ -149,7 +149,7 @@ const BaotaDashboard: React.FC = () => {
           <div>
             <p className="font-semibold">宝塔尚未配置</p>
             <p className="mt-1 text-xs leading-relaxed text-amber-900">
-              默认地址只是占位；请保存真实面板地址与 API Key。保存后工作台会显示连通状态，Ingress 同步入口也会可用。
+              默认地址只是初始值；请保存真实面板地址与 API Key。保存后工作台会显示连通状态，Ingress 同步入口也会可用。
             </p>
           </div>
           <Button asChild size="sm" className="shrink-0 bg-amber-700 hover:bg-amber-800">
@@ -201,7 +201,7 @@ const BaotaDashboard: React.FC = () => {
             <Button asChild variant="outline" size="sm">
               <Link to="/cluster/baota/settings">
                 打开设置
-                <ExternalLink className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </CardContent>
@@ -221,7 +221,7 @@ const BaotaDashboard: React.FC = () => {
             <Button asChild variant="outline" size="sm">
               <Link to="/cluster/baota/sync">
                 查看同步
-                <ExternalLink className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </CardContent>
@@ -239,7 +239,7 @@ const BaotaDashboard: React.FC = () => {
             <Button asChild variant="outline" size="sm">
               <Link to="/cluster/baota/ingress">
                 打开规则
-                <ExternalLink className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </CardContent>

@@ -11,7 +11,6 @@ import {
   User,
   Users,
   ChevronDown,
-  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/auth-context";
@@ -75,8 +74,9 @@ function MobileBottomNav() {
             <Link
               key={to}
               to={to}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors active:opacity-70",
+                "flex cursor-pointer flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors active:opacity-70",
                 active ? "text-blue-600" : "text-slate-400"
               )}
             >
@@ -128,7 +128,11 @@ function MobileHeader() {
       <div className="flex items-center gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-1 rounded-full px-2 py-1 text-sm text-slate-600 transition active:bg-slate-100">
+            <button
+              type="button"
+              className="flex cursor-pointer items-center gap-1 rounded-full px-2 py-1 text-sm text-slate-600 transition active:bg-slate-100"
+              aria-label={`打开账户菜单：${status?.username ?? "未命名用户"}`}
+            >
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">
                 {(status?.username ?? "?").slice(0, 1).toUpperCase()}
               </div>
@@ -194,14 +198,14 @@ const AppLayoutMobile: React.FC = () => {
 
   if (hideAppChrome) {
     return (
-      <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-[#0c0f14]">
+      <div data-cmp="AppLayoutMobileFullBleed" className="flex h-dvh min-h-0 flex-col overflow-hidden bg-[#0c0f14]">
         <Outlet />
       </div>
     );
   }
 
   return (
-    <div className="flex h-dvh min-h-0 flex-col bg-white">
+    <div data-cmp="AppLayoutMobile" className="flex h-dvh min-h-0 flex-col bg-white">
       <MobileHeader />
       <PlatformVersionBanner />
       <RedisStatusBanner />

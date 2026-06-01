@@ -110,18 +110,10 @@ type sshPutBody struct {
 	KeyPassphrase   *string `json:"keyPassphrase"`
 	Port            *int    `json:"port"`
 	InsecureHostKey *bool   `json:"insecureHostKey"`
+	Confirm         bool    `json:"confirm"`
 }
 
 func handlePutVCenterVMSSHSettings(c *gin.Context, cfg Config, store SSHSettingsStore) {
-	if store == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未启用 SSH 存储（请设置 SSH_SETTINGS_BACKEND 与 REDIS_ADDR 或 MYSQL_DSN）"})
-		return
-	}
-	key, err := sshEncryptionKey(cfg)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "EASYPANEL_ENCRYPTION_KEY: " + err.Error()})
-		return
-	}
 	moref := strings.TrimSpace(c.Param("moref"))
 	if moref == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "缺少 moref"})
@@ -130,6 +122,18 @@ func handlePutVCenterVMSSHSettings(c *gin.Context, cfg Config, store SSHSettings
 	var body sshPutBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "vCenter VM SSH settings update") {
+		return
+	}
+	if store == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未启用 SSH 存储（请设置 SSH_SETTINGS_BACKEND 与 REDIS_ADDR 或 MYSQL_DSN）"})
+		return
+	}
+	key, err := sshEncryptionKey(cfg)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "EASYPANEL_ENCRYPTION_KEY: " + err.Error()})
 		return
 	}
 	if strings.TrimSpace(body.User) == "" {
@@ -154,13 +158,16 @@ func handlePutVCenterVMSSHSettings(c *gin.Context, cfg Config, store SSHSettings
 }
 
 func handleDeleteVCenterVMSSHSettings(c *gin.Context, cfg Config, store SSHSettingsStore) {
-	if store == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未启用 SSH 存储"})
-		return
-	}
 	moref := strings.TrimSpace(c.Param("moref"))
 	if moref == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "缺少 moref"})
+		return
+	}
+	if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "vCenter VM SSH settings delete") {
+		return
+	}
+	if store == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未启用 SSH 存储"})
 		return
 	}
 	if err := store.DeleteVM(c.Request.Context(), moref); err != nil {

@@ -63,6 +63,7 @@ function normalizeRoutePath(input) {
   out = out.replace(/\\\//g, "/");
   out = out.replace(/\$\{[^}]+\}/g, ":param");
   out = out.split(/[?#]/, 1)[0];
+  out = out.replace(/\$\{[^/]*$/g, (match, offset, source) => (source[offset - 1] === "/" ? ":param" : ""));
   out = out.replace(/\/+$/, "");
   return out === "" ? "/" : out;
 }
@@ -318,11 +319,56 @@ function scanFrontendUses() {
   return uniqueSorted(uses);
 }
 
+function firstRouteToken(raw) {
+  const text = raw.trim();
+  let depth = 0;
+  let quote = "";
+  let escaped = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quote) {
+      if (quote !== "`" && escaped) {
+        escaped = false;
+      } else if (quote !== "`" && ch === "\\") {
+        escaped = true;
+      } else if (ch === quote) {
+        quote = "";
+      }
+      continue;
+    }
+    if (depth > 0 && (ch === `"` || ch === "'" || ch === "`")) {
+      quote = ch;
+      continue;
+    }
+    if (ch === "$" && text[i + 1] === "{") {
+      depth += 1;
+      i += 1;
+      continue;
+    }
+    if (depth > 0) {
+      if (ch === "{") depth += 1;
+      if (ch === "}") depth -= 1;
+      continue;
+    }
+    if (/\s/.test(ch)) return text.slice(0, i);
+  }
+  return text;
+}
+
 function routeCandidates(raw) {
   const trimmed = raw.trim();
   const out = [];
   if (/^\/(?:api|r|d)(?:\/|$)/.test(trimmed)) {
-    out.push(trimmed.split(/\s+/)[0]);
+    out.push(firstRouteToken(trimmed));
+    if (trimmed.includes("${")) return [...new Set(out)];
+  }
+  if (trimmed.includes("${")) {
+    const contractStart = trimmed.search(/\/(?:api|r|d)(?:\/|$)/);
+    if (contractStart >= 0) {
+      out.push(firstRouteToken(trimmed.slice(contractStart)));
+      return [...new Set(out)];
+    }
   }
   const embeddedRe = /(^|[^A-Za-z0-9_@.-])(\/(?:api|r|d)(?:\/[^\s"'`<>)\]]*)?)(?=$|[\s"'`<>)\],.;:])/g;
   let match;
@@ -336,21 +382,37 @@ function isContractPath(pathPattern) {
   return /^\/(?:api|r|d)(?:\/|$)/.test(pathPattern);
 }
 
+function isFetchArgument(before) {
+  return /\bfetch\s*\(\s*(?:[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\s*\+\s*)?$/.test(before);
+}
+
+function isApiHelperCallArgument(before, helperPattern) {
+  return new RegExp(`\\b${helperPattern}\\s*(?:<[^()]*>)?\\s*\\(\\s*(?:[A-Za-z_$][\\w$]*\\s*\\(\\s*)*$`, "s").test(before);
+}
+
+function isApiHelperArgument(before) {
+  return isApiHelperCallArgument(before, "api(?:Get|Post|Put|Patch|Delete)(?:Json|Text|Raw|NoBody)?");
+}
+
+function isWebSocketArgument(before) {
+  return /wsUrl\s*\(\s*$/.test(before) || /wsUrlForApiPath\s*\(\s*$/.test(before) || /new\s+WebSocket\s*\(\s*$/.test(before);
+}
+
 function inferFrontendMethod(before, after) {
-  if (/apiDelete(?:Json)?\s*(?:<[^()]*>)?\s*\(\s*$/.test(before)) return "DELETE";
-  if (/apiPatch(?:Json)?\s*(?:<[^()]*>)?\s*\(\s*$/.test(before)) return "PATCH";
-  if (/apiPut(?:Json|Raw)?\s*(?:<[^()]*>)?\s*\(\s*$/.test(before)) return "PUT";
-  if (/apiPost(?:Json|NoBody)?\s*(?:<[^()]*>)?\s*\(\s*$/.test(before)) return "POST";
-  if (/apiGet(?:Json|Text)?\s*(?:<[^()]*>)?\s*\(\s*$/.test(before)) return "GET";
+  if (isApiHelperCallArgument(before, "apiDelete(?:Json)?")) return "DELETE";
+  if (isApiHelperCallArgument(before, "apiPatch(?:Json)?")) return "PATCH";
+  if (isApiHelperCallArgument(before, "apiPut(?:Json|Raw)?")) return "PUT";
+  if (isApiHelperCallArgument(before, "apiPost(?:Json|NoBody)?")) return "POST";
+  if (isApiHelperCallArgument(before, "apiGet(?:Json|Text)?")) return "GET";
   const methodMatch = after.match(/method\s*:\s*["'`](GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)["'`]/i);
   if (methodMatch) return methodMatch[1].toUpperCase();
-  if (/wsUrl\s*\(\s*$/.test(before) || /new\s+WebSocket\s*\(\s*$/.test(before)) return "GET";
+  if (isWebSocketArgument(before) || isFetchArgument(before)) return "GET";
   return "UNKNOWN";
 }
 
 function inferFrontendKind(before, window) {
-  if (/wsUrl\s*\(\s*$/.test(before) || /new\s+WebSocket\s*\(\s*$/.test(before)) return "websocket";
-  if (/api(?:Get|Post|Put|Patch|Delete)(?:Json|Text|Raw|NoBody)?\s*(?:<[^()]*>)?\s*\(\s*$/.test(before) || /fetch\s*\(/.test(window)) return "http";
+  if (isWebSocketArgument(before)) return "websocket";
+  if (isApiHelperArgument(before) || isFetchArgument(before)) return "http";
   return "literal";
 }
 

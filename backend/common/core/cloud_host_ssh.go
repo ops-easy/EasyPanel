@@ -333,6 +333,15 @@ func handleGetCloudHostSSHSettings(c *gin.Context, app *ServerApp) {
 }
 
 func handlePutCloudHostSSHSettings(c *gin.Context, app *ServerApp) {
+	id := strings.TrimSpace(c.Param("id"))
+	var body sshPutBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "cloud host SSH settings update") {
+		return
+	}
 	store := app.SSHStore()
 	if store == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未启用 SSH 存储（请设置 SSH_SETTINGS_BACKEND=file 与 SSH_SETTINGS_DIR，或按文档配置 Redis/MySQL）"})
@@ -343,15 +352,9 @@ func handlePutCloudHostSSHSettings(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "EASYPANEL_ENCRYPTION_KEY: " + err.Error()})
 		return
 	}
-	id := strings.TrimSpace(c.Param("id"))
 	ch, err := getCloudHostByID(app, id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-	var body sshPutBody
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	if strings.TrimSpace(body.User) == "" {
@@ -378,12 +381,15 @@ func handlePutCloudHostSSHSettings(c *gin.Context, app *ServerApp) {
 }
 
 func handleDeleteCloudHostSSHSettings(c *gin.Context, app *ServerApp) {
+	id := strings.TrimSpace(c.Param("id"))
+	if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "cloud host SSH settings delete") {
+		return
+	}
 	store := app.SSHStore()
 	if store == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未启用 SSH 存储"})
 		return
 	}
-	id := strings.TrimSpace(c.Param("id"))
 	ch, err := getCloudHostByID(app, id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})

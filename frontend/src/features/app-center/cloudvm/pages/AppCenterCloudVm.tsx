@@ -39,10 +39,12 @@ import { Textarea } from "@/shared/ui/textarea";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { apiGetJson, apiPostJson } from "@/lib/api";
+import { withAppCenterMutationConfirmQuery } from "@/features/app-center/lib/appCenterMutationConfirm";
 import { cloudVmAppCenterCanWrite } from "@/lib/platform-permissions";
 import { LogoBaota, LogoDocker, LogoHysteria2, LogoNginx } from "@/features/app-center/cloudvm/components/CloudVmSoftwareLogos";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 const CLOUD_VM_LIST_PATH = "/cluster/apps/cloud-vm";
 const CLOUD_VM_CREATE_PATH = "/cluster/apps/cloud-vm/create";
@@ -335,7 +337,7 @@ export default function AppCenterCloudVm({ initialTab = "create" }: { initialTab
       if (form.installHysteria2 && !form.hysteria2ConfigYaml.trim()) {
         throw new Error("已勾选 Hysteria2 客户端时请粘贴 hysteria2:// 分享链接或填写/导入客户端 YAML");
       }
-      return apiPostJson<{ id: number }>("/api/app-center/cloud-vm/instances", {
+      return apiPostJson<{ id: number }>(withAppCenterMutationConfirmQuery("/api/app-center/cloud-vm/instances"), {
         name: form.name,
         imageId: form.imageId,
         rootPassword: form.rootPassword,
@@ -384,6 +386,9 @@ export default function AppCenterCloudVm({ initialTab = "create" }: { initialTab
   const goPrev = () => {
     if (step > 1) setStep((s) => s - 1);
   };
+  const submitCreate = () => {
+    createMut.mutate();
+  };
 
   const openCreateTab = () => {
     setStep(1);
@@ -419,7 +424,7 @@ export default function AppCenterCloudVm({ initialTab = "create" }: { initialTab
   if (bootQ.data && !bootQ.data.bootstrapComplete && !canWrite) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        容器主机镜像尚未完成首次引导。管理员请打开{" "}
+        容器主机尚未配置部署参数。管理员请打开{" "}
         <Link to={BOOTSTRAP_PATH} className="font-mono font-semibold underline">
           {BOOTSTRAP_PATH}
         </Link>{" "}
@@ -1059,15 +1064,18 @@ export default function AppCenterCloudVm({ initialTab = "create" }: { initialTab
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   ) : (
-                    <Button
+                    <ConfirmActionButton
                       type="button"
                       size="sm"
                       className="gap-1 bg-indigo-600 hover:bg-indigo-700"
                       disabled={createMut.isPending || !step1Ok}
-                      onClick={() => createMut.mutate()}
+                      title="确认创建容器主机？"
+                      description={`将创建容器主机「${form.name.trim() || "未命名"}」，并在 Kubernetes 中写入 Secret、PVC、Deployment 与 Service。`}
+                      confirmLabel="创建"
+                      onConfirm={submitCreate}
                     >
                       {createMut.isPending ? "创建中…" : "创建容器主机"}
-                    </Button>
+                    </ConfirmActionButton>
                   )}
                 </div>
               </CardContent>

@@ -22,6 +22,7 @@ type adminTotpBody struct {
 	UserID          int64  `json:"userId"`
 	Username        string `json:"username"`
 	CurrentPassword string `json:"currentPassword"`
+	Confirm         bool   `json:"confirm"`
 }
 
 var (
@@ -65,12 +66,15 @@ func verifyCurrentOperatorPassword(c *gin.Context, app *ServerApp, cfg Config, p
 }
 
 func handleAdminUserTotpProvision(c *gin.Context, app *ServerApp) {
-	cfg := app.Cfg()
 	var body adminTotpBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数无效"})
 		return
 	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "platform user TOTP provision") {
+		return
+	}
+	cfg := app.Cfg()
 	if err := verifyCurrentOperatorPassword(c, app, cfg, body.CurrentPassword); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -204,12 +208,15 @@ func resolveTotpTarget(c *gin.Context, app *ServerApp, cfg Config, body adminTot
 }
 
 func handleAdminUserTotpDisable(c *gin.Context, app *ServerApp) {
-	cfg := app.Cfg()
 	var body adminTotpBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数无效"})
 		return
 	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "platform user TOTP disable") {
+		return
+	}
+	cfg := app.Cfg()
 	if err := verifyCurrentOperatorPassword(c, app, cfg, body.CurrentPassword); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

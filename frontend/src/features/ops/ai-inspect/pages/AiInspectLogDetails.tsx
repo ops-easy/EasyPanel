@@ -27,6 +27,7 @@ import { useAuth } from "@/auth/auth-context";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import {
   Dialog,
   DialogContent,
@@ -793,18 +794,19 @@ const AiInspectLogDetails: React.FC = () => {
                   分析当前筛选日志
                 </Button>
                 {isAdmin ? (
-                  <Button
+                  <ConfirmActionButton
                     type="button"
                     size="sm"
                     variant="outline"
                     disabled={clearVmlogDedupeMut.isPending}
-                    onClick={() => {
-                      if (!window.confirm("清除当前筛选条件下已登记的 AI 问题指纹？下次分析将重新视为新问题。")) return;
-                      clearVmlogDedupeMut.mutate();
-                    }}
+                    title="清除已登记问题指纹？"
+                    description="将清除当前筛选条件下已登记的 AI 问题指纹；下次分析会把这些问题重新视为新问题。"
+                    confirmLabel="清除指纹"
+                    confirmButtonClassName="bg-amber-600 text-white hover:bg-amber-700"
+                    onConfirm={() => clearVmlogDedupeMut.mutate()}
                   >
                     清除本条件已登记问题（管理员）
-                  </Button>
+                  </ConfirmActionButton>
                 ) : null}
               </div>
               {openclawAnalyze?.ok ? (

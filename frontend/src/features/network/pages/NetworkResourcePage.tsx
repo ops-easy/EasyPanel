@@ -46,7 +46,7 @@ const viewMeta: Record<
 > = {
   devices: {
     title: "设备",
-    description: "查看 iKuai 与 OpenWrt 接入状态、管理地址、监控覆盖和最近更新时间。",
+    description: "查看 iKuai 与 OpenWrt 配置状态、管理地址、监控覆盖和最近更新时间。",
     icon: Network,
     empty: "当前没有可展示的网络设备。",
   },

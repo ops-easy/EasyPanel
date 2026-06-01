@@ -158,6 +158,7 @@ type openSearchPruneInput struct {
 	Pattern       string `json:"pattern"`
 	OlderThanDays int    `json:"olderThanDays"`
 	DryRun        bool   `json:"dryRun"`
+	Confirm       bool   `json:"confirm,omitempty"`
 }
 
 type openSearchPruneResult struct {

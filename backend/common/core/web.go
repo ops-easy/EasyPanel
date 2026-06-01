@@ -27,6 +27,7 @@ import (
 
 type YamlRequest struct {
 	YamlContent string `json:"yamlContent" binding:"required"`
+	Confirm     bool   `json:"confirm"`
 	// SkipWorkloadSchedulingCheck 为 true 时跳过 Deployment/StatefulSet 更新前的调度余量预检（应急用）。
 	SkipWorkloadSchedulingCheck bool `json:"skipWorkloadSchedulingCheck"`
 }
@@ -36,6 +37,7 @@ type DeleteIngressRequest struct {
 	Name        string `json:"name" binding:"required"`
 	Domain      string `json:"domain"`
 	DeleteBaota bool   `json:"deleteBaota"`
+	Confirm     bool   `json:"confirm"`
 }
 
 // NewRouter 构造旧版 core-local Dashboard HTTP 路由。
@@ -222,7 +224,9 @@ func handleGetStatus(c *gin.Context, k8sClient *kubernetes.Clientset, cfg Config
 	if !GuardK8s(c, k8sClient) {
 		return
 	}
-	ingresses, err := k8sClient.NetworkingV1().Ingresses("").List(context.TODO(), metav1.ListOptions{})
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
+	defer cancel()
+	ingresses, err := k8sClient.NetworkingV1().Ingresses("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		RespondAPIError500(c, "查询 Ingress 失败: "+err.Error())
 		return
@@ -251,12 +255,15 @@ func handleGetStatus(c *gin.Context, k8sClient *kubernetes.Clientset, cfg Config
 
 // 处理前端发来的纯 YAML 字符串
 func handleApplyYaml(c *gin.Context, k8sClient *kubernetes.Clientset) {
-	if !GuardK8s(c, k8sClient) {
-		return
-	}
 	var req YamlRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{"error": "参数解析失败: " + err.Error()})
+		return
+	}
+	if !requireK8sMutationConfirm(c, req.Confirm, "Ingress YAML 应用") {
+		return
+	}
+	if !GuardK8s(c, k8sClient) {
 		return
 	}
 
@@ -272,18 +279,20 @@ func handleApplyYaml(c *gin.Context, k8sClient *kubernetes.Clientset) {
 	}
 
 	// 2. 与 K8s API 交互 (获取现有的资源版本，以支持 Update)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 90*time.Second)
+	defer cancel()
 	client := k8sClient.NetworkingV1().Ingresses(ingress.Namespace)
-	existing, err := client.Get(context.TODO(), ingress.Name, metav1.GetOptions{})
+	existing, err := client.Get(ctx, ingress.Name, metav1.GetOptions{})
 
 	op := ""
 	if err == nil {
 		// 存在则更新，必须带上旧的 ResourceVersion
 		ingress.ResourceVersion = existing.ResourceVersion
-		_, err = client.Update(context.TODO(), &ingress, metav1.UpdateOptions{})
+		_, err = client.Update(ctx, &ingress, metav1.UpdateOptions{})
 		op = "更新"
 	} else if apierrors.IsNotFound(err) {
 		// 不存在则创建
-		_, err = client.Create(context.TODO(), &ingress, metav1.CreateOptions{})
+		_, err = client.Create(ctx, &ingress, metav1.CreateOptions{})
 		op = "创建"
 	} else {
 		RespondAPIError500(c, "读取现有资源失败: "+err.Error())
@@ -320,7 +329,7 @@ func handleGetNamespaces(c *gin.Context, app *ServerApp) {
 			}
 		}
 	}
-	namespaces, err := k8sClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	namespaces, err := k8sClient.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		RespondAPIError500(c, "查询命名空间失败: "+err.Error())
 		return
@@ -342,7 +351,9 @@ func handleGetServices(c *gin.Context, k8sClient *kubernetes.Clientset) {
 	if !GuardK8s(c, k8sClient) {
 		return
 	}
-	services, err := k8sClient.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
+	defer cancel()
+	services, err := k8sClient.CoreV1().Services("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		RespondAPIError500(c, "查询服务失败: "+err.Error())
 		return
@@ -657,7 +668,9 @@ func handleListAllIngresses(c *gin.Context, k8sClient *kubernetes.Clientset, cfg
 	if !GuardK8s(c, k8sClient) {
 		return
 	}
-	ingresses, err := k8sClient.NetworkingV1().Ingresses("").List(context.TODO(), metav1.ListOptions{})
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
+	defer cancel()
+	ingresses, err := k8sClient.NetworkingV1().Ingresses("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		RespondAPIError500(c, "查询 Ingress 失败: "+err.Error())
 		return
@@ -708,7 +721,9 @@ func handleGetIngressRaw(c *gin.Context, k8sClient *kubernetes.Clientset) {
 		c.String(http.StatusBadRequest, "缺少参数 ns 或 name")
 		return
 	}
-	ingress, err := k8sClient.NetworkingV1().Ingresses(ns).Get(context.TODO(), name, metav1.GetOptions{})
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
+	defer cancel()
+	ingress, err := k8sClient.NetworkingV1().Ingresses(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		c.String(http.StatusInternalServerError, "获取 Ingress 失败: %v", err)
 		return
@@ -722,20 +737,25 @@ func handleGetIngressRaw(c *gin.Context, k8sClient *kubernetes.Clientset) {
 }
 
 func handleDeleteIngress(c *gin.Context, k8sClient *kubernetes.Clientset, cfg Config) {
-	if !GuardK8s(c, k8sClient) {
-		return
-	}
 	var req DeleteIngressRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数解析失败: " + err.Error()})
 		return
 	}
+	if !requireK8sMutationConfirm(c, req.Confirm, "Ingress 删除") {
+		return
+	}
+	if !GuardK8s(c, k8sClient) {
+		return
+	}
 	btCfg := cfg
-	if ing, err := k8sClient.NetworkingV1().Ingresses(req.Namespace).Get(context.TODO(), req.Name, metav1.GetOptions{}); err == nil && ing != nil {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 90*time.Second)
+	defer cancel()
+	if ing, err := k8sClient.NetworkingV1().Ingresses(req.Namespace).Get(ctx, req.Name, metav1.GetOptions{}); err == nil && ing != nil {
 		tid := BaotaTargetIDFromIngress(ing.Annotations)
 		btCfg = ConfigForBaotaTargetID(cfg, tid)
 	}
-	if err := k8sClient.NetworkingV1().Ingresses(req.Namespace).Delete(context.TODO(), req.Name, metav1.DeleteOptions{}); err != nil {
+	if err := k8sClient.NetworkingV1().Ingresses(req.Namespace).Delete(ctx, req.Name, metav1.DeleteOptions{}); err != nil {
 		RespondAPIError500(c, "删除 Ingress 失败: "+err.Error())
 		return
 	}

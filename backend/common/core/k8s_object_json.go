@@ -27,7 +27,8 @@ func handleK8sGetObjectJSON(c *gin.Context, k8s *kubernetes.Clientset) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "需要 query: kind, namespace, name"})
 		return
 	}
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
+	defer cancel()
 	var (
 		obj interface{}
 		err error
@@ -91,8 +92,9 @@ func handleK8sGetObjectJSON(c *gin.Context, k8s *kubernetes.Clientset) {
 }
 
 type putK8sObjectBody struct {
-	Kind   string          `json:"kind"`
-	Object json.RawMessage `json:"object"`
+	Kind    string          `json:"kind"`
+	Object  json.RawMessage `json:"object"`
+	Confirm bool            `json:"confirm"`
 	// SkipWorkloadSchedulingCheck 为 true 时跳过 Deployment/StatefulSet 保存前的调度余量预检（应急用）。
 	SkipWorkloadSchedulingCheck bool `json:"skipWorkloadSchedulingCheck"`
 }
@@ -110,7 +112,8 @@ func k8sAppendRevisionAfterObjectJSONPut(app *ServerApp, c *gin.Context, kind st
 	if ns == "" || name == "" {
 		return
 	}
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
 	b, err := k8sGetObjectYAMLBytes(ctx, app.K8s(), kind, ns, name)
 	if err != nil {
 		return
@@ -120,10 +123,6 @@ func k8sAppendRevisionAfterObjectJSONPut(app *ServerApp, c *gin.Context, kind st
 
 // PUT /api/k8s/object-json  body: { kind, object } — 与 GET 结构一致，用于图形化编辑后写回
 func handleK8sPutObjectJSON(c *gin.Context, app *ServerApp) {
-	k8s := app.K8s()
-	if !GuardK8s(c, k8s) {
-		return
-	}
 	var body putK8sObjectBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数解析失败: " + err.Error()})
@@ -132,6 +131,13 @@ func handleK8sPutObjectJSON(c *gin.Context, app *ServerApp) {
 	kind := strings.TrimSpace(body.Kind)
 	if kind == "" || len(body.Object) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "需要 kind 与 object"})
+		return
+	}
+	if !requireK8sMutationConfirm(c, body.Confirm, "Kubernetes 图形化资源保存") {
+		return
+	}
+	k8s := app.K8s()
+	if !GuardK8s(c, k8s) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 90*time.Second)

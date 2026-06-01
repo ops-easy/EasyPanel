@@ -33,9 +33,11 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { apiDelete, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
+import { withHostMutationConfirm, withHostMutationConfirmQuery } from "@/features/vcenter/lib/hostMutationConfirm";
 import type { AppConfig } from "@/lib/api";
 import { toast } from "sonner";
 import { mergeListeningPortsByProtoPort } from "@/lib/listening-ports";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 export type CloudHostRow = {
   id: string;
@@ -160,9 +162,9 @@ const CloudHosts: React.FC = () => {
         comment: form.comment.trim(),
       };
       if (editing) {
-        return apiPutJson<{ host: CloudHostRow }>(`/api/cloud-hosts/${encodeURIComponent(editing.id)}`, body);
+        return apiPutJson<{ host: CloudHostRow }>(`/api/cloud-hosts/${encodeURIComponent(editing.id)}`, withHostMutationConfirm(body));
       }
-      return apiPostJson<{ host: CloudHostRow }>("/api/cloud-hosts", body);
+      return apiPostJson<{ host: CloudHostRow }>("/api/cloud-hosts", withHostMutationConfirm(body));
     },
     onSuccess: () => {
       const wasEdit = editing != null;
@@ -179,7 +181,7 @@ const CloudHosts: React.FC = () => {
   });
 
   const delMut = useMutation({
-    mutationFn: (id: string) => apiDelete(`/api/cloud-hosts/${encodeURIComponent(id)}`),
+    mutationFn: (id: string) => apiDelete(withHostMutationConfirmQuery(`/api/cloud-hosts/${encodeURIComponent(id)}`)),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["cloud-hosts"] });
       void queryClient.invalidateQueries({ queryKey: ["cloud-hosts-metrics"] });
@@ -335,7 +337,7 @@ const CloudHosts: React.FC = () => {
                         <Button
                           asChild
                           size="sm"
-                          className="gap-1.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-md shadow-violet-500/20 transition-all duration-200 hover:from-violet-500 hover:to-violet-600 hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.97]"
+                          className="gap-1.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-md shadow-violet-500/20 transition-all duration-200 hover:from-violet-500 hover:to-violet-600 hover:shadow-lg hover:shadow-violet-500/25 active:shadow-sm"
                         >
                           <Link to={`/cluster/compute/cloud/${encodeURIComponent(h.id)}/ssh`}>
                             <Terminal className="h-3.5 w-3.5 opacity-95" strokeWidth={2} />
@@ -549,7 +551,7 @@ const CloudHosts: React.FC = () => {
             {saveMut.isError && (
               <p className="text-sm text-red-600">{(saveMut.error as Error).message}</p>
             )}
-            <Button
+            <ConfirmActionButton
               type="button"
               disabled={
                 saveMut.isPending ||
@@ -557,10 +559,13 @@ const CloudHosts: React.FC = () => {
                 !form.sshHost.trim() ||
                 (needPerHostSshUser && !form.sshUser.trim())
               }
-              onClick={() => saveMut.mutate()}
+              title="确认保存云主机？"
+              description="将写入云主机元数据、SSH 地址与凭据设置，堡垒机和资源中心会按此配置管理。"
+              confirmLabel="保存"
+              onConfirm={() => saveMut.mutate()}
             >
               {saveMut.isPending ? "保存中…" : "保存"}
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

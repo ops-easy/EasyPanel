@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+func HarborIndexCrawlTimeout() time.Duration {
+	return time.Duration(harborIndexCrawlTimeoutSec()) * time.Second
+}
+
 // StartHarborImageIndexWorker 周期性将 Harbor 镜像（到 tag）全量索引写入 Redis；间隔 EASYPANEL_HARBOR_INDEX_INTERVAL_SEC（默认 60，0 关闭）。
 func StartHarborImageIndexWorker(app *ServerApp) {
 	if !app.Cfg().EnableBackgroundJobs {
@@ -23,8 +27,7 @@ func StartHarborImageIndexWorker(app *ServerApp) {
 				time.Sleep(time.Duration(sec) * time.Second)
 				continue
 			}
-			timeout := time.Duration(harborIndexCrawlTimeoutSec()) * time.Second
-			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			ctx, cancel := context.WithTimeout(context.Background(), HarborIndexCrawlTimeout())
 			HarborIndexRefreshOnce(ctx, app)
 			cancel()
 			time.Sleep(time.Duration(sec) * time.Second)

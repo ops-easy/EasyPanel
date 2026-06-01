@@ -505,7 +505,7 @@ const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({ tone = "light" }) => 
                 type="button"
                 role="option"
                 className={cn(
-                  "flex w-full items-start gap-3 border-b px-4 py-2.5 text-left text-sm last:border-b-0 focus:outline-none",
+                  "flex w-full cursor-pointer items-start gap-3 border-b px-4 py-2.5 text-left text-sm last:border-b-0 focus:outline-none",
                   isDark ? "border-slate-800 hover:bg-slate-800/70 focus:bg-slate-800/70" : "border-slate-100 hover:bg-slate-50 focus:bg-slate-50"
                 )}
                 onMouseDown={(e) => e.preventDefault()}

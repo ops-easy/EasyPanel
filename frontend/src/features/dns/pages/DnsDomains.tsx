@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Globe, Loader2, Pencil, Plus, RefreshCw, Trash2, ExternalLink, CloudDownload } from "lucide-react";
+import { ArrowRight, Globe, Loader2, Pencil, Plus, RefreshCw, Trash2, CloudDownload } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
@@ -12,6 +13,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDeleteJson, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import { dnsEffectiveDateLabel } from "@/features/dns/pages/dns-date-utils";
+import { withDnsMutationConfirm, withDnsMutationConfirmQuery } from "@/features/dns/lib/dnsMutationConfirm";
 import { useAuth } from "@/auth/auth-context";
 import { toast } from "sonner";
 
@@ -72,8 +74,8 @@ export default function DnsDomains() {
   const saveMut = useMutation({
     mutationFn: async () => {
       const body = { ...form };
-      if (editID !== null) return apiPutJson(`/api/dns/domains/${editID}`, body);
-      return apiPostJson("/api/dns/domains", body);
+      if (editID !== null) return apiPutJson(`/api/dns/domains/${editID}`, withDnsMutationConfirm(body));
+      return apiPostJson("/api/dns/domains", withDnsMutationConfirm(body));
     },
     onSuccess: () => {
       toast.success(editID !== null ? "域名已更新" : "域名已添加");
@@ -84,7 +86,7 @@ export default function DnsDomains() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => apiDeleteJson(`/api/dns/domains/${id}`),
+    mutationFn: (id: number) => apiDeleteJson(withDnsMutationConfirmQuery(`/api/dns/domains/${id}`)),
     onSuccess: () => {
       toast.success("域名已删除");
       setDeleteID(null);
@@ -96,7 +98,10 @@ export default function DnsDomains() {
   const syncRecords = async (domainId: number) => {
     setSyncingID(domainId);
     try {
-      const r = await apiPostJson<{ message: string; count: number }>(`/api/dns/domains/${domainId}/records/sync`, {});
+      const r = await apiPostJson<{ message: string; count: number }>(
+        `/api/dns/domains/${domainId}/records/sync`,
+        withDnsMutationConfirm({})
+      );
       toast.success(`${r.message}，共 ${r.count} 条记录`);
       void qc.invalidateQueries({ queryKey: ["dns-records", domainId] });
     } catch (e) {
@@ -114,7 +119,10 @@ export default function DnsDomains() {
     let totalDomains = 0;
     for (const acc of accounts) {
       try {
-        const r = await apiPostJson<{ total: number; added: number }>(`/api/dns/accounts/${acc.id}/sync-domains`, {});
+        const r = await apiPostJson<{ total: number; added: number }>(
+          `/api/dns/accounts/${acc.id}/sync-domains`,
+          withDnsMutationConfirm({})
+        );
         totalAdded += r.added;
         totalDomains += r.total;
       } catch {
@@ -138,18 +146,20 @@ export default function DnsDomains() {
             <RefreshCw className="h-4 w-4" />
           </Button>
           {!isViewer && (
-            <Button
+            <ConfirmActionButton
               variant="outline" size="sm"
               className="gap-1.5"
               disabled={syncingAllAccounts || accounts.length === 0}
-              onClick={() => void syncAllAccountDomains()}
               title="从所有服务商账号拉取域名，自动补全域名列表"
+              description="将依次从所有 DNS 服务商账号同步域名到平台本地库，已有域名会按服务商数据更新。"
+              confirmLabel="开始同步"
+              onConfirm={() => void syncAllAccountDomains()}
             >
               {syncingAllAccounts
                 ? <Loader2 className="h-4 w-4 animate-spin" />
                 : <CloudDownload className="h-4 w-4" />}
               同步所有账号域名
-            </Button>
+            </ConfirmActionButton>
           )}
           {!isViewer && (
             <Button size="sm" onClick={openCreate} className="gap-1.5">
@@ -214,18 +224,21 @@ export default function DnsDomains() {
                       <div className="flex items-center justify-end gap-1">
                         <Button asChild variant="outline" size="sm" className="gap-1">
                           <Link to={`/cluster/apps/dns/records?domainId=${d.id}`}>
-                            <ExternalLink className="h-3.5 w-3.5" /> 解析
+                            <ArrowRight className="h-3.5 w-3.5" /> 解析
                           </Link>
                         </Button>
-                        <Button
+                        <ConfirmActionButton
                           variant="outline" size="sm"
                           disabled={syncingID === d.id}
-                          onClick={() => void syncRecords(d.id)}
+                          title={`同步 ${d.name} 的解析记录`}
+                          description="将从 DNS 服务商同步解析记录并覆盖平台本地缓存，用于后续管理与展示。"
+                          confirmLabel="同步解析"
+                          onConfirm={() => void syncRecords(d.id)}
                         >
                           {syncingID === d.id
                             ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             : <RefreshCw className="h-3.5 w-3.5" />}
-                        </Button>
+                        </ConfirmActionButton>
                         {!isViewer && (
                           <>
                             <Button variant="ghost" size="sm" onClick={() => openEdit(d)}>
@@ -301,10 +314,16 @@ export default function DnsDomains() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
-            <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending || !form.name || !form.accountId}>
+            <ConfirmActionButton
+              title={editID !== null ? "更新域名元数据" : "添加域名到本地库"}
+              description="域名、服务商账号、备案和到期信息会写入平台本地库，用于 DNS、证书与巡检联动。"
+              confirmLabel="保存"
+              onConfirm={() => saveMut.mutate()}
+              disabled={saveMut.isPending || !form.name || !form.accountId}
+            >
               {saveMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               保存
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

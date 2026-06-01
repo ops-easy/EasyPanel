@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, Plus, RefreshCw, Server, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
@@ -11,6 +12,7 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescript
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDeleteJson, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import { dnsLineDisplayLabel } from "@/features/dns/pages/dns-date-utils";
+import { withDnsMutationConfirm, withDnsMutationConfirmQuery } from "@/features/dns/lib/dnsMutationConfirm";
 import { useAuth } from "@/auth/auth-context";
 import { toast } from "sonner";
 
@@ -93,7 +95,11 @@ export default function DnsRecords() {
   };
 
   const syncMut = useMutation({
-    mutationFn: () => apiPostJson<{ message: string; count: number }>(`/api/dns/domains/${selectedDomainId}/records/sync`, {}),
+    mutationFn: () =>
+      apiPostJson<{ message: string; count: number }>(
+        `/api/dns/domains/${selectedDomainId}/records/sync`,
+        withDnsMutationConfirm({})
+      ),
     onSuccess: (r) => {
       toast.success(`${r.message}，共 ${r.count} 条记录`);
       void qc.invalidateQueries({ queryKey: ["dns-records", selectedDomainId] });
@@ -104,9 +110,9 @@ export default function DnsRecords() {
   const saveMut = useMutation({
     mutationFn: async () => {
       if (editRecord) {
-        return apiPutJson(`/api/dns/domains/${selectedDomainId}/records/${editRecord.id}`, form);
+        return apiPutJson(`/api/dns/domains/${selectedDomainId}/records/${editRecord.id}`, withDnsMutationConfirm(form));
       }
-      return apiPostJson(`/api/dns/domains/${selectedDomainId}/records`, form);
+      return apiPostJson(`/api/dns/domains/${selectedDomainId}/records`, withDnsMutationConfirm(form));
     },
     onSuccess: () => {
       toast.success(editRecord ? "记录已更新" : "记录已添加");
@@ -117,7 +123,8 @@ export default function DnsRecords() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (r: DnsRecord) => apiDeleteJson(`/api/dns/domains/${selectedDomainId}/records/${r.id}`),
+    mutationFn: (r: DnsRecord) =>
+      apiDeleteJson(withDnsMutationConfirmQuery(`/api/dns/domains/${selectedDomainId}/records/${r.id}`)),
     onSuccess: () => {
       toast.success("记录已删除");
       setDeleteRec(null);
@@ -128,7 +135,10 @@ export default function DnsRecords() {
 
   const toggleMut = useMutation({
     mutationFn: (r: DnsRecord) =>
-      apiPostJson(`/api/dns/domains/${selectedDomainId}/records/${r.id}/status`, { enabled: r.status === 0 }),
+      apiPostJson(
+        `/api/dns/domains/${selectedDomainId}/records/${r.id}/status`,
+        withDnsMutationConfirm({ enabled: r.status === 0 })
+      ),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["dns-records", selectedDomainId] }),
     onError: (e) => toast.error(fmtErr(e)),
   });
@@ -150,10 +160,18 @@ export default function DnsRecords() {
           <p className="text-sm text-slate-500">管理域名的 A、CNAME、MX、TXT 等解析记录</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => syncMut.mutate()} disabled={!selectedDomainId || syncMut.isPending}>
+          <ConfirmActionButton
+            variant="outline"
+            size="sm"
+            title="同步 DNS 解析记录"
+            description="将从 DNS 服务商同步解析记录并覆盖平台本地缓存，用于后续展示和管理。"
+            confirmLabel="开始同步"
+            onConfirm={() => syncMut.mutate()}
+            disabled={!selectedDomainId || syncMut.isPending}
+          >
             {syncMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             <span className="ml-1.5 hidden sm:inline">从服务商同步</span>
-          </Button>
+          </ConfirmActionButton>
           {!isViewer && (
             <Button size="sm" onClick={openCreate} disabled={!selectedDomainId} className="gap-1.5">
               <Plus className="h-4 w-4" /> 添加记录
@@ -256,11 +274,19 @@ export default function DnsRecords() {
                   {!isViewer && (
                     <TableCell className="align-top py-2.5 text-right">
                       <div className="flex items-center justify-end gap-0.5">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => toggleMut.mutate(r)}>
+                        <ConfirmActionButton
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          title={`${r.status === 1 ? "暂停" : "启用"}解析记录`}
+                          description={`${recordFqdn(r.host)} 的解析状态会同步提交给 DNS 服务商。`}
+                          confirmLabel={r.status === 1 ? "暂停" : "启用"}
+                          onConfirm={() => toggleMut.mutate(r)}
+                        >
                           {r.status === 1
                             ? <ToggleRight className="h-4 w-4 text-emerald-600" />
                             : <ToggleLeft className="h-4 w-4 text-slate-400" />}
-                        </Button>
+                        </ConfirmActionButton>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(r)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -342,10 +368,16 @@ export default function DnsRecords() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
-            <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending || !form.host || !form.value}>
+            <ConfirmActionButton
+              title={editRecord ? "更新 DNS 解析记录" : "创建 DNS 解析记录"}
+              description="解析记录会写入 DNS 服务商并同步更新平台缓存。"
+              confirmLabel="保存"
+              onConfirm={() => saveMut.mutate()}
+              disabled={saveMut.isPending || !form.host || !form.value}
+            >
               {saveMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               保存
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

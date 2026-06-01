@@ -13,6 +13,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func toolboxConfirm(raw string) bool {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "1", "true", "yes", "y":
+		return true
+	default:
+		return false
+	}
+}
+
+func requireToolboxConfirm(c *gin.Context, confirmed bool, label string) bool {
+	if confirmed {
+		return true
+	}
+	c.JSON(http.StatusBadRequest, gin.H{"error": label + " requires confirm=true"})
+	return false
+}
+
 func handleToolboxIPScanConfigGet(c *gin.Context, app *appctx.ServerApp) {
 	segs, err := toolsvc.LoadSegments(app)
 	if err != nil {
@@ -26,6 +43,9 @@ func handleToolboxIPScanConfigPut(c *gin.Context, app *appctx.ServerApp) {
 	var body toolmodel.IPScanConfigPut
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请求 JSON 无效: " + err.Error()})
+		return
+	}
+	if !requireToolboxConfirm(c, body.Confirm, "IP scan config update") {
 		return
 	}
 	norm, err := toolsvc.NormalizeSegments(body.Segments)
@@ -43,6 +63,9 @@ func handleToolboxIPScanConfigPut(c *gin.Context, app *appctx.ServerApp) {
 func handleToolboxIPScanRun(c *gin.Context, app *appctx.ServerApp) {
 	var body toolmodel.IPScanRunBody
 	_ = c.ShouldBindJSON(&body)
+	if !requireToolboxConfirm(c, body.Confirm || toolboxConfirm(c.Query("confirm")), "IP scan run") {
+		return
+	}
 	segment := strings.TrimSpace(body.Segment)
 	if segment == "" {
 		segs, err := toolsvc.LoadSegments(app)

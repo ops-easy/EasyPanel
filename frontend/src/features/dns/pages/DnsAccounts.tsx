@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { KeyRound, Loader2, Plus, RefreshCw, Trash2, Pencil, CheckCircle, XCircle, CloudDownload } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
@@ -10,6 +11,7 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescript
 import { Badge } from "@/shared/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDeleteJson, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
+import { withDnsMutationConfirm, withDnsMutationConfirmQuery } from "@/features/dns/lib/dnsMutationConfirm";
 import { useAuth } from "@/auth/auth-context";
 import { toast } from "sonner";
 
@@ -95,9 +97,9 @@ export default function DnsAccounts() {
     mutationFn: async () => {
       const body = { name: form.name, provider: form.provider, config: form.config, remark: form.remark };
       if (editID !== null) {
-        return apiPutJson(`/api/dns/accounts/${editID}`, body);
+        return apiPutJson(`/api/dns/accounts/${editID}`, withDnsMutationConfirm(body));
       }
-      return apiPostJson("/api/dns/accounts", body);
+      return apiPostJson("/api/dns/accounts", withDnsMutationConfirm(body));
     },
     onSuccess: () => {
       toast.success(editID !== null ? "账号已更新" : "账号已创建");
@@ -108,7 +110,7 @@ export default function DnsAccounts() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => apiDeleteJson(`/api/dns/accounts/${id}`),
+    mutationFn: (id: number) => apiDeleteJson(withDnsMutationConfirmQuery(`/api/dns/accounts/${id}`)),
     onSuccess: () => {
       toast.success("账号已删除");
       setDeleteID(null);
@@ -134,7 +136,7 @@ export default function DnsAccounts() {
   const syncDomainsMut = useMutation({
     mutationFn: async (acc: Account) =>
       apiPostJson<{ message: string; total: number; added: number }>(
-        `/api/dns/accounts/${acc.id}/sync-domains`, {}),
+        `/api/dns/accounts/${acc.id}/sync-domains`, withDnsMutationConfirm({})),
     onSuccess: (r, acc) => {
       setSyncResult({ id: acc.id, msg: `已同步 ${r.total} 个域名，新增 ${r.added} 个` });
       void qc.invalidateQueries({ queryKey: ["dns-domains"] });
@@ -216,16 +218,18 @@ export default function DnsAccounts() {
                           : "测试连接"}
                       </Button>
                       {!isViewer && (
-                        <Button
+                        <ConfirmActionButton
                           variant="outline" size="sm"
                           title="从服务商同步域名列表"
+                          description={`将从 ${acc.name} 拉取域名并写入平台本地库，已有域名会按服务商数据更新。`}
                           disabled={syncDomainsMut.isPending}
-                          onClick={() => syncDomainsMut.mutate(acc)}
+                          confirmLabel="开始同步"
+                          onConfirm={() => syncDomainsMut.mutate(acc)}
                         >
                           {syncDomainsMut.isPending && syncDomainsMut.variables?.id === acc.id
                             ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             : <><CloudDownload className="h-3.5 w-3.5" /><span className="ml-1">同步域名</span></>}
-                        </Button>
+                        </ConfirmActionButton>
                       )}
                       {!isViewer && (
                         <>
@@ -293,10 +297,16 @@ export default function DnsAccounts() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
-            <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending || !form.name}>
+            <ConfirmActionButton
+              title={editID !== null ? "更新 DNS 服务商账号" : "添加 DNS 服务商账号"}
+              description="账号凭据会写入平台配置库，并用于后续域名、解析记录和证书签发操作。"
+              confirmLabel="保存"
+              onConfirm={() => saveMut.mutate()}
+              disabled={saveMut.isPending || !form.name}
+            >
               {saveMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               保存
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

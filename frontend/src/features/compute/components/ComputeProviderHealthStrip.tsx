@@ -24,7 +24,7 @@ const ComputeProviderHealthStrip: React.FC<ComputeProviderHealthStripProps> = ({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="grid flex-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
           {loading ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">正在读取接入源...</div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">正在读取配置源...</div>
           ) : (
             rows.map((provider) => {
               const configured = provider.configured === true;
@@ -44,7 +44,7 @@ const ComputeProviderHealthStrip: React.FC<ComputeProviderHealthStripProps> = ({
                       configured ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600"
                     )}
                   >
-                    {configured ? "已接入" : "未接入"}
+                    {configured ? "已配置" : "未配置"}
                   </Badge>
                 </div>
               );
@@ -70,7 +70,7 @@ const ComputeProviderHealthStrip: React.FC<ComputeProviderHealthStripProps> = ({
       ) : (
         <p className="mt-3 flex items-center gap-2 text-xs text-slate-500">
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-          接入源状态会影响下方资源、容量热点和最近活动。
+          配置源状态会影响下方资源、容量热点和最近活动。
         </p>
       )}
     </section>

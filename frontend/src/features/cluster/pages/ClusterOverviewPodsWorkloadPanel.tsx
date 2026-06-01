@@ -4,11 +4,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/auth/auth-context";
 import { Brain, ChevronDown, Cpu, Flame, Gauge, Loader2, MemoryStick, RefreshCw, Settings } from "lucide-react";
 import { apiGetJson, apiPostJson, ApiHttpError } from "@/lib/api";
+import { withK8sMutationConfirm } from "@/features/cluster/lib/k8sMutationConfirm";
 import { cn } from "@/lib/utils";
 import { formatCpuMilliC } from "@/lib/k8s-metrics-format";
 import { OpenClawChatMarkdown } from "@/features/app-center/openclaw/components/OpenClawChatMarkdown";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -175,7 +177,7 @@ function ClusterStrip({
   if (!prometheus) {
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-amber-200/80 bg-amber-50/50 px-4 py-3 dark:border-amber-900/45 dark:bg-amber-950/20">
-        <p className="text-xs text-amber-950 dark:text-amber-100/90">未接入 Prometheus，无法对比实际用量</p>
+        <p className="text-xs text-amber-950 dark:text-amber-100/90">未配置 Prometheus，无法对比实际用量</p>
         <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1.5 text-xs" asChild>
           <Link to="/cluster/settings">
             <Settings className="h-3.5 w-3.5" />
@@ -566,7 +568,7 @@ const ClusterOverviewPodsWorkloadPanel: React.FC = () => {
       try {
         const res = await apiPostJson<{ ok?: boolean; linkedSync?: WorkloadLinkedSyncPayload; message?: string }>(
           "/api/k8s/workloads/patch-container-resources",
-          {
+          withK8sMutationConfirm({
             kind: row.kind,
             namespace: row.namespace,
             name: row.name,
@@ -576,7 +578,7 @@ const ClusterOverviewPodsWorkloadPanel: React.FC = () => {
             memoryLimit: row.suggestedMemoryLimit ?? "",
             syncLinked: advisorySyncLinked,
             helmChartRef: advisoryHelmChartRef.trim(),
-          }
+          })
         );
         const lines: string[] = [`已按建议调整 ${row.kind} ${row.namespace}/${row.name}`];
         const ls = res.linkedSync;
@@ -793,16 +795,19 @@ const ClusterOverviewPodsWorkloadPanel: React.FC = () => {
                             {[r.suggestedCpuRequest, r.suggestedMemoryRequest].filter(Boolean).join(" · ") || "—"}
                           </TableCell>
                           <TableCell className="pr-3 text-right">
-                            <Button
+                            <ConfirmActionButton
                               type="button"
                               size="sm"
                               variant="secondary"
                               className="h-7 text-[11px]"
                               disabled={!canPatch || busy}
-                              onClick={() => void applyAdvisoryPatch(r)}
+                              title="确认按建议修改容器资源？"
+                              description={`将按建议修改 ${r.kind} ${r.namespace}/${r.name} 的容器资源配置。`}
+                              confirmLabel="修改"
+                              onConfirm={() => void applyAdvisoryPatch(r)}
                             >
                               {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "一键应用"}
-                            </Button>
+                            </ConfirmActionButton>
                           </TableCell>
                         </TableRow>
                       );

@@ -7,8 +7,10 @@ import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { CollapsibleManual } from "@/shared/ui/CollapsibleManual";
 import { apiGetJson, apiPostJson, apiPutJson, ApiHttpError } from "@/lib/api";
+import { withOpsMutationConfirm, withOpsMutationConfirmQuery } from "@/lib/ops-mutation-confirm";
 import { useAuth } from "@/auth/auth-context";
 import { toast } from "sonner";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 type AlertRule = {
   id: string;
@@ -126,7 +128,7 @@ const AiInspectAlerts: React.FC = () => {
   const regenWebhookMut = useMutation({
     mutationFn: () =>
       apiPostJson<{ webhookUrl?: string; message?: string; error?: string }>(
-        "/api/ops/alerts/alertmanager-webhook/regenerate",
+        withOpsMutationConfirmQuery("/api/ops/alerts/alertmanager-webhook/regenerate"),
         {},
       ),
     onSuccess: (res) => {
@@ -143,7 +145,7 @@ const AiInspectAlerts: React.FC = () => {
 
   const saveMut = useMutation({
     mutationFn: (body: AlertsGet) =>
-      apiPutJson("/api/ops/alerts", {
+      apiPutJson("/api/ops/alerts", withOpsMutationConfirm({
         rules: body.rules,
         alertmanagerForwardToChannels: body.alertmanagerForwardToChannels,
         channels: body.channels.map((c) => ({
@@ -164,7 +166,7 @@ const AiInspectAlerts: React.FC = () => {
         })),
         channelIds: body.channelIds,
         silences: body.silences,
-      }),
+      })),
     onSuccess: () => {
       toast.success("告警配置已保存");
       void qc.invalidateQueries({ queryKey: ["ops-alerts"] });
@@ -231,15 +233,18 @@ const AiInspectAlerts: React.FC = () => {
             </span>
           </label>
           <div className="flex flex-wrap gap-2">
-            <Button
+            <ConfirmActionButton
               type="button"
               variant="secondary"
               size="sm"
               disabled={regenWebhookMut.isPending}
-              onClick={() => regenWebhookMut.mutate()}
+              title="确认重置 Webhook URL？"
+              description="将生成新的 Alertmanager Webhook 地址，旧地址会失效，需要同步更新外部告警源。"
+              confirmLabel="重置"
+              onConfirm={() => regenWebhookMut.mutate()}
             >
               生成或重置 Webhook URL
-            </Button>
+            </ConfirmActionButton>
             {draft.alertmanagerWebhookUrl ? (
               <Button
                 type="button"
@@ -797,9 +802,19 @@ const AiInspectAlerts: React.FC = () => {
         </div>
       </section>
 
-      <Button type="button" onClick={() => draft && saveMut.mutate(draft)} disabled={saveMut.isPending}>
+      <ConfirmActionButton
+        type="button"
+        disabled={saveMut.isPending}
+        title="确认保存告警配置？"
+        description="将写入告警规则与通知渠道配置，后续巡检告警会按这些规则发送。"
+        confirmLabel="保存"
+        onConfirm={() => {
+          if (!draft) return;
+          saveMut.mutate(draft);
+        }}
+      >
         保存全部
-      </Button>
+      </ConfirmActionButton>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">最近通知</h2>

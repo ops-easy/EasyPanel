@@ -197,6 +197,9 @@ func handleAppOpenClawInstanceRBACPreset(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "OpenClaw update RBAC preset") {
+		return
+	}
 	if app.K8s() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "K8s 未连接"})
 		return
@@ -260,6 +263,7 @@ func handleAppOpenClawInstanceRBACPreset(c *gin.Context, app *ServerApp) {
 		return
 	}
 	mirrorPlatformKVIfDualWrite(app)
+	SetAuditDetail(c, "应用中心 OpenClaw 更新 RBAC 预设 "+inst.DisplayName+" preset="+preset+" role="+roleName)
 	c.JSON(http.StatusOK, gin.H{
 		"ok":                     true,
 		"rbacPreset":             preset,

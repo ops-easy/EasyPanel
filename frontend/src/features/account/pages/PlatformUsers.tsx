@@ -44,6 +44,8 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { Switch } from "@/shared/ui/switch";
 import { Separator } from "@/shared/ui/separator";
 import { ApiHttpError, API_BASE, apiDelete, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
+import { withAccountMutationConfirm, withAccountMutationConfirmQuery } from "@/features/account/lib/accountMutationConfirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 type Row = {
   id: number;
@@ -402,11 +404,11 @@ const PlatformUsers: React.FC = () => {
     mutationFn: async () => {
       const pj = buildPermissionsJson(useCustomPermissions, role, permForm);
       if (edit) {
-        const body: Record<string, unknown> = {
+        const body: Record<string, unknown> = withAccountMutationConfirm({
           email,
           role,
           disabled: edit.disabled,
-        };
+        });
         if (password.trim()) body.password = password;
         if (role !== "admin") {
           body.permissionsJson = pj ?? "";
@@ -415,14 +417,14 @@ const PlatformUsers: React.FC = () => {
         body.allowMultiIpLogin = allowMultiIpLogin;
         return apiPutJson(`/api/admin/users/${edit.id}`, body);
       }
-      const createBody: Record<string, unknown> = {
+      const createBody: Record<string, unknown> = withAccountMutationConfirm({
         username: username.trim(),
         email: email.trim(),
         password,
         role,
         allowedLoginIps: allowedLoginIps.trim(),
         allowMultiIpLogin,
-      };
+      });
       if (role !== "admin") {
         createBody.permissionsJson = pj === "" ? undefined : pj;
       }
@@ -438,7 +440,7 @@ const PlatformUsers: React.FC = () => {
   });
 
   const delMut = useMutation({
-    mutationFn: (id: number) => apiDelete(`/api/admin/users/${id}`),
+    mutationFn: (id: number) => apiDelete(withAccountMutationConfirmQuery(`/api/admin/users/${id}`)),
     onSuccess: () => {
       toast.success("已删除");
       void qc.invalidateQueries({ queryKey: ["admin-users"] });
@@ -463,8 +465,8 @@ const PlatformUsers: React.FC = () => {
       const { u, currentPassword } = p;
       const body =
         u.id > 0 && !u.virtual
-          ? { userId: u.id, currentPassword }
-          : { username: u.username, currentPassword };
+          ? withAccountMutationConfirm({ userId: u.id, currentPassword })
+          : withAccountMutationConfirm({ username: u.username, currentPassword });
       return apiPostJson<TotpProvisionApiRes>("/api/admin/users/totp/provision", body);
     },
     onSuccess: (data, p) => {
@@ -485,8 +487,8 @@ const PlatformUsers: React.FC = () => {
       const { u, currentPassword } = p;
       const body =
         u.id > 0 && !u.virtual
-          ? { userId: u.id, currentPassword }
-          : { username: u.username, currentPassword };
+          ? withAccountMutationConfirm({ userId: u.id, currentPassword })
+          : withAccountMutationConfirm({ username: u.username, currentPassword });
       return apiPostJson("/api/admin/users/totp/disable", body);
     },
     onSuccess: () => {
@@ -1052,16 +1054,19 @@ const PlatformUsers: React.FC = () => {
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 取消
               </Button>
-              <Button
+              <ConfirmActionButton
                 type="button"
                 disabled={
                   saveMut.isPending ||
                   (!edit && (username.trim().length < 2 || password.length < 8))
                 }
-                onClick={() => saveMut.mutate()}
+                title="确认保存平台用户？"
+                description="将写入用户资料、角色与模块权限配置，保存后会影响该账号后续访问范围。"
+                confirmLabel="保存"
+                onConfirm={() => saveMut.mutate()}
               >
                 {saveMut.isPending ? "保存中…" : "保存"}
-              </Button>
+              </ConfirmActionButton>
             </DialogFooter>
           </div>
         </DialogContent>
@@ -1236,10 +1241,10 @@ const PlatformUsers: React.FC = () => {
                 if (!oidcUnbindRow) return;
                 setOidcUnbindBusy(true);
                 try {
-                  await apiPostJson("/api/admin/users/oidc/unbind", {
+                  await apiPostJson("/api/admin/users/oidc/unbind", withAccountMutationConfirm({
                     username: oidcUnbindRow.username,
                     operatorPassword: oidcUnbindPwd,
-                  });
+                  }));
                   toast.success("已取消该用户的 OIDC 绑定");
                   setOidcUnbindRow(null);
                   setOidcUnbindPwd("");

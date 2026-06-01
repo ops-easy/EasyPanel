@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	appsv1 "k8s.io/api/apps/v1"
@@ -15,18 +16,23 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	sigyaml "sigs.k8s.io/yaml"
 )
 
-// POST /api/k8s/apply-yaml  body: { yamlContent: string } — 多文档 --- 分隔；支持常见 workload/网络/RBAC 周边资源及 kind: List
+// POST /api/k8s/apply-yaml  body: { yamlContent: string } — 多文档 --- 分隔；typed fast path 覆盖常见资源，其它合法 Kind 走 dynamic apply。
 func handleK8sApplyYamlGeneric(c *gin.Context, app *ServerApp) {
-	k8s := app.K8s()
-	if !GuardK8s(c, k8s) {
-		return
-	}
 	var req YamlRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数解析失败: " + err.Error()})
+		return
+	}
+	if !requireK8sMutationConfirm(c, req.Confirm, "Kubernetes YAML 应用") {
+		return
+	}
+	k8s := app.K8s()
+	restCfg := app.K8sREST()
+	if !GuardK8sREST(c, k8s, restCfg) {
 		return
 	}
 	docs := splitYAMLDocuments(req.YamlContent)
@@ -34,7 +40,8 @@ func handleK8sApplyYamlGeneric(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "YAML 为空"})
 		return
 	}
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
+	defer cancel()
 	applied := 0
 	user := dashboardUsernameFromGin(c)
 	for _, doc := range docs {
@@ -45,7 +52,7 @@ func handleK8sApplyYamlGeneric(c *gin.Context, app *ServerApp) {
 		if normalizeYAMLDocument(doc) == "" {
 			continue
 		}
-		if err := applyOneKubernetesYAML(ctx, k8s, doc, req.SkipWorkloadSchedulingCheck); err != nil {
+		if err := applyOneKubernetesYAML(ctx, k8s, restCfg, doc, req.SkipWorkloadSchedulingCheck); err != nil {
 			RespondAPIError500(c, err.Error())
 			return
 		}
@@ -89,7 +96,7 @@ func splitYAMLDocuments(s string) []string {
 	return out
 }
 
-func applyKubernetesYAMLList(ctx context.Context, k8s *kubernetes.Clientset, doc string, skipWorkloadSchedulingCheck bool) error {
+func applyKubernetesYAMLList(ctx context.Context, k8s *kubernetes.Clientset, restCfg *rest.Config, doc string, skipWorkloadSchedulingCheck bool) error {
 	doc = normalizeYAMLDocument(doc)
 	if doc == "" {
 		return fmt.Errorf("List 资源在规范化后为空")
@@ -111,14 +118,14 @@ func applyKubernetesYAMLList(ctx context.Context, k8s *kubernetes.Clientset, doc
 		if err != nil {
 			return fmt.Errorf("List items[%d] 序列化: %w", i, err)
 		}
-		if err := applyOneKubernetesYAML(ctx, k8s, string(itemYAML), skipWorkloadSchedulingCheck); err != nil {
+		if err := applyOneKubernetesYAML(ctx, k8s, restCfg, string(itemYAML), skipWorkloadSchedulingCheck); err != nil {
 			return fmt.Errorf("List items[%d]: %w", i, err)
 		}
 	}
 	return nil
 }
 
-func applyOneKubernetesYAML(ctx context.Context, k8s *kubernetes.Clientset, doc string, skipWorkloadSchedulingCheck bool) error {
+func applyOneKubernetesYAML(ctx context.Context, k8s *kubernetes.Clientset, restCfg *rest.Config, doc string, skipWorkloadSchedulingCheck bool) error {
 	doc = normalizeYAMLDocument(doc)
 	if doc == "" {
 		return fmt.Errorf("YAML 片段在去掉注释与分隔符后为空")
@@ -132,7 +139,7 @@ func applyOneKubernetesYAML(ctx context.Context, k8s *kubernetes.Clientset, doc 
 		return fmt.Errorf("无法识别 YAML kind（请确保包含顶格字段 kind，例如 kind: Deployment）；支持 Deployment/StatefulSet/DaemonSet/ReplicaSet/Job/CronJob/Pod/Service/PVC/ConfigMap/Secret/Ingress/NetworkPolicy/HorizontalPodAutoscaler/Namespace/ServiceAccount 及 kind: List 多段清单")
 	}
 	if kind == "List" {
-		return applyKubernetesYAMLList(ctx, k8s, doc, skipWorkloadSchedulingCheck)
+		return applyKubernetesYAMLList(ctx, k8s, restCfg, doc, skipWorkloadSchedulingCheck)
 	}
 	switch kind {
 	case "Deployment":
@@ -471,7 +478,10 @@ func applyOneKubernetesYAML(ctx context.Context, k8s *kubernetes.Clientset, doc 
 		}
 		return err
 	default:
-		return fmt.Errorf("暂不支持的 kind: %s（可拆成多段 YAML 或使用 kubectl；已支持 List 包裹的多资源）", kind)
+		if restCfg == nil {
+			return fmt.Errorf("当前 kind %s 需要 Kubernetes REST 配置用于动态应用", kind)
+		}
+		return applyYAMLManifestDynamic(ctx, restCfg, []byte(doc))
 	}
 }
 
@@ -590,7 +600,8 @@ func handleK8sGetObjectYAML(c *gin.Context, k8s *kubernetes.Clientset) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "需要 query: kind, namespace, name"})
 		return
 	}
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
+	defer cancel()
 	yamlBytes, err := k8sGetObjectYAMLBytes(ctx, k8s, kind, ns, name)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "不支持的 kind:") {
@@ -611,9 +622,6 @@ func handleK8sGetObjectYAML(c *gin.Context, k8s *kubernetes.Clientset) {
 
 // DELETE /api/k8s/objects/:kind/:namespace/:name  kind: deployment|statefulset|pod|service|pvc|configmap
 func handleK8sDeleteObject(c *gin.Context, k8s *kubernetes.Clientset) {
-	if !GuardK8s(c, k8s) {
-		return
-	}
 	kind := strings.ToLower(strings.TrimSpace(c.Param("kind")))
 	ns := c.Param("namespace")
 	name := c.Param("name")
@@ -621,7 +629,14 @@ func handleK8sDeleteObject(c *gin.Context, k8s *kubernetes.Clientset) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "路径无效"})
 		return
 	}
-	ctx := context.TODO()
+	if !requireK8sMutationConfirm(c, k8sConfirmed(c.Query("confirm")), "Kubernetes 资源删除") {
+		return
+	}
+	if !GuardK8s(c, k8s) {
+		return
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
+	defer cancel()
 	var err error
 	switch kind {
 	case "deployment":

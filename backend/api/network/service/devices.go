@@ -110,6 +110,23 @@ func requireNetworkAdmin(c *gin.Context) bool {
 	return false
 }
 
+func networkConfirmed(raw string) bool {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "1", "true", "yes", "y":
+		return true
+	default:
+		return false
+	}
+}
+
+func requireNetworkConfirm(c *gin.Context, confirmed bool, label string) bool {
+	if confirmed {
+		return true
+	}
+	c.JSON(http.StatusBadRequest, gin.H{"error": label + " requires confirm=true"})
+	return false
+}
+
 func networkEncryptionKey(app *ServerApp) ([]byte, error) {
 	if app == nil {
 		return nil, errors.New("应用上下文不可用")
@@ -357,6 +374,7 @@ type networkDeviceBody struct {
 	InstanceLabel   string `json:"instanceLabel"`
 	JobLabel        string `json:"jobLabel"`
 	Notes           string `json:"notes"`
+	Confirm         bool   `json:"confirm"`
 }
 
 func findNetworkDevice(list []networkmodel.Device, id string) (*networkmodel.Device, int) {
@@ -450,6 +468,9 @@ func handleNetworkDeviceCreate(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if !requireNetworkConfirm(c, body.Confirm, "network device create") {
+		return
+	}
 	var key []byte
 	if strings.EqualFold(strings.TrimSpace(body.Kind), networkDeviceKindOpenWrt) || strings.EqualFold(strings.TrimSpace(body.Kind), networkDeviceKindIkuai) {
 		var err error
@@ -474,11 +495,20 @@ func handleNetworkDeviceCreate(c *gin.Context, app *ServerApp) {
 		result.Error500(c, err.Error())
 		return
 	}
+	setNetworkAuditDetail(c, networkActionAuditDetail(dev.Kind, dev, "save-device"))
 	c.JSON(http.StatusOK, gin.H{"device": networkDeviceListItem(dev)})
 }
 
 func handleNetworkDeviceUpdate(c *gin.Context, app *ServerApp) {
 	if !requireNetworkAdmin(c) {
+		return
+	}
+	var body networkDeviceBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireNetworkConfirm(c, body.Confirm, "network device update") {
 		return
 	}
 	list, err := loadNetworkDevices(app.PlatformKV())
@@ -489,11 +519,6 @@ func handleNetworkDeviceUpdate(c *gin.Context, app *ServerApp) {
 	cur, idx := findNetworkDevice(list, c.Param("id"))
 	if cur == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "网络设备不存在"})
-		return
-	}
-	var body networkDeviceBody
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	var key []byte
@@ -515,11 +540,15 @@ func handleNetworkDeviceUpdate(c *gin.Context, app *ServerApp) {
 		result.Error500(c, err.Error())
 		return
 	}
+	setNetworkAuditDetail(c, networkActionAuditDetail(dev.Kind, dev, "update-device"))
 	c.JSON(http.StatusOK, gin.H{"device": networkDeviceListItem(dev)})
 }
 
 func handleNetworkDeviceDelete(c *gin.Context, app *ServerApp) {
 	if !requireNetworkAdmin(c) {
+		return
+	}
+	if !requireNetworkConfirm(c, networkConfirmed(c.Query("confirm")), "network device delete") {
 		return
 	}
 	list, err := loadNetworkDevices(app.PlatformKV())
@@ -529,14 +558,18 @@ func handleNetworkDeviceDelete(c *gin.Context, app *ServerApp) {
 	}
 	id := strings.TrimSpace(c.Param("id"))
 	out := make([]networkmodel.Device, 0, len(list))
+	deleted := networkmodel.Device{ID: id}
 	for _, x := range list {
 		if x.ID != id {
 			out = append(out, x)
+		} else {
+			deleted = x
 		}
 	}
 	if err := saveNetworkDevices(app.PlatformKV(), out); err != nil {
 		result.Error500(c, err.Error())
 		return
 	}
+	setNetworkAuditDetail(c, networkActionAuditDetail(deleted.Kind, deleted, "delete-device"))
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }

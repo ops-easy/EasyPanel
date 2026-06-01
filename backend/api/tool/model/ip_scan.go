@@ -28,8 +28,10 @@ type IPScanRun struct {
 
 type IPScanConfigPut struct {
 	Segments []string `json:"segments"`
+	Confirm  bool     `json:"confirm"`
 }
 
 type IPScanRunBody struct {
 	Segment string `json:"segment"`
+	Confirm bool   `json:"confirm"`
 }

@@ -23,6 +23,9 @@ func handleAppHermesUpgrade(c *gin.Context, app *ServerApp) {
 		RespondAPIPermissionDenied(c)
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Hermes upgrade") {
+		return
+	}
 	inst, ok := loadHermesInstanceByParam(c, app)
 	if !ok {
 		return
@@ -58,12 +61,16 @@ func handleAppHermesUpgrade(c *gin.Context, app *ServerApp) {
 		RespondAPIError500(c, err.Error())
 		return
 	}
+	SetAuditDetail(c, "应用中心 Hermes 升级镜像 "+saved.DisplayName+" image="+image)
 	c.JSON(http.StatusOK, gin.H{"instance": saved})
 }
 
 func handleAppHermesRollback(c *gin.Context, app *ServerApp) {
 	if getDashboardRoleFromGin(c) != DashboardRoleAdmin {
 		RespondAPIPermissionDenied(c)
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "Hermes rollback") {
 		return
 	}
 	inst, ok := loadHermesInstanceByParam(c, app)
@@ -91,6 +98,7 @@ func handleAppHermesRollback(c *gin.Context, app *ServerApp) {
 		RespondAPIError500(c, err.Error())
 		return
 	}
+	SetAuditDetail(c, "应用中心 Hermes 回滚镜像 "+saved.DisplayName+" image="+prev)
 	c.JSON(http.StatusOK, gin.H{"instance": saved})
 }
 

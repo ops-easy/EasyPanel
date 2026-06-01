@@ -18,13 +18,16 @@ const k8sAnnotationDeploymentRestartedAt = "kubectl.kubernetes.io/restartedAt"
 
 // handleK8sDeploymentRolloutRestart POST /api/k8s/deployments/:namespace/:name/restart
 func handleK8sDeploymentRolloutRestart(c *gin.Context, k8s *kubernetes.Clientset) {
-	if !GuardK8s(c, k8s) {
-		return
-	}
 	ns := strings.TrimSpace(c.Param("namespace"))
 	name := strings.TrimSpace(c.Param("name"))
 	if ns == "" || name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "需要 path: namespace, name"})
+		return
+	}
+	if !requireK8sMutationConfirm(c, k8sConfirmed(c.Query("confirm")), "Deployment 滚动重启") {
+		return
+	}
+	if !GuardK8s(c, k8s) {
 		return
 	}
 	ctx := c.Request.Context()

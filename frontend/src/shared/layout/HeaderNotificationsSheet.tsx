@@ -221,7 +221,7 @@ const HeaderNotificationsSheet: React.FC = () => {
       <SheetTrigger asChild>
         <button
           type="button"
-          className="relative rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600"
+          className="relative cursor-pointer rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600"
           aria-label="通知"
         >
           <Bell size={22} />

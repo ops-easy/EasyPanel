@@ -259,7 +259,7 @@ func ViewerRestrictionsMiddleware(app *ServerApp) gin.HandlerFunc {
 		}
 		role := authz.DashboardRole(c)
 		if role == "" {
-			c.Next()
+			AbortAPIPermissionDenied(c)
 			return
 		}
 		if role == DashboardRoleAdmin {

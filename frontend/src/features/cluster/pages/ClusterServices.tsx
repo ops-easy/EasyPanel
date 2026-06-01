@@ -33,6 +33,8 @@ import { cn } from "@/lib/utils";
 import type { SvcRow } from "./types";
 import { K8sGraphicEditDialogLazy } from "./k8s/K8sGraphicEditDialogLazy";
 import { normalizePortEntries, servicePortsPreview } from "./servicePortsDisplay";
+import { withK8sMutationConfirm, withK8sMutationConfirmQuery } from "@/features/cluster/lib/k8sMutationConfirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 const ClusterServices: React.FC = () => {
   const { namespace: nsEncoded } = useParams<{ namespace: string }>();
@@ -60,7 +62,7 @@ const ClusterServices: React.FC = () => {
 
   const applyMut = useMutation({
     mutationFn: (yamlContent: string) =>
-      apiPostJson("/api/k8s/apply-yaml", { yamlContent }),
+      apiPostJson("/api/k8s/apply-yaml", withK8sMutationConfirm({ yamlContent })),
     onSuccess: () => {
       setYamlOpen(false);
       void queryClient.invalidateQueries({ queryKey: ["k8s-services"] });
@@ -71,7 +73,9 @@ const ClusterServices: React.FC = () => {
   const deleteMut = useMutation({
     mutationFn: (name: string) =>
       apiDelete(
-        `/api/k8s/objects/service/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}`
+        withK8sMutationConfirmQuery(
+          `/api/k8s/objects/service/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}`
+        )
       ),
     onSuccess: () => {
       setDelName(null);
@@ -294,13 +298,16 @@ const ClusterServices: React.FC = () => {
             <Button type="button" variant="secondary" onClick={() => setYamlOpen(false)}>
               取消
             </Button>
-            <Button
+            <ConfirmActionButton
               type="button"
               disabled={applyMut.isPending}
-              onClick={() => void applyMut.mutateAsync(yamlDraft)}
+              title="确认应用 Service YAML？"
+              description={`将把 ${yamlMode === "edit" ? "当前 Service" : "新 Service YAML"} 写入命名空间 ${namespace}。`}
+              confirmLabel="应用"
+              onConfirm={() => void applyMut.mutateAsync(yamlDraft)}
             >
               {applyMut.isPending ? "提交中…" : "提交应用"}
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
           {applyMut.isError && (
             <p className="text-sm text-red-600">{(applyMut.error as Error).message}</p>

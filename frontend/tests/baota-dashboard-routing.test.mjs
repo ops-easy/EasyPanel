@@ -21,7 +21,7 @@ function sourceBetween(source, startNeedle, endNeedle) {
   return source.slice(start, end);
 }
 
-test("baota workspace opens the module dashboard instead of ingress sync", () => {
+test("baota workspace opens the module dashboard when configured instead of ingress sync", () => {
   assert.doesNotMatch(appSource, /path="baota" element=\{<Navigate to="\/cluster\/baota\/sync"/);
   assert.match(appSource, /path="baota" element=\{<Navigate to="\/cluster\/baota"/);
 
@@ -38,8 +38,10 @@ test("baota workspace opens the module dashboard instead of ingress sync", () =>
   assert.doesNotMatch(hubBaotaItem, /\/cluster\/baota\/sync/);
 
   const homeHubBaotaCard = sourceBetween(homeHubSource, "{showBaota && (", "{showAppCenter && (");
-  assert.match(homeHubBaotaCard, /to="\/cluster\/baota"/);
-  assert.doesNotMatch(homeHubBaotaCard, /baotaEntryTo|\/cluster\/baota\/sync|\/cluster\/baota\/settings/);
+  assert.match(homeHubSource, /const baotaNeedsSetup = !baotaSummaryLoading && !baotaSummaryError && !baotaOk;/);
+  assert.match(homeHubBaotaCard, /to=\{baotaNeedsSetup \? "\/cluster\/baota\/settings" : "\/cluster\/baota"\}/);
+  assert.match(homeHubBaotaCard, /配置宝塔接入/);
+  assert.doesNotMatch(homeHubBaotaCard, /baotaEntryTo|\/cluster\/baota\/sync/);
   assert.doesNotMatch(homeHubSource, /const baotaEntryTo/);
 
   assert.ok(baotaDashboardSource.length > 0, "BaotaDashboard.tsx should exist");

@@ -35,6 +35,7 @@ import {
 } from "@/shared/ui/alert-dialog";
 import { CollapsibleManual } from "@/shared/ui/CollapsibleManual";
 import { apiGetJson, apiPostJson, type AppConfig } from "@/lib/api";
+import { withK8sMutationConfirm } from "@/features/cluster/lib/k8sMutationConfirm";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { AddonsStatusResponse } from "@/features/cluster/pages/ClusterK8sAddonsSection";
@@ -236,13 +237,16 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
         verification?: IngressAddonVerification;
         loginTokenHint?: string;
         prometheusHint?: string;
-      }>("/api/k8s/addons/dashboard-monitoring/install", {
-        metricsServerNamespace,
-        dashboardNamespace,
-        dashboardReleaseName,
-        manifestMirror,
-        kubeletInsecureTls,
-      });
+      }>(
+        "/api/k8s/addons/dashboard-monitoring/install",
+        withK8sMutationConfirm({
+          metricsServerNamespace,
+          dashboardNamespace,
+          dashboardReleaseName,
+          manifestMirror,
+          kubeletInsecureTls,
+        })
+      );
       setProgress(100);
       if (res.verification) setVerification(res.verification);
       const msg = String(res.message || "").trim() || "安装流程已完成";
@@ -309,7 +313,7 @@ const ClusterK8sDashboardMonitoringSection: React.FC = () => {
           的规则改写 Helm 渲染出的 <code className="rounded bg-white px-0.5 text-[11px]">docker.io</code>、{" "}
           <code className="rounded bg-white px-0.5 text-[11px]">quay.io</code> 等前缀（关闭镜像改写时不处理）。安装结束后自动轮询 Dashboard api/auth/web 与 Kong
           proxy Service；另创建{" "}
-          <code className="rounded bg-white px-0.5 text-[11px]">easypanel-dashboard-admin</code>（cluster-admin，仅便于登录演示，生产请改最小权限）。
+          <code className="rounded bg-white px-0.5 text-[11px]">easypanel-dashboard-admin</code>（cluster-admin，仅便于首次登录，生产请改最小权限）。
           <span className="mt-2 block text-[13px] text-slate-700">
             <strong className="text-slate-800">说明：</strong>本平台「集群 → 监控」页的 <strong>Prometheus / VictoriaMetrics</strong> 地址仍在下方「Kubernetes
             监控」卡片单独配置；本栈解决 Dashboard UI 内 CPU/内存条与 <code className="rounded bg-slate-100 px-0.5 text-[11px]">kubectl top</code> 所需 metrics-server。

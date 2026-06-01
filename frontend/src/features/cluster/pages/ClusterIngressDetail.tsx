@@ -18,6 +18,8 @@ import { apiGetJson, apiPostJson } from "@/lib/api";
 import { parseAge } from "./parseAge";
 import { K8sObjectRevisionTriggerButton } from "@/features/cluster/components/K8sObjectRevisionDialog";
 import { K8sRelationsCard } from "./K8sRelationsCard";
+import { withK8sMutationConfirm } from "@/features/cluster/lib/k8sMutationConfirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 const TAB_QUERY = "tab";
 
@@ -97,7 +99,7 @@ const ClusterIngressDetail: React.FC = () => {
 
   const applyMut = useMutation({
     mutationFn: (yamlContent: string) =>
-      apiPostJson("/api/k8s/apply-yaml", { yamlContent }),
+      apiPostJson("/api/k8s/apply-yaml", withK8sMutationConfirm({ yamlContent })),
     onSuccess: () => {
       setYamlOpen(false);
       void queryClient.invalidateQueries({ queryKey: ["k8s-ingresses"] });
@@ -272,14 +274,17 @@ const ClusterIngressDetail: React.FC = () => {
             {yamlLoadQ.data?.yaml && (
               <>
                 <div className="flex flex-wrap gap-2">
-                  <Button
+                  <ConfirmActionButton
                     type="button"
                     size="sm"
                     disabled={applyMut.isPending}
-                    onClick={() => void applyMut.mutateAsync(yamlTab.buffer)}
+                    title="确认应用 Ingress YAML？"
+                    description={`将把 Ingress ${namespace}/${ingressName} 的 YAML 写入 Kubernetes API。`}
+                    confirmLabel="应用"
+                    onConfirm={() => void applyMut.mutateAsync(yamlTab.buffer)}
                   >
                     {applyMut.isPending ? "提交中…" : "提交应用"}
-                  </Button>
+                  </ConfirmActionButton>
                   <Button
                     type="button"
                     size="sm"
@@ -323,13 +328,16 @@ const ClusterIngressDetail: React.FC = () => {
             <Button type="button" variant="secondary" onClick={() => setYamlOpen(false)}>
               取消
             </Button>
-            <Button
+            <ConfirmActionButton
               type="button"
               disabled={applyMut.isPending}
-              onClick={() => void applyMut.mutateAsync(yamlDraft)}
+              title="确认应用 Ingress YAML？"
+              description={`将把 Ingress ${namespace}/${ingressName} 的当前 YAML 写入 Kubernetes API。`}
+              confirmLabel="应用"
+              onConfirm={() => void applyMut.mutateAsync(yamlDraft)}
             >
               {applyMut.isPending ? "提交中…" : "提交应用"}
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
           {applyMut.isError && (
             <p className="text-sm text-red-600">{(applyMut.error as Error).message}</p>

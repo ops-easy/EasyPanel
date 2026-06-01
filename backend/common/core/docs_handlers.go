@@ -125,16 +125,20 @@ type docsCosPutBody struct {
 	Region     string `json:"region"`
 	Prefix     string `json:"prefix"`
 	PublicBase string `json:"publicBase"`
+	Confirm    bool   `json:"confirm"`
 }
 
 func docsAttachmentStoragePut(c *gin.Context, app *ServerApp) {
-	if app.PlatformKV() == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "platform_kv 不可用"})
-		return
-	}
 	var body docsCosPutBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 JSON"})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "docs attachment storage update") {
+		return
+	}
+	if app.PlatformKV() == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "platform_kv 不可用"})
 		return
 	}
 	st := docsCosStored{
@@ -168,6 +172,9 @@ func docsAttachmentStoragePut(c *gin.Context, app *ServerApp) {
 }
 
 func docsAttachmentStorageClearCosKV(c *gin.Context, app *ServerApp) {
+	if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "docs attachment storage clear") {
+		return
+	}
 	if app.PlatformKV() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "platform_kv 不可用"})
 		return
@@ -467,6 +474,7 @@ type docsSaveBody struct {
 	Published        bool     `json:"published"`
 	SaveVersion      bool     `json:"saveVersion"`
 	NewSharePassword *string  `json:"newSharePassword"`
+	Confirm          bool     `json:"confirm"`
 }
 
 func docsNormalizeContentKind(s string) string {
@@ -603,13 +611,17 @@ func docsInsertVersion(db docsSQL, docID uint64, ver int, title, body, who, cont
 }
 
 func docsCreate(c *gin.Context, app *ServerApp) {
-	db := docsRequireMySQL(c, app)
-	if db == nil {
-		return
-	}
 	var body docsSaveBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if (body.Published || body.NewSharePassword != nil) &&
+		!requireOpsMutationConfirm(c, body.Confirm, "docs public sharing create") {
+		return
+	}
+	db := docsRequireMySQL(c, app)
+	if db == nil {
 		return
 	}
 	who := docsActor(c, app)
@@ -726,10 +738,6 @@ func docsGet(c *gin.Context, app *ServerApp) {
 }
 
 func docsUpdate(c *gin.Context, app *ServerApp) {
-	db := docsRequireMySQL(c, app)
-	if db == nil {
-		return
-	}
 	id, err := strconv.ParseUint(strings.TrimSpace(c.Param("id")), 10, 64)
 	if err != nil || id == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 id"})
@@ -738,6 +746,14 @@ func docsUpdate(c *gin.Context, app *ServerApp) {
 	var body docsSaveBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if body.NewSharePassword != nil &&
+		!requireOpsMutationConfirm(c, body.Confirm, "docs public sharing update") {
+		return
+	}
+	db := docsRequireMySQL(c, app)
+	if db == nil {
 		return
 	}
 	who := docsActor(c, app)
@@ -754,6 +770,9 @@ func docsUpdate(c *gin.Context, app *ServerApp) {
 		return
 	} else if err != nil {
 		RespondAPIError500(c, err.Error())
+		return
+	}
+	if curPub != pub && !requireOpsMutationConfirm(c, body.Confirm, "docs public sharing update") {
 		return
 	}
 	oldK := docsNormalizeContentKind(existingKind)
@@ -865,20 +884,24 @@ func docsVersions(c *gin.Context, app *ServerApp) {
 }
 
 func docsRestoreVersion(c *gin.Context, app *ServerApp) {
-	db := docsRequireMySQL(c, app)
-	if db == nil {
-		return
-	}
 	id, err := strconv.ParseUint(strings.TrimSpace(c.Param("id")), 10, 64)
 	if err != nil || id == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 id"})
 		return
 	}
 	var body struct {
-		VersionNo int `json:"versionNo"`
+		VersionNo int  `json:"versionNo"`
+		Confirm   bool `json:"confirm"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil || body.VersionNo <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请提供 versionNo"})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "docs version restore") {
+		return
+	}
+	db := docsRequireMySQL(c, app)
+	if db == nil {
 		return
 	}
 	var title, md, verKind string
@@ -1034,13 +1057,16 @@ func docsPatchCategory(c *gin.Context, app *ServerApp) {
 }
 
 func docsDelete(c *gin.Context, app *ServerApp) {
-	db := docsRequireMySQL(c, app)
-	if db == nil {
-		return
-	}
 	id, err := strconv.ParseUint(strings.TrimSpace(c.Param("id")), 10, 64)
 	if err != nil || id == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 id"})
+		return
+	}
+	if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "docs delete") {
+		return
+	}
+	db := docsRequireMySQL(c, app)
+	if db == nil {
 		return
 	}
 	var guideRefs int
@@ -1251,13 +1277,16 @@ func docsMediaList(c *gin.Context, app *ServerApp) {
 }
 
 func docsMediaDelete(c *gin.Context, app *ServerApp) {
-	db := docsRequireMySQL(c, app)
-	if db == nil {
-		return
-	}
 	id, err := strconv.ParseUint(strings.TrimSpace(c.Param("id")), 10, 64)
 	if err != nil || id == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效 id"})
+		return
+	}
+	if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "docs media delete") {
+		return
+	}
+	db := docsRequireMySQL(c, app)
+	if db == nil {
 		return
 	}
 	var storage, skey string

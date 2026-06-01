@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ops-easy/EasyPanel/backend/common/appctx"
+	sharedaudit "github.com/ops-easy/EasyPanel/backend/common/audit"
 	"github.com/ops-easy/EasyPanel/backend/common/result"
 
 	"github.com/gin-gonic/gin"
@@ -302,9 +304,14 @@ func handlePVESummary(c *gin.Context, app *ServerApp) {
 }
 
 type pveGuestPowerBody struct {
-	Node   string `json:"node"`
-	Type   string `json:"type"`
-	Action string `json:"action"`
+	Node    string `json:"node"`
+	Type    string `json:"type"`
+	Action  string `json:"action"`
+	Confirm bool   `json:"confirm"`
+}
+
+func pveGuestPowerActionRequiresConfirm(action string) bool {
+	return validatePVEGuestPowerAction(action) == nil
 }
 
 func handlePVEGuestPower(c *gin.Context, app *ServerApp) {
@@ -316,9 +323,14 @@ func handlePVEGuestPower(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	path, err := pveGuestPowerPath(body.Node, body.Type, c.Param("vmid"), strings.TrimSpace(body.Action))
+	action := strings.TrimSpace(body.Action)
+	path, err := pveGuestPowerPath(body.Node, body.Type, c.Param("vmid"), action)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if pveGuestPowerActionRequiresConfirm(action) && !body.Confirm {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PVE 电源操作需要显式 confirm=true"})
 		return
 	}
 	client, _, ok := pveClientForRequest(c, app)
@@ -330,6 +342,7 @@ func handlePVEGuestPower(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
+	sharedaudit.SetDetail(c, fmt.Sprintf("PVE Guest %s/%s/%s 电源：%s", strings.TrimSpace(body.Node), strings.TrimSpace(body.Type), strings.TrimSpace(c.Param("vmid")), action))
 	c.JSON(http.StatusOK, gin.H{"task": json.RawMessage(data)})
 }
 

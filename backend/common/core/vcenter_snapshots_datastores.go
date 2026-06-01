@@ -57,6 +57,25 @@ func handleVCenterVMSnapshots(c *gin.Context, app *ServerApp) {
 }
 
 func handleVCenterVMSnapshotCreate(c *gin.Context, app *ServerApp) {
+	var body struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Memory      bool   `json:"memory"`
+		Quiesce     bool   `json:"quiesce"`
+		Confirm     bool   `json:"confirm"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求体须为 JSON"})
+		return
+	}
+	if !requireVCenterConfirm(c, body.Confirm, "vCenter 虚拟机快照创建") {
+		return
+	}
+	name := strings.TrimSpace(body.Name)
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "快照名称不能为空"})
+		return
+	}
 	vm, ctx, err := getVCenterVMObject(c, app.VCenter())
 	if err != nil {
 		if err.Error() == "vCenter 未配置" {
@@ -64,21 +83,6 @@ func handleVCenterVMSnapshotCreate(c *gin.Context, app *ServerApp) {
 			return
 		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	var body struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		Memory      bool   `json:"memory"`
-		Quiesce     bool   `json:"quiesce"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请求体须为 JSON"})
-		return
-	}
-	name := strings.TrimSpace(body.Name)
-	if name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "快照名称不能为空"})
 		return
 	}
 	task, err := vm.CreateSnapshot(ctx, name, strings.TrimSpace(body.Description), body.Memory, body.Quiesce)
@@ -92,6 +96,14 @@ func handleVCenterVMSnapshotCreate(c *gin.Context, app *ServerApp) {
 }
 
 func handleVCenterVMSnapshotRevert(c *gin.Context, app *ServerApp) {
+	var body struct {
+		SuppressPowerOn bool `json:"suppressPowerOn"`
+		Confirm         bool `json:"confirm"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	if !requireVCenterConfirm(c, body.Confirm, "vCenter 虚拟机快照回滚") {
+		return
+	}
 	vm, ctx, err := getVCenterVMObject(c, app.VCenter())
 	if err != nil {
 		if err.Error() == "vCenter 未配置" {
@@ -101,10 +113,6 @@ func handleVCenterVMSnapshotRevert(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	var body struct {
-		SuppressPowerOn bool `json:"suppressPowerOn"`
-	}
-	_ = c.ShouldBindJSON(&body)
 	name := strings.TrimSpace(c.Param("name"))
 	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "快照名称不能为空"})
@@ -121,6 +129,9 @@ func handleVCenterVMSnapshotRevert(c *gin.Context, app *ServerApp) {
 }
 
 func handleVCenterVMSnapshotDelete(c *gin.Context, app *ServerApp) {
+	if !requireVCenterConfirm(c, vCenterQueryConfirmed(c.Query("confirm")), "vCenter 虚拟机快照删除") {
+		return
+	}
 	vm, ctx, err := getVCenterVMObject(c, app.VCenter())
 	if err != nil {
 		if err.Error() == "vCenter 未配置" {

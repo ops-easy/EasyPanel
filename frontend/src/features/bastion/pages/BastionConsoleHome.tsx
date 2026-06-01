@@ -25,7 +25,7 @@ type BastionTargetRow = {
 };
 
 /**
- * 堡垒机控制台首页：汇总可进入统一终端的目标数据，覆盖 vCenter、PVE、额外主机、云主机与 Redis CLI。
+ * 堡垒机控制台首页：汇总可进入统一终端的目标数据，覆盖 vCenter、PVE、额外主机、云主机、Redis CLI 与 MySQL SQL。
  */
 const BastionConsoleHome: React.FC = () => {
   const { status: auth } = useAuth();
@@ -71,6 +71,14 @@ const BastionConsoleHome: React.FC = () => {
     staleTime: 60_000,
   });
 
+  const mysqlQ = useQuery({
+    queryKey: ["bastion-console-mysql"],
+    queryFn: ({ signal }) =>
+      apiGetJson<{ instances: { id: number; name: string }[] }>("/api/app-center/mysql/instances", { signal }),
+    enabled: showApp,
+    staleTime: 60_000,
+  });
+
   const nativeSshQ = useQuery({
     queryKey: ["vcenter-bastion-native-ssh"],
     queryFn: ({ signal }) =>
@@ -96,7 +104,7 @@ const BastionConsoleHome: React.FC = () => {
         <div className="space-y-2 text-center sm:text-left">
           <h1 className="text-xl font-semibold tracking-tight text-slate-100">堡垒机控制台</h1>
           <p className="text-sm text-slate-400">
-            数据来自当前运行时已连接的 vCenter、PVE、堡垒机策略、应用中心云主机与 Redis CLI；进入「主机与终端」可选择目标、打开 SSH / 远程桌面、SFTP 或 redis-cli。
+            数据来自当前运行时已连接的 vCenter、PVE、堡垒机策略、应用中心云主机、Redis CLI 与 MySQL SQL；进入「主机与终端」可选择目标、打开 SSH / 远程桌面、SFTP、redis-cli 或 SQL 控制台。
           </p>
         </div>
 
@@ -110,7 +118,7 @@ const BastionConsoleHome: React.FC = () => {
             </div>
             <div>
               <p className="font-medium text-emerald-100">主机与终端</p>
-              <p className="text-xs text-slate-400">vCenter / PVE / 额外主机 · 多标签 SSH · Windows 网页 RDP · redis-cli</p>
+              <p className="text-xs text-slate-400">vCenter / PVE / 额外主机 · 多标签 SSH · Windows 网页 RDP · redis-cli · MySQL SQL</p>
             </div>
           </div>
           <ArrowRight className="h-5 w-5 shrink-0 text-emerald-400/80" aria-hidden />
@@ -220,6 +228,16 @@ const BastionConsoleHome: React.FC = () => {
                   {redisQ.isLoading ? "…" : (redisQ.data?.instances?.length ?? 0)}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">redis-cli 终端快捷入口</p>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-[#12161c] p-4">
+                <div className="mb-2 flex items-center gap-2 text-slate-400">
+                  <Database className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wide">应用中心 · MySQL</span>
+                </div>
+                <p className="text-2xl font-semibold text-slate-100">
+                  {mysqlQ.isLoading ? "…" : (mysqlQ.data?.instances?.length ?? 0)}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">SQL 控制台快捷入口</p>
               </div>
             </>
           ) : null}
@@ -343,6 +361,27 @@ const BastionConsoleHome: React.FC = () => {
                     className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-violet-300 hover:text-violet-200"
                   >
                     打开 Redis <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+
+                <div className="flex min-h-[148px] flex-col rounded-xl border border-slate-800 bg-[#121922] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-slate-200">
+                      <Database className="h-4 w-4 text-sky-300" />
+                      <span className="text-sm font-medium">MySQL SQL</span>
+                    </div>
+                    <span className="rounded-full bg-sky-500/10 px-2 py-0.5 text-[11px] font-medium text-sky-200">
+                      非 SSH
+                    </span>
+                  </div>
+                  <p className="mt-3 flex-1 text-xs leading-relaxed text-slate-400">
+                    MySQL SQL：使用实例连接信息，不走 SSH 凭据；在 MySQL 实例列表里打开 SQL 控制台。
+                  </p>
+                  <Link
+                    to="/cluster/apps/mysql"
+                    className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-sky-300 hover:text-sky-200"
+                  >
+                    打开 MySQL <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
               </>

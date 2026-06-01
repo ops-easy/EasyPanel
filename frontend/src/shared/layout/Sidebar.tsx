@@ -953,7 +953,7 @@ const Sidebar: React.FC = () => {
               </>
             ) : (
               <div className="mx-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-500">
-                尚未接入 vCenter 或 PVE，资源入口将在配置完成后显示。
+                尚未配置 vCenter 或 PVE，资源入口将在配置完成后显示。
               </div>
             )}
             {showVcCloud ? (

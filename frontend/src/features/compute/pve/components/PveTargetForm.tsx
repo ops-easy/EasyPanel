@@ -1,6 +1,6 @@
 import type React from "react";
 import { Loader2, Save } from "lucide-react";
-import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
@@ -109,10 +109,18 @@ const PveTargetForm: React.FC<PveTargetFormProps> = ({
           <span className="text-slate-700">跳过 TLS 校验</span>
           <Switch checked={form.skipTls} onCheckedChange={(v) => setForm({ ...form, skipTls: v })} />
         </label>
-        <Button className="h-10 w-full gap-2 lg:col-span-3" disabled={!canWrite || pending} onClick={onSubmit}>
+        <ConfirmActionButton
+          type="button"
+          className="h-10 w-full gap-2 lg:col-span-3"
+          disabled={!canWrite || pending}
+          title="确认保存 PVE 目标？"
+          description="将写入 Proxmox VE API 地址、账号凭据与监控 job 配置，后续算力资源会按此目标纳管。"
+          confirmLabel="保存"
+          onConfirm={onSubmit}
+        >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {submitLabel}
-        </Button>
+        </ConfirmActionButton>
       </div>
     </section>
   );

@@ -222,7 +222,8 @@ func handleK8sPods(c *gin.Context, k8s *kubernetes.Clientset) {
 	nodeOn := strings.TrimSpace(c.Query("node"))
 	phaseFilter := strings.TrimSpace(c.Query("phase"))
 	problem := strings.ToLower(strings.TrimSpace(c.Query("problem")))
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
+	defer cancel()
 	opts := metav1.ListOptions{}
 	if ls != "" {
 		opts.LabelSelector = ls
@@ -285,7 +286,8 @@ func handleK8sPodGet(c *gin.Context, k8s *kubernetes.Clientset) {
 	}
 	ns := c.Param("namespace")
 	name := c.Param("name")
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
+	defer cancel()
 	pod, err := k8s.CoreV1().Pods(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -595,12 +597,16 @@ func handleK8sPodRestarts(c *gin.Context, k8s *kubernetes.Clientset) {
 }
 
 func handleK8sPodDelete(c *gin.Context, k8s *kubernetes.Clientset) {
+	ns := c.Param("namespace")
+	name := c.Param("name")
+	if !requireK8sMutationConfirm(c, k8sConfirmed(c.Query("confirm")), "Pod 删除") {
+		return
+	}
 	if !GuardK8s(c, k8s) {
 		return
 	}
-	ns := c.Param("namespace")
-	name := c.Param("name")
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
+	defer cancel()
 	err := k8s.CoreV1().Pods(ns).Delete(ctx, name, metav1.DeleteOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -686,7 +692,8 @@ func handleK8sServices(c *gin.Context, k8s *kubernetes.Clientset) {
 		return
 	}
 	ns := c.Query("namespace")
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
+	defer cancel()
 	var list *corev1.ServiceList
 	var err error
 	if ns != "" {
@@ -913,13 +920,15 @@ func handleK8sNodes(c *gin.Context, app *ServerApp) {
 		return
 	}
 	cfg := app.Cfg()
-	list, err := k8s.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
+	defer cancel()
+	list, err := k8s.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		RespondAPIError500(c, "列出 Node 失败: "+err.Error())
 		return
 	}
 
-	reqCtx := c.Request.Context()
+	reqCtx := ctx
 	var allPods *corev1.PodList
 	var podListErr error
 	var podWg sync.WaitGroup

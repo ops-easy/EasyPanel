@@ -64,6 +64,9 @@ func handleK8sPodRestartAIReportsList(c *gin.Context, app *ServerApp) {
 
 // DELETE /api/k8s/pod-restart-ai/reports/:id
 func handleK8sPodRestartAIReportDelete(c *gin.Context, app *ServerApp) {
+	if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "K8s restart AI report delete") {
+		return
+	}
 	db := app.MySQLDB()
 	if db == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未配置 MySQL"})
@@ -97,6 +100,7 @@ type k8sRestartAISaveBody struct {
 	Body       string                      `json:"body"`
 	Paragraphs []k8sRestartAIParagraphSave `json:"paragraphs"`
 	Meta       map[string]any              `json:"meta"`
+	Confirm    bool                        `json:"confirm"`
 }
 
 type k8sRestartAIParagraphSave struct {
@@ -106,14 +110,17 @@ type k8sRestartAIParagraphSave struct {
 
 // POST /api/k8s/pod-restart-ai/reports — 保存段落化分析（Pod 页 AI 完成后调用）。
 func handleK8sPodRestartAIReportSave(c *gin.Context, app *ServerApp) {
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未配置 MySQL，无法持久化报告"})
-		return
-	}
 	var body k8sRestartAISaveBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "K8s restart AI report save") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未配置 MySQL，无法持久化报告"})
 		return
 	}
 	kind := strings.TrimSpace(body.Kind)

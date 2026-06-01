@@ -152,10 +152,10 @@ const BaotaSettingsWizard: React.FC<BaotaSettingsWizardProps> = ({
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">接入向导</p>
-            <h2 className="mt-1 text-xl font-semibold text-slate-950">宝塔设置接入向导</h2>
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">配置向导</p>
+            <h2 className="mt-1 text-xl font-semibold text-slate-950">宝塔配置向导</h2>
             <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-              先完成默认面板接入，再配置 Ingress 同步与 HTTPS 证书。多宝塔实例和低频网络参数集中放在高级配置里，避免主流程被运维细节打散。
+              先保存默认面板配置，再配置 Ingress 同步与 HTTPS 证书。多宝塔实例和低频网络参数集中放在高级配置里，避免主流程被运维细节打散。
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -211,8 +211,8 @@ const BaotaSettingsWizard: React.FC<BaotaSettingsWizardProps> = ({
 
       <StepSection
         index={1}
-        title="面板接入"
-        description="维护平台对外地址和默认宝塔面板 API。系统自带的 127.0.0.1 只是占位值，保存真实面板地址与 API Key 后才算接入。"
+        title="面板配置"
+        description="维护平台对外地址和默认宝塔面板 API。系统自带的 127.0.0.1 只是初始默认值；保存真实面板地址与 API Key 后会启用连通检查。"
         icon={Server}
       >
         <div className="grid gap-4 sm:grid-cols-2">
@@ -334,7 +334,7 @@ const BaotaSettingsWizard: React.FC<BaotaSettingsWizardProps> = ({
             </div>
           </div>
           <FieldHint>
-            入口控制器安装、清单下载和节点监听端口请在「集群设置」维护；本页只维护宝塔接入与同步策略。{DDNS_HELP.ddnsPortAnnotation} {DDNS_HELP.ddnsSchemeAnnotation}
+            入口控制器安装、清单下载和节点监听端口请在「集群设置」维护；本页只维护宝塔面板配置与同步策略。{DDNS_HELP.ddnsPortAnnotation} {DDNS_HELP.ddnsSchemeAnnotation}
           </FieldHint>
         </div>
       </StepSection>

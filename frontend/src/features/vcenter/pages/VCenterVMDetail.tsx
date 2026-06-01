@@ -102,6 +102,8 @@ const VCenterVMDetail: React.FC = () => {
 
   const [powerTaskId, setPowerTaskId] = React.useState("");
   const [editOpen, setEditOpen] = React.useState(false);
+  const [powerConfirmName, setPowerConfirmName] = React.useState("");
+  const [resourceConfirmName, setResourceConfirmName] = React.useState("");
   /** 关机二次确认：1 第一步，2 第二步 */
   const [powerOffStep, setPowerOffStep] = React.useState<0 | 1 | 2>(0);
   const powerDoneRef = React.useRef(false);
@@ -166,19 +168,21 @@ const VCenterVMDetail: React.FC = () => {
   }, [taskStatusQ.data, powerTaskId, invalidateVm]);
 
   const powerStartMut = useMutation({
-    mutationFn: (action: string) =>
+    mutationFn: ({ action, confirm }: { action: string; confirm: boolean }) =>
       apiPostJson<VCenterPowerPostResponse>(
         `/api/vcenter/vms/${encodeURIComponent(decoded)}/power`,
-        { action }
+        { action, confirm }
       ),
     onSuccess: (data) => {
       if (data.taskId) {
         powerDoneRef.current = false;
         setPowerTaskId(data.taskId);
+        setPowerConfirmName("");
         toast.message("电源任务已提交", {
           description: "正在从 vCenter 拉取进度…",
         });
       } else {
+        setPowerConfirmName("");
         invalidateVm();
       }
     },
@@ -186,7 +190,7 @@ const VCenterVMDetail: React.FC = () => {
   });
 
   const hardwareMut = useMutation({
-    mutationFn: (body: { numCpu?: number; memoryMB?: number }) =>
+    mutationFn: (body: { numCpu?: number; memoryMB?: number; confirm: boolean }) =>
       apiPutJson<{ ok?: boolean }>(
         `/api/vcenter/vms/${encodeURIComponent(decoded)}/hardware`,
         body
@@ -195,12 +199,13 @@ const VCenterVMDetail: React.FC = () => {
       invalidateVm();
       toast.success("CPU / 内存已保存");
       setEditOpen(false);
+      setResourceConfirmName("");
     },
     onError: (e) => toast.error((e as Error).message),
   });
 
   const diskExpandMut = useMutation({
-    mutationFn: (body: { deviceKey: number; totalGiB: number }) =>
+    mutationFn: (body: { deviceKey: number; totalGiB: number; confirm: boolean }) =>
       apiPostJson<{ ok?: boolean }>(
         `/api/vcenter/vms/${encodeURIComponent(decoded)}/disk/expand`,
         body
@@ -208,26 +213,29 @@ const VCenterVMDetail: React.FC = () => {
     onSuccess: () => {
       invalidateVm();
       toast.success("磁盘扩容已完成");
+      setResourceConfirmName("");
     },
     onError: (e) => toast.error((e as Error).message),
   });
 
   const morePowerMut = useMutation({
-    mutationFn: (action: string) =>
+    mutationFn: ({ action, confirm }: { action: string; confirm: boolean }) =>
       apiPostJson<VCenterPowerPostResponse>(
         `/api/vcenter/vms/${encodeURIComponent(decoded)}/power`,
-        { action }
+        { action, confirm }
       ),
     onSuccess: (data) => {
       if (data.taskId) {
         powerDoneRef.current = false;
         setPowerTaskId(data.taskId);
         setEditOpen(false);
+        setPowerConfirmName("");
         toast.message("电源任务已提交", {
           description: "正在监测进度…",
         });
       } else {
         invalidateVm();
+        setPowerConfirmName("");
         toast.success("操作已发送");
         setEditOpen(false);
       }
@@ -254,6 +262,9 @@ const VCenterVMDetail: React.FC = () => {
     taskState !== "success" &&
     taskState !== "error";
   const vmDisplayName = detailQ.data?.name?.trim() || decoded;
+  const powerConfirmTarget = vmDisplayName.trim() || decoded;
+  const powerConfirmed = powerConfirmName.trim() === powerConfirmTarget;
+  const resourceConfirmed = resourceConfirmName.trim() === powerConfirmTarget;
 
   return (
     <div className="space-y-6">
@@ -332,12 +343,28 @@ const VCenterVMDetail: React.FC = () => {
                         电源与摘要约每 16 秒向 vCenter 拉取刷新，重启/关机后状态会自动更新。
                       </p>
                     </div>
+                    <div className="grid gap-3 sm:grid-cols-[minmax(0,280px)_1fr] sm:items-end">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="vcenter-power-confirm">确认目标</Label>
+                        <Input
+                          id="vcenter-power-confirm"
+                          className="font-mono"
+                          value={powerConfirmName}
+                          onChange={(e) => setPowerConfirmName(e.target.value)}
+                          placeholder={powerConfirmTarget}
+                          disabled={powerBusy}
+                        />
+                      </div>
+                      <p className="text-xs leading-5 text-gray-500">
+                        输入 <span className="font-mono text-gray-800">{powerConfirmTarget}</span> 后启用电源操作。
+                      </p>
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Button
                         type="button"
                         size="sm"
-                        disabled={powerBusy || alreadyPoweredOn}
-                        onClick={() => powerStartMut.mutate("on")}
+                        disabled={powerBusy || alreadyPoweredOn || !powerConfirmed}
+                        onClick={() => powerStartMut.mutate({ action: "on", confirm: powerConfirmed })}
                       >
                         开机
                       </Button>
@@ -345,7 +372,7 @@ const VCenterVMDetail: React.FC = () => {
                         type="button"
                         size="sm"
                         variant="destructive"
-                        disabled={powerBusy}
+                        disabled={powerBusy || !powerConfirmed}
                         onClick={() => setPowerOffStep(1)}
                       >
                         关机
@@ -402,6 +429,22 @@ const VCenterVMDetail: React.FC = () => {
                         修改 CPU、内存与磁盘容量；更多电源操作在下方。
                       </DialogDescription>
                     </DialogHeader>
+                    <div className="grid gap-3 sm:grid-cols-[minmax(0,260px)_1fr] sm:items-end">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="vcenter-resource-confirm">确认目标</Label>
+                        <Input
+                          id="vcenter-resource-confirm"
+                          className="font-mono"
+                          value={resourceConfirmName}
+                          onChange={(e) => setResourceConfirmName(e.target.value)}
+                          placeholder={powerConfirmTarget}
+                          disabled={editPending}
+                        />
+                      </div>
+                      <p className="text-xs leading-5 text-gray-500">
+                        输入 <span className="font-mono text-gray-800">{powerConfirmTarget}</span> 后保存资源变更。
+                      </p>
+                    </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="vm-cpu">vCPU</Label>
@@ -442,8 +485,8 @@ const VCenterVMDetail: React.FC = () => {
                           type="button"
                           size="sm"
                           variant="secondary"
-                          disabled={editPending || powerBusy}
-                          onClick={() => morePowerMut.mutate("suspend")}
+                          disabled={editPending || powerBusy || !powerConfirmed}
+                          onClick={() => morePowerMut.mutate({ action: "suspend", confirm: powerConfirmed })}
                         >
                           挂起
                         </Button>
@@ -451,8 +494,8 @@ const VCenterVMDetail: React.FC = () => {
                           type="button"
                           size="sm"
                           variant="secondary"
-                          disabled={editPending || powerBusy}
-                          onClick={() => morePowerMut.mutate("reset")}
+                          disabled={editPending || powerBusy || !powerConfirmed}
+                          onClick={() => morePowerMut.mutate({ action: "reset", confirm: powerConfirmed })}
                         >
                           重置
                         </Button>
@@ -460,8 +503,8 @@ const VCenterVMDetail: React.FC = () => {
                           type="button"
                           size="sm"
                           variant="outline"
-                          disabled={editPending || powerBusy}
-                          onClick={() => morePowerMut.mutate("shutdown_guest")}
+                          disabled={editPending || powerBusy || !powerConfirmed}
+                          onClick={() => morePowerMut.mutate({ action: "shutdown_guest", confirm: powerConfirmed })}
                         >
                           关闭客户机
                         </Button>
@@ -469,8 +512,8 @@ const VCenterVMDetail: React.FC = () => {
                           type="button"
                           size="sm"
                           variant="outline"
-                          disabled={editPending || powerBusy}
-                          onClick={() => morePowerMut.mutate("reboot_guest")}
+                          disabled={editPending || powerBusy || !powerConfirmed}
+                          onClick={() => morePowerMut.mutate({ action: "reboot_guest", confirm: powerConfirmed })}
                         >
                           重启客户机
                         </Button>
@@ -522,7 +565,7 @@ const VCenterVMDetail: React.FC = () => {
                                       type="button"
                                       size="sm"
                                       variant="secondary"
-                                      disabled={editPending}
+                                      disabled={editPending || !resourceConfirmed}
                                       onClick={() => {
                                         const raw =
                                           diskTargetGiB[d.key]?.trim() ?? "";
@@ -537,6 +580,7 @@ const VCenterVMDetail: React.FC = () => {
                                         diskExpandMut.mutate({
                                           deviceKey: d.key,
                                           totalGiB: g,
+                                          confirm: resourceConfirmed,
                                         });
                                       }}
                                     >
@@ -560,22 +604,24 @@ const VCenterVMDetail: React.FC = () => {
                       </Button>
                       <Button
                         type="button"
-                        disabled={editPending}
+                        disabled={editPending || !resourceConfirmed}
                         onClick={() => {
                           const n = parseInt(cpuEdit, 10);
                           const m = parseInt(memEdit, 10);
                           const body: {
                             numCpu?: number;
                             memoryMB?: number;
-                          } = {};
+                            confirm: boolean;
+                          } = { confirm: false };
                           if (!Number.isNaN(n) && n >= 1) body.numCpu = n;
                           if (!Number.isNaN(m) && m >= 4) body.memoryMB = m;
-                          if (Object.keys(body).length === 0) {
+                          if (body.numCpu == null && body.memoryMB == null) {
                             toast.message("未修改 CPU / 内存", {
                               description: "请调整数值后再保存。",
                             });
                             return;
                           }
+                          body.confirm = resourceConfirmed;
                           hardwareMut.mutate(body);
                         }}
                       >
@@ -865,10 +911,10 @@ const VCenterVMDetail: React.FC = () => {
                   <Button
                     type="button"
                     variant="destructive"
-                    disabled={powerBusy}
+                    disabled={powerBusy || !powerConfirmed}
                     onClick={() => {
                       setPowerOffStep(0);
-                      powerStartMut.mutate("off");
+                      powerStartMut.mutate({ action: "off", confirm: powerConfirmed });
                     }}
                   >
                     确认关机

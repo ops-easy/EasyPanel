@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import {
@@ -24,6 +25,7 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
+import { withToolMutationConfirm } from "@/features/cluster/lib/toolMutationConfirm";
 import { formatDateTimeShanghai } from "@/lib/datetime-cn";
 
 type IpScanConfig = { segments: string[] };
@@ -186,7 +188,7 @@ const ToolNetworkIpScan: React.FC = () => {
         .split(/[\n,;]+/)
         .map((s) => s.trim())
         .filter(Boolean);
-      return apiPutJson<IpScanConfig>("/api/toolbox/ip-scan/config", { segments });
+      return apiPutJson<IpScanConfig>("/api/toolbox/ip-scan/config", withToolMutationConfirm({ segments }));
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["toolbox-ip-scan-config"] });
@@ -197,9 +199,9 @@ const ToolNetworkIpScan: React.FC = () => {
 
   const runMut = useMutation({
     mutationFn: async (segment?: string) =>
-      apiPostJson<{ run: IpScanRun }>("/api/toolbox/ip-scan/run", {
+      apiPostJson<{ run: IpScanRun }>("/api/toolbox/ip-scan/run", withToolMutationConfirm({
         segment: segment?.trim() || "",
-      }),
+      })),
     onSuccess: (data) => {
       void qc.invalidateQueries({ queryKey: ["toolbox-ip-scan-history"] });
       const s = data.run.summary;
@@ -274,10 +276,13 @@ const ToolNetworkIpScan: React.FC = () => {
             </div>
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <Button
+              <ConfirmActionButton
                 type="button"
                 disabled={busy}
-                onClick={() => saveMut.mutate()}
+                title="保存 IP 扫描网段"
+                description="网段列表会写入平台配置库，后续扫描任务将按保存后的队列执行。"
+                confirmLabel="保存"
+                onConfirm={() => saveMut.mutate()}
                 className="w-full cursor-pointer gap-2 bg-cyan-600 hover:bg-cyan-700"
               >
                 {saveMut.isPending ? (
@@ -286,12 +291,15 @@ const ToolNetworkIpScan: React.FC = () => {
                   <Save className="h-4 w-4" />
                 )}
                 保存网段
-              </Button>
-              <Button
+              </ConfirmActionButton>
+              <ConfirmActionButton
                 type="button"
                 variant="outline"
                 disabled={busy}
-                onClick={() => runMut.mutate(undefined)}
+                title="扫描首个已保存网段"
+                description="将在控制台 Pod 内发起 TCP 探测，可能产生短时间网络连接探测流量。"
+                confirmLabel="开始扫描"
+                onConfirm={() => runMut.mutate(undefined)}
                 className="w-full cursor-pointer gap-2"
               >
                 {runMut.isPending ? (
@@ -300,7 +308,7 @@ const ToolNetworkIpScan: React.FC = () => {
                   <Play className="h-4 w-4" />
                 )}
                 扫描首个已保存网段
-              </Button>
+              </ConfirmActionButton>
             </div>
           </section>
 
@@ -319,10 +327,13 @@ const ToolNetworkIpScan: React.FC = () => {
                   value={oneoffSeg}
                   onChange={(e) => setOneoffSeg(e.target.value)}
                 />
-                <Button
+                <ConfirmActionButton
                   type="button"
                   disabled={busy}
-                  onClick={() => {
+                  title="执行单次 IP 扫描"
+                  description="将在控制台 Pod 内对输入的 CIDR 发起 TCP 探测，不会覆盖已保存网段。"
+                  confirmLabel="开始扫描"
+                  onConfirm={() => {
                     const v = oneoffSeg.trim();
                     if (!v) {
                       toast.error("请填写 CIDR");
@@ -338,7 +349,7 @@ const ToolNetworkIpScan: React.FC = () => {
                     <Play className="h-4 w-4" />
                   )}
                   扫描
-                </Button>
+                </ConfirmActionButton>
               </div>
             </div>
           </section>

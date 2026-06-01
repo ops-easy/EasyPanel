@@ -14,6 +14,6 @@ test("compute config uses provider health instead of hard-coded setup copy", () 
   assert.match(settingsSource, /ComputeStatusBadge/);
   assert.match(settingsSource, /\/api\/compute\/providers/);
   assert.match(settingsSource, /providerStatus/);
-  assert.match(settingsSource, /接入源状态/);
+  assert.match(settingsSource, /配置源状态/);
   assert.match(settingsSource, /refreshing=\{cfgQ\.isLoading \|\| providersQ\.isFetching\}/);
 });

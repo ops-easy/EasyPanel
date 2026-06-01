@@ -163,14 +163,17 @@ func handleAppMySQLCreate(c *gin.Context, app *ServerApp) {
 	if !appMySQLRequireWrite(c) {
 		return
 	}
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL metadata store is not connected"})
-		return
-	}
 	var body map[string]interface{}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmedValue(body["confirm"]), "app-center mysql create instance") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL metadata store is not connected"})
 		return
 	}
 	name := strings.TrimSpace(stringFromBody(body, "name"))
@@ -227,11 +230,6 @@ func handleAppMySQLUpdate(c *gin.Context, app *ServerApp) {
 	if !appMySQLRequireWrite(c) {
 		return
 	}
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL metadata store is not connected"})
-		return
-	}
 	id, ok := appMySQLParamID(c)
 	if !ok {
 		return
@@ -239,6 +237,14 @@ func handleAppMySQLUpdate(c *gin.Context, app *ServerApp) {
 	var body map[string]interface{}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmedValue(body["confirm"]), "app-center mysql update instance") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL metadata store is not connected"})
 		return
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
@@ -285,6 +291,9 @@ func handleAppMySQLUpdate(c *gin.Context, app *ServerApp) {
 
 func handleAppMySQLDelete(c *gin.Context, app *ServerApp) {
 	if !appMySQLRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "app-center mysql delete instance") {
 		return
 	}
 	db := app.MySQLDB()
@@ -418,6 +427,9 @@ func handleAppMySQLUserCreate(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "app-center mysql create user") {
+		return
+	}
 	withAppMySQLInstanceDB(c, app, 30*time.Second, func(ctx context.Context, db *sql.DB, _ *appMySQLStoredConfig, row *appMySQLRow) {
 		if !appMySQLManagedOnlyCanMutateRow(c, row) {
 			RespondAPIPermissionDenied(c)
@@ -439,9 +451,13 @@ func handleAppMySQLUserPassword(c *gin.Context, app *ServerApp) {
 	var body struct {
 		Host     string `json:"host"`
 		Password string `json:"password"`
+		Confirm  bool   `json:"confirm"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "app-center mysql user password") {
 		return
 	}
 	user := c.Param("user")
@@ -461,6 +477,9 @@ func handleAppMySQLUserPassword(c *gin.Context, app *ServerApp) {
 
 func handleAppMySQLUserDelete(c *gin.Context, app *ServerApp) {
 	if !appMySQLRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "app-center mysql delete user") {
 		return
 	}
 	user := c.Param("user")
@@ -502,15 +521,19 @@ func handleAppMySQLBackupCreate(c *gin.Context, app *ServerApp) {
 	if !appMySQLRequireWrite(c) {
 		return
 	}
-	if !GuardK8sREST(c, app.K8s(), app.K8sREST()) {
-		return
-	}
 	var body struct {
 		Schema     string `json:"schema"`
 		BackupName string `json:"backupName"`
+		Confirm    bool   `json:"confirm,omitempty"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "app-center mysql backup") {
+		return
+	}
+	if !GuardK8sREST(c, app.K8s(), app.K8sREST()) {
 		return
 	}
 	st, row, ok := appMySQLLoadStoredForRequest(c, app, 15*time.Second)
@@ -566,9 +589,6 @@ func handleAppMySQLBackupRestore(c *gin.Context, app *ServerApp) {
 	if !appMySQLRequireWrite(c) {
 		return
 	}
-	if !GuardK8sREST(c, app.K8s(), app.K8sREST()) {
-		return
-	}
 	var body struct {
 		Confirm      bool   `json:"confirm"`
 		TargetSchema string `json:"targetSchema"`
@@ -577,8 +597,10 @@ func handleAppMySQLBackupRestore(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if !body.Confirm {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "restore requires confirm=true"})
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "app-center mysql backup restore") {
+		return
+	}
+	if !GuardK8sREST(c, app.K8s(), app.K8sREST()) {
 		return
 	}
 	st, row, ok := appMySQLLoadStoredForRequest(c, app, 15*time.Second)
@@ -626,6 +648,9 @@ func handleAppMySQLBackupDelete(c *gin.Context, app *ServerApp) {
 	if !appMySQLRequireWrite(c) {
 		return
 	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "app-center mysql delete backup") {
+		return
+	}
 	st, row, ok := appMySQLLoadStoredForRequest(c, app, 15*time.Second)
 	if !ok {
 		return
@@ -668,6 +693,7 @@ type appMySQLQueryBody struct {
 	Schema          string `json:"schema"`
 	Limit           int    `json:"limit"`
 	ConfirmMutation bool   `json:"confirmMutation"`
+	Confirm         bool   `json:"confirm,omitempty"`
 }
 
 type appMySQLQueryRunner interface {
@@ -711,6 +737,9 @@ func handleAppMySQLQuery(c *gin.Context, app *ServerApp) {
 	if !readOnly {
 		if !body.ConfirmMutation {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "mutation SQL requires confirmMutation=true"})
+			return
+		}
+		if !requireAppCenterMutationConfirm(c, body.Confirm, "app-center mysql mutation sql") {
 			return
 		}
 		if !appMySQLRequireWrite(c) {
@@ -779,6 +808,9 @@ type appMySQLK8sDeployBody struct {
 
 func handleAppMySQLK8sDeploy(c *gin.Context, app *ServerApp) {
 	if !appMySQLRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "app-center mysql deploy") {
 		return
 	}
 	k8s := app.K8s()
@@ -990,20 +1022,24 @@ type appMySQLTemplateWriteBody struct {
 	Name        string                  `json:"name"`
 	Description string                  `json:"description"`
 	Config      *AppMySQLTemplateConfig `json:"config"`
+	Confirm     bool                    `json:"confirm,omitempty"`
 }
 
 func handleAppMySQLTemplateCreate(c *gin.Context, app *ServerApp) {
 	if !appMySQLRequireWrite(c) {
 		return
 	}
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL metadata store is not connected"})
-		return
-	}
 	var body appMySQLTemplateWriteBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "app-center mysql write template") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL metadata store is not connected"})
 		return
 	}
 	name := strings.TrimSpace(body.Name)
@@ -1037,14 +1073,17 @@ func handleAppMySQLTemplateUpdate(c *gin.Context, app *ServerApp) {
 	if !ok {
 		return
 	}
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL metadata store is not connected"})
-		return
-	}
 	var body appMySQLTemplateWriteBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, body.Confirm, "app-center mysql write template") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MySQL metadata store is not connected"})
 		return
 	}
 	name := strings.TrimSpace(body.Name)
@@ -1069,6 +1108,9 @@ func handleAppMySQLTemplateUpdate(c *gin.Context, app *ServerApp) {
 
 func handleAppMySQLTemplateDelete(c *gin.Context, app *ServerApp) {
 	if !appMySQLRequireWrite(c) {
+		return
+	}
+	if !requireAppCenterMutationConfirm(c, appCenterMutationConfirmed(c.Query("confirm")), "app-center mysql delete template") {
 		return
 	}
 	id, ok := appMySQLParamID(c)

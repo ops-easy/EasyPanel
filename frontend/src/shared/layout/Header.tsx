@@ -148,7 +148,7 @@ const Header: React.FC<HeaderProps> = ({ tone = "light" }) => {
             <button
               type="button"
               className={cn(
-                "flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-medium outline-none transition-colors",
+                "flex h-10 cursor-pointer items-center gap-2 rounded-xl border px-3 text-sm font-medium outline-none transition-colors",
                 isDark
                   ? "border-slate-800 bg-slate-900/70 text-slate-100 hover:bg-slate-800"
                   : "border-slate-200 bg-slate-50/90 text-slate-800 hover:bg-slate-100",
@@ -347,9 +347,10 @@ const Header: React.FC<HeaderProps> = ({ tone = "light" }) => {
             <button
               type="button"
               className={cn(
-                "flex items-center space-x-3 rounded-xl px-2 py-1.5 outline-none transition-colors focus-visible:ring-2",
+                "flex cursor-pointer items-center space-x-3 rounded-xl px-2 py-1.5 outline-none transition-colors focus-visible:ring-2",
                 isDark ? "hover:bg-slate-900 focus-visible:ring-emerald-500/30" : "hover:bg-gray-50 focus-visible:ring-blue-500/30"
               )}
+              aria-label={`打开账户菜单：${displayName}`}
             >
               <div
                 className={cn(

@@ -9,11 +9,11 @@ const wizardPath = "../src/features/baota/components/BaotaSettingsWizard.tsx";
 const runtimeSource = read("../src/features/settings/components/SettingsRuntimeSection.tsx");
 const clusterSettingsSource = read("../src/features/cluster/pages/ClusterK8sSettings.tsx");
 
-test("宝塔设置使用常驻接入向导组织主流程", () => {
+test("宝塔设置使用常驻配置向导组织主流程", () => {
   assert.equal(exists(wizardPath), true, "BaotaSettingsWizard.tsx should exist");
   const wizardSource = read(wizardPath);
 
-  for (const label of ["接入向导", "面板接入", "同步策略", "HTTPS 证书", "高级配置", "刷新状态"]) {
+  for (const label of ["配置向导", "面板配置", "同步策略", "HTTPS 证书", "高级配置", "刷新状态"]) {
     assert.match(wizardSource, new RegExp(label));
   }
 

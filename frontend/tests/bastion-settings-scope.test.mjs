@@ -14,6 +14,7 @@ test("bastion home explains ssh settings per target type instead of implying vCe
   assert.match(homeSource, /额外主机：在「策略与分组」里配置地址、凭据与 RDP/);
   assert.match(homeSource, /云主机：在云主机详情中维护 SSH/);
   assert.match(homeSource, /Redis CLI：使用实例连接信息，不走 SSH 凭据/);
+  assert.match(homeSource, /MySQL SQL：使用实例连接信息，不走 SSH 凭据/);
   assert.match(homeSource, /配置入口与凭据归属/);
   assert.match(homeSource, /打开配置/);
   assert.match(homeSource, /to="\/cluster\/compute\/config"/);
@@ -21,13 +22,20 @@ test("bastion home explains ssh settings per target type instead of implying vCe
   assert.match(homeSource, /打开策略与额外主机/);
   assert.match(homeSource, /打开云主机/);
   assert.match(homeSource, /打开 Redis/);
+  assert.match(homeSource, /打开 MySQL/);
   assert.doesNotMatch(homeSource, />\s*vCenter VM 全局 SSH\s*<\/Link>/);
   assert.doesNotMatch(homeSource, /请确认 vCenter 已配置/);
 });
 
 test("bastion session header reflects all supported target families", () => {
   assert.doesNotMatch(sessionSource, /vCenter 路 JumpServer RDP 路 SSH/);
-  assert.match(sessionSource, /vCenter · PVE · 额外主机 · 云主机 · Redis CLI/);
+  assert.match(sessionSource, /vCenter · PVE · 额外主机 · 云主机 · Redis CLI · MySQL SQL/);
   assert.match(sessionSource, /title="虚拟机全局 SSH 设置"/);
   assert.match(sessionSource, />全局 SSH</);
+});
+
+test("bastion session full-screen header returns to bastion console home", () => {
+  assert.match(sessionSource, /<Link to=\{BASTION_ROUTE_BASE\}/);
+  assert.match(sessionSource, /title="返回堡垒机控制台"/);
+  assert.doesNotMatch(sessionSource, /<Link to="\/" title="工作台">/);
 });

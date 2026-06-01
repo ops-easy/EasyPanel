@@ -37,6 +37,7 @@ import { apiGetJson, apiPostJson } from "@/lib/api";
 import { k8sRevisionYamlToJsonString } from "@/lib/k8sRevisionYamlToJson";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { withK8sMutationConfirm } from "@/features/cluster/lib/k8sMutationConfirm";
 
 export type K8sObjectRevisionMeta = {
   id: string;
@@ -190,12 +191,15 @@ export const K8sObjectRevisionDialog: React.FC<K8sObjectRevisionDialogProps> = (
 
   const rollbackMut = useMutation({
     mutationFn: () =>
-      apiPostJson<{ message?: string }>("/api/k8s/object-revisions/rollback", {
-        namespace,
-        kind,
-        name,
-        revisionId: rollbackId,
-      }),
+      apiPostJson<{ message?: string }>(
+        "/api/k8s/object-revisions/rollback",
+        withK8sMutationConfirm({
+          namespace,
+          kind,
+          name,
+          revisionId: rollbackId,
+        })
+      ),
     onSuccess: (res) => {
       toast.success(res.message ?? "已回退");
       setConfirmRollbackOpen(false);

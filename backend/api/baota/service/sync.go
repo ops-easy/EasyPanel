@@ -1,6 +1,9 @@
 package service
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 
@@ -31,6 +34,19 @@ func IngressSyncStatus(app *ServerApp) gin.HandlerFunc {
 
 func IngressSyncRun(app *ServerApp) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		body := map[string]interface{}{}
+		if c.Request.Body != nil {
+			raw, err := io.ReadAll(c.Request.Body)
+			if err == nil {
+				c.Request.Body = io.NopCloser(bytes.NewReader(raw))
+				if len(bytes.TrimSpace(raw)) > 0 {
+					_ = json.Unmarshal(raw, &body)
+				}
+			}
+		}
+		if !requireBaotaMutationConfirm(c, baotaMutationConfirmedValue(body["confirm"]), "Baota ingress sync run") {
+			return
+		}
 		cfg := app.Cfg()
 		if app.K8s() == nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "K8s 未连接"})

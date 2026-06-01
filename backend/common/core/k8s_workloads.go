@@ -244,9 +244,6 @@ func K8sExpandPVCStorage(ctx context.Context, k8s *kubernetes.Clientset, ns, pvc
 }
 
 func handleK8sPVCExpand(c *gin.Context, k8s *kubernetes.Clientset) {
-	if !GuardK8s(c, k8s) {
-		return
-	}
 	ns := strings.TrimSpace(c.Param("namespace"))
 	name := strings.TrimSpace(c.Param("name"))
 	if ns == "" || name == "" {
@@ -254,7 +251,8 @@ func handleK8sPVCExpand(c *gin.Context, k8s *kubernetes.Clientset) {
 		return
 	}
 	var body struct {
-		Size string `json:"size"`
+		Size    string `json:"size"`
+		Confirm bool   `json:"confirm"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -263,6 +261,12 @@ func handleK8sPVCExpand(c *gin.Context, k8s *kubernetes.Clientset) {
 	newStr := strings.TrimSpace(body.Size)
 	if newStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请提供 size，例如 50Gi"})
+		return
+	}
+	if !requireK8sMutationConfirm(c, body.Confirm, "PVC 扩容") {
+		return
+	}
+	if !GuardK8s(c, k8s) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
@@ -276,6 +280,7 @@ func handleK8sPVCExpand(c *gin.Context, k8s *kubernetes.Clientset) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error() + "（需 StorageClass allowVolumeExpansion 及 CSI 支持在线扩容；部分环境需在节点上扩展文件系统）"})
 		return
 	}
+	SetAuditDetail(c, "PVC 扩容 "+ns+"/"+name+" -> "+newStr)
 	c.JSON(http.StatusOK, gin.H{"ok": true, "size": newStr})
 }
 

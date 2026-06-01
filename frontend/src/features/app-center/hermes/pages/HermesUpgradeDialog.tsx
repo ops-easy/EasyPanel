@@ -6,6 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { apiPostJson } from "@/lib/api";
+import { withAppCenterMutationConfirmQuery } from "@/features/app-center/lib/appCenterMutationConfirm";
 import type { HermesInstance } from "./AppCenterHermesDetail";
 import { normalizeHermesImage } from "../hermesImage";
 
@@ -20,7 +21,7 @@ export default function HermesUpgradeDialog({ instance, canWrite, onChanged }: {
 
   const upgrade = useMutation({
     mutationFn: () =>
-      apiPostJson(`/api/app-center/hermes/instances/${encodeURIComponent(instance?.id ?? "")}/upgrade`, {
+      apiPostJson(withAppCenterMutationConfirmQuery(`/api/app-center/hermes/instances/${encodeURIComponent(instance?.id ?? "")}/upgrade`), {
         image: normalizeHermesImage(image),
         replicas: Number(replicas) || 1,
       }),
@@ -32,7 +33,8 @@ export default function HermesUpgradeDialog({ instance, canWrite, onChanged }: {
   });
 
   const rollback = useMutation({
-    mutationFn: () => apiPostJson(`/api/app-center/hermes/instances/${encodeURIComponent(instance?.id ?? "")}/rollback`, {}),
+    mutationFn: () =>
+      apiPostJson(withAppCenterMutationConfirmQuery(`/api/app-center/hermes/instances/${encodeURIComponent(instance?.id ?? "")}/rollback`), {}),
     onSuccess: () => {
       toast.success("Hermes 已开始回滚");
       onChanged();

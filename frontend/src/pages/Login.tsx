@@ -241,7 +241,7 @@ function serviceStatusSummary(kind: "baota" | "ddns", item: { status?: string } 
   if (s === "success") {
     return {
       label: "正常",
-      hint: kind === "baota" ? "宝塔面板已接入" : "DDNS 解析已接入",
+      hint: kind === "baota" ? "宝塔面板已配置" : "DDNS 解析已配置",
       tone: "ok",
     };
   }
@@ -323,13 +323,13 @@ function publicServiceTile(
     return {
       label,
       state: "未配置",
-      detail: label === "宝塔" ? "面板 API 待接入" : "域名解析待接入",
+      detail: label === "宝塔" ? "保存面板 API 后启用同步" : "配置解析参数后启用 DDNS",
       tone: "pending",
       icon,
     };
   }
   if (summary.tone === "ok") {
-    return { label, state: "已接入", detail: summary.hint ?? "探活正常", tone: "ok", icon };
+    return { label, state: "已配置", detail: summary.hint ?? "探活正常", tone: "ok", icon };
   }
   if (summary.tone === "warn") {
     return { label, state: summary.label, detail: summary.hint ?? "需要检查", tone: "warn", icon };
@@ -411,7 +411,7 @@ function LoginRuntimeStatusPanel({
         {
           label: "PVE",
           state: rt?.pveConfigured ? "已配置" : "未配置",
-          detail: rt?.pveConfigured ? "PVE 接入信息已保存" : "PVE 入口待接入",
+          detail: rt?.pveConfigured ? "PVE 接入信息已保存" : "配置 PVE 后纳管资源",
           tone: rt?.pveConfigured ? "ok" : "pending",
           icon: <Monitor className="h-4 w-4" />,
         },
@@ -420,7 +420,7 @@ function LoginRuntimeStatusPanel({
           configured: rt?.redisConfigured,
           connected: rt?.redisConnected,
           configuredDetail: "缓存与镜像通道可用",
-          pendingDetail: "缓存能力待接入",
+          pendingDetail: "配置 Redis 后启用缓存",
           icon: <Server className="h-4 w-4" />,
         }),
         runtimeConnectionTile({
@@ -466,7 +466,7 @@ function LoginRuntimeStatusPanel({
         </div>
         <div className={cn("inline-flex shrink-0 items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold", overallClass.chip)}>
           <span className={cn("h-2 w-2 rounded-full", overallClass.dot)} aria-hidden />
-          {loading ? "检查中" : warnCount > 0 ? "有告警" : pendingCount > 0 ? "待完善" : "健康"}
+          {loading ? "检查中" : warnCount > 0 ? "有告警" : pendingCount > 0 ? "需配置" : "健康"}
         </div>
       </div>
 
@@ -962,7 +962,7 @@ const Login: React.FC = () => {
                       />
                       <button
                         type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                         onClick={() => setPasswordVisible(!passwordVisible)}
                         aria-label={passwordVisible ? "隐藏密码" : "显示密码"}
                       >

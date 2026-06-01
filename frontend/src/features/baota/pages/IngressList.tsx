@@ -27,6 +27,8 @@ import { YamlEditor } from "@/shared/ui/YamlEditor";
 import { apiGetJson, apiGetText, apiPostJson, type IngressRow } from "@/lib/api";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { toast } from "sonner";
+import { withK8sMutationConfirm } from "@/features/cluster/lib/k8sMutationConfirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 const IngressList: React.FC = () => {
   const queryClient = useQueryClient();
@@ -80,7 +82,10 @@ const IngressList: React.FC = () => {
   const saveEdit = async () => {
     setSaveLoading(true);
     try {
-      await apiPostJson<{ message: string }>("/api/ingress/yaml", { yamlContent: editYaml });
+      await apiPostJson<{ message: string }>(
+        "/api/ingress/yaml",
+        withK8sMutationConfirm({ yamlContent: editYaml })
+      );
       setEditOpen(false);
       void queryClient.invalidateQueries({ queryKey: ["ingresses-all"] });
     } catch (e) {
@@ -102,12 +107,15 @@ const IngressList: React.FC = () => {
     const domain = delRow.hosts[0] ?? "";
     setDelLoading(true);
     try {
-      await apiPostJson<{ message: string }>("/api/ingress/delete", {
-        namespace: delRow.namespace,
-        name: delRow.name,
-        domain,
-        deleteBaota: delBaota && !!domain,
-      });
+      await apiPostJson<{ message: string }>(
+        "/api/ingress/delete",
+        withK8sMutationConfirm({
+          namespace: delRow.namespace,
+          name: delRow.name,
+          domain,
+          deleteBaota: delBaota && !!domain,
+        })
+      );
       setDelOpen(false);
       setDelRow(null);
       void queryClient.invalidateQueries({ queryKey: ["ingresses-all"] });
@@ -362,9 +370,16 @@ const IngressList: React.FC = () => {
             <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
               取消
             </Button>
-            <Button type="button" disabled={saveLoading || editLoading} onClick={() => void saveEdit()}>
+            <ConfirmActionButton
+              type="button"
+              disabled={saveLoading || editLoading}
+              title="确认应用 Ingress YAML？"
+              description={`将把 Ingress ${editNs}/${editName} 的 YAML 写入 Kubernetes API。`}
+              confirmLabel="应用"
+              onConfirm={() => void saveEdit()}
+            >
               {saveLoading ? "保存中…" : "保存并应用"}
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

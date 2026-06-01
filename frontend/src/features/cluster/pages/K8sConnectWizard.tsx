@@ -14,6 +14,8 @@ import {
 } from "@/shared/ui/select";
 import { toast } from "sonner";
 import { apiGetJson, apiPutJson, type RuntimeSettingsDTO } from "@/lib/api";
+import { withOpsMutationConfirm } from "@/lib/ops-mutation-confirm";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 type K8sMode = "none" | "incluster" | "kubeconfig";
 
@@ -89,7 +91,7 @@ const K8sConnectWizard: React.FC = () => {
       if (rh && rport > 0) {
         payload.redisAddr = "";
       }
-      await apiPutJson("/api/settings/runtime", payload);
+      await apiPutJson("/api/settings/runtime", withOpsMutationConfirm(payload));
       setOk("已保存并重载。");
       toast.success("保存成功");
       await qc.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
@@ -162,7 +164,14 @@ const K8sConnectWizard: React.FC = () => {
         )}
         {err && <p className="text-sm text-red-600">{err}</p>}
         {ok && <p className="text-sm text-emerald-700">{ok}</p>}
-        <Button type="button" onClick={() => void onSave()} disabled={saving}>
+        <ConfirmActionButton
+          type="button"
+          disabled={saving}
+          title="确认保存 Kubernetes 连接？"
+          description="将写入 Kubernetes 运行时连接方式并触发平台重载，集群工作台会立即按新配置读取。"
+          confirmLabel="保存"
+          onConfirm={() => void onSave()}
+        >
           {saving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -174,7 +183,7 @@ const K8sConnectWizard: React.FC = () => {
               保存并重载
             </>
           )}
-        </Button>
+        </ConfirmActionButton>
       </div>
     </div>
   );

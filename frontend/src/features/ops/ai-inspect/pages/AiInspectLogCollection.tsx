@@ -4,8 +4,10 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { HardDrive, Loader2, Save, ScrollText } from "lucide-react";
 import { apiGetJson, apiPutJson } from "@/lib/api";
+import { withOpsMutationConfirm } from "@/lib/ops-mutation-confirm";
 import { useAuth } from "@/auth/auth-context";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -47,10 +49,10 @@ const AiInspectLogCollection: React.FC = () => {
   const saveVectorDownloadMut = useMutation({
     mutationFn: async () => {
       const cur = await apiGetJson<Record<string, unknown>>("/api/settings/runtime");
-      await apiPutJson("/api/settings/runtime", {
+      await apiPutJson("/api/settings/runtime", withOpsMutationConfirm({
         ...cur,
         vmLogVectorDownloadBaseUrl: vectorDownloadBaseUrl.trim(),
-      });
+      }));
     },
     onSuccess: async () => {
       toast.success("已保存 Vector 下载基址");
@@ -131,12 +133,15 @@ const AiInspectLogCollection: React.FC = () => {
                   />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button
+                  <ConfirmActionButton
                     type="button"
                     size="sm"
                     className="h-8 gap-1.5 text-xs"
                     disabled={saveVectorDownloadMut.isPending || runtimeQ.isFetching}
-                    onClick={() => saveVectorDownloadMut.mutate()}
+                    title="确认保存 Vector 下载基址？"
+                    description="将写入日志采集运行时下载地址，后续安装脚本会按该基址拉取 Vector。"
+                    confirmLabel="保存"
+                    onConfirm={() => saveVectorDownloadMut.mutate()}
                   >
                     {saveVectorDownloadMut.isPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -144,7 +149,7 @@ const AiInspectLogCollection: React.FC = () => {
                       <Save className="h-3.5 w-3.5" />
                     )}
                     保存下载基址
-                  </Button>
+                  </ConfirmActionButton>
                   <Button type="button" variant="ghost" size="sm" className="h-8 text-xs text-slate-600" asChild>
                     <Link to="/account/settings#runtime-vmlog-vector-download">其它运行时项</Link>
                   </Button>

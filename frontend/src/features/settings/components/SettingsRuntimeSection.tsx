@@ -38,11 +38,13 @@ import {
 } from "@/shared/ui/dialog";
 import { toast } from "sonner";
 import { apiGetJson, apiPutJson, type K8sSidebarMenuItem, type RuntimeSettingsDTO } from "@/lib/api";
+import { withOpsMutationConfirm } from "@/lib/ops-mutation-confirm";
 import { CollapsibleManual } from "@/shared/ui/CollapsibleManual";
 import AccountPlatformSettingsBody from "@/features/account/components/AccountPlatformSettingsBody";
 import OidcAuthentikHelp from "@/features/account/components/OidcAuthentikHelp";
 import HarborRedisIndexSettingsPanel from "@/features/harbor/components/HarborRedisIndexSettingsPanel";
 import BaotaSettingsWizard from "@/features/baota/components/BaotaSettingsWizard";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 export type SettingsRuntimeVariant = "full" | "k8s" | "virtualMachine" | "account" | "baota";
 export type SettingsRuntimeFocus = "all" | "vcenter" | "monitoring" | "idrac" | "vmlog";
@@ -299,7 +301,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
       payload.idracUser = pickedIdracTarget?.user ?? "";
       payload.idracPassword = pickedIdracTarget?.password ?? "";
       payload.idracInsecure = pickedIdracTarget ? pickedIdracTarget.insecure !== false : true;
-      await apiPutJson("/api/settings/runtime", payload);
+      await apiPutJson("/api/settings/runtime", withOpsMutationConfirm(payload));
       const msg = "已保存并重载配置";
       setOk(msg);
       toast.success("保存成功");
@@ -1429,7 +1431,14 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
             </div>
           )}
 
-          <Button type="button" onClick={() => void onSave()} disabled={saving}>
+          <ConfirmActionButton
+            type="button"
+            disabled={saving}
+            title="确认保存运行时配置？"
+            description="将写入平台运行时配置并触发热重载，影响 Kubernetes、vCenter、监控、堡垒机等模块的连接行为。"
+            confirmLabel="保存"
+            onConfirm={() => void onSave()}
+          >
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1441,7 +1450,7 @@ const SettingsRuntimeSection: React.FC<SettingsRuntimeSectionProps> = ({
                 {v === "virtualMachine" ? "保存配置" : defaultSaveLabel}
               </>
             )}
-          </Button>
+          </ConfirmActionButton>
         </div>
       </div>
     </div>

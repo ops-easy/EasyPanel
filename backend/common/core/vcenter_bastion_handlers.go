@@ -42,6 +42,7 @@ type bastionPolicyPutJSON struct {
 	TargetRdpWebEmbeds []BastionTargetRdpWebEmbed `json:"targetRdpWebEmbeds"`
 	NativeSshEnabled   *bool                      `json:"nativeSshEnabled"`
 	NativeSshPort      *int                       `json:"nativeSshPort"`
+	Confirm            bool                       `json:"confirm"`
 }
 
 func handleGetVCenterBastionPolicy(c *gin.Context, app *ServerApp) {
@@ -50,11 +51,6 @@ func handleGetVCenterBastionPolicy(c *gin.Context, app *ServerApp) {
 }
 
 func handlePutVCenterBastionPolicy(c *gin.Context, app *ServerApp) {
-	kv := app.PlatformKV()
-	if kv == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未配置平台 KV，无法保存堡垒机策略"})
-		return
-	}
 	if getDashboardRoleFromGin(c) != DashboardRoleAdmin {
 		RespondAPIPermissionDenied(c)
 		return
@@ -62,6 +58,14 @@ func handlePutVCenterBastionPolicy(c *gin.Context, app *ServerApp) {
 	var body bastionPolicyPutJSON
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON 无效: " + err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "vCenter bastion policy update") {
+		return
+	}
+	kv := app.PlatformKV()
+	if kv == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未配置平台 KV，无法保存堡垒机策略"})
 		return
 	}
 	ctx := c.Request.Context()

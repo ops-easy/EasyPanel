@@ -56,7 +56,13 @@ export function RouterChangePreviewPanel({ preview }: { preview?: NetworkChangeP
       ) : null}
 
       {preview.unsupported?.length ? (
-        <p className="mt-3 text-xs leading-5 text-slate-500">暂不支持：{preview.unsupported.join("、")}</p>
+        <div className="mt-3 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+          <div>
+            <p className="font-medium text-slate-800">需人工处理项</p>
+            <p>以下变更未自动生成命令，请在目标平台确认后处理：{preview.unsupported.join("、")}</p>
+          </div>
+        </div>
       ) : null}
     </section>
   );

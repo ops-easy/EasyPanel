@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -28,49 +30,49 @@ func RegisterRoutes(api *gin.RouterGroup, app *appctx.ServerApp) {
 
 	// Accounts (DNS provider credentials)
 	g.GET("/accounts", func(c *gin.Context) { handleDnsAccountList(c, app) })
-	g.POST("/accounts", func(c *gin.Context) { handleDnsAccountCreate(c, app) })
+	g.POST("/accounts", dnsMutationConfirmMiddleware("DNS account create"), func(c *gin.Context) { handleDnsAccountCreate(c, app) })
 	g.GET("/accounts/:id", func(c *gin.Context) { handleDnsAccountGet(c, app) })
-	g.PUT("/accounts/:id", func(c *gin.Context) { handleDnsAccountUpdate(c, app) })
-	g.DELETE("/accounts/:id", func(c *gin.Context) { handleDnsAccountDelete(c, app) })
+	g.PUT("/accounts/:id", dnsMutationConfirmMiddleware("DNS account update"), func(c *gin.Context) { handleDnsAccountUpdate(c, app) })
+	g.DELETE("/accounts/:id", dnsMutationConfirmMiddleware("DNS account delete"), func(c *gin.Context) { handleDnsAccountDelete(c, app) })
 	g.POST("/accounts/:id/test", func(c *gin.Context) { handleDnsAccountTest(c, app) })
-	g.POST("/accounts/:id/sync-domains", func(c *gin.Context) { handleDnsAccountSyncDomains(c, app) })
+	g.POST("/accounts/:id/sync-domains", dnsMutationConfirmMiddleware("DNS account domain sync"), func(c *gin.Context) { handleDnsAccountSyncDomains(c, app) })
 
 	// Domains
 	g.GET("/domains", func(c *gin.Context) { handleDnsDomainList(c, app) })
-	g.POST("/domains", func(c *gin.Context) { handleDnsDomainCreate(c, app) })
+	g.POST("/domains", dnsMutationConfirmMiddleware("DNS domain create"), func(c *gin.Context) { handleDnsDomainCreate(c, app) })
 	g.GET("/domains/:id", func(c *gin.Context) { handleDnsDomainGet(c, app) })
-	g.PUT("/domains/:id", func(c *gin.Context) { handleDnsDomainUpdate(c, app) })
-	g.DELETE("/domains/:id", func(c *gin.Context) { handleDnsDomainDelete(c, app) })
+	g.PUT("/domains/:id", dnsMutationConfirmMiddleware("DNS domain update"), func(c *gin.Context) { handleDnsDomainUpdate(c, app) })
+	g.DELETE("/domains/:id", dnsMutationConfirmMiddleware("DNS domain delete"), func(c *gin.Context) { handleDnsDomainDelete(c, app) })
 
 	// DNS Records (synced to DB; also proxied to provider)
 	g.GET("/domains/:id/records", func(c *gin.Context) { handleDnsRecordList(c, app) })
-	g.POST("/domains/:id/records/sync", func(c *gin.Context) { handleDnsRecordSync(c, app) })
-	g.POST("/domains/:id/records", func(c *gin.Context) { handleDnsRecordCreate(c, app) })
-	g.PUT("/domains/:id/records/:rid", func(c *gin.Context) { handleDnsRecordUpdate(c, app) })
-	g.DELETE("/domains/:id/records/:rid", func(c *gin.Context) { handleDnsRecordDelete(c, app) })
-	g.POST("/domains/:id/records/:rid/status", func(c *gin.Context) { handleDnsRecordSetStatus(c, app) })
+	g.POST("/domains/:id/records/sync", dnsMutationConfirmMiddleware("DNS record sync"), func(c *gin.Context) { handleDnsRecordSync(c, app) })
+	g.POST("/domains/:id/records", dnsMutationConfirmMiddleware("DNS record create"), func(c *gin.Context) { handleDnsRecordCreate(c, app) })
+	g.PUT("/domains/:id/records/:rid", dnsMutationConfirmMiddleware("DNS record update"), func(c *gin.Context) { handleDnsRecordUpdate(c, app) })
+	g.DELETE("/domains/:id/records/:rid", dnsMutationConfirmMiddleware("DNS record delete"), func(c *gin.Context) { handleDnsRecordDelete(c, app) })
+	g.POST("/domains/:id/records/:rid/status", dnsMutationConfirmMiddleware("DNS record status update"), func(c *gin.Context) { handleDnsRecordSetStatus(c, app) })
 
 	// Failover / Health check tasks
 	g.GET("/failover", func(c *gin.Context) { handleDnsFailoverList(c, app) })
-	g.POST("/failover", func(c *gin.Context) { handleDnsFailoverCreate(c, app) })
-	g.PUT("/failover/:id", func(c *gin.Context) { handleDnsFailoverUpdate(c, app) })
-	g.DELETE("/failover/:id", func(c *gin.Context) { handleDnsFailoverDelete(c, app) })
+	g.POST("/failover", dnsMutationConfirmMiddleware("DNS failover create"), func(c *gin.Context) { handleDnsFailoverCreate(c, app) })
+	g.PUT("/failover/:id", dnsMutationConfirmMiddleware("DNS failover update"), func(c *gin.Context) { handleDnsFailoverUpdate(c, app) })
+	g.DELETE("/failover/:id", dnsMutationConfirmMiddleware("DNS failover delete"), func(c *gin.Context) { handleDnsFailoverDelete(c, app) })
 	g.GET("/failover/:id/logs", func(c *gin.Context) { handleDnsFailoverLogs(c, app) })
-	g.POST("/failover/:id/check", func(c *gin.Context) { handleDnsFailoverCheck(c, app) })
+	g.POST("/failover/:id/check", dnsMutationConfirmMiddleware("DNS failover manual check"), func(c *gin.Context) { handleDnsFailoverCheck(c, app) })
 
 	// Scheduled tasks
 	g.GET("/scheduled", func(c *gin.Context) { handleDnsScheduledList(c, app) })
-	g.POST("/scheduled", func(c *gin.Context) { handleDnsScheduledCreate(c, app) })
-	g.DELETE("/scheduled/:id", func(c *gin.Context) { handleDnsScheduledDelete(c, app) })
+	g.POST("/scheduled", dnsMutationConfirmMiddleware("DNS scheduled task create"), func(c *gin.Context) { handleDnsScheduledCreate(c, app) })
+	g.DELETE("/scheduled/:id", dnsMutationConfirmMiddleware("DNS scheduled task delete"), func(c *gin.Context) { handleDnsScheduledDelete(c, app) })
 
 	// SSL Certificates
 	g.GET("/certs", func(c *gin.Context) { handleDnsCertList(c, app) })
-	g.POST("/certs", func(c *gin.Context) { handleDnsCertCreate(c, app) })
+	g.POST("/certs", dnsMutationConfirmMiddleware("DNS certificate order create"), func(c *gin.Context) { handleDnsCertCreate(c, app) })
 	g.GET("/certs/:id", func(c *gin.Context) { handleDnsCertGet(c, app) })
-	g.DELETE("/certs/:id", func(c *gin.Context) { handleDnsCertDelete(c, app) })
-	g.POST("/certs/:id/apply", func(c *gin.Context) { handleDnsCertApply(c, app) })
-	g.PATCH("/certs/:id/baota", func(c *gin.Context) { handleDnsCertUpdateBaota(c, app) })
-	g.POST("/certs/:id/push-baota", func(c *gin.Context) { handleDnsCertPushBaota(c, app) })
+	g.DELETE("/certs/:id", dnsMutationConfirmMiddleware("DNS certificate order delete"), func(c *gin.Context) { handleDnsCertDelete(c, app) })
+	g.POST("/certs/:id/apply", dnsMutationConfirmMiddleware("DNS certificate apply"), func(c *gin.Context) { handleDnsCertApply(c, app) })
+	g.PATCH("/certs/:id/baota", dnsMutationConfirmMiddleware("DNS certificate Baota settings update"), func(c *gin.Context) { handleDnsCertUpdateBaota(c, app) })
+	g.POST("/certs/:id/push-baota", dnsMutationConfirmMiddleware("DNS certificate push to Baota"), func(c *gin.Context) { handleDnsCertPushBaota(c, app) })
 }
 
 // ─────────────────────────── permission helpers ───────────────────────────
@@ -101,6 +103,58 @@ func dnsRequireMySQL(c *gin.Context, app *appctx.ServerApp) *sql.DB {
 		return nil
 	}
 	return db
+}
+
+func dnsMutationConfirmed(raw string) bool {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "1", "true", "yes", "y":
+		return true
+	default:
+		return false
+	}
+}
+
+func dnsMutationConfirmedValue(value interface{}) bool {
+	switch v := value.(type) {
+	case bool:
+		return v
+	case string:
+		return dnsMutationConfirmed(v)
+	case float64:
+		return v == 1
+	case int:
+		return v == 1
+	default:
+		return false
+	}
+}
+
+func dnsMutationConfirmMiddleware(label string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if dnsMutationConfirmed(c.Query("confirm")) {
+			c.Next()
+			return
+		}
+
+		confirmed := false
+		if c.Request.Body != nil {
+			raw, err := io.ReadAll(c.Request.Body)
+			if err == nil {
+				c.Request.Body = io.NopCloser(bytes.NewReader(raw))
+				if len(bytes.TrimSpace(raw)) > 0 {
+					var body map[string]interface{}
+					if json.Unmarshal(raw, &body) == nil {
+						confirmed = dnsMutationConfirmedValue(body["confirm"])
+					}
+				}
+			}
+		}
+		if confirmed {
+			c.Next()
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": label + " requires explicit confirm=true"})
+	}
 }
 
 // ─────────────────────────── status ───────────────────────────
@@ -969,47 +1023,22 @@ func handleDnsFailoverCheck(c *gin.Context, app *appctx.ServerApp) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "任务不存在"})
 		return
 	}
-	ok, msg := dnsDoHealthCheck(ctx, task)
-	status := "ok"
-	if !ok {
-		status = "error"
+	if task.Status != 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "任务已停用"})
+		return
 	}
-	_ = dnsFailoverLogInsert(ctx, db, id, "manual_check", "", "", msg)
-	_, _ = db.ExecContext(ctx,
-		`UPDATE dns_failover_tasks SET last_check_at=NOW(), last_status=? WHERE id=?`,
-		status, id)
-	c.JSON(http.StatusOK, gin.H{"ok": ok, "status": status, "message": msg})
-}
-
-// dnsDoHealthCheck performs a simple connectivity test for a failover task.
-func dnsDoHealthCheck(ctx context.Context, task *DnsFailoverTask) (bool, string) {
-	target := task.CheckTarget
-	switch task.CheckType {
-	case "http", "https":
-		scheme := task.CheckType
-		if scheme == "" {
-			scheme = "http"
-		}
-		u := scheme + "://" + target
-		if task.CheckPath != "" && task.CheckPath != "/" {
-			u += task.CheckPath
-		}
-		req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
-		if err != nil {
-			return false, err.Error()
-		}
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return false, "HTTP 请求失败: " + err.Error()
-		}
-		_ = resp.Body.Close()
-		if resp.StatusCode >= 400 {
-			return false, "HTTP 状态码: " + strconv.Itoa(resp.StatusCode)
-		}
-		return true, "HTTP 检测成功，状态码: " + strconv.Itoa(resp.StatusCode)
-	default:
-		return true, "检测类型 " + task.CheckType + " 手动触发成功"
+	transition, err := dnsExecuteFailoverTask(ctx, db, *task)
+	if err != nil {
+		result.Error500(c, "故障切换执行失败: "+err.Error())
+		return
 	}
+	c.JSON(http.StatusOK, gin.H{
+		"ok":         transition.OK,
+		"status":     transition.LastStatus,
+		"action":     transition.Action,
+		"errorCount": transition.ErrorCount,
+		"message":    transition.Message,
+	})
 }
 
 // ─────────────────────────── scheduled ───────────────────────────
@@ -1164,7 +1193,25 @@ func handleDnsCertCreate(c *gin.Context, app *appctx.ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	domainsJSON, _ := json.Marshal(body.Domains)
+	if body.AccountID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请选择 DNS 服务商账号"})
+		return
+	}
+	domains, err := dnsNormalizeCertDomains(body.Domains)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+	if _, err := dnsAccountGet(ctx, db, body.AccountID); err == sql.ErrNoRows {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "DNS 服务商账号不存在"})
+		return
+	} else if err != nil {
+		result.Error500(c, err.Error())
+		return
+	}
+	domainsJSON, _ := json.Marshal(domains)
 	user, _ := c.Get("dashboardUser")
 	createdBy, _ := user.(string)
 	order := DnsCertOrder{
@@ -1175,8 +1222,6 @@ func handleDnsCertCreate(c *gin.Context, app *appctx.ServerApp) {
 		AutoPushBaota: body.AutoPushBaota,
 		CreatedBy:     createdBy,
 	}
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
-	defer cancel()
 	id, err := dnsCertOrderInsert(ctx, db, order)
 	if err != nil {
 		result.Error500(c, err.Error())
@@ -1207,8 +1252,7 @@ func handleDnsCertDelete(c *gin.Context, app *appctx.ServerApp) {
 	c.JSON(http.StatusOK, gin.H{"message": "证书记录已删除"})
 }
 
-// handleDnsCertApply triggers the ACME DNS-01 challenge for a cert order.
-// Currently returns guidance for manual DNS-01 challenge via the configured DNS account.
+// handleDnsCertApply triggers an ACME DNS-01 flow using the configured DNS account.
 func handleDnsCertApply(c *gin.Context, app *appctx.ServerApp) {
 	if !dnsRequireWrite(c) {
 		return
@@ -1233,13 +1277,83 @@ func handleDnsCertApply(c *gin.Context, app *appctx.ServerApp) {
 		result.Error500(c, err.Error())
 		return
 	}
-	// Mark as in-progress
+	if order.AccountID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "证书申请单未绑定 DNS 服务商账号，请重新创建申请单"})
+		return
+	}
+	domains, err := dnsCertOrderDomainList(order.Domains)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	acc, err := dnsAccountGet(ctx, db, order.AccountID)
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "DNS 服务商账号不存在"})
+		return
+	}
+	if err != nil {
+		result.Error500(c, err.Error())
+		return
+	}
+	client, err := newDnsProviderClient(acc.Provider, acc.ConfigJSON)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	zones, err := dnsDomainNamesByAccount(ctx, db, order.AccountID)
+	if err != nil {
+		result.Error500(c, err.Error())
+		return
+	}
+	if len(zones) == 0 {
+		zones, err = client.ListDomains(ctx)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "读取 DNS 服务商域名失败: " + err.Error()})
+			return
+		}
+	}
 	_ = dnsCertOrderUpdateStatus(ctx, db, id, "applying", "", "", nil, nil)
+	issued, err := dnsCertIssueCertificate(ctx, dnsCertificateIssueRequest{
+		Email:            order.Email,
+		Domains:          domains,
+		Zones:            zones,
+		Provider:         client,
+		DirectoryURL:     dnsACMEDirectoryURL(),
+		PropagationDelay: dnsACMEPropagationDelay(),
+	})
+	if err != nil {
+		_ = dnsCertOrderUpdateStatus(ctx, db, id, "failed", "", "", nil, nil)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":  "证书签发失败: " + err.Error(),
+			"status": "failed",
+		})
+		return
+	}
+	issuedAt := issued.IssuedAt
+	if issuedAt.IsZero() {
+		issuedAt = time.Now()
+	}
+	expireAt := issued.ExpireAt
+	if err := dnsCertOrderUpdateStatus(ctx, db, id, "issued", issued.CertPEM, issued.KeyPEM, &issuedAt, &expireAt); err != nil {
+		result.Error500(c, err.Error())
+		return
+	}
+	message := "证书已签发，已自动写入并清理 DNS-01 TXT 记录"
+	if len(issued.CleanupErrors) > 0 {
+		message += "；但部分临时 TXT 记录清理失败：" + strings.Join(issued.CleanupErrors, "；")
+	}
+	if order.AutoPushBaota && strings.TrimSpace(order.BaotaSiteName) != "" {
+		if err := baotasvc.DeploySiteSSLPEM(app.Cfg(), strings.TrimSpace(order.BaotaSiteName), issued.CertPEM, issued.KeyPEM); err != nil {
+			message += "；宝塔自动部署失败：" + err.Error()
+		} else {
+			message += "；已自动部署到宝塔站点 " + strings.TrimSpace(order.BaotaSiteName)
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"message": "证书申请已提交，DNS-01 验证需要在 DNS 服务商添加 _acme-challenge TXT 记录。" +
-			"自动化签发功能（通过已绑定 DNS 账号自动添加验证记录）将在后续版本完整支持。" +
-			"当前版本：请手动在域名 " + order.Domains + " 对应的 DNS 服务商添加验证记录后再来刷新状态。",
-		"status": "applying",
+		"message":    message,
+		"status":     "issued",
+		"expireAt":   expireAt,
+		"dnsRecords": len(issued.DNSRecords),
 	})
 }
 

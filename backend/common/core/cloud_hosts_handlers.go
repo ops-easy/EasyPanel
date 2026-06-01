@@ -136,6 +136,7 @@ type cloudHostBody struct {
 	Comment          string `json:"comment"`
 	SSHPassword      string `json:"sshPassword"`
 	SSHPrivateKeyPEM string `json:"sshPrivateKeyPem"`
+	Confirm          bool   `json:"confirm"`
 }
 
 func persistCloudHostSSHIfAny(ctx context.Context, app *ServerApp, host CloudHost, password, pem string) error {
@@ -176,6 +177,9 @@ func handleCloudHostsCreate(c *gin.Context, app *ServerApp) {
 	var body cloudHostBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请求 JSON 无效: " + err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "cloud host create") {
 		return
 	}
 	if strings.TrimSpace(body.Name) == "" || strings.TrimSpace(body.SSHHost) == "" {
@@ -255,6 +259,9 @@ func handleCloudHostsUpdate(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请求 JSON 无效: " + err.Error()})
 		return
 	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "cloud host update") {
+		return
+	}
 	if strings.TrimSpace(body.Name) == "" || strings.TrimSpace(body.SSHHost) == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "name 与 sshHost 必填"})
 		return
@@ -326,6 +333,9 @@ func handleCloudHostsDelete(c *gin.Context, app *ServerApp) {
 	id := strings.TrimSpace(c.Param("id"))
 	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "缺少 id"})
+		return
+	}
+	if !requireOpsMutationConfirm(c, opsMutationConfirmed(c.Query("confirm")), "cloud host delete") {
 		return
 	}
 	hosts, err := loadCloudHosts(app)

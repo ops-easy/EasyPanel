@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Progress } from "@/shared/ui/progress";
 import { toast } from "sonner";
 import { ApiHttpError, apiGetJson, apiPostJson } from "@/lib/api";
 import { useAuth } from "@/auth/auth-context";
+import { withHarborMutationConfirm } from "@/features/harbor/lib/harborMutationConfirm";
 
 export type HarborImageIndexProgressDTO = {
   state?: string;
@@ -76,7 +78,7 @@ const HarborRedisIndexSettingsPanel: React.FC = () => {
   const onSync = async () => {
     setSyncing(true);
     try {
-      await apiPostJson("/api/harbor/index/sync", {});
+      await apiPostJson("/api/harbor/index/sync", withHarborMutationConfirm({}));
       toast.success("已在后台启动全量索引同步");
       await qc.invalidateQueries({ queryKey: ["harbor-index-status"] });
     } catch (e) {
@@ -121,13 +123,16 @@ const HarborRedisIndexSettingsPanel: React.FC = () => {
           </span>
         </div>
         {isAdmin ? (
-          <Button
+          <ConfirmActionButton
             type="button"
             size="sm"
             variant="secondary"
             className="h-8 gap-1.5"
             disabled={syncing || running}
-            onClick={() => void onSync()}
+            title="全量同步 Harbor 镜像索引"
+            description="将重新扫描 Harbor 项目、仓库和制品标签，并写入 Redis 索引快照。"
+            confirmLabel="开始同步"
+            onConfirm={() => void onSync()}
           >
             {syncing || running ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -135,7 +140,7 @@ const HarborRedisIndexSettingsPanel: React.FC = () => {
               <RefreshCw className="h-3.5 w-3.5" />
             )}
             立即全量同步
-          </Button>
+          </ConfirmActionButton>
         ) : (
           <span className="text-gray-400">仅管理员可手动触发同步</span>
         )}

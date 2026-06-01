@@ -151,7 +151,7 @@ const AiInspectDashboard: React.FC = () => {
       label: "vCenter 指标",
       scope: "Prometheus / vcenter",
       status: promStatusQ.isLoading ? "unknown" : vcenterPrometheusConfigured ? "ok" : "missing",
-      detail: vcenterPrometheusConfigured ? "VMware 指标可用于虚拟化看板与巡检报告。" : "未接入时，vCenter 监控和关联告警会缺少数据。",
+      detail: vcenterPrometheusConfigured ? "VMware 指标可用于虚拟化看板与巡检报告。" : "未配置时，vCenter 监控和关联告警会缺少数据。",
       to: navItems.monitoring.to,
     },
     {

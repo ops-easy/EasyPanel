@@ -39,6 +39,7 @@ test("resource views expose context-specific configuration actions", () => {
 
 test("router config drawer defaults to structured forms with advanced fallback", () => {
   const drawer = read("../src/features/network/router-config/NetworkRouterConfigDrawer.tsx");
+  const preview = read("../src/features/network/router-config/RouterChangePreviewPanel.tsx");
   const openwrt = read("../src/features/network/router-config/OpenWrtStructuredConfigForm.tsx");
   const ikuai = read("../src/features/network/router-config/IkuaiStructuredConfigForm.tsx");
   const advanced = read("../src/features/network/router-config/AdvancedProviderConfigForm.tsx");
@@ -47,6 +48,8 @@ test("router config drawer defaults to structured forms with advanced fallback",
   assert.match(drawer, /RouterConfigSnapshotPanel/);
   assert.match(drawer, /RouterChangePreviewPanel/);
   assert.match(drawer, /高级模式/);
+  assert.match(preview, /需人工处理项/);
+  assert.doesNotMatch(preview, /暂不支持/);
   assert.match(openwrt, /接口地址|DHCP|无线|防火墙|DNS|服务操作/);
   assert.match(ikuai, /终端备注|限速|端口映射|DHCP/);
   assert.match(advanced, /UCI 配置项/);

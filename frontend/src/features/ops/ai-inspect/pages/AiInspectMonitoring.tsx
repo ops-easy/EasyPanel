@@ -16,8 +16,10 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
 import { Textarea } from "@/shared/ui/textarea";
 import { apiGetJson, apiPutJson, ApiHttpError, prometheusQueryRangeApi } from "@/lib/api";
+import { withOpsMutationConfirm } from "@/lib/ops-mutation-confirm";
 import { useAuth } from "@/auth/auth-context";
 import { toast } from "sonner";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import {
   OPS_MONITORING_PRESETS,
   presetCategoriesForScope,
@@ -213,7 +215,7 @@ export default function AiInspectMonitoring() {
   });
 
   const savePanelsMut = useMutation({
-    mutationFn: (panels: OpsMonitoringCustomPanel[]) => apiPutJson("/api/ops/monitoring/panels", { panels }),
+    mutationFn: (panels: OpsMonitoringCustomPanel[]) => apiPutJson("/api/ops/monitoring/panels", withOpsMutationConfirm({ panels })),
     onSuccess: () => {
       toast.success("已保存自定义图表");
       void qc.invalidateQueries({ queryKey: ["ops-monitoring-panels"] });
@@ -429,9 +431,16 @@ export default function AiInspectMonitoring() {
                       placeholder={'sum(rate(http_requests_total[5m]))'}
                     />
                   </div>
-                  <Button type="button" onClick={submitNewPanel} disabled={savePanelsMut.isPending}>
+                  <ConfirmActionButton
+                    type="button"
+                    disabled={savePanelsMut.isPending}
+                    title="确认保存自定义图表？"
+                    description="将把当前 PromQL 图表写入平台配置，并在监控页长期展示。"
+                    confirmLabel="保存"
+                    onConfirm={submitNewPanel}
+                  >
                     保存到平台
-                  </Button>
+                  </ConfirmActionButton>
                 </div>
               </SheetContent>
             </Sheet>
@@ -447,17 +456,21 @@ export default function AiInspectMonitoring() {
                     </span>
                     <p className="mt-1 font-mono text-[11px] text-slate-500 break-all">{p.promql}</p>
                   </div>
-                  <Button
+                  <ConfirmActionButton
                     type="button"
                     variant="ghost"
                     size="icon"
                     className="shrink-0 text-red-600 hover:text-red-700"
-                    onClick={() => deletePanel(p.id)}
                     disabled={savePanelsMut.isPending}
                     aria-label="删除"
+                    title="确认删除自定义图表？"
+                    description={`将从平台配置中移除「${p.title || p.id}」图表。`}
+                    confirmLabel="删除"
+                    confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                    onConfirm={() => deletePanel(p.id)}
                   >
                     <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </ConfirmActionButton>
                 </li>
               ))}
             </ul>

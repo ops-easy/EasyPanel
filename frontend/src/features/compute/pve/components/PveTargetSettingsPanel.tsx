@@ -16,12 +16,14 @@ import { useAuth } from "@/auth/auth-context";
 import { apiDelete, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import PveTargetForm, {
   defaultPveTargetForm,
   pveTargetFormFromTarget,
   type PVETarget,
   type PveTargetFormState,
 } from "./PveTargetForm";
+import { withPveMutationConfirm, withPveMutationConfirmQuery } from "@/features/compute/pve/lib/pveMutationConfirm";
 
 function fmtUpdatedAt(v: unknown): string {
   const s = String(v ?? "").trim();
@@ -77,7 +79,7 @@ const PveTargetSettingsPanel: React.FC = () => {
   const saveMut = useMutation({
     mutationFn: async () => {
       const password = form.password.trim() || (active?.passwordSet ? "***" : "");
-      const payload = { ...form, password };
+      const payload = withPveMutationConfirm({ ...form, password });
       if (active?.id) {
         return apiPutJson<{ target: PVETarget }>(`/api/pve/targets/${encodeURIComponent(active.id)}`, payload);
       }
@@ -92,7 +94,7 @@ const PveTargetSettingsPanel: React.FC = () => {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => apiDelete(`/api/pve/targets/${encodeURIComponent(id)}`),
+    mutationFn: (id: string) => apiDelete(withPveMutationConfirmQuery(`/api/pve/targets/${encodeURIComponent(id)}`)),
     onSuccess: () => {
       toast.success("PVE 目标已删除");
       setForm({ ...defaultPveTargetForm });
@@ -108,7 +110,7 @@ const PveTargetSettingsPanel: React.FC = () => {
     onError: (e) => toast.error((e as Error).message),
   });
 
-  const targetStatus = active ? "已接入" : targetsQ.isLoading ? "读取中" : "未配置";
+  const targetStatus = active ? "已配置" : targetsQ.isLoading ? "读取中" : "未配置";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -137,7 +139,7 @@ const PveTargetSettingsPanel: React.FC = () => {
         <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-slate-950">当前接入目标</p>
+              <p className="text-sm font-semibold text-slate-950">当前 PVE 目标</p>
               <p className="mt-1 text-xs leading-5 text-slate-500">
                 {targetsQ.isLoading
                   ? "正在读取 PVE 目标..."
@@ -152,10 +154,21 @@ const PveTargetSettingsPanel: React.FC = () => {
                   <ShieldCheck className="h-4 w-4" />
                   探测
                 </Button>
-                <Button type="button" variant="outline" size="sm" className="gap-1.5 text-red-700" onClick={() => deleteMut.mutate(active.id)} disabled={!canWrite || deleteMut.isPending}>
+                <ConfirmActionButton
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-red-700"
+                  disabled={!canWrite || deleteMut.isPending}
+                  title="确认删除 PVE 目标？"
+                  description="将从平台配置中移除当前 PVE 连接目标，算力资源中心会停止按该目标读取。"
+                  confirmLabel="删除"
+                  confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                  onConfirm={() => deleteMut.mutate(active.id)}
+                >
                   <Trash2 className="h-4 w-4" />
                   删除
-                </Button>
+                </ConfirmActionButton>
               </div>
             ) : null}
           </div>
@@ -163,7 +176,7 @@ const PveTargetSettingsPanel: React.FC = () => {
             <TargetSummaryItem
               icon={PlugZap}
               label="目标名称"
-              value={active?.name || "待接入"}
+              value={active?.name || "未配置"}
               hint={active ? "Proxmox VE" : "填写下方连接参数"}
             />
             <TargetSummaryItem

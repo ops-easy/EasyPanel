@@ -35,6 +35,7 @@ type TargetBody struct {
 	TokenSecret   string `json:"tokenSecret"`
 	SkipTLS       bool   `json:"skipTls"`
 	PrometheusJob string `json:"prometheusJob"`
+	Confirm       bool   `json:"confirm"`
 }
 
 func LoadTargets(kv platformkv.Store) ([]pvemodel.Target, error) {

@@ -59,6 +59,7 @@ import { formatDateTimeShanghai } from "@/lib/datetime-cn";
 import { copyToClipboardSafe } from "@/lib/clipboard";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/auth-context";
+import { withAppCenterMutationConfirmQuery } from "@/features/app-center/lib/appCenterMutationConfirm";
 import { Badge } from "@/shared/ui/badge";
 import {
   cloudVmAppCenterCanWrite,
@@ -284,7 +285,7 @@ const STEPS = [
   { n: 3, title: "模型与密钥", desc: "预设、上游模型名、API Key、Base URL" },
 ] as const;
 
-/** Select 占位；与集群真实 ns 名不冲突即可 */
+/** Select 默认值；与集群真实 ns 名不冲突即可 */
 const NS_SELECT_EMPTY = "__openclaw_ns_none__";
 const NS_SELECT_CUSTOM = "__openclaw_ns_custom__";
 
@@ -712,32 +713,35 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
 
   const deployMut = useMutation({
     mutationFn: () =>
-      apiPostJson<{ instance: InstanceRow; gatewayToken: string }>("/api/app-center/openclaw/k8s-deploy", {
-        namespace: namespace.trim(),
-        deploymentName: deploymentName.trim(),
-        serviceName: serviceName.trim(),
-        nodePort: 0,
-        exposeMode,
-        ingressName: ingressName.trim(),
-        ingressHost: ingressHost.trim(),
-        ingressTlsScheme,
-        baotaSyncAnnotation,
-        image: image.trim(),
-        initContainerImage: initContainerImage.trim(),
-        modelPreset: preset,
-        openaiApiKey: openaiKey.trim(),
-        openaiBaseUrl: baseUrlOverride.trim(),
-        geminiApiKey: geminiKey.trim(),
-        displayName: displayName.trim() || deploymentName.trim(),
-        chatModel: chatModel.trim() || defaultChatModelForPreset(preset),
-        egressCloudVmId: egressCloudVmId.trim(),
-        httpProxyUrl: httpProxyUrl.trim(),
-        rbacPreset: rbacDeployPreset,
-        toolsProfile: toolsProfileDeploy,
-        promptPacks: Object.entries(promptPackSel)
-          .filter(([, on]) => on)
-          .map(([id]) => id),
-      }),
+      apiPostJson<{ instance: InstanceRow; gatewayToken: string }>(
+        withAppCenterMutationConfirmQuery("/api/app-center/openclaw/k8s-deploy"),
+        {
+          namespace: namespace.trim(),
+          deploymentName: deploymentName.trim(),
+          serviceName: serviceName.trim(),
+          nodePort: 0,
+          exposeMode,
+          ingressName: ingressName.trim(),
+          ingressHost: ingressHost.trim(),
+          ingressTlsScheme,
+          baotaSyncAnnotation,
+          image: image.trim(),
+          initContainerImage: initContainerImage.trim(),
+          modelPreset: preset,
+          openaiApiKey: openaiKey.trim(),
+          openaiBaseUrl: baseUrlOverride.trim(),
+          geminiApiKey: geminiKey.trim(),
+          displayName: displayName.trim() || deploymentName.trim(),
+          chatModel: chatModel.trim() || defaultChatModelForPreset(preset),
+          egressCloudVmId: egressCloudVmId.trim(),
+          httpProxyUrl: httpProxyUrl.trim(),
+          rbacPreset: rbacDeployPreset,
+          toolsProfile: toolsProfileDeploy,
+          promptPacks: Object.entries(promptPackSel)
+            .filter(([, on]) => on)
+            .map(([id]) => id),
+        }
+      ),
     onSuccess: (data) => {
       const nextDeployWait: OpenClawDeployWait = {
         id: data.instance.id,
@@ -944,7 +948,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
   if (bootstrapQ.data && !bootstrapQ.data.bootstrapComplete && !canWrite) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        OpenClaw 部署模式尚未完成首次引导。请联系管理员打开{" "}
+        OpenClaw 尚未配置部署模式。请联系管理员打开{" "}
         <Link to={OPENCLAW_BOOTSTRAP_PATH} className="font-mono font-semibold underline">
           {OPENCLAW_BOOTSTRAP_PATH}
         </Link>{" "}
@@ -1582,7 +1586,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                     ) : (
                       <p className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm text-slate-600 lg:col-span-2">
                         将创建 NodePort 类型 Service，<strong>不指定 NodePort 字段</strong>，由 Kubernetes 在 30000–32767
-                        内分配。外网访问示例为「节点访问 IP + 分配端口」；列表中展示分配结果。
+                        内分配。外网访问地址为「节点访问 IP + 分配端口」；列表中展示分配结果。
                       </p>
                     )}
                   </div>
@@ -1711,7 +1715,7 @@ const AppCenterOpenClaw: React.FC<{ initialTab?: OpenClawPageTab }> = ({ initial
                     ) : null}
                     {preset === "ollama" ? (
                       <p className="rounded-lg border border-amber-200/80 bg-amber-50/70 px-3 py-2 text-sm text-amber-950">
-                        <strong>Ollama</strong>：默认 Base URL 为占位 <code className="rounded bg-white/80 px-1">127.0.0.1:11434</code>
+                        <strong>Ollama</strong>：默认 Base URL 为 <code className="rounded bg-white/80 px-1">127.0.0.1:11434</code>，可按实际服务地址替换
                         ，Pod 内无法访问。请在下方「覆盖 OPENAI_BASE_URL」填写集群内地址，例如{" "}
                         <code className="rounded bg-white/80 px-1">http://ollama.default.svc.cluster.local:11434/v1</code>
                         。API Key 可留空。

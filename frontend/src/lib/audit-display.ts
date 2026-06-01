@@ -53,7 +53,8 @@ function apiMutationLabel(method: string, path: string): string {
   if (path.includes("/api/app-center/opensearch/")) return apiOpenSearchMutationLabel(method, path);
   if (path.includes("/api/app-center/kafka/")) return apiKafkaMutationLabel(method, path);
   if (path.includes("/api/app-center/redis/")) return apiRedisMutationLabel(method, path);
-  if (path.includes("/api/app-center/hermes/")) return "应用中心 Hermes 操作";
+  if (path.includes("/api/app-center/hermes/")) return apiHermesMutationLabel(method, path);
+  if (path.includes("/api/app-center/openclaw/")) return apiOpenClawMutationLabel(method, path);
   if (path.includes("/api/pve/")) return "PVE 纳管操作";
   if (path.includes("/api/network/")) return "网络设备操作";
   if (path.includes("/api/vcenter/") && method === "PUT") return "更新 vCenter 相关配置或虚拟机";
@@ -122,6 +123,38 @@ function apiRedisMutationLabel(method: string, path: string): string {
   if (method === "DELETE") return "删除 Redis 实例或资源";
   if (method === "PUT" || method === "PATCH") return "更新 Redis 实例";
   return "应用中心 Redis 操作";
+}
+
+function apiHermesMutationLabel(method: string, path: string): string {
+  if (path.includes("/k8s-deploy")) return "Hermes 部署到集群";
+  if (path.includes("/restart")) return "Hermes 滚动重启";
+  if (path.includes("/upgrade")) return "Hermes 升级镜像";
+  if (path.includes("/rollback")) return "Hermes 回滚镜像";
+  if (path.includes("/exposure")) return "Hermes 更新暴露方式";
+  if (path.includes("/migrate-openclaw-dry-run")) return "Hermes 迁移 OpenClaw 数据演练";
+  if (path.includes("/migrate-openclaw")) return "Hermes 迁移 OpenClaw 数据";
+  if (path.includes("/file") && (method === "PUT" || method === "PATCH")) return "Hermes 保存实例备注";
+  if (path.includes("/probe")) return "Hermes 运行探测";
+  if (method === "DELETE") return "Hermes 删除实例";
+  return "Hermes 运维操作";
+}
+
+function apiOpenClawMutationLabel(method: string, path: string): string {
+  if (path.includes("/k8s-deploy")) return "OpenClaw 部署到集群";
+  if (path.includes("/file") && (method === "PUT" || method === "PATCH")) return "OpenClaw 保存实例文件";
+  if (path.includes("/chat-model")) return "OpenClaw 更新对话模型";
+  if (path.includes("/apply-upstream-runtime")) return "OpenClaw 应用上游模型运行时";
+  if (path.includes("/telegram-settings")) return "OpenClaw 更新 Telegram 设置";
+  if (path.includes("/apply-telegram-to-openclaw-json")) return "OpenClaw 写入 Telegram 配置";
+  if (path.includes("/egress-proxy")) return "OpenClaw 更新出口代理";
+  if (path.includes("/rbac-preset")) return "OpenClaw 更新 RBAC 预设";
+  if (path.includes("/apply-toolchain-preset")) return "OpenClaw 应用工具链预设";
+  if (path.includes("/sync-to-inspect")) return "OpenClaw 同步到 AI 巡检";
+  if (path.includes("/gateway-image")) return "OpenClaw 更新网关镜像";
+  if (path.includes("/bootstrap") && (method === "PUT" || method === "PATCH")) return "OpenClaw 更新部署初始化";
+  if (path.includes("/image-catalog") && (method === "PUT" || method === "PATCH")) return "OpenClaw 更新镜像目录";
+  if (method === "DELETE") return "OpenClaw 删除实例";
+  return "OpenClaw 运维操作";
 }
 
 /** 平台审计页右侧模块标签 */

@@ -5,6 +5,7 @@ import {
   Pencil, Plus, RefreshCw, Trash2, XCircle,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
@@ -13,6 +14,7 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescript
 import { Badge } from "@/shared/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDeleteJson, apiGetJson, apiPostJson, apiPutJson } from "@/lib/api";
+import { withDnsMutationConfirm, withDnsMutationConfirmQuery } from "@/features/dns/lib/dnsMutationConfirm";
 import { useAuth } from "@/auth/auth-context";
 import { toast } from "sonner";
 
@@ -91,8 +93,8 @@ export default function DnsFailover() {
 
   const saveMut = useMutation({
     mutationFn: async () => {
-      if (editID !== null) return apiPutJson(`/api/dns/failover/${editID}`, form);
-      return apiPostJson("/api/dns/failover", form);
+      if (editID !== null) return apiPutJson(`/api/dns/failover/${editID}`, withDnsMutationConfirm(form));
+      return apiPostJson("/api/dns/failover", withDnsMutationConfirm(form));
     },
     onSuccess: () => {
       toast.success(editID !== null ? "任务已更新" : "监测任务已创建");
@@ -103,7 +105,7 @@ export default function DnsFailover() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => apiDeleteJson(`/api/dns/failover/${id}`),
+    mutationFn: (id: number) => apiDeleteJson(withDnsMutationConfirmQuery(`/api/dns/failover/${id}`)),
     onSuccess: () => { toast.success("任务已删除"); setDeleteID(null); void qc.invalidateQueries({ queryKey: ["dns-failover"] }); },
     onError: (e) => toast.error(fmtErr(e)),
   });
@@ -111,7 +113,10 @@ export default function DnsFailover() {
   const doCheck = async (id: number) => {
     setCheckingID(id);
     try {
-      const r = await apiPostJson<{ ok: boolean; message: string }>(`/api/dns/failover/${id}/check`, {});
+      const r = await apiPostJson<{ ok: boolean; message: string; action: string; errorCount: number }>(
+        `/api/dns/failover/${id}/check`,
+        withDnsMutationConfirm({})
+      );
       toast[r.ok ? "success" : "error"](r.message);
       void qc.invalidateQueries({ queryKey: ["dns-failover"] });
     } catch (e) {
@@ -126,7 +131,7 @@ export default function DnsFailover() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-800">健康监测 / 故障切换</h2>
-          <p className="text-sm text-slate-500">配置 HTTP/TCP 探针，目标故障时自动切换 DNS 解析到备用地址</p>
+          <p className="text-sm text-slate-500">配置 HTTP/HTTPS/TCP/Ping 探针，后台按检测间隔自动执行；立即检测会触发切换或恢复</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => qc.invalidateQueries({ queryKey: ["dns-failover"] })}>
@@ -173,13 +178,20 @@ export default function DnsFailover() {
                     )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="outline" size="sm" disabled={checkingID === t.id}
-                      onClick={() => void doCheck(t.id)}>
+                    <ConfirmActionButton
+                      variant="outline"
+                      size="sm"
+                      disabled={checkingID === t.id}
+                      title="立即执行故障切换检测"
+                      description="本次检测若达到阈值，可能会改写 DNS 解析值或触发恢复动作。"
+                      confirmLabel="立即检测"
+                      onConfirm={() => void doCheck(t.id)}
+                    >
                       {checkingID === t.id
                         ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         : <Activity className="h-3.5 w-3.5" />}
                       <span className="ml-1.5 hidden sm:inline">立即检测</span>
-                    </Button>
+                    </ConfirmActionButton>
                     <Button variant="outline" size="sm"
                       onClick={() => setLogsOpen(logsOpen === t.id ? null : t.id)}>
                       {logsOpen === t.id ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
@@ -253,8 +265,8 @@ export default function DnsFailover() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>解析记录 ID（可选）</Label>
-              <Input placeholder="留空则切换主域名默认记录" value={form.recordId}
+              <Label>解析记录 ID</Label>
+              <Input placeholder="留空则按原始解析值匹配已同步记录" value={form.recordId}
                 onChange={(e) => setForm((f) => ({ ...f, recordId: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
@@ -316,11 +328,15 @@ export default function DnsFailover() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
-            <Button onClick={() => saveMut.mutate()}
-              disabled={saveMut.isPending || !form.name || !form.checkTarget}>
+            <ConfirmActionButton
+              title={editID !== null ? "更新 DNS 故障切换任务" : "创建 DNS 故障切换任务"}
+              description="任务配置会写入平台，并在后续检测中按阈值自动修改或恢复 DNS 解析值。"
+              confirmLabel="保存"
+              onConfirm={() => saveMut.mutate()}
+              disabled={saveMut.isPending || !form.name || !form.domainId || !form.checkTarget || !form.originalValue || !form.failoverValue}>
               {saveMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               保存
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Copy, Loader2, Play, RefreshCw, Terminal } from "lucide-react";
 import { apiGetJson, apiPostJson, ApiHttpError } from "@/lib/api";
+import { withOpsMutationConfirm } from "@/lib/ops-mutation-confirm";
 import { useAuth } from "@/auth/auth-context";
 import { copyToClipboardSafe } from "@/lib/clipboard";
 import { Button } from "@/shared/ui/button";
@@ -325,7 +326,7 @@ export const VmLogShipperAssistant: React.FC = () => {
 
   const shipperApplyMut = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
-      apiPostJson<VmShipperApplyStartRes>("/api/ops/vmlog/vm-shipper/apply", body),
+      apiPostJson<VmShipperApplyStartRes>("/api/ops/vmlog/vm-shipper/apply", withOpsMutationConfirm(body)),
     onSuccess: (data) => {
       if (!data.taskId) {
         toast.error(data.message || "后台安装任务创建失败");

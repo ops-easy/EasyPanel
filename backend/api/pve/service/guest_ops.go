@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -145,6 +146,38 @@ func pveBindSimpleForm(c *gin.Context) (url.Values, bool) {
 	return form, true
 }
 
+func pveConfirmed(raw string) bool {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "1", "true", "yes", "y":
+		return true
+	default:
+		return false
+	}
+}
+
+func pveConsumeConfirmForm(form url.Values) bool {
+	confirmed := pveConfirmed(form.Get("confirm"))
+	form.Del("confirm")
+	return confirmed
+}
+
+func requirePVEConfirm(c *gin.Context, confirmed bool, label string) bool {
+	if confirmed {
+		return true
+	}
+	c.JSON(http.StatusBadRequest, gin.H{"error": label + " 需要显式 confirm=true"})
+	return false
+}
+
+func pveFormKeys(form url.Values) []string {
+	keys := make([]string, 0, len(form))
+	for key := range form {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 func pveGuestRequestScope(c *gin.Context) (node, guestType, vmid string) {
 	node = strings.TrimSpace(c.Query("node"))
 	guestType = strings.TrimSpace(c.DefaultQuery("type", "qemu"))
@@ -179,6 +212,9 @@ func handlePVEGuestConfigUpdate(c *gin.Context, app *ServerApp) {
 	if !ok {
 		return
 	}
+	if !requirePVEConfirm(c, pveConsumeConfirmForm(form), "PVE Guest 配置变更") {
+		return
+	}
 	if err := validatePVEGuestConfigPatch(form); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -198,14 +234,16 @@ func handlePVEGuestConfigUpdate(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
+	sharedaudit.SetDetail(c, fmt.Sprintf("PVE Guest %s/%s/%s 更新配置：fields=%s", node, guestType, vmid, strings.Join(pveFormKeys(form), ",")))
 	c.JSON(http.StatusOK, gin.H{"task": json.RawMessage(data)})
 }
 
 type pveGuestDiskResizeBody struct {
-	Node string `json:"node"`
-	Type string `json:"type"`
-	Disk string `json:"disk"`
-	Size string `json:"size"`
+	Node    string `json:"node"`
+	Type    string `json:"type"`
+	Disk    string `json:"disk"`
+	Size    string `json:"size"`
+	Confirm bool   `json:"confirm"`
 }
 
 func handlePVEGuestDiskResize(c *gin.Context, app *ServerApp) {
@@ -219,6 +257,9 @@ func handlePVEGuestDiskResize(c *gin.Context, app *ServerApp) {
 	}
 	if strings.TrimSpace(body.Disk) == "" || strings.TrimSpace(body.Size) == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "disk and size are required"})
+		return
+	}
+	if !requirePVEConfirm(c, body.Confirm, "PVE Guest 磁盘扩容") {
 		return
 	}
 	path, err := pveGuestDiskResizePath(body.Node, body.Type, c.Param("vmid"))
@@ -238,6 +279,7 @@ func handlePVEGuestDiskResize(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
+	sharedaudit.SetDetail(c, fmt.Sprintf("PVE Guest %s/%s/%s 磁盘扩容：%s %s", strings.TrimSpace(body.Node), strings.TrimSpace(body.Type), strings.TrimSpace(c.Param("vmid")), strings.TrimSpace(body.Disk), strings.TrimSpace(body.Size)))
 	c.JSON(http.StatusOK, gin.H{"task": json.RawMessage(data)})
 }
 
@@ -268,6 +310,9 @@ func handlePVEGuestSnapshotCreate(c *gin.Context, app *ServerApp) {
 	if !ok {
 		return
 	}
+	if !requirePVEConfirm(c, pveConsumeConfirmForm(form), "PVE Guest snapshot create") {
+		return
+	}
 	if err := normalizePVEGuestSnapshotCreateForm(form); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -294,14 +339,17 @@ func handlePVEGuestSnapshotDelete(c *gin.Context, app *ServerApp) {
 	if !requirePVEAdmin(c) {
 		return
 	}
-	client, _, ok := pveClientForRequest(c, app)
-	if !ok {
+	if !requirePVEConfirm(c, pveConfirmed(c.Query("confirm")), "PVE Guest 快照删除") {
 		return
 	}
 	node, guestType, vmid := pveGuestRequestScope(c)
 	path, err := pveGuestSnapshotPath(node, guestType, vmid, c.Param("snapname"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	client, _, ok := pveClientForRequest(c, app)
+	if !ok {
 		return
 	}
 	query := url.Values{}
@@ -313,6 +361,7 @@ func handlePVEGuestSnapshotDelete(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
+	sharedaudit.SetDetail(c, fmt.Sprintf("PVE Guest %s/%s/%s 删除快照 %s", node, guestType, vmid, strings.TrimSpace(c.Param("snapname"))))
 	c.JSON(http.StatusOK, gin.H{"task": json.RawMessage(data)})
 }
 
@@ -320,8 +369,7 @@ func handlePVEGuestSnapshotRollback(c *gin.Context, app *ServerApp) {
 	if !requirePVEAdmin(c) {
 		return
 	}
-	client, _, ok := pveClientForRequest(c, app)
-	if !ok {
+	if !requirePVEConfirm(c, pveConfirmed(c.Query("confirm")), "PVE Guest 快照回滚") {
 		return
 	}
 	node, guestType, vmid := pveGuestRequestScope(c)
@@ -329,6 +377,10 @@ func handlePVEGuestSnapshotRollback(c *gin.Context, app *ServerApp) {
 	path, err := pveGuestSnapshotRollbackPath(node, guestType, vmid, snapname)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	client, _, ok := pveClientForRequest(c, app)
+	if !ok {
 		return
 	}
 	form := url.Values{}

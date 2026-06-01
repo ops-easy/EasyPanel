@@ -37,7 +37,7 @@ export function NetworkDevicesView({
           </TableHeader>
           <TableBody>
             {loading ? (
-              <LoadingTableRow colSpan={7} label="正在读取设备接入状态..." />
+              <LoadingTableRow colSpan={7} label="正在读取设备配置状态..." />
             ) : rows.length === 0 ? (
               <EmptyTableRow colSpan={7} label={emptyLabel} />
             ) : (

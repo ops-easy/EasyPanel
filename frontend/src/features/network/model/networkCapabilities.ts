@@ -27,7 +27,7 @@ export function buildNetworkProviderCapability(
           key: "http-api",
           label: "HTTP API",
           ok: configured && hasCredentials,
-          detail: configured ? "用于读取和写入 iKuai 配置" : "未接入",
+          detail: configured ? "用于读取和写入 iKuai 配置" : "未配置",
         },
         {
           key: "terminal-policy",

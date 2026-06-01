@@ -36,9 +36,11 @@ import {
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
 import { apiGetJson, apiPostJson, type AppConfig } from "@/lib/api";
+import { withK8sMutationConfirm } from "@/features/cluster/lib/k8sMutationConfirm";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { AddonsStatusResponse } from "@/features/cluster/pages/ClusterK8sAddonsSection";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
 type MirrorMode = "auto" | "ghproxy_preferred" | "direct" | "ghproxy_only";
 
@@ -208,30 +210,33 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
         patchError?: string;
         reachableHint?: string;
         kubePromStackValuesYaml?: string;
-      }>("/api/k8s/addons/kube-prometheus-stack/install", {
-        namespace,
-        releaseName,
-        retention,
-        scrapeInterval,
-        storageClassName,
-        storageSize,
-        prometheusCpuRequest,
-        prometheusMemoryRequest,
-        prometheusCpuLimit,
-        prometheusMemoryLimit,
-        manifestMirror,
-        grafanaEnabled: grafana,
-        alertmanagerEnabled: alertmanager,
-        nodeExporterEnabled: nodeExporter,
-        kubeStateMetricsEnabled: kubeStateMetrics,
-        autoSwitchPrometheusUrl: autoSwitchProm,
-        clearVmSelect: clearVm,
-        kubeEtcdEnabled,
-        kubeEtcdEndpoints: etcdEndpoints,
-        kubeEtcdServiceEnabled: kubeEtcdService,
-        kubeEtcdPort: Number.isFinite(pEtcd) && pEtcd > 0 ? pEtcd : undefined,
-        kubeEtcdTargetPort: Number.isFinite(pTgt) && pTgt > 0 ? pTgt : undefined,
-      });
+      }>(
+        "/api/k8s/addons/kube-prometheus-stack/install",
+        withK8sMutationConfirm({
+          namespace,
+          releaseName,
+          retention,
+          scrapeInterval,
+          storageClassName,
+          storageSize,
+          prometheusCpuRequest,
+          prometheusMemoryRequest,
+          prometheusCpuLimit,
+          prometheusMemoryLimit,
+          manifestMirror,
+          grafanaEnabled: grafana,
+          alertmanagerEnabled: alertmanager,
+          nodeExporterEnabled: nodeExporter,
+          kubeStateMetricsEnabled: kubeStateMetrics,
+          autoSwitchPrometheusUrl: autoSwitchProm,
+          clearVmSelect: clearVm,
+          kubeEtcdEnabled,
+          kubeEtcdEndpoints: etcdEndpoints,
+          kubeEtcdServiceEnabled: kubeEtcdService,
+          kubeEtcdPort: Number.isFinite(pEtcd) && pEtcd > 0 ? pEtcd : undefined,
+          kubeEtcdTargetPort: Number.isFinite(pTgt) && pTgt > 0 ? pTgt : undefined,
+        })
+      );
       setProgress(100);
       setLastInstallHttpError(null);
       if (res.kubePromStackValuesYaml) setLastValuesYaml(res.kubePromStackValuesYaml);
@@ -330,11 +335,14 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
         patchedPrometheusUrlK8s?: string;
         prometheusBaseURL?: string;
         prometheusService?: string;
-      }>("/api/k8s/addons/kube-prometheus-stack/sync-runtime", {
-        namespace,
-        releaseName,
-        clearVmSelect: true,
-      });
+      }>(
+        "/api/k8s/addons/kube-prometheus-stack/sync-runtime",
+        withK8sMutationConfirm({
+          namespace,
+          releaseName,
+          clearVmSelect: true,
+        })
+      );
       const patched = String(res.patchedPrometheusUrlK8s || res.prometheusBaseURL || "").trim();
       if (patched) setLastPatchedUrl(patched);
       toast.success(patched ? `已同步 prometheusUrlK8s: ${patched}` : "已同步 Prometheus 数据源");
@@ -445,17 +453,20 @@ const ClusterK8sKubePrometheusStackSection: React.FC = () => {
                     <span className="font-mono">{kp.runtimePrometheusURLSyncTarget}</span>
                   </p>
                   {isAdmin ? (
-                    <Button
+                    <ConfirmActionButton
                       type="button"
                       variant="outline"
                       size="sm"
                       className="mt-2 h-7 text-xs"
                       disabled={syncBusy}
-                      onClick={() => void syncRuntimePrometheusURL()}
+                      title="确认同步 Prometheus 地址？"
+                      description="将把 kube-prometheus-stack 发现到的 Prometheus 地址写入平台运行时配置。"
+                      confirmLabel="同步"
+                      onConfirm={() => void syncRuntimePrometheusURL()}
                     >
                       {syncBusy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
                       同步发现地址
-                    </Button>
+                    </ConfirmActionButton>
                   ) : null}
                 </div>
               ) : null}

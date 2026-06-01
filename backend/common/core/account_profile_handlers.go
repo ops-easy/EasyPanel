@@ -90,14 +90,10 @@ type accountProfilePutBody struct {
 	CurrentPassword string  `json:"currentPassword"`
 	NewPassword     string  `json:"newPassword"`
 	AvatarURL       *string `json:"avatarUrl,omitempty"`
+	Confirm         bool    `json:"confirm,omitempty"`
 }
 
 func handlePutAccountProfile(c *gin.Context, app *ServerApp) {
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL，无法修改资料"})
-		return
-	}
 	user := strings.TrimSpace(dashboardUsernameFromGin(c))
 	if user == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
@@ -106,6 +102,14 @@ func handlePutAccountProfile(c *gin.Context, app *ServerApp) {
 	var body accountProfilePutBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON 无效: " + err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "account profile update") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL，无法修改资料"})
 		return
 	}
 	newPwd := strings.TrimSpace(body.NewPassword)
@@ -203,14 +207,10 @@ func handlePutAccountProfile(c *gin.Context, app *ServerApp) {
 
 type accountProfileOIDCUnbindBody struct {
 	CurrentPassword string `json:"currentPassword" binding:"required"`
+	Confirm         bool   `json:"confirm"`
 }
 
 func handlePostAccountProfileOIDCUnbind(c *gin.Context, app *ServerApp) {
-	db := app.MySQLDB()
-	if db == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL"})
-		return
-	}
 	user := strings.TrimSpace(dashboardUsernameFromGin(c))
 	if user == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
@@ -219,6 +219,14 @@ func handlePostAccountProfileOIDCUnbind(c *gin.Context, app *ServerApp) {
 	var body accountProfileOIDCUnbindBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON 无效: " + err.Error()})
+		return
+	}
+	if !requireOpsMutationConfirm(c, body.Confirm, "account OIDC unbind") {
+		return
+	}
+	db := app.MySQLDB()
+	if db == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "未连接 MySQL"})
 		return
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)

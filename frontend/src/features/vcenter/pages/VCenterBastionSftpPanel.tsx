@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Folder, File, ArrowUp, RefreshCw, Trash2, Download, Upload } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { wsUrlForApiPath } from "@/lib/api";
 
 type Entry = {
@@ -157,10 +158,13 @@ const VCenterBastionSftpPanel: React.FC<Props> = ({ target }) => {
     send({ op: "readFile", path: full });
   };
 
-  const removeEntry = (name: string) => {
+  const entryFullPath = (name: string) => {
     const base = pathRef.current;
-    const full = base.endsWith("/") ? base + name : `${base}/${name}`;
-    if (!window.confirm(`删除 ${full} ?`)) return;
+    return base.endsWith("/") ? base + name : `${base}/${name}`;
+  };
+
+  const removeEntry = (name: string) => {
+    const full = entryFullPath(name);
     setBusy(true);
     send({ op: "remove", path: full });
   };
@@ -263,15 +267,20 @@ const VCenterBastionSftpPanel: React.FC<Props> = ({ target }) => {
                     </Button>
                   </>
                 )}
-                <Button
+                <ConfirmActionButton
                   type="button"
                   size="sm"
                   variant="ghost"
                   className="h-7 shrink-0 px-2 text-red-400 hover:text-red-300"
-                  onClick={() => removeEntry(en.name)}
+                  aria-label={`删除 ${en.name}`}
+                  title="删除远端文件？"
+                  description={`将从堡垒机 SFTP 目标删除 ${entryFullPath(en.name)}，此操作不可恢复。`}
+                  confirmLabel="删除"
+                  confirmButtonClassName="bg-red-600 text-white hover:bg-red-700"
+                  onConfirm={() => removeEntry(en.name)}
                 >
                   <Trash2 className="size-3.5" />
-                </Button>
+                </ConfirmActionButton>
               </li>
             ))}
           </ul>

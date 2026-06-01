@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calendar, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
@@ -10,6 +11,7 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescript
 import { Badge } from "@/shared/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { apiDeleteJson, apiGetJson, apiPostJson } from "@/lib/api";
+import { withDnsMutationConfirm, withDnsMutationConfirmQuery } from "@/features/dns/lib/dnsMutationConfirm";
 import { useAuth } from "@/auth/auth-context";
 import { toast } from "sonner";
 
@@ -66,10 +68,14 @@ export default function DnsScheduled() {
   const [deleteID, setDeleteID] = useState<number | null>(null);
 
   const saveMut = useMutation({
-    mutationFn: () => apiPostJson("/api/dns/scheduled", {
-      ...form,
-      scheduledAt: form.scheduledAt.replace("T", " ") + ":00",
-    }),
+    mutationFn: () =>
+      apiPostJson(
+        "/api/dns/scheduled",
+        withDnsMutationConfirm({
+          ...form,
+          scheduledAt: form.scheduledAt.replace("T", " ") + ":00",
+        })
+      ),
     onSuccess: () => {
       toast.success("定时任务已创建");
       setDialogOpen(false);
@@ -79,7 +85,7 @@ export default function DnsScheduled() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: number) => apiDeleteJson(`/api/dns/scheduled/${id}`),
+    mutationFn: (id: number) => apiDeleteJson(withDnsMutationConfirmQuery(`/api/dns/scheduled/${id}`)),
     onSuccess: () => {
       toast.success("任务已删除");
       setDeleteID(null);
@@ -191,8 +197,8 @@ export default function DnsScheduled() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>解析记录 ID（可选）</Label>
-              <Input placeholder="留空=操作域名" value={form.recordId}
+              <Label>解析记录 ID</Label>
+              <Input placeholder="填写已同步解析记录 ID" value={form.recordId}
                 onChange={(e) => setForm((f) => ({ ...f, recordId: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
@@ -221,11 +227,15 @@ export default function DnsScheduled() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
-            <Button onClick={() => saveMut.mutate()}
-              disabled={saveMut.isPending || !form.name || !form.domainId}>
+            <ConfirmActionButton
+              title="创建 DNS 定时任务"
+              description="到点后任务会自动暂停、启用、修改或删除解析记录，请确认时间和记录 ID 正确。"
+              confirmLabel="创建"
+              onConfirm={() => saveMut.mutate()}
+              disabled={saveMut.isPending || !form.name || !form.domainId || !form.recordId || (form.action === "modify" && !form.newValue)}>
               {saveMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               创建
-            </Button>
+            </ConfirmActionButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
