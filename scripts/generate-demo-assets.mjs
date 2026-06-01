@@ -2708,7 +2708,11 @@ function stopProcessTree(child) {
     spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
     return;
   }
-  child.kill("SIGTERM");
+  try {
+    process.kill(-child.pid, "SIGTERM");
+  } catch {
+    child.kill("SIGTERM");
+  }
 }
 
 async function removeDirWithRetry(path) {
@@ -2732,7 +2736,11 @@ function startViteServer(port) {
     process.platform === "win32"
       ? ["/d", "/s", "/c", `npm run dev -- --host ${host} --port ${port} --strictPort`]
       : ["run", "dev", "--", "--host", host, "--port", String(port), "--strictPort"];
-  const child = spawn(command, args, { cwd: webDir, stdio: ["ignore", "pipe", "pipe"] });
+  const child = spawn(command, args, {
+    cwd: webDir,
+    detached: process.platform !== "win32",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
   child.stdout.on("data", (chunk) => process.stdout.write(chunk));
   child.stderr.on("data", (chunk) => process.stderr.write(chunk));
   return child;
@@ -2760,7 +2768,10 @@ async function startBrowser(browser, debugPort) {
       `--user-data-dir=${profileDir}`,
       "about:blank",
     ],
-    { stdio: ["ignore", "ignore", "pipe"] }
+    {
+      detached: process.platform !== "win32",
+      stdio: ["ignore", "ignore", "pipe"],
+    }
   );
   child.stderr.on("data", (chunk) => process.stderr.write(chunk));
   await waitForHttp(`http://${host}:${debugPort}/json/version`, 30_000);
