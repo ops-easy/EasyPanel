@@ -15,7 +15,7 @@ spec:
     metadata:
       labels:
         {{- include "easypanel.frontendSelectorLabels" . | nindent 8 }}
-        app.kubernetes.io/part-of: {{ include "easypanel.name" . }}
+        app.kubernetes.io/part-of: easy
     spec:
       {{- with $frontend.podSecurityContext }}
       securityContext:
@@ -24,7 +24,7 @@ spec:
       containers:
         - name: frontend
           image: "{{ $image.repository }}:{{ $image.tag | default "latest" }}"
-          imagePullPolicy: {{ $image.pullPolicy | default "IfNotPresent" }}
+          imagePullPolicy: {{ $image.pullPolicy | default "Always" }}
           ports:
             - name: http
               containerPort: 80
@@ -32,6 +32,13 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 18
+            periodSeconds: 5
+            timeoutSeconds: 2
           readinessProbe:
             httpGet:
               path: /healthz

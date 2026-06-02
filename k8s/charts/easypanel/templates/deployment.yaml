@@ -12,6 +12,9 @@
 {{- $nodeSelector := default ($backend.nodeSelector | default dict) .Values.nodeSelector -}}
 {{- $affinity := default ($backend.affinity | default dict) .Values.affinity -}}
 {{- $tolerations := default ($backend.tolerations | default list) .Values.tolerations -}}
+{{- $config := $backend.config | default dict -}}
+{{- $dbConfig := $config.db | default dict -}}
+{{- $redisConfig := $config.redis | default dict -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,16 +30,52 @@ spec:
     metadata:
       labels:
         {{- include "easypanel.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/part-of: easy
     spec:
       {{- with $podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "easypanel.serviceAccountName" . }}
+      initContainers:
+        - name: wait-for-platform-deps
+          image: {{ default "busybox:1.36" $backend.dependencyWaitImage | quote }}
+          imagePullPolicy: IfNotPresent
+          env:
+            {{- with $extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            - name: WAIT_MYSQL_HOST
+              value: {{ default "mysql.easy.svc.cluster.local" $dbConfig.host | quote }}
+            - name: WAIT_MYSQL_PORT
+              value: {{ default 3306 $dbConfig.port | quote }}
+            - name: WAIT_REDIS_ADDR
+              value: {{ default "redis.easy.svc.cluster.local:6379" $redisConfig.address | quote }}
+          {{- with $extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              mysql_host="${MYSQL_HOST:-$WAIT_MYSQL_HOST}"
+              mysql_port="${MYSQL_PORT:-$WAIT_MYSQL_PORT}"
+              redis_addr="${REDIS_ADDR:-$WAIT_REDIS_ADDR}"
+              redis_host="${redis_addr%%:*}"
+              redis_port="${redis_addr##*:}"
+              until nc -z "$mysql_host" "$mysql_port"; do
+                echo "waiting for MySQL at ${mysql_host}:${mysql_port}"
+                sleep 3
+              done
+              until nc -z "$redis_host" "$redis_port"; do
+                echo "waiting for Redis at ${redis_host}:${redis_port}"
+                sleep 3
+              done
       containers:
         - name: easypanel
           image: "{{ default $backendImage.repository $legacyImage.repository }}:{{ default ($backendImage.tag | default "latest") $legacyImage.tag }}"
-          imagePullPolicy: {{ default ($backendImage.pullPolicy | default "IfNotPresent") $legacyImage.pullPolicy }}
+          imagePullPolicy: {{ default ($backendImage.pullPolicy | default "Always") $legacyImage.pullPolicy }}
           ports:
             - name: http
               containerPort: {{ default ($backendService.port | default 8080) $legacyService.port }}
@@ -65,6 +104,13 @@ spec:
               readOnly: true
             - name: data
               mountPath: /data
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
           readinessProbe:
             httpGet:
               path: /api/health

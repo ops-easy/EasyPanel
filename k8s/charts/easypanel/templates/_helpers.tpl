@@ -37,11 +37,14 @@ helm.sh/chart: {{ include "easypanel.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: easy
+app.kubernetes.io/component: backend
 {{- end }}
 
 {{- define "easypanel.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "easypanel.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: backend
 {{- end }}
 
 {{- define "easypanel.frontendLabels" -}}
@@ -51,11 +54,11 @@ helm.sh/chart: {{ include "easypanel.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/part-of: {{ include "easypanel.name" . }}
+app.kubernetes.io/part-of: easy
 {{- end }}
 
 {{- define "easypanel.frontendSelectorLabels" -}}
-app.kubernetes.io/name: {{ include "easypanel.frontendName" . }}
+app.kubernetes.io/name: {{ include "easypanel.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/component: frontend
 {{- end }}

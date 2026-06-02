@@ -14,7 +14,9 @@ resources:
 
 labels:
   - pairs:
-      app.kubernetes.io/component: easypanel
+      app.kubernetes.io/part-of: easy
+      app.kubernetes.io/name: easypanel
+      app.kubernetes.io/component: backend
     includeSelectors: false
 
 # 后端只暴露 ClusterIP；外部访问入口在 k8s/frontend。

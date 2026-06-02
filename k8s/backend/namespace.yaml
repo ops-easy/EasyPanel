@@ -3,4 +3,5 @@ kind: Namespace
 metadata:
   name: easy
   labels:
+    app.kubernetes.io/part-of: easy
     app.kubernetes.io/name: easypanel

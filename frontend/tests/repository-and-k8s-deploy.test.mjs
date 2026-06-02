@@ -18,6 +18,7 @@ test("raw Kubernetes manifests deploy EasyPanel into the easy namespace", () => 
     "../../k8s/backend/rbac.yaml",
     "../../k8s/backend/secret-example.yaml",
     "../../k8s/backend/service.yaml",
+    "../../k8s/frontend/frontend-configmap.yaml",
     "../../k8s/frontend/frontend-deployment.yaml",
     "../../k8s/frontend/frontend-service.yaml",
     "../../k8s/frontend/ingress.yaml",
@@ -29,10 +30,41 @@ test("raw Kubernetes manifests deploy EasyPanel into the easy namespace", () => 
   }
 
   assert.match(read("../../k8s/backend/namespace.yaml"), /^  name: easy$/m);
+  assert.match(read("../../k8s/kustomization.yaml"), /^namespace: easy$/m);
   assert.match(read("../../k8s/backend/kustomization.yaml"), /^namespace: easy$/m);
   assert.match(read("../../k8s/frontend/kustomization.yaml"), /^namespace: easy$/m);
   assert.match(read("../../k8s/backend/deployment.yaml"), /ghcr\.io\/ops-easy\/easypanel-api:latest/);
   assert.match(read("../../k8s/frontend/frontend-deployment.yaml"), /ghcr\.io\/ops-easy\/easypanel-web:latest/);
+});
+
+test("raw Kubernetes manifests use unified EasyPanel names and labels", () => {
+  const backendDeployment = read("../../k8s/backend/deployment.yaml");
+  const backendService = read("../../k8s/backend/service.yaml");
+  const frontendDeployment = read("../../k8s/frontend/frontend-deployment.yaml");
+  const frontendService = read("../../k8s/frontend/frontend-service.yaml");
+  const frontendConfig = read("../../k8s/frontend/frontend-configmap.yaml");
+  const nginx = read("../deploy/nginx.conf");
+
+  assert.match(backendDeployment, /^  name: easypanel-backend$/m);
+  assert.match(backendService, /^  name: easypanel-backend$/m);
+  assert.match(frontendDeployment, /^  name: easypanel-frontend$/m);
+  assert.match(frontendService, /^  name: easypanel-frontend$/m);
+
+  for (const source of [backendDeployment, backendService, frontendDeployment, frontendService]) {
+    assert.match(source, /app\.kubernetes\.io\/part-of: easy/);
+    assert.match(source, /app\.kubernetes\.io\/name: easypanel/);
+  }
+
+  assert.match(backendDeployment, /app\.kubernetes\.io\/component: backend/);
+  assert.match(frontendDeployment, /app\.kubernetes\.io\/component: frontend/);
+  assert.match(backendDeployment, /imagePullPolicy: Always/);
+  assert.match(frontendDeployment, /imagePullPolicy: Always/);
+  assert.match(backendDeployment, /startupProbe:/);
+  assert.match(frontendDeployment, /startupProbe:/);
+  assert.match(frontendDeployment, /name: easypanel-frontend-nginx/);
+  assert.match(frontendConfig, /proxy_pass http:\/\/easypanel-backend:8080;/);
+  assert.match(nginx, /proxy_pass http:\/\/easypanel-backend:8080;/);
+  assert.doesNotMatch(nginx, /proxy_pass http:\/\/easypanel:8080;/);
 });
 
 test("Kubernetes deployment docs use the easy namespace", () => {
@@ -64,4 +96,17 @@ test("backend container image includes helm for kube-prometheus-stack installs",
 
   assert.match(dockerfile, /COPY --from=helm\s+\/helm\s+\/app\/helm/);
   assert.match(dockerfile, /ENV [^\n]*HELM_BIN=\/app\/helm/);
+});
+
+test("Kubernetes backend waits for MySQL and Redis before starting", () => {
+  const rawDeployment = read("../../k8s/backend/deployment.yaml");
+  const helmDeployment = read("../../k8s/charts/easypanel/templates/deployment.yaml");
+
+  for (const source of [rawDeployment, helmDeployment]) {
+    assert.match(source, /initContainers:/);
+    assert.match(source, /name: wait-for-platform-deps/);
+    assert.match(source, /MYSQL_HOST/);
+    assert.match(source, /REDIS_ADDR/);
+    assert.match(source, /nc -z/);
+  }
 });

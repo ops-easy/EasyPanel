@@ -3,6 +3,10 @@ kind: ConfigMap
 metadata:
   name: easypanel-config
   namespace: easy
+  labels:
+    app.kubernetes.io/part-of: easy
+    app.kubernetes.io/name: easypanel
+    app.kubernetes.io/component: backend
 data:
   config.yaml: |-
     # 这里只放启动必需配置；页面可修改的业务配置保存到 MySQL 动态配置。

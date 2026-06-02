@@ -4,13 +4,13 @@ metadata:
   name: easypanel-frontend
   namespace: easy
   labels:
-    app.kubernetes.io/name: easypanel-frontend
-    app.kubernetes.io/part-of: easypanel
+    app.kubernetes.io/part-of: easy
+    app.kubernetes.io/name: easypanel
     app.kubernetes.io/component: frontend
 spec:
   type: NodePort
   selector:
-    app.kubernetes.io/name: easypanel-frontend
+    app.kubernetes.io/name: easypanel
     app.kubernetes.io/component: frontend
   ports:
     - name: http

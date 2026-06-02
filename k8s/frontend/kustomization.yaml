@@ -4,6 +4,7 @@ kind: Kustomization
 namespace: easy
 
 resources:
+  - frontend-configmap.yaml
   - frontend-deployment.yaml
   - frontend-service.yaml
 
@@ -12,5 +13,7 @@ resources:
 
 labels:
   - pairs:
+      app.kubernetes.io/part-of: easy
+      app.kubernetes.io/name: easypanel
       app.kubernetes.io/component: frontend
     includeSelectors: false

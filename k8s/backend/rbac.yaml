@@ -6,14 +6,18 @@ metadata:
   name: easypanel
   namespace: easy
   labels:
+    app.kubernetes.io/part-of: easy
     app.kubernetes.io/name: easypanel
+    app.kubernetes.io/component: backend
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: easypanel
   labels:
+    app.kubernetes.io/part-of: easy
     app.kubernetes.io/name: easypanel
+    app.kubernetes.io/component: backend
 rules:
   - apiGroups: [""]
     resources: ["namespaces", "nodes", "persistentvolumeclaims", "events"]
@@ -61,7 +65,9 @@ kind: ClusterRoleBinding
 metadata:
   name: easypanel
   labels:
+    app.kubernetes.io/part-of: easy
     app.kubernetes.io/name: easypanel
+    app.kubernetes.io/component: backend
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

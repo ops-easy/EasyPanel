@@ -12,7 +12,7 @@ k8s/
 └── kustomization.yaml          # Kustomize 聚合入口
 ```
 
-后端 Service 名称为 `easypanel`，监听 `8080`。前端 Nginx Service 名称为 `easypanel-frontend`，默认使用 NodePort `32080`，并把 `/api/`、`/r/` 与公开媒体 `/d/` 代理到后端。
+后端 Service 名称为 `easypanel-backend`，监听 `8080`。前端 Nginx Service 名称为 `easypanel-frontend`，默认使用 NodePort `32080`，并把 `/api/`、`/r/` 与公开媒体 `/d/` 代理到后端。
 
 ## 使用 Kustomize 部署
 
@@ -116,13 +116,13 @@ SMOKE_BASE_URL=https://your-staging.example.com SMOKE_D_PATH=/d/ npm run smoke:d
 kubectl -n easy get all,pvc
 
 # 查看后端日志
-kubectl -n easy logs deploy/easypanel -f
+kubectl -n easy logs deploy/easypanel-backend -f
 
 # 查看前端日志
 kubectl -n easy logs deploy/easypanel-frontend -f
 
 # 进入后端 Pod
-kubectl -n easy exec -it deploy/easypanel -- /busybox/sh
+kubectl -n easy exec -it deploy/easypanel-backend -- /busybox/sh
 
 # 删除 Kustomize 部署
 kubectl delete -k k8s

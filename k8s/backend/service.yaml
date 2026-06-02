@@ -1,14 +1,17 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: easypanel
+  name: easypanel-backend
   namespace: easy
   labels:
+    app.kubernetes.io/part-of: easy
     app.kubernetes.io/name: easypanel
+    app.kubernetes.io/component: backend
 spec:
   type: ClusterIP
   selector:
     app.kubernetes.io/name: easypanel
+    app.kubernetes.io/component: backend
   ports:
     - name: http
       port: 8080

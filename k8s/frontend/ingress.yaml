@@ -5,8 +5,8 @@ metadata:
   name: easypanel-frontend
   namespace: easy
   labels:
-    app.kubernetes.io/name: easypanel-frontend
-    app.kubernetes.io/part-of: easypanel
+    app.kubernetes.io/part-of: easy
+    app.kubernetes.io/name: easypanel
     app.kubernetes.io/component: frontend
   annotations:
     # 应用中心 OpenClaw 对话等长请求；默认 60s 易 504，且勿小于后端 WriteTimeout。

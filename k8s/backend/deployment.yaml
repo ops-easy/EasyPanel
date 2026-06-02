@@ -14,20 +14,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: easypanel
+  name: easypanel-backend
   namespace: easy
   labels:
+    app.kubernetes.io/part-of: easy
     app.kubernetes.io/name: easypanel
+    app.kubernetes.io/component: backend
 spec:
   # 多副本示例：replicas: 3，且仅其中 1 个 Pod 不要设置 EASYPANEL_ENABLE_BACKGROUND_JOBS=false，其余为 false。
   replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: easypanel
+      app.kubernetes.io/component: backend
   template:
     metadata:
       labels:
+        app.kubernetes.io/part-of: easy
         app.kubernetes.io/name: easypanel
+        app.kubernetes.io/component: backend
     spec:
       serviceAccountName: easypanel
       securityContext:
@@ -35,10 +40,41 @@ spec:
         runAsNonRoot: true
         runAsUser: 65532
         runAsGroup: 65532
-      containers:
-        - name: easypanel
-          image: ghcr.io/ops-easy/easypanel-api:latest
+      initContainers:
+        - name: wait-for-platform-deps
+          image: busybox:1.36
           imagePullPolicy: IfNotPresent
+          env:
+            - name: WAIT_MYSQL_HOST
+              value: "mysql.easy.svc.cluster.local"
+            - name: WAIT_MYSQL_PORT
+              value: "3306"
+            - name: WAIT_REDIS_ADDR
+              value: "redis.easy.svc.cluster.local:6379"
+          envFrom:
+            - secretRef:
+                name: easypanel-secrets
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              mysql_host="${MYSQL_HOST:-$WAIT_MYSQL_HOST}"
+              mysql_port="${MYSQL_PORT:-$WAIT_MYSQL_PORT}"
+              redis_addr="${REDIS_ADDR:-$WAIT_REDIS_ADDR}"
+              redis_host="${redis_addr%%:*}"
+              redis_port="${redis_addr##*:}"
+              until nc -z "$mysql_host" "$mysql_port"; do
+                echo "waiting for MySQL at ${mysql_host}:${mysql_port}"
+                sleep 3
+              done
+              until nc -z "$redis_host" "$redis_port"; do
+                echo "waiting for Redis at ${redis_host}:${redis_port}"
+                sleep 3
+              done
+      containers:
+        - name: backend
+          image: ghcr.io/ops-easy/easypanel-api:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
@@ -82,6 +118,13 @@ spec:
               readOnly: true
             - name: data
               mountPath: /data
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
           readinessProbe:
             httpGet:
               path: /api/health

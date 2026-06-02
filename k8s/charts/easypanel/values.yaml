@@ -3,7 +3,7 @@ backend:
 
   image:
     repository: ghcr.io/ops-easy/easypanel-api
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     tag: "latest"
 
   service:
@@ -32,7 +32,6 @@ backend:
     EASYPANEL_CONFIG_FILE: "/app/config.yaml"
 
   # 这里只放启动必需配置；页面可修改的业务配置保存到 MySQL 动态配置。
-  config:
   config:
     server:
       address: "0.0.0.0:8080"
@@ -84,7 +83,7 @@ frontend:
 
   image:
     repository: ghcr.io/ops-easy/easypanel-web
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     tag: "latest"
 
   service:
