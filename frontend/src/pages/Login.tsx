@@ -26,7 +26,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { useAuth } from "@/auth/auth-context";
-import { ApiHttpError, apiPostJson, type SystemCheck } from "@/lib/api";
+import { ApiHttpError, apiPostJson, type SystemCheck, type SystemCheckItem } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { TechBadge } from "@/features/auth/components/login/TechBadge";
 import { K8sLogo } from "@/features/auth/components/login/TechLogos";
@@ -337,6 +337,29 @@ function publicServiceTile(
   return { label, state: summary.label, detail: summary.hint ?? "登录后查看详情", tone: summary.tone, icon };
 }
 
+function probeStatusTile(
+  label: string,
+  item: SystemCheckItem | undefined,
+  pendingDetail: string,
+  icon: React.ReactNode
+): LoginStatusTile {
+  const status = normalizeProbeStatus(item?.status);
+  const detail = item?.msg || pendingDetail;
+  if (status === "readonly_reachable") {
+    return { label, state: "只读可达", detail, tone: "ok", icon };
+  }
+  if (status === "configured_unreachable") {
+    return { label, state: "不可达", detail, tone: "warn", icon };
+  }
+  if (status === "datasource_error") {
+    return { label, state: "数据源异常", detail, tone: "warn", icon };
+  }
+  if (status === "hidden") {
+    return { label, state: "受限", detail: "登录后查看详情", tone: "hidden", icon };
+  }
+  return { label, state: "未配置", detail: pendingDetail, tone: "pending", icon };
+}
+
 function runtimeConnectionTile({
   label,
   configured,
@@ -374,7 +397,12 @@ function LoginRuntimeStatusPanel({
   const tiles: LoginStatusTile[] = loading
     ? [
         "Kubernetes",
+        "vCenter",
         "PVE",
+        "OpenWrt",
+        "iKuai",
+        "Prometheus",
+        "VictoriaLogs",
         "Redis",
         "MySQL",
         "宝塔",
@@ -387,8 +415,12 @@ function LoginRuntimeStatusPanel({
         icon:
           label === "Kubernetes" ? (
             <Layers className="h-4 w-4" />
-          ) : label === "PVE" ? (
+          ) : label === "vCenter" || label === "PVE" ? (
             <Monitor className="h-4 w-4" />
+          ) : label === "OpenWrt" || label === "iKuai" ? (
+            <Network className="h-4 w-4" />
+          ) : label === "Prometheus" || label === "VictoriaLogs" ? (
+            <Sparkles className="h-4 w-4" />
           ) : label === "Redis" ? (
             <Server className="h-4 w-4" />
           ) : label === "MySQL" ? (
@@ -408,6 +440,12 @@ function LoginRuntimeStatusPanel({
           pendingDetail: "请在集群设置接入",
           icon: <Layers className="h-4 w-4" />,
         }),
+        probeStatusTile(
+          "vCenter",
+          payload?.systemCheck?.checks?.vcenter,
+          "配置 vCenter 后执行只读探活",
+          <Monitor className="h-4 w-4" />
+        ),
         {
           label: "PVE",
           state: rt?.pveConfigured ? "已配置" : "未配置",
@@ -415,6 +453,36 @@ function LoginRuntimeStatusPanel({
           tone: rt?.pveConfigured ? "ok" : "pending",
           icon: <Monitor className="h-4 w-4" />,
         },
+        probeStatusTile(
+          "PVE API",
+          payload?.systemCheck?.checks?.pve,
+          "配置 PVE 后执行 /version 只读探活",
+          <Monitor className="h-4 w-4" />
+        ),
+        probeStatusTile(
+          "OpenWrt",
+          payload?.systemCheck?.checks?.openwrt,
+          "登记 OpenWrt 后执行 ubus 只读探活",
+          <Network className="h-4 w-4" />
+        ),
+        probeStatusTile(
+          "iKuai",
+          payload?.systemCheck?.checks?.ikuai,
+          "登记 iKuai 后读取系统信息",
+          <Network className="h-4 w-4" />
+        ),
+        probeStatusTile(
+          "Prometheus",
+          payload?.systemCheck?.checks?.prometheus,
+          "配置 Prometheus 或 VictoriaMetrics 后执行即时查询",
+          <Sparkles className="h-4 w-4" />
+        ),
+        probeStatusTile(
+          "VictoriaLogs",
+          payload?.systemCheck?.checks?.victoriaLogs,
+          "配置 VictoriaLogs 后执行 LogsQL 只读查询",
+          <Sparkles className="h-4 w-4" />
+        ),
         runtimeConnectionTile({
           label: "Redis",
           configured: rt?.redisConfigured,

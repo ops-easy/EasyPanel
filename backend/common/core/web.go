@@ -856,8 +856,9 @@ func buildSystemCheckResponse(ctx context.Context, app *ServerApp, role string) 
 			nodeIP = FirstNodeIPPreferInternal(k8sProbeCtx, k8sClient)
 		}
 		return gin.H{
-			"baota": gin.H{"status": "hidden", "url": "", "msg": "仅管理员可查看宝塔连通性"},
-			"ddns":  gin.H{"status": "hidden", "host": "", "ips": []string{}, "msg": "仅管理员可查看", "port443": false, "httpsPort": "443"},
+			"baota":  gin.H{"status": "hidden", "url": "", "msg": "仅管理员可查看宝塔连通性"},
+			"ddns":   gin.H{"status": "hidden", "host": "", "ips": []string{}, "msg": "仅管理员可查看", "port443": false, "httpsPort": "443"},
+			"checks": buildHiddenSystemCheckItems("仅管理员可查看真实环境探活"),
 			"k8s": gin.H{
 				"ingressInstalled":   ingressInstalled,
 				"ingressHostNetwork": ingressHostNetwork,
@@ -912,6 +913,7 @@ func buildSystemCheckResponse(ctx context.Context, app *ServerApp, role string) 
 			"port443":   port443,
 			"httpsPort": httpsPort,
 		},
+		"checks": buildSystemCheckItems(ctx, app),
 		"k8s": gin.H{
 			"ingressInstalled":   ingressInstalled,
 			"ingressHostNetwork": ingressHostNetwork,

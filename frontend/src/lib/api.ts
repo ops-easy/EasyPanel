@@ -47,6 +47,29 @@ function maybeRedirectLogin(res: Response, path: string) {
   }
 }
 
+export type SystemCheckStatus =
+  | "not_configured"
+  | "configured_unreachable"
+  | "readonly_reachable"
+  | "datasource_error"
+  | "hidden"
+  | string;
+
+export type SystemCheckItem = {
+  status: SystemCheckStatus;
+  configured?: boolean;
+  reachable?: boolean;
+  readonly?: boolean;
+  msg?: string;
+  checkedAt?: string;
+  targetCount?: number;
+  reachableCount?: number;
+  configuredScopes?: number;
+  reachableScopes?: number;
+  urlHint?: string;
+  scopes?: Record<string, SystemCheckItem>;
+};
+
 export type SystemCheck = {
   baota: { status: string; url: string; msg: string };
   ddns: {
@@ -61,6 +84,14 @@ export type SystemCheck = {
     ingressInstalled: boolean;
     ingressHostNetwork: boolean;
     nodeIP: string;
+  };
+  checks?: {
+    vcenter?: SystemCheckItem;
+    pve?: SystemCheckItem;
+    openwrt?: SystemCheckItem;
+    ikuai?: SystemCheckItem;
+    prometheus?: SystemCheckItem;
+    victoriaLogs?: SystemCheckItem;
   };
 };
 

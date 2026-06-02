@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
 import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
-import { apiGetJson } from "@/lib/api";
+import { apiGetJson, type SystemCheckItem } from "@/lib/api";
 import { workspaceMenuVisible } from "@/lib/platform-permissions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/shared/ui/button";
@@ -210,11 +210,56 @@ function queryConfiguredMetric(
   return queryTextMetric(query, configured ? "已配置" : "未配置");
 }
 
+function readinessStatus(item?: SystemCheckItem): string {
+  return String(item?.status ?? "").trim().toLowerCase();
+}
+
+function readinessHasProblem(item?: SystemCheckItem): boolean {
+  const status = readinessStatus(item);
+  return status === "configured_unreachable" || status === "datasource_error";
+}
+
+function readinessIsReady(item?: SystemCheckItem): boolean {
+  return readinessStatus(item) === "readonly_reachable";
+}
+
+function readinessMetric(item: SystemCheckItem | undefined, fallback: number | string): number | string {
+  switch (readinessStatus(item)) {
+    case "readonly_reachable":
+      return "只读可达";
+    case "configured_unreachable":
+      return "不可达";
+    case "datasource_error":
+      return "数据源异常";
+    case "not_configured":
+      return "未配置";
+    case "hidden":
+      return "受限";
+    default:
+      return fallback;
+  }
+}
+
+function readinessHint(label: string, item?: SystemCheckItem): string {
+  const status = readinessStatus(item);
+  if (status === "readonly_reachable") return `${label} 只读探活可达。`;
+  if (status === "configured_unreachable") return `${label} 已配置但当前不可达：${item?.msg ?? "请检查网络、凭据或证书配置"}。`;
+  if (status === "datasource_error") return `${label} 数据源异常：${item?.msg ?? "请检查查询入口与返回格式"}。`;
+  if (status === "not_configured") return `${label} 未配置。`;
+  return "";
+}
+
 const HomeHub: React.FC = () => {
   const { status: authStatus } = useAuth();
   const runtimeQ = useRuntimeStatusQuery();
   const cfg = runtimeQ.data?.config;
   const check = runtimeQ.data?.systemCheck;
+  const vcenterReadiness = check?.checks?.vcenter;
+  const pveReadiness = check?.checks?.pve;
+  const openWrtReadiness = check?.checks?.openwrt;
+  const ikuaiReadiness = check?.checks?.ikuai;
+  const prometheusReadiness = check?.checks?.prometheus;
+  const victoriaLogsReadiness = check?.checks?.victoriaLogs;
   const perm = cfg?.permissions;
   const hubRole = authStatus?.role;
   const isAdmin = authStatus?.role === "admin";
@@ -490,6 +535,12 @@ const HomeHub: React.FC = () => {
       : !pveTargetsLoading && nPveTargets === 0
       ? "当前已配置 vCenter；如需同时纳管 PVE，可在配置页继续追加 Proxmox VE 目标。"
       : "";
+  const vCenterApiMetric = readinessMetric(vcenterReadiness, vcOk ? "已配置" : "未配置");
+  const pveApiMetric = readinessMetric(pveReadiness, nPveTargets > 0 ? "已配置" : "未配置");
+  const computeReadinessProblem = readinessHasProblem(vcenterReadiness) || readinessHasProblem(pveReadiness);
+  const computeReadinessHint = computeReadinessProblem
+    ? readinessHint("vCenter", vcenterReadiness) || readinessHint("PVE", pveReadiness)
+    : "";
   const k8sMetricValue = (value?: number): number | string => {
     if (k8sSummaryLoading) return "…";
     if (k8sQ.isError) return "异常";
@@ -568,8 +619,17 @@ const HomeHub: React.FC = () => {
     : nNetworkDevices > 0
     ? "已配置"
     : "未配置";
+  const networkOpenWrtProbeMetric = readinessMetric(openWrtReadiness, networkOpenWrtMetric);
+  const networkIkuaiProbeMetric = readinessMetric(ikuaiReadiness, networkIkuaiMetric);
+  const networkPrometheusProbeMetric = readinessMetric(prometheusReadiness, networkDataSourceMetric);
+  const networkReadinessProblem =
+    readinessHasProblem(openWrtReadiness) || readinessHasProblem(ikuaiReadiness) || readinessHasProblem(prometheusReadiness);
   const openWrtHubHint =
-    !networkSummaryLoading && nNetworkDevices === 0
+    networkReadinessProblem
+      ? readinessHint("OpenWrt", openWrtReadiness) ||
+        readinessHint("iKuai", ikuaiReadiness) ||
+        readinessHint("Prometheus / VictoriaMetrics", prometheusReadiness)
+      : !networkSummaryLoading && nNetworkDevices === 0
       ? "请先登记 iKuai 或 OpenWrt 设备，工作台会按设备类型汇总接口、终端、无线和监控数据源。"
       : !networkSummaryLoading && nOpenWrtDevices === 0
       ? "OpenWrt 未配置：请先登记 OpenWrt 设备的 Prometheus scope、instance 或 job 标签，避免进入子页后才发现没有数据源。"
@@ -697,6 +757,8 @@ const HomeHub: React.FC = () => {
   const aiNeedsSetup = !aiLoading && !aiWorkspaceRestricted && !aiSummaryError && !aiWorkspaceReady;
   const aiPromK8sMetric = queryConfiguredMetric(aiPromQ, aiPromK8s);
   const aiPromVcMetric = queryConfiguredMetric(aiPromQ, aiPromVc);
+  const aiPrometheusProbeMetric = readinessMetric(prometheusReadiness, aiPromK8sMetric);
+  const aiVictoriaLogsMetric = readinessMetric(victoriaLogsReadiness, cfg?.victoriaLogsConfigured ? "已配置" : "未配置");
   const aiRulesMetric = isAdmin ? queryTextMetric(aiAlertsQ, `${aiRulesOn}/${aiRulesTotal}`) : "受限";
   const aiPanelsMetric = queryCountMetric(aiPanelsQ, aiPanels);
   const aiReportsMetric = isAdmin ? queryCountMetric(aiReportsQ, aiReports) : "受限";
@@ -845,10 +907,14 @@ const HomeHub: React.FC = () => {
               <MetricItem label="vCenter VM" value={vCenterVmMetric} />
               <MetricItem label="ESXi 主机" value={vCenterHostMetric} />
               <MetricItem label="PVE 目标" value={pveTargetMetric} />
+              <MetricItem label="vCenter API" value={vCenterApiMetric} />
+              <MetricItem label="PVE API" value={pveApiMetric} />
               <MetricItem label="云主机" value={appCenterCloudVmMetric} />
             </HubMetricGrid>
             <HubCardHint>
-              {pveHubHint
+              {computeReadinessHint
+                ? computeReadinessHint
+                : pveHubHint
                 ? pveHubHint
                 : !computeOk && !computeLoading
                 ? "请先配置 vCenter 或新增 PVE 目标，摘要会保持同一版式并显示纳管数量。"
@@ -881,6 +947,9 @@ const HomeHub: React.FC = () => {
               <MetricItem label="OpenWrt" value={networkOpenWrtMetric} />
               <MetricItem label="纳管设备" value={networkDeviceMetric} />
               <MetricItem label="数据源" value={networkDataSourceMetric} />
+              <MetricItem label="iKuai 探活" value={networkIkuaiProbeMetric} />
+              <MetricItem label="OpenWrt 探活" value={networkOpenWrtProbeMetric} />
+              <MetricItem label="监控探活" value={networkPrometheusProbeMetric} />
             </HubMetricGrid>
             <HubCardHint>
               {openWrtHubHint || "网络设备按 iKuai 与 OpenWrt 分组展示，进入后可查看接口、客户端与监控数据源。"}
@@ -1029,6 +1098,8 @@ const HomeHub: React.FC = () => {
             <HubMetricGrid>
               <MetricItem label="K8s 数据源" value={aiPromK8sMetric} />
               <MetricItem label="vCenter 数据源" value={aiPromVcMetric} />
+              <MetricItem label="Prometheus 探活" value={aiPrometheusProbeMetric} />
+              <MetricItem label="VictoriaLogs" value={aiVictoriaLogsMetric} />
               <MetricItem label="告警规则" value={aiRulesMetric} />
               <MetricItem label="监控面板" value={aiPanelsMetric} />
               <MetricItem label="巡检报告" value={aiReportsMetric} />
