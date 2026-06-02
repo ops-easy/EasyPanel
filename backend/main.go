@@ -50,6 +50,7 @@ func main() {
 		go scheduler.StartSyncer(ctx, app)
 	}
 	scheduler.StartRedisReconnectLoop(ctx, app)
+	scheduler.StartSetupRecoveryLoop(ctx, app)
 	scheduler.StartSettingsRuntimeStatusRefresher(app)
 	if bg {
 		scheduler.StartSystemHostEgressWatcher(app)

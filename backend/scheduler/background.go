@@ -18,6 +18,10 @@ func StartSettingsRuntimeStatusRefresher(app *appctx.ServerApp) {
 	core.StartRuntimeStatusRefresher(app)
 }
 
+func StartSetupRecoveryLoop(ctx context.Context, app *appctx.ServerApp) {
+	core.StartSetupRecoveryLoop(ctx, app)
+}
+
 func StartSystemHostEgressWatcher(app *appctx.ServerApp) {
 	core.StartHostEgressWatcher(app)
 }
