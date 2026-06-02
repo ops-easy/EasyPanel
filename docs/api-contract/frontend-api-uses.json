@@ -231,7 +231,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 296,
+      "sourceLine": 341,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -399,7 +399,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 308,
+      "sourceLine": 353,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -607,7 +607,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 290,
+      "sourceLine": 335,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -975,7 +975,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 284,
+      "sourceLine": 329,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1295,7 +1295,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 302,
+      "sourceLine": 347,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1591,7 +1591,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/opensearch/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 314,
+      "sourceLine": 359,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1735,7 +1735,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 278,
+      "sourceLine": 323,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1895,7 +1895,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/status",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 272,
+      "sourceLine": 317,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1999,7 +1999,7 @@
       "method": "POST",
       "pathPattern": "/api/auth/login",
       "sourceFile": "frontend/src/pages/Login.tsx",
-      "sourceLine": 708,
+      "sourceLine": 776,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2015,7 +2015,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/auth/login",
       "sourceFile": "frontend/src/pages/Login.tsx",
-      "sourceLine": 718,
+      "sourceLine": 786,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -2031,7 +2031,7 @@
       "method": "POST",
       "pathPattern": "/api/auth/login-totp",
       "sourceFile": "frontend/src/pages/Login.tsx",
-      "sourceLine": 738,
+      "sourceLine": 806,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2055,7 +2055,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/auth/oidc/login",
       "sourceFile": "frontend/src/pages/Login.tsx",
-      "sourceLine": 661,
+      "sourceLine": 729,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -2151,7 +2151,7 @@
       "method": "GET",
       "pathPattern": "/api/bastion/targets",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 326,
+      "sourceLine": 371,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2615,7 +2615,7 @@
       "method": "GET",
       "pathPattern": "/api/dns/domains",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 319,
+      "sourceLine": 364,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2791,7 +2791,7 @@
       "method": "GET",
       "pathPattern": "/api/docs",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 381,
+      "sourceLine": 426,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2799,7 +2799,7 @@
       "method": "GET",
       "pathPattern": "/api/docs",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 388,
+      "sourceLine": 433,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2879,7 +2879,7 @@
       "method": "GET",
       "pathPattern": "/api/docs/attachment-storage",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 402,
+      "sourceLine": 447,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2951,7 +2951,7 @@
       "method": "GET",
       "pathPattern": "/api/docs/media",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 395,
+      "sourceLine": 440,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3191,7 +3191,7 @@
       "method": "GET",
       "pathPattern": "/api/ingresses",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 374,
+      "sourceLine": 419,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4063,7 +4063,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/summary",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 242,
+      "sourceLine": 287,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4191,7 +4191,7 @@
       "method": "GET",
       "pathPattern": "/api/network/devices",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 367,
+      "sourceLine": 412,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4495,7 +4495,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 340,
+      "sourceLine": 385,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4527,7 +4527,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/alerts",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 335,
+      "sourceLine": 380,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4639,7 +4639,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/reports",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 346,
+      "sourceLine": 391,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4687,7 +4687,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 352,
+      "sourceLine": 397,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4951,7 +4951,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/query",
       "sourceFile": "frontend/src/lib/api.ts",
-      "sourceLine": 654,
+      "sourceLine": 685,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4967,7 +4967,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/query_range",
       "sourceFile": "frontend/src/lib/api.ts",
-      "sourceLine": 667,
+      "sourceLine": 698,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5039,7 +5039,7 @@
       "method": "GET",
       "pathPattern": "/api/prometheus/status",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 359,
+      "sourceLine": 404,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5095,7 +5095,7 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 263,
+      "sourceLine": 308,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5695,7 +5695,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/hosts",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 256,
+      "sourceLine": 301,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5767,7 +5767,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/vms",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 249,
+      "sourceLine": 294,
       "needsManualReview": false,
       "kind": "http"
     },
