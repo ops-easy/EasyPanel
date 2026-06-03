@@ -17,6 +17,8 @@ import {
 import { Button } from "@/shared/ui/button";
 import { useAuth } from "@/auth/auth-context";
 import { apiGetJson } from "@/lib/api";
+import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
+import { readinessHasProblem, readinessHint, readinessIsConfigured, readinessIsReady, readinessMetric } from "@/lib/system-readiness";
 import ComputePageHeader from "@/features/compute/components/ComputePageHeader";
 import ComputeProviderHealthStrip from "@/features/compute/components/ComputeProviderHealthStrip";
 import ComputeStatusBadge from "@/features/compute/components/ComputeStatusBadge";
@@ -187,6 +189,10 @@ function SummaryList({ title, empty, items }: { title: string; empty: string; it
 
 const ComputeDashboard: React.FC = () => {
   const { status } = useAuth();
+  const runtimeQ = useRuntimeStatusQuery();
+  const check = runtimeQ.data?.systemCheck;
+  const vcenterReadiness = check?.checks?.vcenter;
+  const pveReadiness = check?.checks?.pve;
   const canFetchCloudVm =
     (status?.loggedIn === true || status?.authRequired === false) &&
     workspaceMenuVisible(status?.permissions, "appcenter", status?.role);
@@ -213,7 +219,16 @@ const ComputeDashboard: React.FC = () => {
   const summary = summaryQ.data;
   const providers = providersQ.data?.providers ?? summary?.providers ?? [];
   const cloudVmCount = cloudVmQ.data?.instances?.length ?? 0;
-  const hasVirtualizedProviders = providers.some((provider) => provider.configured === true);
+  const providerConfiguredFallback = (providerKey: "vcenter" | "pve") =>
+    providers.some((provider) => provider.provider === providerKey && provider.configured === true);
+  const vcenterConfigured = vcenterReadiness ? readinessIsConfigured(vcenterReadiness) : providerConfiguredFallback("vcenter");
+  const pveConfigured = pveReadiness ? readinessIsConfigured(pveReadiness) : providerConfiguredFallback("pve");
+  const vcenterReady = vcenterReadiness ? readinessIsReady(vcenterReadiness) : vcenterConfigured;
+  const pveReady = pveReadiness ? readinessIsReady(pveReadiness) : pveConfigured;
+  const hasVirtualizedAccess = vcenterConfigured || pveConfigured;
+  const hasReadyVirtualizedAccess = vcenterReady || pveReady;
+  const computeReadinessProblem = readinessHasProblem(vcenterReadiness) || readinessHasProblem(pveReadiness);
+  const computeReadinessHint = readinessHint("vCenter", vcenterReadiness) || readinessHint("PVE", pveReadiness);
   const cloudVmProvider: ComputeProvider | null =
     cloudVmCount > 0
       ? {
@@ -225,8 +240,9 @@ const ComputeDashboard: React.FC = () => {
         }
       : null;
   const providerRows = cloudVmProvider ? [...providers, cloudVmProvider] : providers;
-  const providerConfigured = hasVirtualizedProviders || cloudVmCount > 0;
-  const computePrimaryPath = hasVirtualizedProviders
+  const providerConfigured = hasVirtualizedAccess || cloudVmCount > 0;
+  const providerOperational = hasReadyVirtualizedAccess || cloudVmCount > 0;
+  const computePrimaryPath = hasReadyVirtualizedAccess
     ? "/cluster/compute/guests"
     : cloudVmCount > 0
       ? "/cluster/apps/cloud-vm"
@@ -235,12 +251,16 @@ const ComputeDashboard: React.FC = () => {
   const health = summary?.health ?? {};
   const abnormalCount = (health.warning ?? 0) + (health.critical ?? 0);
   const warnings = [...(providersQ.data?.warnings ?? []), ...(summary?.warnings ?? [])];
-  const configuredProviderCount = providerRows.filter((provider) => provider.configured === true).length;
+  const configuredProviderCount = Number(vcenterConfigured) + Number(pveConfigured) + Number(cloudVmCount > 0);
   const totalProviderCount = Math.max(providerRows.length, 3);
   const healthyCount = (health.ok ?? 0) + (health.idle ?? 0);
   const warningCount = summary?.warningCount ?? warnings.length;
+  const vcenterProbeMetric = readinessMetric(vcenterReadiness, vcenterConfigured ? "\u5df2\u914d\u7f6e" : "\u672a\u914d\u7f6e");
+  const pveProbeMetric = readinessMetric(pveReadiness, pveConfigured ? "\u5df2\u914d\u7f6e" : "\u672a\u914d\u7f6e");
   const dashboardMessage = !providerConfigured
     ? "还没有配置源，先完成 vCenter、PVE 或容器主机配置。"
+    : computeReadinessProblem
+      ? computeReadinessHint || "只读探活发现配置源异常，请先检查网络、凭据或证书。"
     : abnormalCount > 0
       ? "有异常资源需要优先处理，先从风险队列进入详情。"
       : warningCount > 0
@@ -253,8 +273,9 @@ const ComputeDashboard: React.FC = () => {
         eyebrow="Dashboard"
         title="虚拟化 Dashboard"
         description="面向日常运维的虚拟化态势页：只放配置源、风险队列、容量热点和下一步动作；虚拟机、宿主机、存储和任务活动进入对象视图处理。"
-        refreshing={summaryQ.isFetching || providersQ.isFetching || cloudVmQ.isFetching}
+        refreshing={runtimeQ.isFetching || summaryQ.isFetching || providersQ.isFetching || cloudVmQ.isFetching}
         onRefresh={() => {
+          void runtimeQ.refetch();
           void providersQ.refetch();
           void summaryQ.refetch();
           if (canFetchCloudVm) void cloudVmQ.refetch();
@@ -262,7 +283,7 @@ const ComputeDashboard: React.FC = () => {
         action={
           <Button asChild className="h-9 gap-2 bg-violet-600 hover:bg-violet-700">
             <Link to={computePrimaryPath}>
-              {hasVirtualizedProviders ? "打开资源视图" : cloudVmCount > 0 ? "打开容器主机" : "打开配置"}
+              {hasReadyVirtualizedAccess ? "打开资源视图" : cloudVmCount > 0 ? "打开容器主机" : "打开配置"}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
@@ -319,8 +340,8 @@ const ComputeDashboard: React.FC = () => {
             <h2 className="text-sm font-semibold text-slate-950">下一步</h2>
           </div>
           <div className="space-y-2">
-            {providerConfigured ? (
-              hasVirtualizedProviders ? (
+            {providerOperational ? (
+              hasReadyVirtualizedAccess ? (
                 <>
                   <ActionLink
                     to={abnormalCount > 0 ? "/cluster/compute/guests" : "/cluster/compute/storage"}
@@ -350,7 +371,12 @@ const ComputeDashboard: React.FC = () => {
         </section>
       </section>
 
-      <ComputeProviderHealthStrip providers={providerRows} loading={summaryQ.isLoading || providersQ.isLoading || cloudVmQ.isLoading} warnings={warnings} />
+      <ComputeProviderHealthStrip
+        providers={providerRows}
+        loading={runtimeQ.isLoading || summaryQ.isLoading || providersQ.isLoading || cloudVmQ.isLoading}
+        warnings={warnings}
+        readinessByProvider={{ vcenter: vcenterReadiness, pve: pveReadiness }}
+      />
 
       {!providerConfigured && !summaryQ.isLoading && !cloudVmQ.isLoading ? (
         <section className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
@@ -372,8 +398,8 @@ const ComputeDashboard: React.FC = () => {
       ) : null}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-        <MiniMetric label="虚拟机 / CT" value={countText(counts.guests)} />
-        <MiniMetric label="宿主机 / 节点" value={countText(counts.hosts)} />
+        <MiniMetric label="vCenter 探活" value={vcenterProbeMetric} tone={readinessHasProblem(vcenterReadiness) ? "text-amber-700" : readinessIsReady(vcenterReadiness) ? "text-emerald-700" : undefined} />
+        <MiniMetric label="PVE 探活" value={pveProbeMetric} tone={readinessHasProblem(pveReadiness) ? "text-amber-700" : readinessIsReady(pveReadiness) ? "text-emerald-700" : undefined} />
         <MiniMetric label="存储" value={countText(counts.storage)} />
         <MiniMetric label="容器主机" value={countText(cloudVmCount)} />
         <MiniMetric label="最近活动" value={countText(counts.activity)} />

@@ -16,6 +16,7 @@
     "dev": "vite",
     "lint": "eslint .",
     "preview": "vite preview",
+    "smoke:readonly-readiness": "node ../scripts/smoke-readonly-readiness.mjs",
     "smoke:deploy": "node ../scripts/smoke-deploy.mjs",
     "smoke:dist": "node ../scripts/smoke-web-dist.mjs",
     "smoke:render": "npm run check:render",

@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "frontend-api-uses",
-  "routeCount": 740,
+  "routeCount": 738,
   "routes": [
     {
       "method": "UNKNOWN",
@@ -215,7 +215,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/instances",
       "sourceFile": "frontend/src/features/compute/pages/ComputeDashboard.tsx",
-      "sourceLine": 207,
+      "sourceLine": 213,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2335,7 +2335,7 @@
       "method": "GET",
       "pathPattern": "/api/compute/providers",
       "sourceFile": "frontend/src/features/compute/pages/ComputeDashboard.tsx",
-      "sourceLine": 195,
+      "sourceLine": 201,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2367,7 +2367,7 @@
       "method": "GET",
       "pathPattern": "/api/compute/summary",
       "sourceFile": "frontend/src/features/compute/pages/ComputeDashboard.tsx",
-      "sourceLine": 201,
+      "sourceLine": 207,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4175,7 +4175,7 @@
       "method": "GET",
       "pathPattern": "/api/network/devices",
       "sourceFile": "frontend/src/features/network/pages/NetworkDashboard.tsx",
-      "sourceLine": 180,
+      "sourceLine": 195,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4303,7 +4303,7 @@
       "method": "GET",
       "pathPattern": "/api/network/devices/:param/exporter-status",
       "sourceFile": "frontend/src/features/network/pages/NetworkDashboard.tsx",
-      "sourceLine": 194,
+      "sourceLine": 211,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -4479,7 +4479,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 86,
+      "sourceLine": 92,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4519,7 +4519,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/alerts",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 81,
+      "sourceLine": 87,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4591,7 +4591,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/ops/cluster-advisory",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 109,
+      "sourceLine": 115,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -4599,7 +4599,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/cluster-advisory/ack",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 116,
+      "sourceLine": 122,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4615,7 +4615,7 @@
       "method": "POST",
       "pathPattern": "/api/ops/cluster-advisory/run",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 121,
+      "sourceLine": 127,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4623,7 +4623,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/reports",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 92,
+      "sourceLine": 98,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4671,7 +4671,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 76,
+      "sourceLine": 82,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4679,7 +4679,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectMonitoring.tsx",
-      "sourceLine": 126,
+      "sourceLine": 128,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4695,7 +4695,7 @@
       "method": "PUT",
       "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectMonitoring.tsx",
-      "sourceLine": 218,
+      "sourceLine": 220,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5010,22 +5010,6 @@
       "sourceLine": 46,
       "needsManualReview": false,
       "kind": "literal"
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/prometheus/status",
-      "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectDashboard.tsx",
-      "sourceLine": 70,
-      "needsManualReview": false,
-      "kind": "http"
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/prometheus/status",
-      "sourceFile": "frontend/src/features/ops/ai-inspect/pages/AiInspectMonitoring.tsx",
-      "sourceLine": 121,
-      "needsManualReview": false,
-      "kind": "http"
     },
     {
       "method": "GET",

@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Settings } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import type { SystemCheckItem } from "@/lib/api";
+import { readinessHasProblem, readinessHint, readinessIsConfigured, readinessMetric } from "@/lib/system-readiness";
 import { cn } from "@/lib/utils";
 import { computeProviderLabels, type ComputeProvider } from "./compute-resource-types";
 
@@ -10,6 +12,7 @@ export type ComputeProviderHealthStripProps = {
   providers: ComputeProvider[];
   loading?: boolean;
   warnings?: string[];
+  readinessByProvider?: Record<string, SystemCheckItem | undefined>;
 };
 
 const fallbackProviders: ComputeProvider[] = [
@@ -17,7 +20,7 @@ const fallbackProviders: ComputeProvider[] = [
   { provider: "pve", name: "PVE", configured: false },
 ];
 
-const ComputeProviderHealthStrip: React.FC<ComputeProviderHealthStripProps> = ({ providers, loading, warnings = [] }) => {
+const ComputeProviderHealthStrip: React.FC<ComputeProviderHealthStripProps> = ({ providers, loading, warnings = [], readinessByProvider }) => {
   const rows = providers.length > 0 ? providers : fallbackProviders;
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
@@ -27,24 +30,32 @@ const ComputeProviderHealthStrip: React.FC<ComputeProviderHealthStripProps> = ({
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">正在读取配置源...</div>
           ) : (
             rows.map((provider) => {
-              const configured = provider.configured === true;
               const label = provider.name || computeProviderLabels[provider.provider] || provider.provider;
+              const probe = readinessByProvider?.[provider.provider];
+              const configured = probe ? readinessIsConfigured(probe) : provider.configured === true;
+              const problem = readinessHasProblem(probe);
+              const hint = readinessHint(label, probe) || provider.baseUrl || provider.hint || "未填写接入信息";
+              const badgeLabel = readinessMetric(probe, configured ? "已配置" : "未配置");
               return (
                 <div key={`${provider.provider}:${provider.targetId ?? ""}`} className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-950">{label}</p>
-                    <p className="truncate text-[11px] text-slate-500" title={provider.baseUrl || provider.hint || ""}>
-                      {provider.baseUrl || provider.hint || "未填写接入信息"}
+                    <p className="truncate text-[11px] text-slate-500" title={hint}>
+                      {hint}
                     </p>
                   </div>
                   <Badge
                     variant="outline"
                     className={cn(
                       "shrink-0 font-normal",
-                      configured ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600"
+                      problem
+                        ? "border-amber-200 bg-amber-50 text-amber-800"
+                        : configured
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                          : "border-slate-200 bg-white text-slate-600"
                     )}
                   >
-                    {configured ? "已配置" : "未配置"}
+                    {badgeLabel}
                   </Badge>
                 </div>
               );

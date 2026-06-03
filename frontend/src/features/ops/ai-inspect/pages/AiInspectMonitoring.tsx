@@ -16,6 +16,8 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/shared/ui/sheet";
 import { Textarea } from "@/shared/ui/textarea";
 import { apiGetJson, apiPutJson, ApiHttpError, prometheusQueryRangeApi } from "@/lib/api";
+import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
+import { readinessHint, readinessIsReady, readinessMetric } from "@/lib/system-readiness";
 import { withOpsMutationConfirm } from "@/lib/ops-mutation-confirm";
 import { useAuth } from "@/auth/auth-context";
 import { toast } from "sonner";
@@ -96,6 +98,14 @@ export default function AiInspectMonitoring() {
   const qc = useQueryClient();
   const { status } = useAuth();
   const isAdmin = status?.role === "admin";
+  const runtimeQ = useRuntimeStatusQuery();
+  const check = runtimeQ.data?.systemCheck;
+  const prometheusReadiness = check?.checks?.prometheus;
+  const vcenterReadiness = check?.checks?.vcenter;
+  const k8sPrometheusReadiness = prometheusReadiness?.scopes?.k8s ?? prometheusReadiness;
+  const vcenterPrometheusReadiness = prometheusReadiness?.scopes?.vcenter ?? prometheusReadiness;
+  const prometheusProbeMetric = readinessMetric(prometheusReadiness, "未配置");
+  const prometheusProbeHint = readinessHint("Prometheus / VictoriaMetrics", prometheusReadiness);
   const [searchParams] = useSearchParams();
   const alertQuery = (searchParams.get("alertQuery") || "").trim();
   const alertScope = monitoringScopeFromParam(searchParams.get("scope"));
@@ -112,14 +122,6 @@ export default function AiInspectMonitoring() {
   const [newScope, setNewScope] = useState<"k8s" | "vcenter" | "inherit">(alertScope);
   const [newDisplay, setNewDisplay] = useState<"single" | "matrix">("single");
   const [newLabelKeys, setNewLabelKeys] = useState("");
-
-  const promStatusQ = useQuery({
-    queryKey: ["prometheus-status"],
-    queryFn: ({ signal }) =>
-      apiGetJson<{
-        scopes?: { k8s?: { configured?: boolean }; vcenter?: { configured?: boolean } };
-      }>("/api/prometheus/status", { signal }),
-  });
 
   const customQ = useQuery({
     queryKey: ["ops-monitoring-panels"],
@@ -259,25 +261,25 @@ export default function AiInspectMonitoring() {
     savePanelsMut.mutate([...cur, next]);
   };
 
-  const k8sOk = promStatusQ.data?.scopes?.k8s?.configured === true;
-  const vcOk = promStatusQ.data?.scopes?.vcenter?.configured === true;
+  const k8sOk = readinessIsReady(k8sPrometheusReadiness);
+  const vcOk = readinessIsReady(vcenterPrometheusReadiness ?? vcenterReadiness);
   const datasourceOptions: Array<{ value: MonitoringDataScope; label: string; disabled?: boolean }> = [
-    { value: "k8s", label: k8sOk ? "Kubernetes 集群指标源" : "Kubernetes 集群指标源（未配置）" },
+    { value: "k8s", label: k8sOk ? "Kubernetes 集群指标源" : `Kubernetes 集群指标源（${readinessMetric(k8sPrometheusReadiness, "未配置")}）` },
     {
       value: "vcenter",
-      label: vcOk ? "vCenter / VMware 指标源" : "vCenter / VMware 指标源（未配置）",
-      disabled: promStatusQ.isSuccess && !vcOk,
+      label: vcOk ? "vCenter / VMware 指标源" : `vCenter / VMware 指标源（${readinessMetric(vcenterPrometheusReadiness ?? vcenterReadiness, "未配置")}）`,
+      disabled: !runtimeQ.isLoading && !vcOk,
     },
   ];
 
   React.useEffect(() => {
-    if (!promStatusQ.isSuccess) return;
+    if (runtimeQ.isLoading) return;
     if (pageScope === "vcenter" && !vcOk) {
       setPageScope("k8s");
     } else if (pageScope === "k8s" && !k8sOk && vcOk) {
       setPageScope("vcenter");
     }
-  }, [k8sOk, pageScope, promStatusQ.isSuccess, vcOk]);
+  }, [k8sOk, pageScope, runtimeQ.isLoading, vcOk]);
 
   return (
     <div className="space-y-8">
@@ -349,14 +351,20 @@ export default function AiInspectMonitoring() {
           </div>
         </div>
         <p className="mt-3 text-xs text-slate-500">
-          当前 scope 数据源状态：
+          当前 scope 数据源状态（Prometheus / VictoriaMetrics：{prometheusProbeMetric}）：
           {pageScope === "k8s" ? (
             <span className={k8sOk ? " text-emerald-700" : " text-amber-800"}>
-              {k8sOk ? " Kubernetes 已配置" : " Kubernetes 未配置或不可达（请到集群设置填写 prometheusUrlK8s / vmSelectUrlK8s）"}
+              {` Kubernetes ${readinessMetric(k8sPrometheusReadiness, "未配置")}`}
+              {readinessHint("Kubernetes 指标", k8sPrometheusReadiness) || prometheusProbeHint
+                ? ` · ${readinessHint("Kubernetes 指标", k8sPrometheusReadiness) || prometheusProbeHint}`
+                : ""}
             </span>
           ) : (
             <span className={vcOk ? " text-emerald-700" : " text-amber-800"}>
-              {vcOk ? " vCenter 已配置" : " vCenter 未配置（请到配置填写 prometheusUrlVcenter）"}
+              {` vCenter ${readinessMetric(vcenterPrometheusReadiness ?? vcenterReadiness, "未配置")}`}
+              {readinessHint("vCenter 指标", vcenterPrometheusReadiness ?? vcenterReadiness)
+                ? ` · ${readinessHint("vCenter 指标", vcenterPrometheusReadiness ?? vcenterReadiness)}`
+                : ""}
             </span>
           )}
         </p>

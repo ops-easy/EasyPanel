@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, ChevronRight, LayoutDashboard, Sparkles } from "lucide-react";
 import { apiGetJson, apiPostJson } from "@/lib/api";
+import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
 import { useAuth } from "@/auth/auth-context";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -18,6 +19,7 @@ import { CurrentRiskPanel } from "@/features/ops/ai-inspect/components/CurrentRi
 import { NextStepPanel, type NextStepAction } from "@/features/ops/ai-inspect/components/NextStepPanel";
 import { OPS_MONITORING_PRESETS } from "./opsMonitoringPresets";
 import { toast } from "sonner";
+import { readinessAccessStatus, readinessHint, readinessIsReady, readinessMetric } from "@/lib/system-readiness";
 
 type AlertsGet = {
   rules: { enabled: boolean }[];
@@ -62,15 +64,19 @@ const AiInspectDashboard: React.FC = () => {
   const { status } = useAuth();
   const isAdmin = status?.role === "admin";
   const loggedIn = Boolean(status?.loggedIn);
+  const runtimeQ = useRuntimeStatusQuery();
+  const check = runtimeQ.data?.systemCheck;
+  const prometheusReadiness = check?.checks?.prometheus;
+  const victoriaLogsReadiness = check?.checks?.victoriaLogs;
+  const vcenterReadiness = check?.checks?.vcenter;
+  const pveReadiness = check?.checks?.pve;
+  const openWrtReadiness = check?.checks?.openwrt;
+  const ikuaiReadiness = check?.checks?.ikuai;
+  const k8sPrometheusReadiness = prometheusReadiness?.scopes?.k8s ?? prometheusReadiness;
+  const vcenterPrometheusReadiness = prometheusReadiness?.scopes?.vcenter ?? prometheusReadiness;
+  const networkReadiness = readinessIsReady(openWrtReadiness) ? openWrtReadiness : readinessIsReady(ikuaiReadiness) ? ikuaiReadiness : openWrtReadiness ?? ikuaiReadiness;
+  const prometheusProbeHint = readinessHint("Prometheus / VictoriaMetrics", prometheusReadiness);
 
-  const promStatusQ = useQuery({
-    queryKey: ["prometheus-status"],
-    queryFn: ({ signal }) =>
-      apiGetJson<{ scopes?: { k8s?: { configured?: boolean }; vcenter?: { configured?: boolean } } }>(
-        "/api/prometheus/status"
-      , { signal }),
-    enabled: loggedIn,
-  });
   const monitoringPanelsQ = useQuery({
     queryKey: ["ops-monitoring-panels"],
     queryFn: ({ signal }) => apiGetJson<{ panels: { id: string }[] }>("/api/ops/monitoring/panels", { signal }),
@@ -136,43 +142,46 @@ const AiInspectDashboard: React.FC = () => {
   const oc = openclawQ.data?.endpoint;
   const repN = repQ.data?.total ?? repQ.data?.reports?.length ?? 0;
   const navItems = AI_INSPECT_NAV_ITEMS_BY_ID;
-  const k8sPrometheusConfigured = promStatusQ.data?.scopes?.k8s?.configured === true;
-  const vcenterPrometheusConfigured = promStatusQ.data?.scopes?.vcenter?.configured === true;
   const aiProviderReady = Boolean(oc?.enabled && (oc.apiKeySet || oc.baseUrl));
   const accessHealthItems: AccessHealthItem[] = [
     {
       label: "Kubernetes 指标",
       scope: "Prometheus / k8s",
-      status: promStatusQ.isLoading ? "unknown" : k8sPrometheusConfigured ? "ok" : "missing",
-      detail: k8sPrometheusConfigured ? "监控看板和告警规则可直接查询 K8s 指标。" : "先在集群设置中配置 Kubernetes Prometheus 地址。",
+      status: readinessAccessStatus(k8sPrometheusReadiness, runtimeQ.isLoading),
+      detail: readinessHint("Kubernetes 指标", k8sPrometheusReadiness) || "先在集群设置中配置 Kubernetes Prometheus 地址。",
       to: navItems.monitoring.to,
     },
     {
       label: "vCenter 指标",
       scope: "Prometheus / vcenter",
-      status: promStatusQ.isLoading ? "unknown" : vcenterPrometheusConfigured ? "ok" : "missing",
-      detail: vcenterPrometheusConfigured ? "VMware 指标可用于虚拟化看板与巡检报告。" : "未配置时，vCenter 监控和关联告警会缺少数据。",
+      status: readinessAccessStatus(vcenterPrometheusReadiness ?? vcenterReadiness, runtimeQ.isLoading),
+      detail:
+        readinessHint("vCenter 指标", vcenterPrometheusReadiness ?? vcenterReadiness) ||
+        "未配置时，vCenter 监控和关联告警会缺少数据。",
       to: navItems.monitoring.to,
     },
     {
       label: "PVE 指标",
       scope: "Prometheus / PVE",
-      status: "unknown",
-      detail: "跟随巡检策略中的 PVE / Proxmox VE 开关与运行时数据源配置。",
+      status: readinessAccessStatus(pveReadiness, runtimeQ.isLoading),
+      detail: readinessHint("PVE", pveReadiness) || "跟随巡检策略中的 PVE / Proxmox VE 开关与运行时数据源配置。",
       to: navItems.configure.to,
     },
     {
       label: "Network 指标",
       scope: "Prometheus / 网络设备",
-      status: "unknown",
-      detail: "OpenWrt / iKuai 指标纳入网络设备巡检，适合和流量告警联动。",
+      status: readinessAccessStatus(networkReadiness, runtimeQ.isLoading),
+      detail:
+        readinessHint("OpenWrt", openWrtReadiness) ||
+        readinessHint("iKuai", ikuaiReadiness) ||
+        "OpenWrt / iKuai 指标纳入网络设备巡检，适合和流量告警联动。",
       to: navItems.configure.to,
     },
     {
       label: "日志检索",
       scope: "VictoriaLogs",
-      status: clusterAdvisoryQ.data?.logPodsSampled ? "ok" : "unknown",
-      detail: "日志接入和检索分开维护，告警排障可直接跳到日志检索页。",
+      status: readinessAccessStatus(victoriaLogsReadiness, runtimeQ.isLoading),
+      detail: readinessHint("VictoriaLogs", victoriaLogsReadiness) || "日志接入和检索分开维护，告警排障可直接跳到日志检索页。",
       to: navItems.logs.to,
     },
     {
@@ -308,7 +317,7 @@ const AiInspectDashboard: React.FC = () => {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <SummaryCard item={navItems.monitoring}>
-          {promStatusQ.isLoading || monitoringPanelsQ.isLoading ? (
+          {runtimeQ.isLoading || monitoringPanelsQ.isLoading ? (
             <span className="text-slate-400">加载中…</span>
           ) : (
             <>
@@ -317,8 +326,9 @@ const AiInspectDashboard: React.FC = () => {
                 管理员自定义图：<strong className="text-slate-800">{customPanelN}</strong> 条
               </p>
               <p className="mt-2 text-xs text-slate-500">
-                K8s 数据源 {promStatusQ.data?.scopes?.k8s?.configured ? "已配置" : "未配置"} · vCenter{" "}
-                {promStatusQ.data?.scopes?.vcenter?.configured ? "已配置" : "未配置"}
+                K8s 数据源 {readinessMetric(k8sPrometheusReadiness, "未配置")} · vCenter{" "}
+                {readinessMetric(vcenterPrometheusReadiness ?? vcenterReadiness, "未配置")}
+                {prometheusProbeHint ? ` · ${prometheusProbeHint}` : ""}
               </p>
             </>
           )}

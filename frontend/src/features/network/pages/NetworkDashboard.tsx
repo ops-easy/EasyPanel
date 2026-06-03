@@ -4,7 +4,15 @@ import { useQuery } from "@tanstack/react-query";
 import { Activity, ArrowRight, Cable, Gauge, Network, Router, Settings, Users, Wifi } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { apiGetJson } from "@/lib/api";
+import { apiGetJson, type SystemCheckItem } from "@/lib/api";
+import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
+import {
+  readinessHasProblem,
+  readinessHint,
+  readinessIsConfigured,
+  readinessIsReady,
+  readinessMetric,
+} from "@/lib/system-readiness";
 import { cn } from "@/lib/utils";
 import {
   deviceQueryHint,
@@ -103,18 +111,16 @@ function updatedLabel(device?: NetworkDevice): string {
   return formatDateTime(device.updatedAt);
 }
 
-function providerReady(kind: NetworkDeviceKind, device?: NetworkDevice): boolean {
-  if (!device) return false;
-  if (kind === "ikuai") return Boolean(device.instanceLabel || device.jobLabel || device.prometheusScope);
-  return Boolean(device.host || device.apiUrl || device.passwordSet || device.privateKeySet);
-}
-
-function ProviderAccessBadge({ kind, device }: { kind: NetworkDeviceKind; device?: NetworkDevice }) {
-  const ready = providerReady(kind, device);
-  const hint =
+function ProviderAccessBadge({ kind, device, readiness }: { kind: NetworkDeviceKind; device?: NetworkDevice; readiness?: SystemCheckItem }) {
+  const ready = readinessIsReady(readiness);
+  const configured = readinessIsConfigured(readiness);
+  const problem = readinessHasProblem(readiness);
+  const fallbackHint =
     kind === "openwrt"
       ? device?.host || device?.apiUrl || "需要 SSH/API 接入"
       : deviceQueryHint(device) || "需要 Prometheus 标签";
+  const hint = readinessHint(providerLabels[kind], readiness) || fallbackHint;
+  const badgeLabel = readinessMetric(readiness, device ? "已配置" : "未配置");
   const Icon = kind === "ikuai" ? Router : Wifi;
   return (
     <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
@@ -138,10 +144,14 @@ function ProviderAccessBadge({ kind, device }: { kind: NetworkDeviceKind; device
         variant="outline"
         className={cn(
           "shrink-0 font-normal",
-          ready ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-100 text-slate-600"
+          problem
+            ? "border-amber-200 bg-amber-50 text-amber-800"
+            : ready || configured
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-slate-200 bg-slate-100 text-slate-600"
         )}
       >
-        {ready ? "已配置" : "未配置"}
+        {badgeLabel}
       </Badge>
     </div>
   );
@@ -175,6 +185,11 @@ function NetworkResourceCard({
 }
 
 const NetworkDashboard: React.FC = () => {
+  const runtimeQ = useRuntimeStatusQuery();
+  const check = runtimeQ.data?.systemCheck;
+  const openWrtReadiness = check?.checks?.openwrt;
+  const ikuaiReadiness = check?.checks?.ikuai;
+  const prometheusReadiness = check?.checks?.prometheus;
   const devicesQ = useQuery({
     queryKey: ["network-devices"],
     queryFn: ({ signal }) => apiGetJson<{ devices: NetworkDevice[] }>("/api/network/devices", { signal }),
@@ -185,7 +200,9 @@ const NetworkDashboard: React.FC = () => {
   const devices = useMemo(() => devicesQ.data?.devices ?? [], [devicesQ.data?.devices]);
   const ikuaiDevice = useMemo(() => singleNetworkDeviceByKind(devices, "ikuai"), [devices]);
   const openWrtDevice = useMemo(() => singleNetworkDeviceByKind(devices, "openwrt"), [devices]);
-  const configuredCount = Number(Boolean(ikuaiDevice)) + Number(Boolean(openWrtDevice));
+  const ikuaiConfigured = ikuaiReadiness ? readinessIsConfigured(ikuaiReadiness) : Boolean(ikuaiDevice);
+  const openWrtConfigured = openWrtReadiness ? readinessIsConfigured(openWrtReadiness) : Boolean(openWrtDevice);
+  const configuredCount = Number(ikuaiConfigured) + Number(openWrtConfigured);
   const providerConfigured = configuredCount > 0;
 
   const openWrtStatusQ = useQuery({
@@ -204,6 +221,8 @@ const NetworkDashboard: React.FC = () => {
     .filter(Boolean)
     .sort()
     .at(-1);
+  const prometheusProbeMetric = readinessMetric(prometheusReadiness, openWrtDevice ? `${openWrtReadyCount}/5` : ikuaiDevice ? "iKuai" : "-");
+  const prometheusProbeHint = readinessHint("Prometheus / VictoriaMetrics", prometheusReadiness) || "Prometheus 指标族";
 
   const cardCounts: Record<(typeof resourceCards)[number]["key"], React.ReactNode> = {
     devices: `${configuredCount}/2`,
@@ -211,7 +230,7 @@ const NetworkDashboard: React.FC = () => {
     clients: providerConfigured ? "汇总" : "-",
     wireless: openWrtDevice ? "OpenWrt" : "-",
     connections: providerConfigured ? "可排查" : "-",
-    monitoring: openWrtDevice ? `${openWrtReadyCount}/5` : ikuaiDevice ? "iKuai" : "-",
+    monitoring: prometheusProbeMetric,
   };
 
   return (
@@ -245,14 +264,14 @@ const NetworkDashboard: React.FC = () => {
           </Button>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          {devicesQ.isLoading ? (
+          {runtimeQ.isLoading || devicesQ.isLoading ? (
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-5 text-sm text-slate-500 shadow-sm">
               正在读取网络配置源...
             </div>
           ) : (
             <>
-              <ProviderAccessBadge kind="ikuai" device={ikuaiDevice} />
-              <ProviderAccessBadge kind="openwrt" device={openWrtDevice} />
+              <ProviderAccessBadge kind="ikuai" device={ikuaiDevice} readiness={ikuaiReadiness} />
+              <ProviderAccessBadge kind="openwrt" device={openWrtDevice} readiness={openWrtReadiness} />
             </>
           )}
         </div>
@@ -260,14 +279,19 @@ const NetworkDashboard: React.FC = () => {
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <NetworkMetricCard label="配置源" value={`${configuredCount}/2`} hint="iKuai / OpenWrt" tone="cyan" />
-        <NetworkMetricCard label="OpenWrt 指标" value={`${openWrtReadyCount}/5`} hint="Prometheus 指标族" tone="emerald" />
+        <NetworkMetricCard
+          label="Prometheus 探活"
+          value={prometheusProbeMetric}
+          hint={prometheusProbeHint}
+          tone={readinessHasProblem(prometheusReadiness) ? "amber" : readinessIsReady(prometheusReadiness) ? "emerald" : "slate"}
+        />
         <NetworkMetricCard
           label="最近更新"
           value={latestUpdate ? formatDateTime(latestUpdate) : "尚未保存"}
           hint="接入记录"
           tone="slate"
         />
-        <NetworkMetricCard label="配置入口" value={providerConfigured ? "已就绪" : "待配置"} hint="统一配置" tone="amber" />
+        <NetworkMetricCard label="配置入口" value={providerConfigured ? "已接入" : "待配置"} hint="统一配置" tone="amber" />
       </section>
 
       {providerConfigured ? (

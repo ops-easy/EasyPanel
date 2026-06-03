@@ -130,7 +130,12 @@ npm run build
 npm run smoke:dist
 SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy
 SMOKE_BASE_URL=https://your-staging.example.com SMOKE_D_PATH=/d/ npm run smoke:deploy
+SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:readonly-readiness
 ```
+
+`smoke:readonly-readiness` 是真实已连接环境的只读就绪预设：它只发起 `GET` 请求，复用 `EASYPANEL_RENDER_SMOKE_ROUTE` 的路由过滤语义，默认检查 `/login`、`/`、`/cluster/compute/dashboard`、`/cluster/network/dashboard`、`/cluster/baota` 和 `/cluster/ai-inspect/dashboard`，并要求 vCenter、PVE、OpenWrt、iKuai、Prometheus、VictoriaLogs 的新探活状态为 `readonly_reachable`。
+
+在 staging 上验证时先确保该环境已经连接对应数据源，再从 `frontend/` 目录执行上面的命令。脚本会检查 SPA 路由、构建资源、`/api/login/public-status` 的公开只读探针，以及带鉴权时的 `/api/runtime/status`；如果运行时状态接口需要登录，可设置 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN`，否则脚本会保留公开探针验证并提示跳过受保护接口。需要聚焦时可用 `EASYPANEL_RENDER_SMOKE_ROUTE=/cluster/ai-inspect/dashboard` 缩小路由集合，用 `SMOKE_READINESS_CHECKS=prometheus,victoriaLogs` 缩小只读探针集合，慢环境可调大 `SMOKE_REQUEST_TIMEOUT_MS`。
 
 ### Kustomize 部署
 
