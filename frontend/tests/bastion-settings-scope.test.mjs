@@ -37,5 +37,6 @@ test("bastion session header reflects all supported target families", () => {
 test("bastion session full-screen header returns to bastion console home", () => {
   assert.match(sessionSource, /<Link to=\{BASTION_ROUTE_BASE\}/);
   assert.match(sessionSource, /title="返回堡垒机控制台"/);
+  assert.match(sessionSource, /返回控制台/);
   assert.doesNotMatch(sessionSource, /<Link to="\/" title="工作台">/);
 });

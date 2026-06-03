@@ -292,12 +292,12 @@ export default function AiInspectMonitoring() {
         </p>
       </div>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="grid gap-4 lg:grid-cols-[minmax(16rem,1fr)_minmax(10rem,0.65fr)_minmax(9rem,0.55fr)_minmax(18rem,1fr)] lg:items-start">
           <div className="space-y-2">
             <Label>数据源（scope）</Label>
             <Select value={pageScope} onValueChange={(v) => setPageScope(v as MonitoringDataScope)}>
-              <SelectTrigger className="w-[280px]">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -322,7 +322,7 @@ export default function AiInspectMonitoring() {
           <div className="space-y-2">
             <Label>分类</Label>
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -337,7 +337,7 @@ export default function AiInspectMonitoring() {
           <div className="space-y-2">
             <Label>时间范围</Label>
             <Select value={String(rangeMinutes)} onValueChange={(v) => setRangeMinutes(Number(v) as typeof rangeMinutes)}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -349,25 +349,30 @@ export default function AiInspectMonitoring() {
               </SelectContent>
             </Select>
           </div>
+          <div className="text-xs text-slate-500 lg:border-l lg:border-slate-100 lg:pl-5">
+            <p className="font-medium text-slate-700">当前 scope 数据源状态</p>
+            <p className="mt-2">
+              Prometheus / VictoriaMetrics：<span className="font-mono">{prometheusProbeMetric}</span>
+            </p>
+            <p className="mt-1">
+              {pageScope === "k8s" ? (
+                <span className={k8sOk ? "text-emerald-700" : "text-amber-800"}>
+                  {`Kubernetes ${readinessMetric(k8sPrometheusReadiness, "未配置")}`}
+                  {readinessHint("Kubernetes 指标", k8sPrometheusReadiness) || prometheusProbeHint
+                    ? ` · ${readinessHint("Kubernetes 指标", k8sPrometheusReadiness) || prometheusProbeHint}`
+                    : ""}
+                </span>
+              ) : (
+                <span className={vcOk ? "text-emerald-700" : "text-amber-800"}>
+                  {`vCenter ${readinessMetric(vcenterPrometheusReadiness ?? vcenterReadiness, "未配置")}`}
+                  {readinessHint("vCenter 指标", vcenterPrometheusReadiness ?? vcenterReadiness)
+                    ? ` · ${readinessHint("vCenter 指标", vcenterPrometheusReadiness ?? vcenterReadiness)}`
+                    : ""}
+                </span>
+              )}
+            </p>
+          </div>
         </div>
-        <p className="mt-3 text-xs text-slate-500">
-          当前 scope 数据源状态（Prometheus / VictoriaMetrics：{prometheusProbeMetric}）：
-          {pageScope === "k8s" ? (
-            <span className={k8sOk ? " text-emerald-700" : " text-amber-800"}>
-              {` Kubernetes ${readinessMetric(k8sPrometheusReadiness, "未配置")}`}
-              {readinessHint("Kubernetes 指标", k8sPrometheusReadiness) || prometheusProbeHint
-                ? ` · ${readinessHint("Kubernetes 指标", k8sPrometheusReadiness) || prometheusProbeHint}`
-                : ""}
-            </span>
-          ) : (
-            <span className={vcOk ? " text-emerald-700" : " text-amber-800"}>
-              {` vCenter ${readinessMetric(vcenterPrometheusReadiness ?? vcenterReadiness, "未配置")}`}
-              {readinessHint("vCenter 指标", vcenterPrometheusReadiness ?? vcenterReadiness)
-                ? ` · ${readinessHint("vCenter 指标", vcenterPrometheusReadiness ?? vcenterReadiness)}`
-                : ""}
-            </span>
-          )}
-        </p>
       </section>
 
       {isAdmin ? (

@@ -19,3 +19,15 @@ test("monitoring datasource selector describes VMware source and gates unconfigu
   assert.match(source, /disabled=\{option.disabled\}/);
   assert.match(source, /prometheusUrlVcenter \/ vmSelectUrlVcenter/);
 });
+
+test("monitoring datasource filter bar fills the header panel on wide screens", () => {
+  const source = read("src/features/ops/ai-inspect/pages/AiInspectMonitoring.tsx");
+
+  assert.match(
+    source,
+    /className="grid gap-4 lg:grid-cols-\[minmax\(16rem,1fr\)_minmax\(10rem,0\.65fr\)_minmax\(9rem,0\.55fr\)_minmax\(18rem,1fr\)\] lg:items-start"/,
+  );
+  assert.match(source, /lg:border-l lg:border-slate-100 lg:pl-5/);
+  assert.ok((source.match(/<SelectTrigger className="w-full">/g) ?? []).length >= 3);
+  assert.doesNotMatch(source, /lg:flex-row lg:flex-wrap/);
+});

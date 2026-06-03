@@ -690,6 +690,19 @@ const VCenterBastion: React.FC = () => {
     <div className="flex h-full min-h-0 w-full max-w-none flex-col overflow-hidden bg-[#141414] text-[#ffffff]">
       <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-[#1f1f1f] bg-black px-3">
         <div className="flex min-w-0 items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 shrink-0 gap-1 rounded-md border border-[#30363d] bg-[#161b22] px-2 text-[11px] font-medium text-[#dbeafe] hover:bg-[#1f2937] hover:text-[#ffffff]"
+            asChild
+          >
+            <Link to={BASTION_ROUTE_BASE} title="返回堡垒机控制台" aria-label="返回堡垒机控制台">
+              <Home className="size-3.5" />
+              返回控制台
+            </Link>
+          </Button>
+          <span className="h-5 w-px shrink-0 bg-[#30363d]" aria-hidden />
           <SquareTerminal className="size-4 shrink-0 text-[#1890ff]" aria-hidden />
           <div className="min-w-0">
             <h1 className="truncate text-xs font-semibold tracking-wide text-[#ffffff]">主机与终端</h1>
@@ -697,17 +710,6 @@ const VCenterBastion: React.FC = () => {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-[#8c8c8c] hover:bg-[#1f1f1f] hover:text-[#ffffff]"
-            asChild
-          >
-            <Link to={BASTION_ROUTE_BASE} title="返回堡垒机控制台" aria-label="返回堡垒机控制台">
-              <Home className="size-4" />
-            </Link>
-          </Button>
           <button
             type="button"
             className="rounded-md p-2 text-[#8c8c8c] hover:bg-[#1f1f1f] hover:text-[#ffffff]"
