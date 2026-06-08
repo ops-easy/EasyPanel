@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 const apiSource = readFileSync(new URL("../src/lib/api.ts", import.meta.url), "utf8");
+const readinessSource = readFileSync(new URL("../src/lib/system-readiness.ts", import.meta.url), "utf8");
 const homeHubSource = readFileSync(new URL("../src/pages/HomeHub.tsx", import.meta.url), "utf8");
 const loginSource = readFileSync(new URL("../src/pages/Login.tsx", import.meta.url), "utf8");
 
@@ -25,8 +26,10 @@ test("frontend SystemCheck type exposes unified readonly probe checks", () => {
 });
 
 test("workbench status cards consume unified readonly probe checks", () => {
-  assert.match(homeHubSource, /function readinessMetric/);
-  assert.match(homeHubSource, /function readinessHasProblem/);
+  assert.match(homeHubSource, /from "@\/lib\/system-readiness"/);
+  assert.doesNotMatch(homeHubSource, /function readinessStatus/);
+  assert.doesNotMatch(homeHubSource, /function readinessMetric/);
+  assert.doesNotMatch(homeHubSource, /function readinessHasProblem/);
   for (const binding of [
     "vcenterReadiness",
     "pveReadiness",
@@ -46,13 +49,37 @@ test("workbench status cards consume unified readonly probe checks", () => {
 });
 
 test("login public status shows the same readonly probe status vocabulary", () => {
-  assert.match(loginSource, /function probeStatusTile/);
+  assert.match(loginSource, /from "@\/lib\/system-readiness"/);
+  assert.match(loginSource, /readinessLoginSummary\(item,\s*pendingDetail\)/);
+  assert.doesNotMatch(loginSource, /status === "readonly_reachable"/);
+  assert.doesNotMatch(loginSource, /status === "configured_unreachable"/);
+  assert.doesNotMatch(loginSource, /status === "datasource_error"/);
   assert.match(loginSource, /payload\?\.systemCheck\?\.checks\?\.vcenter/);
   assert.match(loginSource, /payload\?\.systemCheck\?\.checks\?\.pve/);
   assert.match(loginSource, /payload\?\.systemCheck\?\.checks\?\.openwrt/);
   assert.match(loginSource, /payload\?\.systemCheck\?\.checks\?\.ikuai/);
   assert.match(loginSource, /payload\?\.systemCheck\?\.checks\?\.prometheus/);
   assert.match(loginSource, /payload\?\.systemCheck\?\.checks\?\.victoriaLogs/);
-  assert.match(loginSource, /readonly_reachable/);
-  assert.match(loginSource, /datasource_error/);
+});
+
+test("system readiness owns workbench and login presentation for reachable unreachable and hidden probes", () => {
+  for (const helper of [
+    "readinessStatus",
+    "readinessHasProblem",
+    "readinessIsReady",
+    "readinessIsConfigured",
+    "readinessMetric",
+    "readinessHint",
+    "readinessLoginSummary",
+  ]) {
+    assert.match(readinessSource, new RegExp(`export function ${helper}\\b`));
+  }
+
+  for (const status of ["readonly_reachable", "configured_unreachable", "hidden"]) {
+    assert.match(readinessSource, new RegExp(`case "${status}"|status === "${status}"`));
+  }
+
+  assert.match(readinessSource, /readonly_reachable"[\s\S]*tone:\s*"ok"/);
+  assert.match(readinessSource, /configured_unreachable"[\s\S]*tone:\s*"warn"/);
+  assert.match(readinessSource, /hidden"[\s\S]*tone:\s*"hidden"/);
 });

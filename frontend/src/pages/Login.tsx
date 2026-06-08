@@ -27,6 +27,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { useAuth } from "@/auth/auth-context";
 import { ApiHttpError, apiPostJson, type SystemCheck, type SystemCheckItem } from "@/lib/api";
+import { readinessLoginSummary, type ReadinessLoginTone } from "@/lib/system-readiness";
 import { cn } from "@/lib/utils";
 import { TechBadge } from "@/features/auth/components/login/TechBadge";
 import { K8sLogo } from "@/features/auth/components/login/TechLogos";
@@ -197,7 +198,7 @@ function LoginSuccessOverlay() {
 type PublicStatusSummary = {
   label: string;
   hint?: string;
-  tone: "ok" | "warn" | "pending" | "hidden";
+  tone: ReadinessLoginTone;
 };
 
 type LoginStatusTone = PublicStatusSummary["tone"];
@@ -343,21 +344,7 @@ function probeStatusTile(
   pendingDetail: string,
   icon: React.ReactNode
 ): LoginStatusTile {
-  const status = normalizeProbeStatus(item?.status);
-  const detail = item?.msg || pendingDetail;
-  if (status === "readonly_reachable") {
-    return { label, state: "只读可达", detail, tone: "ok", icon };
-  }
-  if (status === "configured_unreachable") {
-    return { label, state: "不可达", detail, tone: "warn", icon };
-  }
-  if (status === "datasource_error") {
-    return { label, state: "数据源异常", detail, tone: "warn", icon };
-  }
-  if (status === "hidden") {
-    return { label, state: "受限", detail: "登录后查看详情", tone: "hidden", icon };
-  }
-  return { label, state: "未配置", detail: pendingDetail, tone: "pending", icon };
+  return { label, ...readinessLoginSummary(item, pendingDetail), icon };
 }
 
 function runtimeConnectionTile({

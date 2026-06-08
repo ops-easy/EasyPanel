@@ -17,8 +17,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/auth/auth-context";
 import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
-import { apiGetJson, type SystemCheckItem } from "@/lib/api";
+import { apiGetJson } from "@/lib/api";
 import { workspaceMenuVisible } from "@/lib/platform-permissions";
+import { readinessHasProblem, readinessHint, readinessMetric } from "@/lib/system-readiness";
 import { cn } from "@/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { type K8sSummary } from "@/features/cluster/pages/types";
@@ -208,45 +209,6 @@ function queryConfiguredMetric(
   configured: boolean
 ): string {
   return queryTextMetric(query, configured ? "已配置" : "未配置");
-}
-
-function readinessStatus(item?: SystemCheckItem): string {
-  return String(item?.status ?? "").trim().toLowerCase();
-}
-
-function readinessHasProblem(item?: SystemCheckItem): boolean {
-  const status = readinessStatus(item);
-  return status === "configured_unreachable" || status === "datasource_error";
-}
-
-function readinessIsReady(item?: SystemCheckItem): boolean {
-  return readinessStatus(item) === "readonly_reachable";
-}
-
-function readinessMetric(item: SystemCheckItem | undefined, fallback: number | string): number | string {
-  switch (readinessStatus(item)) {
-    case "readonly_reachable":
-      return "只读可达";
-    case "configured_unreachable":
-      return "不可达";
-    case "datasource_error":
-      return "数据源异常";
-    case "not_configured":
-      return "未配置";
-    case "hidden":
-      return "受限";
-    default:
-      return fallback;
-  }
-}
-
-function readinessHint(label: string, item?: SystemCheckItem): string {
-  const status = readinessStatus(item);
-  if (status === "readonly_reachable") return `${label} 只读探活可达。`;
-  if (status === "configured_unreachable") return `${label} 已配置但当前不可达：${item?.msg ?? "请检查网络、凭据或证书配置"}。`;
-  if (status === "datasource_error") return `${label} 数据源异常：${item?.msg ?? "请检查查询入口与返回格式"}。`;
-  if (status === "not_configured") return `${label} 未配置。`;
-  return "";
 }
 
 const HomeHub: React.FC = () => {

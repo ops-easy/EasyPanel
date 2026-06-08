@@ -1,7 +1,7 @@
 import type { SystemCheckItem } from "@/lib/api";
 
 export function readinessStatus(item?: SystemCheckItem): string {
-  return String(item?.status ?? "").trim().toLowerCase();
+  return String(item?.status ?? "").trim().toLowerCase().replaceAll("-", "_").replaceAll(" ", "_");
 }
 
 export function readinessHasProblem(item?: SystemCheckItem): boolean {
@@ -66,4 +66,33 @@ export function readinessAccessStatus(item?: SystemCheckItem, loading = false): 
   if (status === "configured_unreachable" || status === "datasource_error") return "warn";
   if (status === "not_configured") return "missing";
   return "unknown";
+}
+
+export type ReadinessLoginTone = "ok" | "warn" | "pending" | "hidden";
+
+export type ReadinessLoginSummary = {
+  state: string;
+  detail: string;
+  tone: ReadinessLoginTone;
+};
+
+export function readinessLoginSummary(
+  item: SystemCheckItem | undefined,
+  pendingDetail: string,
+  hiddenDetail = "登录后查看详情"
+): ReadinessLoginSummary {
+  const detail = item?.msg || pendingDetail;
+
+  switch (readinessStatus(item)) {
+    case "readonly_reachable":
+      return { state: "只读可达", detail, tone: "ok" };
+    case "configured_unreachable":
+      return { state: "不可达", detail, tone: "warn" };
+    case "datasource_error":
+      return { state: "数据源异常", detail, tone: "warn" };
+    case "hidden":
+      return { state: "受限", detail: hiddenDetail, tone: "hidden" };
+    default:
+      return { state: "未配置", detail: pendingDetail, tone: "pending" };
+  }
 }
