@@ -48,6 +48,20 @@ test("workbench status cards consume unified readonly probe checks", () => {
   assert.match(homeHubSource, /readinessMetric\(victoriaLogsReadiness/);
 });
 
+test("AI inspect workbench card uses runtime readiness instead of legacy prometheus status", () => {
+  assert.match(homeHubSource, /useRuntimeStatusQuery/);
+  assert.match(homeHubSource, /const prometheusReadiness = check\?\.checks\?\.prometheus/);
+  assert.match(homeHubSource, /const victoriaLogsReadiness = check\?\.checks\?\.victoriaLogs/);
+  assert.match(homeHubSource, /const k8sPrometheusReadiness = prometheusReadiness\?\.scopes\?\.k8s \?\? prometheusReadiness;/);
+  assert.match(homeHubSource, /const vcenterPrometheusReadiness = prometheusReadiness\?\.scopes\?\.vcenter \?\? prometheusReadiness;/);
+  assert.match(homeHubSource, /const aiPromK8sMetric = readinessMetric\(k8sPrometheusReadiness, "未配置"\);/);
+  assert.match(homeHubSource, /const aiPromVcMetric = readinessMetric\(vcenterPrometheusReadiness \?\? vcenterReadiness, "未配置"\);/);
+  assert.match(homeHubSource, /const aiVictoriaLogsMetric = readinessMetric\(victoriaLogsReadiness, "未配置"\);/);
+  assert.doesNotMatch(homeHubSource, /aiPromQ/);
+  assert.doesNotMatch(homeHubSource, /prometheus-status-hub/);
+  assert.doesNotMatch(homeHubSource, /\/api\/prometheus\/status/);
+});
+
 test("login public status shows the same readonly probe status vocabulary", () => {
   assert.match(loginSource, /from "@\/lib\/system-readiness"/);
   assert.match(loginSource, /readinessLoginSummary\(item,\s*pendingDetail\)/);

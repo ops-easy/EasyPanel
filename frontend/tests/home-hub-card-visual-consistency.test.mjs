@@ -321,7 +321,7 @@ test("bastion and AI inspect cards surface summary API errors", () => {
 
   assert.match(
     source,
-    /const aiSummaryError = !aiWorkspaceRestricted && \(aiAlertsQ\.isError \|\| aiProviderQ\.isError \|\| aiReportsQ\.isError \|\| aiPanelsQ\.isError \|\| aiPromQ\.isError\);/
+    /const aiSummaryError = !aiWorkspaceRestricted && \(aiAlertsQ\.isError \|\| aiProviderQ\.isError \|\| aiReportsQ\.isError \|\| aiPanelsQ\.isError\);/
   );
   assert.match(
     source,
@@ -351,20 +351,21 @@ test("bastion and AI inspect cards stay in checking state while summary queries 
 
   assert.match(
     source,
-    /aiLoading:\s+aiAlertsQ\.isLoading \|\| aiAlertsQ\.isFetching \|\|\s+aiProviderQ\.isLoading \|\| aiProviderQ\.isFetching \|\|\s+aiPanelsQ\.isLoading \|\| aiPanelsQ\.isFetching \|\|\s+aiReportsQ\.isLoading \|\| aiReportsQ\.isFetching \|\|\s+aiPromQ\.isLoading \|\| aiPromQ\.isFetching,/
+    /aiLoading:\s+runtimeQ\.isLoading \|\| runtimeQ\.isFetching \|\|\s+aiAlertsQ\.isLoading \|\| aiAlertsQ\.isFetching \|\|\s+aiProviderQ\.isLoading \|\| aiProviderQ\.isFetching \|\|\s+aiPanelsQ\.isLoading \|\| aiPanelsQ\.isFetching \|\|\s+aiReportsQ\.isLoading \|\| aiReportsQ\.isFetching,/
   );
 
-  for (const query of ["bastionTargetsQ", "aiAlertsQ", "aiProviderQ", "aiPanelsQ", "aiReportsQ", "aiPromQ"]) {
+  for (const query of ["bastionTargetsQ", "runtimeQ", "aiAlertsQ", "aiProviderQ", "aiPanelsQ", "aiReportsQ"]) {
     assert.match(source, new RegExp(`${query}\\.isFetching,`));
   }
 });
 
 test("AI inspect workbench metrics surface their own query errors", () => {
   assert.match(source, /function queryTextMetric\(\s*query: \{ isLoading: boolean; isFetching: boolean; isError: boolean \},\s*value: string\s*\): string/);
-  assert.match(source, /function queryConfiguredMetric\(\s*query: \{ isLoading: boolean; isFetching: boolean; isError: boolean \},\s*configured: boolean\s*\): string/);
 
-  assert.match(source, /const aiPromK8sMetric = queryConfiguredMetric\(aiPromQ, aiPromK8s\);/);
-  assert.match(source, /const aiPromVcMetric = queryConfiguredMetric\(aiPromQ, aiPromVc\);/);
+  assert.match(source, /const aiPromK8sMetric = readinessMetric\(k8sPrometheusReadiness, "未配置"\);/);
+  assert.match(source, /const aiPromVcMetric = readinessMetric\(vcenterPrometheusReadiness \?\? vcenterReadiness, "未配置"\);/);
+  assert.match(source, /const aiPrometheusProbeMetric = readinessMetric\(prometheusReadiness, aiPromK8sMetric\);/);
+  assert.match(source, /const aiVictoriaLogsMetric = readinessMetric\(victoriaLogsReadiness, "未配置"\);/);
   assert.match(source, /const aiRulesMetric = isAdmin \? queryTextMetric\(aiAlertsQ, `\$\{aiRulesOn\}\/\$\{aiRulesTotal\}`\) : "受限";/);
   assert.match(source, /const aiPanelsMetric = queryCountMetric\(aiPanelsQ, aiPanels\);/);
   assert.match(source, /const aiReportsMetric = isAdmin \? queryCountMetric\(aiReportsQ, aiReports\) : "受限";/);
@@ -378,6 +379,7 @@ test("AI inspect workbench metrics surface their own query errors", () => {
   assert.match(source, /<MetricItem label="通知通道" value=\{aiChannelsMetric\} \/>/);
 
   assert.doesNotMatch(source, /<MetricItem label="K8s 数据源" value=\{aiLoading \? "…" : aiPromK8s \? "已配置" : "未配置"\} \/>/);
+  assert.doesNotMatch(source, /queryConfiguredMetric/);
   assert.doesNotMatch(source, /<MetricItem label="监控面板" value=\{aiLoading \? "…" : aiPanels\} \/>/);
   assert.doesNotMatch(source, /<MetricItem label="通知通道" value=\{isAdmin \? \(aiLoading \? "…" : aiChannels\) : "受限"\} \/>/);
 });
@@ -433,7 +435,6 @@ test("hidden workbench modules do not keep fetching their summary APIs", () => {
     "ops-ai-provider-hub",
     "ops-inspect-reports-hub",
     "ops-monitoring-panels-hub",
-    "prometheus-status-hub",
   ]) {
     const start = source.indexOf(`queryKey: ["${key}"]`);
     assert.ok(start >= 0, `missing ${key}`);
@@ -441,6 +442,7 @@ test("hidden workbench modules do not keep fetching their summary APIs", () => {
     assert.match(block, /enabled: aiInspectSummaryEnabled/);
   }
 
+  assert.doesNotMatch(source, /prometheus-status-hub/);
   assert.doesNotMatch(source, /enabled: loggedIn,\s*$/m);
   assert.doesNotMatch(source, /enabled: loggedIn && isAdmin,\s*$/m);
 });

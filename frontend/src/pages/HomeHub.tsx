@@ -19,7 +19,7 @@ import { useAuth } from "@/auth/auth-context";
 import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
 import { apiGetJson } from "@/lib/api";
 import { workspaceMenuVisible } from "@/lib/platform-permissions";
-import { readinessHasProblem, readinessHint, readinessMetric } from "@/lib/system-readiness";
+import { readinessHasProblem, readinessHint, readinessIsConfigured, readinessMetric } from "@/lib/system-readiness";
 import { cn } from "@/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { type K8sSummary } from "@/features/cluster/pages/types";
@@ -204,13 +204,6 @@ function queryTextMetric(
   return value;
 }
 
-function queryConfiguredMetric(
-  query: { isLoading: boolean; isFetching: boolean; isError: boolean },
-  configured: boolean
-): string {
-  return queryTextMetric(query, configured ? "已配置" : "未配置");
-}
-
 const HomeHub: React.FC = () => {
   const { status: authStatus } = useAuth();
   const runtimeQ = useRuntimeStatusQuery();
@@ -222,6 +215,8 @@ const HomeHub: React.FC = () => {
   const ikuaiReadiness = check?.checks?.ikuai;
   const prometheusReadiness = check?.checks?.prometheus;
   const victoriaLogsReadiness = check?.checks?.victoriaLogs;
+  const k8sPrometheusReadiness = prometheusReadiness?.scopes?.k8s ?? prometheusReadiness;
+  const vcenterPrometheusReadiness = prometheusReadiness?.scopes?.vcenter ?? prometheusReadiness;
   const perm = cfg?.permissions;
   const hubRole = authStatus?.role;
   const isAdmin = authStatus?.role === "admin";
@@ -357,15 +352,6 @@ const HomeHub: React.FC = () => {
     queryKey: ["ops-monitoring-panels-hub"],
     queryFn: ({ signal }) =>
       apiGetJson<{ panels: { id: string }[] }>("/api/ops/monitoring/panels", { signal }),
-    enabled: aiInspectSummaryEnabled,
-  });
-  const aiPromQ = useQuery({
-    queryKey: ["prometheus-status-hub"],
-    queryFn: ({ signal }) =>
-      apiGetJson<{ scopes?: { k8s?: { configured?: boolean }; vcenter?: { configured?: boolean } } }>(
-        "/api/prometheus/status",
-        { signal }
-      ),
     enabled: aiInspectSummaryEnabled,
   });
 
@@ -610,8 +596,6 @@ const HomeHub: React.FC = () => {
     aiReports,
     aiPanels,
     aiProviderEnabled,
-    aiPromK8s,
-    aiPromVc,
     aiLoading,
   } = useMemo(() => {
     const bastionTargets = bastionTargetsQ.data?.targets ?? [];
@@ -632,14 +616,12 @@ const HomeHub: React.FC = () => {
       aiReports: aiReportsQ.data?.reports?.length ?? 0,
       aiPanels: aiPanelsQ.data?.panels?.length ?? 0,
       aiProviderEnabled: aiProviderQ.data?.endpoint?.enabled ?? false,
-      aiPromK8s: aiPromQ.data?.scopes?.k8s?.configured ?? false,
-      aiPromVc: aiPromQ.data?.scopes?.vcenter?.configured ?? false,
       aiLoading:
+        runtimeQ.isLoading || runtimeQ.isFetching ||
         aiAlertsQ.isLoading || aiAlertsQ.isFetching ||
         aiProviderQ.isLoading || aiProviderQ.isFetching ||
         aiPanelsQ.isLoading || aiPanelsQ.isFetching ||
-        aiReportsQ.isLoading || aiReportsQ.isFetching ||
-        aiPromQ.isLoading || aiPromQ.isFetching,
+        aiReportsQ.isLoading || aiReportsQ.isFetching,
     };
   }, [
     bastionTargetsQ.data?.targets,
@@ -650,7 +632,8 @@ const HomeHub: React.FC = () => {
     aiReportsQ.data?.reports,
     aiPanelsQ.data?.panels,
     aiProviderQ.data?.endpoint,
-    aiPromQ.data?.scopes,
+    runtimeQ.isLoading,
+    runtimeQ.isFetching,
     aiAlertsQ.isLoading,
     aiAlertsQ.isFetching,
     aiProviderQ.isLoading,
@@ -659,8 +642,6 @@ const HomeHub: React.FC = () => {
     aiPanelsQ.isFetching,
     aiReportsQ.isLoading,
     aiReportsQ.isFetching,
-    aiPromQ.isLoading,
-    aiPromQ.isFetching,
   ]);
 
   const appCenterRedisMetric = showAppCenter ? queryCountMetric(redisQ, nRedis) : "受限";
@@ -692,16 +673,20 @@ const HomeHub: React.FC = () => {
     ? "已就绪"
     : "待配置";
   const bastionNeedsSetup = !bastionStatusLoading && !bastionSummaryError && !bastionReady && isAdmin;
+  const aiPromK8sConfigured = readinessIsConfigured(k8sPrometheusReadiness);
+  const aiPromVcConfigured = readinessIsConfigured(vcenterPrometheusReadiness ?? vcenterReadiness);
+  const aiVictoriaLogsConfigured = readinessIsConfigured(victoriaLogsReadiness);
   const aiWorkspaceReady =
     aiProviderEnabled ||
-    aiPromK8s ||
-    aiPromVc ||
+    aiPromK8sConfigured ||
+    aiPromVcConfigured ||
+    aiVictoriaLogsConfigured ||
     aiPanels > 0 ||
     aiReports > 0 ||
     aiRulesTotal > 0 ||
     aiChannels > 0;
   const aiWorkspaceRestricted = !isAdmin;
-  const aiSummaryError = !aiWorkspaceRestricted && (aiAlertsQ.isError || aiProviderQ.isError || aiReportsQ.isError || aiPanelsQ.isError || aiPromQ.isError);
+  const aiSummaryError = !aiWorkspaceRestricted && (aiAlertsQ.isError || aiProviderQ.isError || aiReportsQ.isError || aiPanelsQ.isError);
   const aiStatusTone: HubStatusTone = aiWorkspaceRestricted
     ? "slate"
     : aiSummaryError
@@ -717,10 +702,10 @@ const HomeHub: React.FC = () => {
     ? "已就绪"
     : "待配置";
   const aiNeedsSetup = !aiLoading && !aiWorkspaceRestricted && !aiSummaryError && !aiWorkspaceReady;
-  const aiPromK8sMetric = queryConfiguredMetric(aiPromQ, aiPromK8s);
-  const aiPromVcMetric = queryConfiguredMetric(aiPromQ, aiPromVc);
+  const aiPromK8sMetric = readinessMetric(k8sPrometheusReadiness, "未配置");
+  const aiPromVcMetric = readinessMetric(vcenterPrometheusReadiness ?? vcenterReadiness, "未配置");
   const aiPrometheusProbeMetric = readinessMetric(prometheusReadiness, aiPromK8sMetric);
-  const aiVictoriaLogsMetric = readinessMetric(victoriaLogsReadiness, cfg?.victoriaLogsConfigured ? "已配置" : "未配置");
+  const aiVictoriaLogsMetric = readinessMetric(victoriaLogsReadiness, "未配置");
   const aiRulesMetric = isAdmin ? queryTextMetric(aiAlertsQ, `${aiRulesOn}/${aiRulesTotal}`) : "受限";
   const aiPanelsMetric = queryCountMetric(aiPanelsQ, aiPanels);
   const aiReportsMetric = isAdmin ? queryCountMetric(aiReportsQ, aiReports) : "受限";
@@ -780,7 +765,7 @@ const HomeHub: React.FC = () => {
     ...(showNetwork ? [networkDevicesQ] : []),
     ...(baotaIngressSummaryEnabled ? [baotaIngressQ] : []),
     ...(aiInspectSummaryEnabled && isAdmin ? [aiAlertsQ, aiProviderQ, aiReportsQ] : []),
-    ...(aiInspectSummaryEnabled ? [aiPanelsQ, aiPromQ] : []),
+    ...(aiInspectSummaryEnabled ? [aiPanelsQ] : []),
     ...(docsSummaryEnabled ? [docsRegularQ, docsGuidesQ, docsMediaQ] : []),
     ...(docsSummaryEnabled && isAdmin ? [docsStorageQ] : []),
   ] as const;

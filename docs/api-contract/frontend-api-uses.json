@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "frontend-api-uses",
-  "routeCount": 738,
+  "routeCount": 737,
   "routes": [
     {
       "method": "UNKNOWN",
@@ -231,7 +231,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/cloud-vm/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 303,
+      "sourceLine": 298,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -399,7 +399,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/hermes/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 315,
+      "sourceLine": 310,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -607,7 +607,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/kafka/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 297,
+      "sourceLine": 292,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -975,7 +975,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/mysql/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 291,
+      "sourceLine": 286,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1295,7 +1295,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/openclaw/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 309,
+      "sourceLine": 304,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1591,7 +1591,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/opensearch/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 321,
+      "sourceLine": 316,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1735,7 +1735,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/instances",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 285,
+      "sourceLine": 280,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -1895,7 +1895,7 @@
       "method": "GET",
       "pathPattern": "/api/app-center/redis/status",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 279,
+      "sourceLine": 274,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2151,7 +2151,7 @@
       "method": "GET",
       "pathPattern": "/api/bastion/targets",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 333,
+      "sourceLine": 328,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2615,7 +2615,7 @@
       "method": "GET",
       "pathPattern": "/api/dns/domains",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 326,
+      "sourceLine": 321,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2791,7 +2791,7 @@
       "method": "GET",
       "pathPattern": "/api/docs",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 388,
+      "sourceLine": 374,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2799,7 +2799,7 @@
       "method": "GET",
       "pathPattern": "/api/docs",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 395,
+      "sourceLine": 381,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2879,7 +2879,7 @@
       "method": "GET",
       "pathPattern": "/api/docs/attachment-storage",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 409,
+      "sourceLine": 395,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2951,7 +2951,7 @@
       "method": "GET",
       "pathPattern": "/api/docs/media",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 402,
+      "sourceLine": 388,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3191,7 +3191,7 @@
       "method": "GET",
       "pathPattern": "/api/ingresses",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 381,
+      "sourceLine": 367,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4063,7 +4063,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/summary",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 249,
+      "sourceLine": 244,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4191,7 +4191,7 @@
       "method": "GET",
       "pathPattern": "/api/network/devices",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 374,
+      "sourceLine": 360,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4495,7 +4495,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/ai-provider",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 347,
+      "sourceLine": 342,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4527,7 +4527,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/alerts",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 342,
+      "sourceLine": 337,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4639,7 +4639,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/inspect/reports",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 353,
+      "sourceLine": 348,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4687,7 +4687,7 @@
       "method": "GET",
       "pathPattern": "/api/ops/monitoring/panels",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 359,
+      "sourceLine": 354,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5020,14 +5020,6 @@
       "kind": "http"
     },
     {
-      "method": "GET",
-      "pathPattern": "/api/prometheus/status",
-      "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 366,
-      "needsManualReview": false,
-      "kind": "http"
-    },
-    {
       "method": "POST",
       "pathPattern": "/api/prometheus/validate-config-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/k8s/K8sGraphicEditDialog.tsx",
@@ -5079,7 +5071,7 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 270,
+      "sourceLine": 265,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5679,7 +5671,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/hosts",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 263,
+      "sourceLine": 258,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5751,7 +5743,7 @@
       "method": "GET",
       "pathPattern": "/api/vcenter/vms",
       "sourceFile": "frontend/src/pages/HomeHub.tsx",
-      "sourceLine": 256,
+      "sourceLine": 251,
       "needsManualReview": false,
       "kind": "http"
     },

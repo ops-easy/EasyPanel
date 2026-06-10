@@ -130,10 +130,13 @@ npm run build
 npm run smoke:dist
 SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy
 SMOKE_BASE_URL=https://your-staging.example.com SMOKE_D_PATH=/d/ npm run smoke:deploy
+SMOKE_BASE_URL=https://your-staging.example.com SMOKE_READONLY_READINESS=1 npm run smoke:deploy
+SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy:readiness
+npm run smoke:deploy:readiness -- --base-url https://your-staging.example.com
 SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:readonly-readiness
 ```
 
-`smoke:readonly-readiness` 是真实已连接环境的只读就绪预设：它只发起 `GET` 请求，复用 `EASYPANEL_RENDER_SMOKE_ROUTE` 的路由过滤语义，默认检查 `/login`、`/`、`/cluster/compute/dashboard`、`/cluster/network/dashboard`、`/cluster/baota` 和 `/cluster/ai-inspect/dashboard`，并要求 vCenter、PVE、OpenWrt、iKuai、Prometheus、VictoriaLogs 的新探活状态为 `readonly_reachable`。
+`smoke:deploy` 默认仍只做部署安全的远端 SPA、资源和公开接口检查；本地 `npm run check` 只调用 `check:deploy` 的 dist/nginx 合约，不会触发真实环境只读探针。要在 staging 或真实已连接环境里把只读 readiness 一起纳入部署验收，可设置 `SMOKE_READONLY_READINESS=1` 后运行 `smoke:deploy`，或直接运行组合入口 `smoke:deploy:readiness`。组合入口支持 `SMOKE_BASE_URL`，也支持 npm 透传的 `--base-url`；使用 `--base-url` 时，`smoke:deploy` 会把同一个地址写入 `SMOKE_BASE_URL` 后再动态导入只读 readiness 脚本，确保两个阶段检查同一个目标环境。`smoke:readonly-readiness` 也保留为单独预设：它只发起 `GET` 请求，复用 `EASYPANEL_RENDER_SMOKE_ROUTE` 的路由过滤语义，默认检查 `/login`、`/`、`/cluster/compute/dashboard`、`/cluster/network/dashboard`、`/cluster/baota` 和 `/cluster/ai-inspect/dashboard`，并要求 vCenter、PVE、OpenWrt、iKuai、Prometheus、VictoriaLogs 的新探活状态为 `readonly_reachable`。
 
 在 staging 上验证时先确保该环境已经连接对应数据源，再从 `frontend/` 目录执行上面的命令。脚本会检查 SPA 路由、构建资源、`/api/login/public-status` 的公开只读探针，以及带鉴权时的 `/api/runtime/status`；如果运行时状态接口需要登录，可设置 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN`，否则脚本会保留公开探针验证并提示跳过受保护接口。需要聚焦时可用 `EASYPANEL_RENDER_SMOKE_ROUTE=/cluster/ai-inspect/dashboard` 缩小路由集合，用 `SMOKE_READINESS_CHECKS=prometheus,victoriaLogs` 缩小只读探针集合，慢环境可调大 `SMOKE_REQUEST_TIMEOUT_MS`。
 

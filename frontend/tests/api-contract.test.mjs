@@ -76,6 +76,16 @@ test("frontend runtime API paths have concrete methods", () => {
   assert.deepEqual(unknownRuntime, [], `frontend runtime API paths without method inference:\n${unknownRuntime.join("\n")}`);
 });
 
+test("HomeHub AI inspect summary does not use legacy prometheus status contract", () => {
+  const frontend = readJSON("docs/api-contract/frontend-api-uses.json").routes;
+  const legacyHomeHubUses = frontend
+    .filter((use) => use.sourceFile === "frontend/src/pages/HomeHub.tsx")
+    .filter((use) => use.pathPattern === "/api/prometheus/status")
+    .map((use) => `${use.method} ${use.pathPattern} at ${use.sourceFile}:${use.sourceLine}`);
+
+  assert.deepEqual(legacyHomeHubUses, [], `HomeHub still records legacy prometheus status API:\n${legacyHomeHubUses.join("\n")}`);
+});
+
 test("frontend dynamic API paths stay visible for manual review", () => {
   const frontend = readJSON("docs/api-contract/frontend-api-uses.json").routes;
   const dynamicUses = frontend.filter((use) => use.needsManualReview);

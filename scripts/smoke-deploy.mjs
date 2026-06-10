@@ -65,6 +65,20 @@ const requiredDeploySmokeRoutes = [
   "/docs/:docId/edit",
 ];
 
+function argValue(name) {
+  const index = process.argv.indexOf(name);
+  if (index < 0) return "";
+  return process.argv[index + 1] ?? "";
+}
+
+function argFlag(name) {
+  return process.argv.includes(name);
+}
+
+function envFlag(name) {
+  return ["1", "true", "yes", "on"].includes(String(process.env[name] ?? "").trim().toLowerCase());
+}
+
 function readCriticalRoutes() {
   const source = readFileSync(routeInventoryPath, "utf8");
   const block = source.match(/export const criticalRoutes = \[([\s\S]*?)\] as const;/);
@@ -93,7 +107,7 @@ function toSmokePath(route) {
   });
 }
 
-const base = process.env.SMOKE_BASE_URL;
+const base = argValue("--base-url") || process.env.SMOKE_BASE_URL;
 
 if (!base) {
   throw new Error("SMOKE_BASE_URL is required, for example: SMOKE_BASE_URL=https://staging.example.com npm run smoke:deploy");
@@ -164,3 +178,8 @@ for (const probePath of backendPassthroughProbePaths) {
 console.log(
   `frontend deploy smoke ok: base=${baseUrl.origin}, spaRoutes=${spaSmokeRoutes.length}, assets=${assets.length}, unauth=${unauthenticatedProbePaths.length}, passthrough=${backendPassthroughProbePaths.length}`,
 );
+
+if (argFlag("--readonly-readiness") || envFlag("SMOKE_READONLY_READINESS")) {
+  process.env.SMOKE_BASE_URL = base;
+  await import("./smoke-readonly-readiness.mjs");
+}

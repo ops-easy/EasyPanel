@@ -18,6 +18,7 @@
     "preview": "vite preview",
     "smoke:readonly-readiness": "node ../scripts/smoke-readonly-readiness.mjs",
     "smoke:deploy": "node ../scripts/smoke-deploy.mjs",
+    "smoke:deploy:readiness": "node ../scripts/smoke-deploy.mjs --readonly-readiness",
     "smoke:dist": "node ../scripts/smoke-web-dist.mjs",
     "smoke:render": "npm run check:render",
     "test": "node --test tests/*.test.mjs"

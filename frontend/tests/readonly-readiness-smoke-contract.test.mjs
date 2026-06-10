@@ -15,6 +15,31 @@ test("readonly readiness smoke has a single npm preset", () => {
   );
 });
 
+test("deploy smoke can opt into readonly readiness without local check", () => {
+  assert.equal(
+    packageJson.scripts["smoke:deploy:readiness"],
+    "node ../scripts/smoke-deploy.mjs --readonly-readiness"
+  );
+  assert.equal(packageJson.scripts["smoke:deploy"], "node ../scripts/smoke-deploy.mjs");
+  assert.doesNotMatch(packageJson.scripts.check, /readonly-readiness|smoke:deploy:readiness|SMOKE_READONLY_READINESS/);
+
+  const deploySmoke = read("../../scripts/smoke-deploy.mjs");
+  assert.match(deploySmoke, /SMOKE_READONLY_READINESS/);
+  assert.match(deploySmoke, /--readonly-readiness/);
+  assert.match(deploySmoke, /import\("\.\/smoke-readonly-readiness\.mjs"\)/);
+});
+
+test("deploy smoke forwards CLI base-url to readonly readiness child", () => {
+  const deploySmoke = read("../../scripts/smoke-deploy.mjs");
+
+  assert.match(deploySmoke, /const\s+base\s*=\s*argValue\("--base-url"\)\s*\|\|\s*process\.env\.SMOKE_BASE_URL/);
+  assert.match(deploySmoke, /process\.env\.SMOKE_BASE_URL\s*=\s*base/);
+  assert.match(
+    deploySmoke,
+    /process\.env\.SMOKE_BASE_URL\s*=\s*base[\s\S]*await\s+import\("\.\/smoke-readonly-readiness\.mjs"\)/
+  );
+});
+
 test("readonly readiness smoke keeps the focused connected-environment route set", () => {
   assert.ok(existsSync(smokeScriptUrl), "scripts/smoke-readonly-readiness.mjs should exist");
   const source = read("../../scripts/smoke-readonly-readiness.mjs");
@@ -60,6 +85,7 @@ test("readonly readiness smoke command is documented with the verification notes
 
   assert.ok(readme.includes("smoke:readonly-readiness"));
   assert.ok(readme.includes("SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:readonly-readiness"));
+  assert.ok(readme.includes("npm run smoke:deploy:readiness -- --base-url https://your-staging.example.com"));
   assert.ok(readme.includes("SMOKE_AUTH_COOKIE"));
   assert.ok(readme.includes("SMOKE_BEARER_TOKEN"));
   assert.ok(readme.includes("SMOKE_READINESS_CHECKS"));
