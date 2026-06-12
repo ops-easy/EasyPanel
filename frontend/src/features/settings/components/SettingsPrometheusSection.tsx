@@ -28,30 +28,12 @@ import {
   apiPostJson,
   apiPutJson,
   prometheusQueryApi,
-  type AppConfig,
   type PrometheusDiscoverCandidate,
 } from "@/lib/api";
+import { useRuntimeStatusQuery } from "@/hooks/use-runtime-status";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { withOpsMutationConfirm } from "@/lib/ops-mutation-confirm";
 import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
-
-type PromScopeStatus = {
-  configured: boolean;
-  urlHint: string;
-  sourceOverride: boolean;
-};
-
-type PromStatus = {
-  configured: boolean;
-  urlHint: string;
-  sourceEnv: boolean;
-  sourceOverride: boolean;
-  scopes?: {
-    k8s?: PromScopeStatus;
-    vcenter?: PromScopeStatus;
-    cloud?: PromScopeStatus;
-  };
-};
 
 type SettingsPrometheusSectionProps = {
   locale?: "zh" | "en";
@@ -74,11 +56,7 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
   const [dsSaving, setDsSaving] = useState(false);
 
   const cfgQ = useAppConfig();
-
-  const promStatusQ = useQuery({
-    queryKey: ["prometheus-status"],
-    queryFn: ({ signal }) => apiGetJson<PromStatus>("/api/prometheus/status", { signal }),
-  });
+  const runtimeQ = useRuntimeStatusQuery();
 
   const discoverQ = useQuery({
     queryKey: ["prometheus-discover"],
@@ -88,7 +66,15 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
   });
 
   const cfg = cfgQ.data;
+  const check = runtimeQ.data?.systemCheck;
+  const prometheusReadiness = check?.checks?.prometheus;
   const k8sOk = cfg?.k8sConfigured === true;
+
+  const invalidateMonitoringReadiness = () => {
+    void queryClient.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
+    void queryClient.invalidateQueries({ queryKey: ["runtime-status"] });
+    void queryClient.invalidateQueries({ queryKey: ["cluster-prometheus-snapshot"] });
+  };
 
   const runPrometheus = async (q?: string) => {
     const query = (q ?? promql).trim();
@@ -111,10 +97,7 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
       await apiPostJson("/api/prometheus/source", withOpsMutationConfirm({ baseUrl: promBase.trim(), scope: "k8s" }));
       setPromBase("");
       setSelectedDiscoverId("");
-      void queryClient.invalidateQueries({ queryKey: ["prometheus-status"] });
-      void queryClient.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
-      void queryClient.invalidateQueries({ queryKey: ["runtime-status"] });
-      void queryClient.invalidateQueries({ queryKey: ["cluster-prometheus-snapshot"] });
+      invalidateMonitoringReadiness();
       setPromErr(null);
       toast.success(en ? "Saved (session override)." : "已保存（当前进程）");
     } catch (e) {
@@ -140,9 +123,7 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
       const cur = await apiGetJson<Record<string, unknown>>("/api/settings/runtime");
       await apiPutJson("/api/settings/runtime", withOpsMutationConfirm({ ...cur, prometheusUrlK8s: url }));
       await apiPostJson("/api/prometheus/source", withOpsMutationConfirm({ baseUrl: url, scope: "k8s" }));
-      void queryClient.invalidateQueries({ queryKey: ["prometheus-status"] });
-      void queryClient.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
-      void queryClient.invalidateQueries({ queryKey: ["cluster-prometheus-snapshot"] });
+      invalidateMonitoringReadiness();
       setPromErr(null);
       toast.success(en ? "Saved to MySQL dynamic config." : "已保存并写入 MySQL 动态配置");
     } catch (e) {
@@ -169,9 +150,7 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
       if (prom) {
         await apiPostJson("/api/prometheus/source", withOpsMutationConfirm({ baseUrl: prom, scope: "k8s" }));
       }
-      void queryClient.invalidateQueries({ queryKey: ["prometheus-status"] });
-      void queryClient.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
-      void queryClient.invalidateQueries({ queryKey: ["cluster-prometheus-snapshot"] });
+      invalidateMonitoringReadiness();
       setDsOpen(false);
       toast.success(en ? "Saved to MySQL dynamic config." : "已保存并写入 MySQL 动态配置");
     } catch (e) {
@@ -186,9 +165,7 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
   const clearPrometheus = async () => {
     try {
       await apiPostJson("/api/prometheus/source", withOpsMutationConfirm({ baseUrl: "", scope: "k8s" }));
-      void queryClient.invalidateQueries({ queryKey: ["prometheus-status"] });
-      void queryClient.invalidateQueries({ queryKey: APP_CONFIG_QUERY_KEY });
-      void queryClient.invalidateQueries({ queryKey: ["runtime-status"] });
+      invalidateMonitoringReadiness();
       toast.success(en ? "Override cleared." : "已清除进程内覆盖");
     } catch (e) {
       const m = extractErrorMessage(e);
@@ -235,9 +212,9 @@ const SettingsPrometheusSection: React.FC<SettingsPrometheusSectionProps> = ({
 
   const candidates = discoverQ.data?.candidates ?? [];
 
-  const k8sScope = promStatusQ.data?.scopes?.k8s;
-  const k8sConfigured = k8sScope?.configured ?? promStatusQ.data?.configured;
-  const k8sUrlHint = k8sScope?.urlHint ?? promStatusQ.data?.urlHint;
+  const k8sScope = prometheusReadiness?.scopes?.k8s;
+  const k8sConfigured = k8sScope?.configured ?? prometheusReadiness?.configured;
+  const k8sUrlHint = k8sScope?.urlHint ?? prometheusReadiness?.urlHint;
 
   return (
     <div className="mb-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
