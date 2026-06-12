@@ -140,7 +140,7 @@ SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:readonly-readiness
 
 在 staging 上验证时先确保该环境已经连接对应数据源，再从 `frontend/` 目录执行上面的命令。脚本会检查 SPA 路由、构建资源、`/api/login/public-status` 的公开只读探针，以及带鉴权时的 `/api/runtime/status`；如果运行时状态接口需要登录，可设置 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN`，否则脚本会保留公开探针验证并提示跳过受保护接口。需要聚焦时可用 `EASYPANEL_RENDER_SMOKE_ROUTE=/cluster/ai-inspect/dashboard` 缩小路由集合，用 `SMOKE_READINESS_CHECKS=prometheus,victoriaLogs` 缩小只读探针集合，慢环境可调大 `SMOKE_REQUEST_TIMEOUT_MS`。
 
-也可以在 GitHub Actions 手动运行 `.github/workflows/frontend-remote-smoke.yml`，传入 `base-url` 后由工作流执行 `npm ci` 和远端 readiness smoke；如目标环境需要登录，在仓库 Secrets 配置 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN` 即可。
+也可以在 GitHub Actions 手动运行 `.github/workflows/frontend-remote-smoke.yml`，传入 `base-url` 后由工作流在 `frontend/` 目录执行 `npm ci` 与 `npm run smoke:deploy:readiness -- --base-url "$REMOTE_SMOKE_BASE_URL"`；如目标环境需要登录，在仓库 Secrets 配置可选的 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN` 即可。
 
 ### Kustomize 部署
 
@@ -186,7 +186,7 @@ helm install easypanel ./k8s/charts/easypanel \
 
 后端镜像使用多阶段构建，最终运行镜像基于 `distroless/static-debian12:nonroot`，包含后端二进制与 `/app/helm`（用于容器内渲染 kube-prometheus-stack）；前端镜像基于 Nginx，并将 `/api/`、`/r/` 与公开媒体 `/d/` 反向代理到后端 Service。
 
-预发或生产部署完成后，可手动触发 `.github/workflows/frontend-remote-smoke.yml`，输入部署后的 `base-url` 对远端前端入口和只读 readiness 探针做烟测。
+预发或生产部署完成后，可手动触发 `.github/workflows/frontend-remote-smoke.yml`，输入部署后的 `base-url` 对远端前端入口和只读 readiness 探针做烟测。该工作流运行 `npm run smoke:deploy:readiness`，并会透传仓库 Secrets 中可选的 `SMOKE_AUTH_COOKIE` / `SMOKE_BEARER_TOKEN`。
 
 ## 关键配置
 

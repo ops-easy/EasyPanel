@@ -86,6 +86,21 @@ test("HomeHub AI inspect summary does not use legacy prometheus status contract"
   assert.deepEqual(legacyHomeHubUses, [], `HomeHub still records legacy prometheus status API:\n${legacyHomeHubUses.join("\n")}`);
 });
 
+test("Prometheus runtime readiness migration removes the legacy status endpoint contract", () => {
+  const backend = readJSON("docs/api-contract/backend-routes.json").routes;
+  const frontend = readJSON("docs/api-contract/frontend-api-uses.json").routes;
+
+  const backendLegacyRoutes = backend
+    .filter((route) => route.pathPattern === "/api/prometheus/status")
+    .map((route) => `${route.method} ${route.pathPattern} at ${route.sourceFile}:${route.sourceLine}`);
+  const frontendLegacyUses = frontend
+    .filter((use) => use.pathPattern === "/api/prometheus/status")
+    .map((use) => `${use.method} ${use.pathPattern} at ${use.sourceFile}:${use.sourceLine}`);
+
+  assert.deepEqual(backendLegacyRoutes, [], `backend still exposes legacy prometheus status API:\n${backendLegacyRoutes.join("\n")}`);
+  assert.deepEqual(frontendLegacyUses, [], `frontend still records legacy prometheus status API:\n${frontendLegacyUses.join("\n")}`);
+});
+
 test("frontend dynamic API paths stay visible for manual review", () => {
   const frontend = readJSON("docs/api-contract/frontend-api-uses.json").routes;
   const dynamicUses = frontend.filter((use) => use.needsManualReview);

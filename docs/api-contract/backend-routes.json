@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "backend-routes",
-  "routeCount": 541,
+  "routeCount": 540,
   "routes": [
     {
       "method": "GET",
@@ -2731,55 +2731,49 @@
       "method": "GET",
       "pathPattern": "/api/prometheus/discover",
       "sourceFile": "backend/common/core/web_exports.go",
-      "sourceLine": 16
+      "sourceLine": 15
     },
     {
       "method": "GET",
       "pathPattern": "/api/prometheus/query",
       "sourceFile": "backend/common/core/web_exports.go",
-      "sourceLine": 18
+      "sourceLine": 17
     },
     {
       "method": "POST",
       "pathPattern": "/api/prometheus/query",
       "sourceFile": "backend/common/core/web_exports.go",
-      "sourceLine": 19
+      "sourceLine": 18
     },
     {
       "method": "GET",
+      "pathPattern": "/api/prometheus/query_range",
+      "sourceFile": "backend/common/core/web_exports.go",
+      "sourceLine": 19
+    },
+    {
+      "method": "POST",
       "pathPattern": "/api/prometheus/query_range",
       "sourceFile": "backend/common/core/web_exports.go",
       "sourceLine": 20
     },
     {
       "method": "POST",
-      "pathPattern": "/api/prometheus/query_range",
-      "sourceFile": "backend/common/core/web_exports.go",
-      "sourceLine": 21
-    },
-    {
-      "method": "POST",
       "pathPattern": "/api/prometheus/source",
       "sourceFile": "backend/common/core/web_exports.go",
-      "sourceLine": 17
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/prometheus/status",
-      "sourceFile": "backend/common/core/web_exports.go",
-      "sourceLine": 15
+      "sourceLine": 16
     },
     {
       "method": "POST",
       "pathPattern": "/api/prometheus/validate-config-yaml",
       "sourceFile": "backend/common/core/web_exports.go",
-      "sourceLine": 22
+      "sourceLine": 21
     },
     {
       "method": "GET",
       "pathPattern": "/api/prometheus/vcenter-metrics",
       "sourceFile": "backend/common/core/web_exports.go",
-      "sourceLine": 23
+      "sourceLine": 22
     },
     {
       "method": "GET",

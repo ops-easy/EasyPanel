@@ -3,6 +3,7 @@ package core
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -33,9 +34,32 @@ func assertConfirmRequired(t *testing.T, w *httptest.ResponseRecorder) {
 func TestPrometheusSourceRejectsMissingConfirmationBeforeMutation(t *testing.T) {
 	c, w := newConfirmTestContext(http.MethodPost, "/api/prometheus/source", `{"baseUrl":"https://prom.example","scope":"k8s"}`)
 
-	handlePrometheusSource(c, Config{})
+	handlePrometheusSource(c, &ServerApp{})
 
 	assertConfirmRequired(t, w)
+}
+
+func TestPrometheusSourceInvalidatesRuntimeStatusCacheContract(t *testing.T) {
+	raw, err := os.ReadFile("prometheus_proxy.go")
+	if err != nil {
+		t.Fatalf("read prometheus_proxy.go: %v", err)
+	}
+	source := string(raw)
+	start := strings.Index(source, "func handlePrometheusSource")
+	if start < 0 {
+		t.Fatal("missing handlePrometheusSource")
+	}
+	end := strings.Index(source[start:], "\nfunc prometheusFetchInstant")
+	if end < 0 {
+		t.Fatal("missing prometheusFetchInstant after handlePrometheusSource")
+	}
+	body := source[start : start+end]
+	if !strings.Contains(body, "func handlePrometheusSource(c *gin.Context, app *ServerApp)") {
+		t.Fatal("Prometheus source mutation must receive ServerApp so it can evict shared runtime-status cache")
+	}
+	if !strings.Contains(body, "InvalidateRuntimeStatusCache(context.Background(), app)") {
+		t.Fatal("Prometheus source mutation must evict runtime-status cache after process override changes")
+	}
 }
 
 func TestDocsAttachmentStorageRejectsMissingConfirmationBeforeKVLookup(t *testing.T) {

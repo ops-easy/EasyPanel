@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "frontend-api-uses",
-  "routeCount": 737,
+  "routeCount": 736,
   "routes": [
     {
       "method": "UNKNOWN",
@@ -4943,7 +4943,7 @@
       "method": "GET",
       "pathPattern": "/api/prometheus/discover",
       "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 86,
+      "sourceLine": 64,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4975,7 +4975,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/source",
       "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 111,
+      "sourceLine": 97,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4983,7 +4983,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/source",
       "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 142,
+      "sourceLine": 125,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4991,7 +4991,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/source",
       "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 170,
+      "sourceLine": 151,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -4999,7 +4999,7 @@
       "method": "POST",
       "pathPattern": "/api/prometheus/source",
       "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 188,
+      "sourceLine": 167,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5010,14 +5010,6 @@
       "sourceLine": 46,
       "needsManualReview": false,
       "kind": "literal"
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/prometheus/status",
-      "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 80,
-      "needsManualReview": false,
-      "kind": "http"
     },
     {
       "method": "POST",
@@ -5375,7 +5367,7 @@
       "method": "GET",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 128,
+      "sourceLine": 111,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5383,7 +5375,7 @@
       "method": "GET",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 140,
+      "sourceLine": 123,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5391,7 +5383,7 @@
       "method": "GET",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 167,
+      "sourceLine": 148,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5439,7 +5431,7 @@
       "method": "PUT",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 141,
+      "sourceLine": 124,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5447,7 +5439,7 @@
       "method": "PUT",
       "pathPattern": "/api/settings/runtime",
       "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 168,
+      "sourceLine": 149,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -5567,7 +5559,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/v1/query",
       "sourceFile": "frontend/src/features/settings/components/SettingsPrometheusSection.tsx",
-      "sourceLine": 253,
+      "sourceLine": 230,
       "needsManualReview": false,
       "kind": "literal"
     },

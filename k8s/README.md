@@ -107,9 +107,11 @@ npm run build
 npm run smoke:dist
 SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy
 SMOKE_BASE_URL=https://your-staging.example.com SMOKE_D_PATH=/d/ npm run smoke:deploy
+SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy:readiness
+npm run smoke:deploy:readiness -- --base-url https://your-staging.example.com
 ```
 
-也可以在 GitHub Actions 手动触发 `.github/workflows/frontend-remote-smoke.yml`，输入部署后的 `base-url`；如果目标环境需要登录，在仓库 Secrets 配置 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN`。
+`smoke:deploy:readiness` 会先执行远端前端部署烟测，再执行只读 readiness 探针；如果 `/api/runtime/status` 需要登录，可设置 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN`。也可以在 GitHub Actions 手动触发 `.github/workflows/frontend-remote-smoke.yml`，输入部署后的 `base-url`，工作流会在 `frontend/` 目录执行 `npm ci` 与 `npm run smoke:deploy:readiness -- --base-url "$REMOTE_SMOKE_BASE_URL"`，并透传仓库 Secrets 中可选的 `SMOKE_AUTH_COOKIE` / `SMOKE_BEARER_TOKEN`。
 
 ## 常用命令
 

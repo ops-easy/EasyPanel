@@ -91,3 +91,36 @@ test("readonly readiness smoke command is documented with the verification notes
   assert.ok(readme.includes("SMOKE_READINESS_CHECKS"));
   assert.ok(readme.includes("/cluster/ai-inspect/dashboard"));
 });
+
+test("frontend remote smoke workflow runs the readiness preset with optional auth secrets", () => {
+  const workflow = read("../../.github/workflows/frontend-remote-smoke.yml");
+
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /base-url:/);
+  assert.match(workflow, /timeout-minutes:\s*15/);
+  assert.match(workflow, /REMOTE_SMOKE_BASE_URL:\s*\$\{\{\s*inputs\.base-url\s*\}\}/);
+  assert.match(workflow, /SMOKE_AUTH_COOKIE:\s*\$\{\{\s*secrets\.SMOKE_AUTH_COOKIE\s*\}\}/);
+  assert.match(workflow, /SMOKE_BEARER_TOKEN:\s*\$\{\{\s*secrets\.SMOKE_BEARER_TOKEN\s*\}\}/);
+  assert.match(workflow, /working-directory:\s*\.\/frontend/);
+  assert.match(workflow, /run:\s*npm ci/);
+  assert.match(workflow, /run:\s*npm run smoke:deploy:readiness -- --base-url "\$REMOTE_SMOKE_BASE_URL"/);
+  assert.doesNotMatch(workflow, /npm run smoke:deploy(?!:readiness)/);
+});
+
+test("remote readiness smoke workflow is documented consistently", () => {
+  const workflow = read("../../.github/workflows/frontend-remote-smoke.yml");
+  const docs = [
+    ["README.md", read("../../README.md")],
+    ["k8s/README.md", read("../../k8s/README.md")],
+  ];
+
+  for (const [label, source] of docs) {
+    assert.ok(source.includes(".github/workflows/frontend-remote-smoke.yml"), `${label} should reference the workflow`);
+    assert.ok(source.includes("base-url"), `${label} should document the workflow input`);
+    assert.ok(source.includes("SMOKE_AUTH_COOKIE"), `${label} should document cookie auth secret`);
+    assert.ok(source.includes("SMOKE_BEARER_TOKEN"), `${label} should document bearer auth secret`);
+    assert.ok(source.includes("smoke:deploy:readiness"), `${label} should reference the readiness npm preset`);
+  }
+
+  assert.match(workflow, /npm run smoke:deploy:readiness/);
+});

@@ -1546,17 +1546,6 @@ function mockApiResponse(url, method = "GET") {
       updatedAt: "2026-05-26T08:00:00+08:00",
     };
   }
-  if (pathname === "/api/prometheus/status") {
-    return {
-      configured: true,
-      scopes: {
-        k8s: { configured: true },
-        vcenter: { configured: true },
-        pve: { configured: true },
-        network: { configured: true },
-      },
-    };
-  }
   if (pathname === "/api/ops/monitoring/panels") return { panels: [] };
   if (pathname === "/api/ops/alerts") return { rules: [], channels: [] };
   if (pathname === "/api/ops/alerts/log") return { entries: [] };

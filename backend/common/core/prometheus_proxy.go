@@ -396,62 +396,13 @@ func PrometheusKubeNodeInfoCountProbe(cfg Config) (count *float64, detail string
 	return nil, "kube-state-metrics 探测无正计数（已尝试 kube_node_info / kube_pod_info / kube_namespace_labels）", querySourceNote, effectiveURLMasked
 }
 
-func handlePrometheusStatus(c *gin.Context, cfg Config) {
-	prometheusMu.RLock()
-	ov := prometheusURLOverride
-	ovK := prometheusURLOverrideK8s
-	ovV := prometheusURLOverrideVCenter
-	ovP := prometheusURLOverridePVE
-	ovC := prometheusURLOverrideCloud
-	prometheusMu.RUnlock()
-	u := GetEffectivePrometheusURL(cfg)
-	uk := GetPrometheusURLForScope(cfg, "k8s")
-	uv := GetPrometheusURLForScope(cfg, "vcenter")
-	up := GetPrometheusURLForScope(cfg, "pve")
-	uc := GetPrometheusURLForScope(cfg, "cloud")
-	un := GetPrometheusURLForScope(cfg, "network")
-	c.JSON(http.StatusOK, gin.H{
-		"configured":     u != "",
-		"urlHint":        maskPrometheusURL(u),
-		"sourceEnv":      strings.TrimSpace(cfg.PrometheusURL) != "",
-		"sourceOverride": strings.TrimSpace(ov) != "",
-		"scopes": gin.H{
-			"k8s": gin.H{
-				"configured":     uk != "",
-				"urlHint":        maskPrometheusURL(uk),
-				"sourceOverride": strings.TrimSpace(ovK) != "",
-			},
-			"vcenter": gin.H{
-				"configured":     uv != "",
-				"urlHint":        maskPrometheusURL(uv),
-				"sourceOverride": strings.TrimSpace(ovV) != "",
-			},
-			"pve": gin.H{
-				"configured":     up != "",
-				"urlHint":        maskPrometheusURL(up),
-				"sourceOverride": strings.TrimSpace(ovP) != "",
-			},
-			"cloud": gin.H{
-				"configured":     uc != "",
-				"urlHint":        maskPrometheusURL(uc),
-				"sourceOverride": strings.TrimSpace(ovC) != "",
-			},
-			"network": gin.H{
-				"configured":     un != "",
-				"urlHint":        maskPrometheusURL(un),
-				"sourceOverride": strings.TrimSpace(ovV) != "",
-			},
-		},
-	})
-}
-
 type prometheusSourceBody struct {
 	BaseURL string `json:"baseUrl"`
 	Scope   string `json:"scope"` // k8s | vcenter | pve | cloud | network | global（默认 global，兼容旧客户端）
 	Confirm bool   `json:"confirm"`
 }
 
-func handlePrometheusSource(c *gin.Context, cfg Config) {
+func handlePrometheusSource(c *gin.Context, app *ServerApp) {
 	var body prometheusSourceBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数无效"})
@@ -467,6 +418,7 @@ func handlePrometheusSource(c *gin.Context, cfg Config) {
 	}
 	if raw == "" {
 		SetPrometheusURLOverrideForScope(sc, "")
+		InvalidateRuntimeStatusCache(context.Background(), app)
 		SetAuditDetail(c, "已清除进程内 Prometheus 覆盖（scope="+sc+"）")
 		c.JSON(http.StatusOK, gin.H{"message": "已清除该数据源的进程内 Prometheus 覆盖"})
 		return
@@ -476,6 +428,7 @@ func handlePrometheusSource(c *gin.Context, cfg Config) {
 		return
 	}
 	SetPrometheusURLOverrideForScope(sc, raw)
+	InvalidateRuntimeStatusCache(context.Background(), app)
 	SetAuditDetail(c, "已设置进程内 Prometheus（scope="+sc+"）→ "+maskPrometheusURL(raw))
 	c.JSON(http.StatusOK, gin.H{"message": "已保存 Prometheus 地址（仅当前进程有效；持久化请在系统设置中保存到 MySQL 动态配置，或用环境变量强制覆盖）"})
 }
