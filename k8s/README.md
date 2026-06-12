@@ -109,6 +109,8 @@ SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy
 SMOKE_BASE_URL=https://your-staging.example.com SMOKE_D_PATH=/d/ npm run smoke:deploy
 ```
 
+也可以在 GitHub Actions 手动触发 `.github/workflows/frontend-remote-smoke.yml`，输入部署后的 `base-url`；如果目标环境需要登录，在仓库 Secrets 配置 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN`。
+
 ## 常用命令
 
 ```bash
