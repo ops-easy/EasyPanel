@@ -15,9 +15,7 @@ data:
       model: release
       publicUrl: "https://easypanel.example.com"
       user: admin
-      # 初始管理员密码；仅在 MySQL 用户表为空时生效，生产请用 Secret 覆盖
-      password: admin
-      sessionSecret: ""
+      # DASHBOARD_PASSWORD / DASHBOARD_SESSION_SECRET 由 easypanel-secrets 注入
       sessionDays: 7
       cookieSecure: true
       accessLog: true
@@ -28,11 +26,11 @@ data:
       port: 3306
       db: easypanel
       username: easypanel
-      password: change-me
+      # MYSQL_PASSWORD 由 easypanel-secrets 注入
 
     redis:
       address: redis.easy.svc.cluster.local:6379
-      password: change-me
+      # REDIS_PASSWORD 由 easypanel-secrets 注入
       db: 0
 
     startup:

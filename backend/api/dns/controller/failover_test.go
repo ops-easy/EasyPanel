@@ -3,31 +3,19 @@ package controller
 import (
 	"context"
 	"net"
-	"os/exec"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 )
 
-func TestDnsFailoverTCPHealthCheckConnectsToTarget(t *testing.T) {
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer ln.Close()
-	go func() {
-		conn, err := ln.Accept()
-		if err == nil {
-			_ = conn.Close()
-		}
-	}()
+func TestDnsFailoverHealthCheckBlocksLoopbackTargets(t *testing.T) {
+	restore := stubDnsFailoverLookupIP(t, map[string][]net.IP{
+		"localhost": {net.ParseIP("127.0.0.1")},
+	})
+	defer restore()
 
-	_, portText, err := net.SplitHostPort(ln.Addr().String())
-	if err != nil {
-		t.Fatal(err)
-	}
-	port, err := strconv.Atoi(portText)
+	port, err := strconv.Atoi("8080")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,29 +25,82 @@ func TestDnsFailoverTCPHealthCheckConnectsToTarget(t *testing.T) {
 		CheckPort:    port,
 		CheckTimeout: 1,
 	})
-	if !ok {
-		t.Fatalf("dnsDoHealthCheck(tcp) ok = false, msg = %q", msg)
+	if ok {
+		t.Fatalf("dnsDoHealthCheck(tcp loopback) ok = true, msg = %q", msg)
 	}
-	if !strings.Contains(msg, "TCP") {
-		t.Fatalf("dnsDoHealthCheck(tcp) msg = %q, want TCP detail", msg)
+	if !strings.Contains(msg, "内网") {
+		t.Fatalf("dnsDoHealthCheck(tcp loopback) msg = %q, want private target detail", msg)
+	}
+
+	ok, msg = dnsDoHealthCheck(context.Background(), &DnsFailoverTask{
+		CheckType:    "ping",
+		CheckTarget:  "http://localhost/healthz",
+		CheckTimeout: 1,
+	})
+	if ok {
+		t.Fatalf("dnsDoHealthCheck(ping localhost) ok = true, msg = %q", msg)
+	}
+	if !strings.Contains(msg, "内网") {
+		t.Fatalf("dnsDoHealthCheck(ping localhost) msg = %q, want private target detail", msg)
 	}
 }
 
-func TestDnsFailoverPingHealthCheckConnectsToLoopback(t *testing.T) {
-	if _, err := exec.LookPath("ping"); err != nil {
-		t.Skip("ping command is not available in this test environment")
-	}
-	ok, msg := dnsDoHealthCheck(context.Background(), &DnsFailoverTask{
-		CheckType:    "ping",
-		CheckTarget:  "127.0.0.1",
-		CheckTimeout: 1,
+func TestDnsFailoverTargetValidationRejectsPrivateAndLinkLocalAddresses(t *testing.T) {
+	restore := stubDnsFailoverLookupIP(t, map[string][]net.IP{
+		"internal.example.com": {net.ParseIP("10.0.0.7")},
+		"public.example.com":   {net.ParseIP("8.8.8.8")},
 	})
-	if !ok {
-		t.Fatalf("dnsDoHealthCheck(ping) ok = false, msg = %q", msg)
+	defer restore()
+
+	for _, host := range []string{
+		"10.0.0.1",
+		"172.16.0.1",
+		"192.168.1.1",
+		"100.64.0.1",
+		"169.254.169.254",
+		"198.18.0.1",
+		"::1",
+		"fc00::1",
+		"internal.example.com",
+	} {
+		if err := dnsFailoverValidatePublicHost(context.Background(), host); err == nil {
+			t.Fatalf("dnsFailoverValidatePublicHost(%q) error = nil, want blocked", host)
+		}
 	}
-	if !strings.Contains(msg, "Ping") {
-		t.Fatalf("dnsDoHealthCheck(ping) msg = %q, want Ping detail", msg)
+
+	if err := dnsFailoverValidatePublicHost(context.Background(), "public.example.com"); err != nil {
+		t.Fatalf("dnsFailoverValidatePublicHost(public.example.com) error = %v", err)
 	}
+}
+
+func TestDnsFailoverResolvePublicHostReturnsDialIP(t *testing.T) {
+	restore := stubDnsFailoverLookupIP(t, map[string][]net.IP{
+		"public.example.com": {net.ParseIP("8.8.8.8")},
+	})
+	defer restore()
+
+	target, err := dnsFailoverResolvePublicHost(context.Background(), "public.example.com:443")
+	if err != nil {
+		t.Fatalf("dnsFailoverResolvePublicHost(public.example.com:443) error = %v", err)
+	}
+	if target.Host != "public.example.com" {
+		t.Fatalf("target.Host = %q, want public.example.com", target.Host)
+	}
+	if got := target.IP.String(); got != "8.8.8.8" {
+		t.Fatalf("target.IP = %q, want 8.8.8.8", got)
+	}
+}
+
+func stubDnsFailoverLookupIP(t *testing.T, records map[string][]net.IP) func() {
+	t.Helper()
+	old := dnsFailoverLookupIP
+	dnsFailoverLookupIP = func(_ context.Context, _ string, host string) ([]net.IP, error) {
+		if ips, ok := records[host]; ok {
+			return ips, nil
+		}
+		return []net.IP{net.ParseIP("8.8.4.4")}, nil
+	}
+	return func() { dnsFailoverLookupIP = old }
 }
 
 func TestDnsFailoverTransitionSwitchesAfterMaxErrorsAndRestoresOnRecovery(t *testing.T) {

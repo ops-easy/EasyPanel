@@ -17,6 +17,13 @@ k8s/
 ## 使用 Kustomize 部署
 
 ```bash
+kubectl apply -f k8s/backend/namespace.yaml
+kubectl -n easy create secret generic easypanel-secrets \
+  --from-literal=DASHBOARD_PASSWORD='<replace-with-strong-password>' \
+  --from-literal=DASHBOARD_SESSION_SECRET="$(openssl rand -hex 32)" \
+  --from-literal=EASYPANEL_ENCRYPTION_KEY="$(openssl rand -hex 32)" \
+  --from-literal=MYSQL_PASSWORD='<replace-with-mysql-password>' \
+  --from-literal=REDIS_PASSWORD='<replace-with-redis-password>'
 kubectl apply -k k8s
 kubectl -n easy get pod,svc,pvc
 ```
@@ -40,11 +47,18 @@ kubectl apply -f k8s/frontend/ingress.yaml
 - `k8s/backend/deployment.yaml` 中的后端镜像地址。
 - `k8s/frontend/frontend-deployment.yaml` 中的前端镜像地址。
 - `k8s/frontend/ingress.yaml` 中的域名、TLS Secret 和 IngressClass。
-- `k8s/backend/secret-example.yaml` 中的敏感配置示例。
+- 预先创建 `easypanel-secrets`，或按环境改造 `k8s/backend/secret-example.yaml` 后再应用。
 
 ## 使用 Helm 部署
 
 ```bash
+kubectl create namespace easy --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n easy create secret generic easypanel-secrets \
+  --from-literal=DASHBOARD_PASSWORD='<replace-with-strong-password>' \
+  --from-literal=DASHBOARD_SESSION_SECRET="$(openssl rand -hex 32)" \
+  --from-literal=EASYPANEL_ENCRYPTION_KEY="$(openssl rand -hex 32)" \
+  --from-literal=MYSQL_PASSWORD='<replace-with-mysql-password>' \
+  --from-literal=REDIS_PASSWORD='<replace-with-redis-password>'
 helm install easypanel ./k8s/charts/easypanel \
   --namespace easy \
   --create-namespace \
@@ -109,9 +123,10 @@ SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy
 SMOKE_BASE_URL=https://your-staging.example.com SMOKE_D_PATH=/d/ npm run smoke:deploy
 SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy:readiness
 npm run smoke:deploy:readiness -- --base-url https://your-staging.example.com
+npm run smoke:deploy:readiness -- --base-url https://your-staging.example.com --readiness-checks prometheus,victoriaLogs --render-routes /cluster/ai-inspect/dashboard --request-timeout-ms 30000
 ```
 
-`smoke:deploy:readiness` 会先执行远端前端部署烟测，再执行只读 readiness 探针；如果 `/api/runtime/status` 需要登录，可设置 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN`。也可以在 GitHub Actions 手动触发 `.github/workflows/frontend-remote-smoke.yml`，输入部署后的 `base-url`，工作流会在 `frontend/` 目录执行 `npm ci` 与 `npm run smoke:deploy:readiness -- --base-url "$REMOTE_SMOKE_BASE_URL"`，并透传仓库 Secrets 中可选的 `SMOKE_AUTH_COOKIE` / `SMOKE_BEARER_TOKEN`。
+`smoke:deploy:readiness` 会先执行远端前端部署烟测，再执行只读 readiness 探针；如果 `/api/runtime/status` 需要登录，可设置 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN`。本地命令可用 `--readiness-checks`、`--render-routes`、`--request-timeout-ms` 覆盖 `SMOKE_READINESS_CHECKS`、`EASYPANEL_RENDER_SMOKE_ROUTE`、`SMOKE_REQUEST_TIMEOUT_MS`。也可以在 GitHub Actions 手动触发 `.github/workflows/frontend-remote-smoke.yml`，输入部署后的 `base-url`，并按需填写 `readiness-checks`、`render-routes`、`request-timeout-ms`；工作流会在 `frontend/` 目录执行 `npm ci` 与 `npm run smoke:deploy:readiness`，并透传仓库 Secrets 中可选的 `SMOKE_AUTH_COOKIE` / `SMOKE_BEARER_TOKEN`。烟测 JSON summary 会写进 job summary，并上传到 `frontend-remote-smoke-results` artifact。
 
 ## 常用命令
 

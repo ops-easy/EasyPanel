@@ -30,6 +30,23 @@ type dnsFailoverTransition struct {
 	RecordChanged bool
 }
 
+var dnsFailoverLookupIP = net.DefaultResolver.LookupIP
+var dnsFailoverBlockedIPNets = []*net.IPNet{
+	dnsFailoverMustParseCIDR("100.64.0.0/10"),
+	dnsFailoverMustParseCIDR("192.0.0.0/24"),
+	dnsFailoverMustParseCIDR("192.0.2.0/24"),
+	dnsFailoverMustParseCIDR("198.18.0.0/15"),
+	dnsFailoverMustParseCIDR("198.51.100.0/24"),
+	dnsFailoverMustParseCIDR("203.0.113.0/24"),
+	dnsFailoverMustParseCIDR("240.0.0.0/4"),
+	dnsFailoverMustParseCIDR("2001:db8::/32"),
+}
+
+type dnsFailoverPublicHost struct {
+	Host string
+	IP   net.IP
+}
+
 func dnsDoHealthCheck(ctx context.Context, task *DnsFailoverTask) (bool, string) {
 	if task == nil {
 		return false, "监测任务为空"
@@ -63,7 +80,12 @@ func dnsDoHTTPHealthCheck(ctx context.Context, task *DnsFailoverTask, scheme str
 	if err != nil {
 		return false, err.Error()
 	}
-	client := &http.Client{Timeout: dnsFailoverTimeout(task.CheckTimeout)}
+	timeout := dnsFailoverTimeout(task.CheckTimeout)
+	transport := &http.Transport{
+		DialContext: dnsFailoverPublicDialContext(timeout),
+	}
+	defer transport.CloseIdleConnections()
+	client := &http.Client{Timeout: timeout, Transport: transport}
 	resp, err := client.Do(req)
 	if err != nil {
 		return false, "HTTP 请求失败: " + err.Error()
@@ -84,7 +106,11 @@ func dnsDoTCPHealthCheck(ctx context.Context, task *DnsFailoverTask) (bool, stri
 	if port <= 0 || port > 65535 {
 		return false, "TCP 检测端口无效"
 	}
-	addr := dnsJoinHostPort(target, port)
+	resolved, err := dnsFailoverResolvePublicHost(ctx, target)
+	if err != nil {
+		return false, err.Error()
+	}
+	addr := net.JoinHostPort(resolved.IP.String(), strconv.Itoa(port))
 	dialer := net.Dialer{Timeout: dnsFailoverTimeout(task.CheckTimeout)}
 	conn, err := dialer.DialContext(ctx, "tcp", addr)
 	if err != nil {
@@ -99,8 +125,12 @@ func dnsDoPingHealthCheck(ctx context.Context, task *DnsFailoverTask) (bool, str
 	if err != nil {
 		return false, err.Error()
 	}
+	resolved, err := dnsFailoverResolvePublicHost(ctx, target)
+	if err != nil {
+		return false, err.Error()
+	}
 	timeout := dnsFailoverTimeout(task.CheckTimeout)
-	output, err := dnsRunPingCommand(ctx, target, timeout)
+	output, err := dnsRunPingCommand(ctx, resolved.IP.String(), timeout)
 	detail := dnsPingOutputSummary(output)
 	if err != nil {
 		msg := "Ping 检测失败: " + err.Error()
@@ -109,7 +139,7 @@ func dnsDoPingHealthCheck(ctx context.Context, task *DnsFailoverTask) (bool, str
 		}
 		return false, msg
 	}
-	msg := "Ping 检测成功: " + target
+	msg := "Ping 检测成功: " + resolved.Host
 	if detail != "" {
 		msg += "；" + detail
 	}
@@ -143,6 +173,113 @@ func dnsFailoverPingTarget(raw string) (string, error) {
 		return "", errors.New("Ping 检测目标缺少主机")
 	}
 	return target, nil
+}
+
+func dnsFailoverValidatePublicHost(ctx context.Context, rawHost string) error {
+	_, err := dnsFailoverResolvePublicHost(ctx, rawHost)
+	return err
+}
+
+func dnsFailoverResolvePublicHost(ctx context.Context, rawHost string) (dnsFailoverPublicHost, error) {
+	host, err := dnsFailoverTargetHost(rawHost)
+	if err != nil {
+		return dnsFailoverPublicHost{}, err
+	}
+	var ips []net.IP
+	if ip := net.ParseIP(host); ip != nil {
+		ips = []net.IP{ip}
+	} else {
+		ips, err = dnsFailoverLookupIP(ctx, "ip", host)
+		if err != nil {
+			return dnsFailoverPublicHost{}, fmt.Errorf("检测目标解析失败: %w", err)
+		}
+	}
+	if len(ips) == 0 {
+		return dnsFailoverPublicHost{}, errors.New("检测目标未解析到 IP")
+	}
+	for _, ip := range ips {
+		if err := dnsFailoverValidatePublicIP(host, ip); err != nil {
+			return dnsFailoverPublicHost{}, err
+		}
+	}
+	return dnsFailoverPublicHost{Host: host, IP: dnsFailoverComparableIP(ips[0])}, nil
+}
+
+func dnsFailoverPublicDialContext(timeout time.Duration) func(context.Context, string, string) (net.Conn, error) {
+	return func(ctx context.Context, network string, address string) (net.Conn, error) {
+		host, port, err := net.SplitHostPort(address)
+		if err != nil {
+			return nil, err
+		}
+		resolved, err := dnsFailoverResolvePublicHost(ctx, host)
+		if err != nil {
+			return nil, err
+		}
+		dialer := net.Dialer{Timeout: timeout}
+		return dialer.DialContext(ctx, network, net.JoinHostPort(resolved.IP.String(), port))
+	}
+}
+
+func dnsFailoverTargetHost(rawHost string) (string, error) {
+	host := strings.TrimSpace(rawHost)
+	if host == "" {
+		return "", errors.New("检测目标缺少主机")
+	}
+	if strings.Contains(host, "://") {
+		u, err := url.Parse(host)
+		if err != nil {
+			return "", err
+		}
+		host = u.Hostname()
+	} else if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
+	}
+	host = strings.Trim(strings.TrimSpace(host), "[]")
+	if host == "" {
+		return "", errors.New("检测目标缺少主机")
+	}
+	if strings.ContainsAny(host, `/\`) {
+		return "", errors.New("检测目标主机不能包含路径")
+	}
+	return host, nil
+}
+
+func dnsFailoverValidatePublicIP(host string, ip net.IP) error {
+	ip = dnsFailoverComparableIP(ip)
+	if ip == nil {
+		return fmt.Errorf("检测目标 %s 解析到无效 IP，已拒绝", host)
+	}
+	if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() || ip.IsMulticast() || dnsFailoverIPInBlockedRange(ip) {
+		return fmt.Errorf("检测目标 %s 解析到内网/本机/链路本地/保留地址 %s，已拒绝", host, ip.String())
+	}
+	return nil
+}
+
+func dnsFailoverComparableIP(ip net.IP) net.IP {
+	if ip == nil {
+		return nil
+	}
+	if v4 := ip.To4(); v4 != nil {
+		return v4
+	}
+	return ip
+}
+
+func dnsFailoverIPInBlockedRange(ip net.IP) bool {
+	for _, network := range dnsFailoverBlockedIPNets {
+		if network.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
+func dnsFailoverMustParseCIDR(raw string) *net.IPNet {
+	_, network, err := net.ParseCIDR(raw)
+	if err != nil {
+		panic(err)
+	}
+	return network
 }
 
 func dnsRunPingCommand(ctx context.Context, target string, timeout time.Duration) ([]byte, error) {

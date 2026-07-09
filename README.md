@@ -133,20 +133,28 @@ SMOKE_BASE_URL=https://your-staging.example.com SMOKE_D_PATH=/d/ npm run smoke:d
 SMOKE_BASE_URL=https://your-staging.example.com SMOKE_READONLY_READINESS=1 npm run smoke:deploy
 SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:deploy:readiness
 npm run smoke:deploy:readiness -- --base-url https://your-staging.example.com
+npm run smoke:deploy:readiness -- --base-url https://your-staging.example.com --readiness-checks prometheus,victoriaLogs --render-routes /cluster/ai-inspect/dashboard --request-timeout-ms 30000
 SMOKE_BASE_URL=https://your-staging.example.com npm run smoke:readonly-readiness
 ```
 
-`smoke:deploy` 默认仍只做部署安全的远端 SPA、资源和公开接口检查；本地 `npm run check` 只调用 `check:deploy` 的 dist/nginx 合约，不会触发真实环境只读探针。要在 staging 或真实已连接环境里把只读 readiness 一起纳入部署验收，可设置 `SMOKE_READONLY_READINESS=1` 后运行 `smoke:deploy`，或直接运行组合入口 `smoke:deploy:readiness`。组合入口支持 `SMOKE_BASE_URL`，也支持 npm 透传的 `--base-url`；使用 `--base-url` 时，`smoke:deploy` 会把同一个地址写入 `SMOKE_BASE_URL` 后再动态导入只读 readiness 脚本，确保两个阶段检查同一个目标环境。`smoke:readonly-readiness` 也保留为单独预设：它只发起 `GET` 请求，复用 `EASYPANEL_RENDER_SMOKE_ROUTE` 的路由过滤语义，默认检查 `/login`、`/`、`/cluster/compute/dashboard`、`/cluster/network/dashboard`、`/cluster/baota` 和 `/cluster/ai-inspect/dashboard`，并要求 vCenter、PVE、OpenWrt、iKuai、Prometheus、VictoriaLogs 的新探活状态为 `readonly_reachable`。
+`smoke:deploy` 默认仍只做部署安全的远端 SPA、资源和公开接口检查；本地 `npm run check` 只调用 `check:deploy` 的 dist/nginx 合约，不会触发真实环境只读探针。要在 staging 或真实已连接环境里把只读 readiness 一起纳入部署验收，可设置 `SMOKE_READONLY_READINESS=1` 后运行 `smoke:deploy`，或直接运行组合入口 `smoke:deploy:readiness`。组合入口支持 `SMOKE_BASE_URL`，也支持 npm 透传的 `--base-url`；使用 `--base-url` 时，`smoke:deploy` 会把同一个地址写入 `SMOKE_BASE_URL` 后再动态导入只读 readiness 脚本，确保两个阶段检查同一个目标环境。`smoke:deploy:readiness` 和 `smoke:readonly-readiness` 还支持 `--readiness-checks`、`--render-routes`、`--request-timeout-ms`，分别对应 `SMOKE_READINESS_CHECKS`、`EASYPANEL_RENDER_SMOKE_ROUTE`、`SMOKE_REQUEST_TIMEOUT_MS`。`smoke:readonly-readiness` 也保留为单独预设：它只发起 `GET` 请求，复用 `EASYPANEL_RENDER_SMOKE_ROUTE` 的路由过滤语义，默认检查 `/login`、`/`、`/cluster/compute/dashboard`、`/cluster/network/dashboard`、`/cluster/baota` 和 `/cluster/ai-inspect/dashboard`，并要求 vCenter、PVE、OpenWrt、iKuai、Prometheus、VictoriaLogs 的新探活状态为 `readonly_reachable`。
 
 在 staging 上验证时先确保该环境已经连接对应数据源，再从 `frontend/` 目录执行上面的命令。脚本会检查 SPA 路由、构建资源、`/api/login/public-status` 的公开只读探针，以及带鉴权时的 `/api/runtime/status`；如果运行时状态接口需要登录，可设置 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN`，否则脚本会保留公开探针验证并提示跳过受保护接口。需要聚焦时可用 `EASYPANEL_RENDER_SMOKE_ROUTE=/cluster/ai-inspect/dashboard` 缩小路由集合，用 `SMOKE_READINESS_CHECKS=prometheus,victoriaLogs` 缩小只读探针集合，慢环境可调大 `SMOKE_REQUEST_TIMEOUT_MS`。
 
-也可以在 GitHub Actions 手动运行 `.github/workflows/frontend-remote-smoke.yml`，传入 `base-url` 后由工作流在 `frontend/` 目录执行 `npm ci` 与 `npm run smoke:deploy:readiness -- --base-url "$REMOTE_SMOKE_BASE_URL"`；如目标环境需要登录，在仓库 Secrets 配置可选的 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN` 即可。
+也可以在 GitHub Actions 手动运行 `.github/workflows/frontend-remote-smoke.yml`，传入 `base-url` 后由工作流在 `frontend/` 目录执行 `npm ci` 与 `npm run smoke:deploy:readiness`；手动输入项 `readiness-checks`、`render-routes`、`request-timeout-ms` 会透传给 `--readiness-checks`、`--render-routes`、`--request-timeout-ms`。`readiness-checks` 和 `render-routes` 留空会保持默认全集，`request-timeout-ms` 默认 `15000`。如目标环境需要登录，在仓库 Secrets 配置可选的 `SMOKE_AUTH_COOKIE` 或 `SMOKE_BEARER_TOKEN` 即可。工作流会把 machine-readable smoke summary 展开到 GitHub Actions job summary，并以 `frontend-remote-smoke-results` artifact 上传原始 JSON。
 
 ### Kustomize 部署
 
 默认清单会创建 `easy` 命名空间、RBAC、PVC、后端 Deployment/Service、前端 Deployment/NodePort Service。
 
 ```bash
+kubectl apply -f k8s/backend/namespace.yaml
+kubectl -n easy create secret generic easypanel-secrets \
+  --from-literal=DASHBOARD_PASSWORD='<replace-with-strong-password>' \
+  --from-literal=DASHBOARD_SESSION_SECRET="$(openssl rand -hex 32)" \
+  --from-literal=EASYPANEL_ENCRYPTION_KEY="$(openssl rand -hex 32)" \
+  --from-literal=MYSQL_PASSWORD='<replace-with-mysql-password>' \
+  --from-literal=REDIS_PASSWORD='<replace-with-redis-password>'
 kubectl apply -k k8s
 kubectl -n easy get pod,svc,pvc
 ```
@@ -166,6 +174,13 @@ kubectl apply -f k8s/frontend/ingress.yaml
 ### Helm 部署
 
 ```bash
+kubectl create namespace easy --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n easy create secret generic easypanel-secrets \
+  --from-literal=DASHBOARD_PASSWORD='<replace-with-strong-password>' \
+  --from-literal=DASHBOARD_SESSION_SECRET="$(openssl rand -hex 32)" \
+  --from-literal=EASYPANEL_ENCRYPTION_KEY="$(openssl rand -hex 32)" \
+  --from-literal=MYSQL_PASSWORD='<replace-with-mysql-password>' \
+  --from-literal=REDIS_PASSWORD='<replace-with-redis-password>'
 helm install easypanel ./k8s/charts/easypanel \
   --namespace easy \
   --create-namespace \
@@ -186,7 +201,7 @@ helm install easypanel ./k8s/charts/easypanel \
 
 后端镜像使用多阶段构建，最终运行镜像基于 `distroless/static-debian12:nonroot`，包含后端二进制与 `/app/helm`（用于容器内渲染 kube-prometheus-stack）；前端镜像基于 Nginx，并将 `/api/`、`/r/` 与公开媒体 `/d/` 反向代理到后端 Service。
 
-预发或生产部署完成后，可手动触发 `.github/workflows/frontend-remote-smoke.yml`，输入部署后的 `base-url` 对远端前端入口和只读 readiness 探针做烟测。该工作流运行 `npm run smoke:deploy:readiness`，并会透传仓库 Secrets 中可选的 `SMOKE_AUTH_COOKIE` / `SMOKE_BEARER_TOKEN`。
+预发或生产部署完成后，可手动触发 `.github/workflows/frontend-remote-smoke.yml`，输入部署后的 `base-url` 对远端前端入口和只读 readiness 探针做烟测。该工作流运行 `npm run smoke:deploy:readiness`，并会透传手动输入的 `readiness-checks`、`render-routes`、`request-timeout-ms` 以及仓库 Secrets 中可选的 `SMOKE_AUTH_COOKIE` / `SMOKE_BEARER_TOKEN`；执行结果会写入 job summary，并上传 `frontend-remote-smoke-results` artifact 方便复盘。
 
 ## 关键配置
 
@@ -216,7 +231,7 @@ helm install easypanel ./k8s/charts/easypanel \
 | `OIDC_ISSUER_URL` 等 | OIDC 登录配置 |
 | `EASYPANEL_ASSETS_CDN_BASE` | 文档公开页静态资源 CDN 根地址 |
 
-敏感配置请通过 Kubernetes `Secret`、CI Secret 或外部密钥系统注入，不要写入镜像和公开仓库。
+敏感配置请通过 Kubernetes `Secret`、CI Secret 或外部密钥系统注入，不要写入镜像、ConfigMap、Helm values 或公开仓库。Kubernetes/Helm 默认清单会从 `easypanel-secrets` 注入 `DASHBOARD_PASSWORD`、`DASHBOARD_SESSION_SECRET`、`EASYPANEL_ENCRYPTION_KEY`、`MYSQL_PASSWORD` 和 `REDIS_PASSWORD`。
 
 ## Ingress 同步注解
 

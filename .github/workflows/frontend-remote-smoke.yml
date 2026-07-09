@@ -7,6 +7,21 @@ on:
         description: Deployed EasyPanel base URL, for example https://staging.example.com
         required: true
         type: string
+      readiness-checks:
+        description: Optional comma-separated readonly checks, for example prometheus,victoriaLogs
+        required: false
+        default: ""
+        type: string
+      render-routes:
+        description: Optional comma-separated render route filters, for example /cluster/ai-inspect/dashboard
+        required: false
+        default: ""
+        type: string
+      request-timeout-ms:
+        description: Request timeout in milliseconds for readonly readiness probes
+        required: false
+        default: "15000"
+        type: string
 
 permissions:
   contents: read
@@ -18,6 +33,10 @@ jobs:
     timeout-minutes: 15
     env:
       REMOTE_SMOKE_BASE_URL: ${{ inputs.base-url }}
+      SMOKE_SUMMARY_DIR: ${{ runner.temp }}/frontend-remote-smoke
+      SMOKE_READINESS_CHECKS: ${{ inputs.readiness-checks }}
+      EASYPANEL_RENDER_SMOKE_ROUTE: ${{ inputs.render-routes }}
+      SMOKE_REQUEST_TIMEOUT_MS: ${{ inputs.request-timeout-ms }}
       SMOKE_AUTH_COOKIE: ${{ secrets.SMOKE_AUTH_COOKIE }}
       SMOKE_BEARER_TOKEN: ${{ secrets.SMOKE_BEARER_TOKEN }}
     steps:
@@ -35,6 +54,86 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
+      - name: Prepare smoke summary directory
+        run: mkdir -p "$SMOKE_SUMMARY_DIR"
+
       - name: Run remote readiness smoke
         working-directory: ./frontend
-        run: npm run smoke:deploy:readiness -- --base-url "$REMOTE_SMOKE_BASE_URL"
+        run: >
+          npm run smoke:deploy:readiness -- --base-url "$REMOTE_SMOKE_BASE_URL"
+          --readiness-checks "$SMOKE_READINESS_CHECKS"
+          --render-routes "$EASYPANEL_RENDER_SMOKE_ROUTE"
+          --request-timeout-ms "$SMOKE_REQUEST_TIMEOUT_MS"
+
+      - name: Write job summary
+        if: always()
+        run: |
+          {
+            echo "## Frontend remote smoke"
+            echo ""
+            echo "- Base URL: \`$REMOTE_SMOKE_BASE_URL\`"
+            echo "- Readiness checks: \`${SMOKE_READINESS_CHECKS:-default}\`"
+            echo "- Render routes: \`${EASYPANEL_RENDER_SMOKE_ROUTE:-default}\`"
+            echo "- Request timeout ms: \`$SMOKE_REQUEST_TIMEOUT_MS\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          found_summary=0
+          for summary_file in "$SMOKE_SUMMARY_DIR"/*.json; do
+            if [ ! -e "$summary_file" ]; then
+              continue
+            fi
+            found_summary=1
+            node - "$summary_file" >> "$GITHUB_STEP_SUMMARY" <<'NODE'
+          const { readFileSync } = require("node:fs");
+          const summary = JSON.parse(readFileSync(process.argv[2], "utf8"));
+
+          function cell(value) {
+            const text = value === null || value === undefined || value === "" ? "-" : String(value);
+            return text.replaceAll("|", "\\|").replaceAll("\n", " ");
+          }
+
+          console.log(`\n### ${cell(summary.script)}`);
+          console.log(`- Status: \`${cell(summary.status)}\``);
+          console.log(`- Base URL: \`${cell(summary.baseUrl)}\``);
+          console.log(`- Exit code: \`${cell(summary.exitCode)}\``);
+          console.log(`- Smoke routes hit: \`${summary.smokeRoutes?.length ?? 0}\``);
+          console.log(`- Readonly checks: \`${summary.readonlyChecks?.length ?? 0}\``);
+
+          if (summary.smokeRoutes?.length) {
+            console.log("\n| Kind | Path | Status code | Result |");
+            console.log("| --- | --- | --- | --- |");
+            for (const item of summary.smokeRoutes) {
+              console.log(`| ${cell(item.kind)} | ${cell(item.path)} | ${cell(item.statusCode)} | ${item.ok ? "ok" : "failed"} |`);
+            }
+          }
+
+          if (summary.readonlyChecks?.length) {
+            console.log("\n| Endpoint | Check | Probe status | HTTP status | Result |");
+            console.log("| --- | --- | --- | --- | --- |");
+            for (const item of summary.readonlyChecks) {
+              console.log(`| ${cell(item.endpoint)} | ${cell(item.key)} | ${cell(item.status)} | ${cell(item.statusCode)} | ${item.ok ? "ok" : "failed"} |`);
+            }
+          }
+
+          if (summary.failedItems?.length) {
+            console.log("\n| Failed item | Path/endpoint | Check | Status code | Message |");
+            console.log("| --- | --- | --- | --- | --- |");
+            for (const item of summary.failedItems) {
+              console.log(`| ${cell(item.kind)} | ${cell(item.path ?? item.endpoint)} | ${cell(item.key)} | ${cell(item.statusCode)} | ${cell(item.message)} |`);
+            }
+          }
+          NODE
+          done
+
+          if [ "$found_summary" -eq 0 ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "No machine-readable smoke summary files were written." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload smoke results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-remote-smoke-results
+          path: ${{ env.SMOKE_SUMMARY_DIR }}
+          if-no-files-found: ignore

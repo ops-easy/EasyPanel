@@ -3351,14 +3351,6 @@
       "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterConfigMapDetail.tsx",
-      "sourceLine": 101,
-      "needsManualReview": false,
-      "kind": "http"
-    },
-    {
-      "method": "POST",
-      "pathPattern": "/api/k8s/apply-yaml",
-      "sourceFile": "frontend/src/features/cluster/pages/ClusterIngressDetail.tsx",
       "sourceLine": 102,
       "needsManualReview": false,
       "kind": "http"
@@ -3366,8 +3358,16 @@
     {
       "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
+      "sourceFile": "frontend/src/features/cluster/pages/ClusterIngressDetail.tsx",
+      "sourceLine": 103,
+      "needsManualReview": false,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterIngresses.tsx",
-      "sourceLine": 75,
+      "sourceLine": 76,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3375,7 +3375,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sListPage.tsx",
-      "sourceLine": 199,
+      "sourceLine": 200,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3383,7 +3383,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterSecretDetail.tsx",
-      "sourceLine": 101,
+      "sourceLine": 102,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3391,7 +3391,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterServiceDetail.tsx",
-      "sourceLine": 97,
+      "sourceLine": 98,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3399,7 +3399,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterServices.tsx",
-      "sourceLine": 65,
+      "sourceLine": 66,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3407,7 +3407,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterWorkloadDetail.tsx",
-      "sourceLine": 214,
+      "sourceLine": 215,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3415,7 +3415,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/PodListBlock.tsx",
-      "sourceLine": 292,
+      "sourceLine": 293,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3471,7 +3471,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/deployments/:param/:param/restart",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterWorkloadDetail.tsx",
-      "sourceLine": 182,
+      "sourceLine": 183,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3535,7 +3535,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/nodes",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterNodes.tsx",
-      "sourceLine": 311,
+      "sourceLine": 312,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3599,54 +3599,6 @@
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterConfigMapDetail.tsx",
-      "sourceLine": 86,
-      "needsManualReview": true,
-      "kind": "http"
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/k8s/object-yaml",
-      "sourceFile": "frontend/src/features/cluster/pages/ClusterConfigMapDetail.tsx",
-      "sourceLine": 120,
-      "needsManualReview": true,
-      "kind": "http"
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/k8s/object-yaml",
-      "sourceFile": "frontend/src/features/cluster/pages/ClusterIngressDetail.tsx",
-      "sourceLine": 88,
-      "needsManualReview": true,
-      "kind": "http"
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/k8s/object-yaml",
-      "sourceFile": "frontend/src/features/cluster/pages/ClusterIngressDetail.tsx",
-      "sourceLine": 121,
-      "needsManualReview": true,
-      "kind": "http"
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/k8s/object-yaml",
-      "sourceFile": "frontend/src/features/cluster/pages/ClusterIngresses.tsx",
-      "sourceLine": 111,
-      "needsManualReview": true,
-      "kind": "http"
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/k8s/object-yaml",
-      "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sListPage.tsx",
-      "sourceLine": 264,
-      "needsManualReview": true,
-      "kind": "http"
-    },
-    {
-      "method": "GET",
-      "pathPattern": "/api/k8s/object-yaml",
-      "sourceFile": "frontend/src/features/cluster/pages/ClusterSecretDetail.tsx",
       "sourceLine": 87,
       "needsManualReview": true,
       "kind": "http"
@@ -3654,8 +3606,56 @@
     {
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "frontend/src/features/cluster/pages/ClusterConfigMapDetail.tsx",
+      "sourceLine": 121,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "frontend/src/features/cluster/pages/ClusterIngressDetail.tsx",
+      "sourceLine": 89,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "frontend/src/features/cluster/pages/ClusterIngressDetail.tsx",
+      "sourceLine": 122,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "frontend/src/features/cluster/pages/ClusterIngresses.tsx",
+      "sourceLine": 112,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sListPage.tsx",
+      "sourceLine": 265,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterSecretDetail.tsx",
-      "sourceLine": 120,
+      "sourceLine": 88,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "GET",
+      "pathPattern": "/api/k8s/object-yaml",
+      "sourceFile": "frontend/src/features/cluster/pages/ClusterSecretDetail.tsx",
+      "sourceLine": 121,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3663,7 +3663,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterServiceDetail.tsx",
-      "sourceLine": 83,
+      "sourceLine": 84,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3671,7 +3671,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterServiceDetail.tsx",
-      "sourceLine": 117,
+      "sourceLine": 118,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3679,7 +3679,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterServices.tsx",
-      "sourceLine": 99,
+      "sourceLine": 100,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3687,7 +3687,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterWorkloadDetail.tsx",
-      "sourceLine": 165,
+      "sourceLine": 166,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3695,7 +3695,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterWorkloadDetail.tsx",
-      "sourceLine": 247,
+      "sourceLine": 248,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3703,7 +3703,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/PodListBlock.tsx",
-      "sourceLine": 326,
+      "sourceLine": 327,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3719,7 +3719,7 @@
       "method": "DELETE",
       "pathPattern": "/api/k8s/objects/:param/:param/:param",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sListPage.tsx",
-      "sourceLine": 224,
+      "sourceLine": 225,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3727,7 +3727,7 @@
       "method": "DELETE",
       "pathPattern": "/api/k8s/objects/ingress/:param/:param",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterIngresses.tsx",
-      "sourceLine": 88,
+      "sourceLine": 89,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3735,7 +3735,7 @@
       "method": "DELETE",
       "pathPattern": "/api/k8s/objects/pod/:param/:param",
       "sourceFile": "frontend/src/features/cluster/pages/PodListBlock.tsx",
-      "sourceLine": 304,
+      "sourceLine": 305,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3743,7 +3743,7 @@
       "method": "DELETE",
       "pathPattern": "/api/k8s/objects/service/:param/:param",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterServices.tsx",
-      "sourceLine": 77,
+      "sourceLine": 78,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3871,7 +3871,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/pods/metrics",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterPodDetail.tsx",
-      "sourceLine": 397,
+      "sourceLine": 398,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3879,7 +3879,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/pods/metrics",
       "sourceFile": "frontend/src/features/cluster/pages/PodListBlock.tsx",
-      "sourceLine": 262,
+      "sourceLine": 263,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3975,7 +3975,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/pvcs/:param/:param/expand",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sListPage.tsx",
-      "sourceLine": 237,
+      "sourceLine": 238,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3991,7 +3991,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/rbac/quick-readonly-user",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterRBAC.tsx",
-      "sourceLine": 101,
+      "sourceLine": 102,
       "needsManualReview": false,
       "kind": "http"
     },

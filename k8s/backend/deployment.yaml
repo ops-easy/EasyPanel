@@ -104,7 +104,7 @@ spec:
             #   valueFrom:
             #     secretKeyRef:
             #       name: easypanel-secrets
-            #       key: baota-api-key
+            #       key: BAOTA_API_KEY
             # - name: DDNS_HOST
             #   value: "home.example.com"
             # - name: DEFAULT_PORT
