@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/check-api-contract.mjs",
   "kind": "frontend-api-uses",
-  "routeCount": 736,
+  "routeCount": 737,
   "routes": [
     {
       "method": "UNKNOWN",
@@ -2311,7 +2311,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/compute/activity",
       "sourceFile": "frontend/src/features/compute/pages/ComputeResourcePage.tsx",
-      "sourceLine": 64,
+      "sourceLine": 68,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -2319,7 +2319,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/compute/guests",
       "sourceFile": "frontend/src/features/compute/pages/ComputeResourcePage.tsx",
-      "sourceLine": 40,
+      "sourceLine": 44,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -2327,7 +2327,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/compute/hosts",
       "sourceFile": "frontend/src/features/compute/pages/ComputeResourcePage.tsx",
-      "sourceLine": 48,
+      "sourceLine": 52,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -2343,7 +2343,7 @@
       "method": "GET",
       "pathPattern": "/api/compute/providers",
       "sourceFile": "frontend/src/features/compute/pages/ComputeResourcePage.tsx",
-      "sourceLine": 104,
+      "sourceLine": 111,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -2359,7 +2359,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/compute/storage",
       "sourceFile": "frontend/src/features/compute/pages/ComputeResourcePage.tsx",
-      "sourceLine": 56,
+      "sourceLine": 60,
       "needsManualReview": false,
       "kind": "literal"
     },
@@ -5151,7 +5151,7 @@
       "method": "POST",
       "pathPattern": "/api/pve/targets/:param/guests/:param/console/ticket",
       "sourceFile": "frontend/src/features/compute/pve/pages/PveGuestDetail.tsx",
-      "sourceLine": 444,
+      "sourceLine": 445,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5159,7 +5159,7 @@
       "method": "GET",
       "pathPattern": "/api/pve/targets/:param/guests/:param/console/ws",
       "sourceFile": "frontend/src/features/compute/pve/pages/PveGuestDetail.tsx",
-      "sourceLine": 457,
+      "sourceLine": 458,
       "needsManualReview": true,
       "kind": "websocket"
     },
@@ -5182,8 +5182,16 @@
     {
       "method": "POST",
       "pathPattern": "/api/pve/targets/:param/guests/:param/power",
+      "sourceFile": "frontend/src/features/compute/pages/ComputeResourcePage.tsx",
+      "sourceLine": 176,
+      "needsManualReview": true,
+      "kind": "http"
+    },
+    {
+      "method": "POST",
+      "pathPattern": "/api/pve/targets/:param/guests/:param/power",
       "sourceFile": "frontend/src/features/compute/pve/pages/PveGuestDetail.tsx",
-      "sourceLine": 704,
+      "sourceLine": 705,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -5207,7 +5215,7 @@
       "method": "DELETE",
       "pathPattern": "/api/pve/targets/:param/guests/:param/snapshots/:param",
       "sourceFile": "frontend/src/features/compute/pve/pages/PveGuestDetail.tsx",
-      "sourceLine": 721,
+      "sourceLine": 723,
       "needsManualReview": true,
       "kind": "http"
     },
