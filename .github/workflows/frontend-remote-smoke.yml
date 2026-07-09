@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 15
     env:
       REMOTE_SMOKE_BASE_URL: ${{ inputs['base-url'] }}
-      SMOKE_SUMMARY_DIR: ${{ runner.temp }}/frontend-remote-smoke
+      SMOKE_SUMMARY_DIR: /tmp/frontend-remote-smoke
       SMOKE_READINESS_CHECKS: ${{ inputs['readiness-checks'] }}
       EASYPANEL_RENDER_SMOKE_ROUTE: ${{ inputs['render-routes'] }}
       SMOKE_REQUEST_TIMEOUT_MS: ${{ inputs['request-timeout-ms'] }}
