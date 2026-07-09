@@ -1,20 +1,24 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Database, Monitor, Server } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
-import { apiGetJson } from "@/lib/api";
+import { apiGetJson, apiPostJson } from "@/lib/api";
+import { useAuth } from "@/auth/auth-context";
 import ComputePageHeader from "@/features/compute/components/ComputePageHeader";
 import ComputeResourceFilters from "@/features/compute/components/ComputeResourceFilters";
 import ComputeResourceTable from "@/features/compute/components/ComputeResourceTable";
 import ComputeStatusBadge from "@/features/compute/components/ComputeStatusBadge";
 import ComputeRowActions from "@/features/compute/components/ComputeRowActions";
+import { withPveMutationConfirm } from "@/features/compute/pve/lib/pveMutationConfirm";
 import {
   type ComputeProvider,
   type ComputeResourceFiltersState,
   type ComputeRow,
   type ComputeView,
   type ComputeViewMeta,
+  type PvePowerActionRequest,
 } from "@/features/compute/components/compute-resource-types";
 
 type ComputeListResponse = {
@@ -97,6 +101,9 @@ function uniqueOptions(values: string[]): string[] {
 
 const ComputeResourcePage: React.FC<ComputeResourcePageProps> = ({ view }) => {
   const meta = viewMeta[view];
+  const queryClient = useQueryClient();
+  const { status } = useAuth();
+  const canWrite = status?.role === "admin" || status?.permissions?.compute === "rw" || status?.permissions?.vcenter === "rw";
   const [filters, setFilters] = useState<ComputeResourceFiltersState>(defaultFilters);
 
   const providersQ = useQuery({
@@ -164,6 +171,18 @@ const ComputeResourcePage: React.FC<ComputeResourcePageProps> = ({ view }) => {
 
   const warnings = [...(providersQ.data?.warnings ?? []), ...(rowsQ.data?.warnings ?? [])];
   const Icon = meta.icon;
+  const pvePowerMut = useMutation({
+    mutationFn: ({ targetId, vmid, node, type, action }: PvePowerActionRequest) =>
+      apiPostJson(`/api/pve/targets/${encodeURIComponent(targetId)}/guests/${encodeURIComponent(vmid)}/power`, withPveMutationConfirm({ node, type, action })),
+    onSuccess: (_data, variables) => {
+      toast.success("PVE 电源任务已提交");
+      void queryClient.invalidateQueries({ queryKey: ["compute-resource", "guests"] });
+      void queryClient.invalidateQueries({ queryKey: ["pve-summary", variables.targetId] });
+      void queryClient.invalidateQueries({ queryKey: ["pve-guests", variables.targetId] });
+      void queryClient.invalidateQueries({ queryKey: ["pve-tasks", variables.targetId] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
 
   return (
     <div className="mx-auto w-full max-w-[min(100%,92rem)] space-y-5 pb-10">
@@ -226,11 +245,14 @@ const ComputeResourcePage: React.FC<ComputeResourcePageProps> = ({ view }) => {
         view={view}
         rows={filteredRows}
         loading={rowsQ.isLoading}
+        canWrite={canWrite}
+        pvePowerPending={pvePowerMut.isPending}
+        onPvePower={(body) => pvePowerMut.mutate(body)}
         emptyLabel={filters.query || filters.provider !== "all" || filters.health !== "all" || filters.status !== "all" || filters.node !== "all" ? "没有匹配当前筛选条件的资源。" : meta.empty}
       />
 
       <div className="hidden">
-        <ComputeRowActions view={view} row={rows[0] ?? { provider: "vcenter" }} />
+        <ComputeRowActions view={view} row={rows[0] ?? { provider: "vcenter" }} canWrite={canWrite} pvePowerPending={pvePowerMut.isPending} onPvePower={(body) => pvePowerMut.mutate(body)} />
       </div>
     </div>
   );

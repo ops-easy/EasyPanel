@@ -41,6 +41,7 @@ const pveConsoleQualityProfiles: Record<PveConsoleQuality, { label: string; qual
   balanced: { label: "均衡", qualityLevel: 5, compressionLevel: 2, resizeSession: true },
   sharp: { label: "清晰", qualityLevel: 7, compressionLevel: 1, resizeSession: false },
 };
+const PVE_POWER_ACTIONS = ["start", "shutdown", "reboot", "stop", "reset"];
 
 function asRows(raw: unknown): Record<string, unknown>[] {
   if (Array.isArray(raw)) return raw as Record<string, unknown>[];
@@ -620,7 +621,6 @@ export default function PveGuestDetail() {
       : "overview";
   const [hardwareOpen, setHardwareOpen] = useState(false);
   const [taskId, setTaskId] = useState("");
-  const [powerConfirmName, setPowerConfirmName] = useState("");
   const bastionTargetId = `pve:${targetId}:${node}:${canonicalGuestType}:${vmid}`;
   const sftpTarget = useMemo(() => ({ kind: "target" as const, targetId: bastionTargetId }), [bastionTargetId]);
   const querySuffix = `node=${encodeURIComponent(node)}&type=${encodeURIComponent(canonicalGuestType)}`;
@@ -700,10 +700,12 @@ export default function PveGuestDetail() {
   });
 
   const powerMut = useMutation({
-    mutationFn: ({ action, confirm }: { action: string; confirm: boolean }) =>
-      apiPostJson<PveTaskEnvelope>(`/api/pve/targets/${encodeURIComponent(targetId)}/guests/${encodeURIComponent(vmid)}/power`, { node, type: canonicalGuestType, action, confirm }),
+    mutationFn: (action: string) =>
+      apiPostJson<PveTaskEnvelope>(
+        `/api/pve/targets/${encodeURIComponent(targetId)}/guests/${encodeURIComponent(vmid)}/power`,
+        withPveMutationConfirm({ node, type: canonicalGuestType, action })
+      ),
     onSuccess: (data) => {
-      setPowerConfirmName("");
       submitTask(data, "电源操作已提交");
     },
     onError: (e) => toast.error((e as Error).message),
@@ -729,8 +731,7 @@ export default function PveGuestDetail() {
   const snapshotRows = useMemo(() => asRows(snapshotsQ.data?.snapshots), [snapshotsQ.data?.snapshots]);
   const loading = detailQ.isLoading || metricsQ.isLoading;
   const guestIpHint = optionalText(status.ip ?? status.ip_address ?? status.ipAddress ?? config.ipconfig0);
-  const powerConfirmTarget = String(config.name ?? status.name ?? vmid).trim() || vmid;
-  const powerConfirmed = powerConfirmName.trim() === powerConfirmTarget;
+  const mutationConfirmTarget = String(config.name ?? status.name ?? vmid).trim() || vmid;
   const operationPending = configMut.isPending || diskMut.isPending || powerMut.isPending || snapshotCreateMut.isPending || snapshotDeleteMut.isPending || Boolean(taskId);
 
   return (
@@ -799,27 +800,21 @@ export default function PveGuestDetail() {
           </section>
           <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-950">电源操作</h2>
-            <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,280px)_1fr] md:items-end">
-              <div className="space-y-1.5">
-                <Label htmlFor="pve-power-confirm">确认目标</Label>
-                <Input
-                  id="pve-power-confirm"
-                  className="font-mono"
-                  value={powerConfirmName}
-                  onChange={(e) => setPowerConfirmName(e.target.value)}
-                  placeholder={powerConfirmTarget}
-                  disabled={operationPending}
-                />
-              </div>
-              <p className="text-xs leading-5 text-slate-500">
-                输入 <span className="font-mono text-slate-800">{powerConfirmTarget}</span> 后启用电源按钮。
-              </p>
-            </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              {["start", "shutdown", "reboot", "stop", "reset"].map((action) => (
-                <Button key={action} type="button" variant="outline" size="sm" disabled={operationPending || !powerConfirmed} onClick={() => powerMut.mutate({ action, confirm: powerConfirmed })}>
+              {PVE_POWER_ACTIONS.map((action) => (
+                <ConfirmActionButton
+                  key={action}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={operationPending}
+                  title="确认执行 PVE 电源操作？"
+                  description={`将对 ${canonicalGuestType} ${node}/${vmid} 执行 ${action} 操作。`}
+                  confirmLabel="执行"
+                  onConfirm={() => powerMut.mutate(action)}
+                >
                   {action}
-                </Button>
+                </ConfirmActionButton>
               ))}
             </div>
           </section>
@@ -889,7 +884,7 @@ export default function PveGuestDetail() {
         pending={operationPending}
         onSaveConfig={(body) => configMut.mutate(body)}
         onResizeDisk={(body) => diskMut.mutate(body)}
-        confirmTarget={powerConfirmTarget}
+        confirmTarget={mutationConfirmTarget}
       />
     </div>
   );

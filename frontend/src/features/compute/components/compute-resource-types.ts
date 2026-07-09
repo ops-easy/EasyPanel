@@ -44,6 +44,14 @@ export type ComputeRow = {
   source?: Record<string, unknown>;
 };
 
+export type PvePowerActionRequest = {
+  targetId: string;
+  vmid: string;
+  node: string;
+  type: string;
+  action: string;
+};
+
 export type ComputeViewMeta = {
   title: string;
   endpoint: string;

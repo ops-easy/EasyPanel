@@ -1,7 +1,7 @@
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { Badge } from "@/shared/ui/badge";
-import { computeProviderLabels, type ComputeRow, type ComputeView } from "./compute-resource-types";
+import { computeProviderLabels, type ComputeRow, type ComputeView, type PvePowerActionRequest } from "./compute-resource-types";
 import ComputeRowActions from "./ComputeRowActions";
 import ComputeStatusBadge from "./ComputeStatusBadge";
 import { cn } from "@/lib/utils";
@@ -133,9 +133,12 @@ export type ComputeResourceTableProps = {
   rows: ComputeRow[];
   loading: boolean;
   emptyLabel: string;
+  canWrite?: boolean;
+  pvePowerPending?: boolean;
+  onPvePower?: (body: PvePowerActionRequest) => void;
 };
 
-const ComputeResourceTable: React.FC<ComputeResourceTableProps> = ({ view, rows, loading, emptyLabel }) => {
+const ComputeResourceTable: React.FC<ComputeResourceTableProps> = ({ view, rows, loading, emptyLabel, canWrite, pvePowerPending, onPvePower }) => {
   const columns = columnLabels(view);
   return (
     <section className="overflow-auto rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -219,7 +222,7 @@ const ComputeResourceTable: React.FC<ComputeResourceTableProps> = ({ view, rows,
                   </>
                 )}
                 <TableCell className="text-right">
-                  <ComputeRowActions view={view} row={row} />
+                  <ComputeRowActions view={view} row={row} canWrite={canWrite} pvePowerPending={pvePowerPending} onPvePower={onPvePower} />
                 </TableCell>
               </TableRow>
             ))
@@ -231,4 +234,3 @@ const ComputeResourceTable: React.FC<ComputeResourceTableProps> = ({ view, rows,
 };
 
 export default ComputeResourceTable;
-

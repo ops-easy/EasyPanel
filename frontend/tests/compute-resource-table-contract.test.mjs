@@ -64,3 +64,20 @@ test("compute row actions deep link to console and ssh detail tabs", () => {
   assert.match(pveDetail, /useSearchParams/);
   assert.match(pveDetail, /defaultValue=\{initialTab\}/);
 });
+
+test("compute row PVE power actions use inline confirmation instead of a disabled or typed-name entry", () => {
+  const page = read("../src/features/compute/pages/ComputeResourcePage.tsx");
+  const table = read("../src/features/compute/components/ComputeResourceTable.tsx");
+  const actions = read("../src/features/compute/components/ComputeRowActions.tsx");
+
+  assert.match(page, /pvePowerMut/);
+  assert.match(page, /withPveMutationConfirm\(\{ node, type, action \}\)/);
+  assert.match(page, /\/api\/pve\/targets\/\$\{encodeURIComponent\(targetId\)\}\/guests\/\$\{encodeURIComponent\(vmid\)\}\/power/);
+  assert.match(table, /onPvePower/);
+  assert.match(actions, /ConfirmActionButton/);
+  assert.match(actions, /PVE_POWER_ACTIONS/);
+  assert.match(actions, /onPvePower\(\{ targetId, vmid, node, type, action \}\)/);
+  assert.doesNotMatch(actions, /disabled title="电源操作在详情页确认后执行"/);
+  assert.doesNotMatch(actions, /#power/);
+  assert.doesNotMatch(actions, /powerConfirmName/);
+});

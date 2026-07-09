@@ -43,16 +43,18 @@ test("PVE console embeds a noVNC client instead of only exposing proxy URLs", ()
   assert.doesNotMatch(guest, /console\/ticket`[\s\S]*height:/);
 });
 
-test("PVE power operations require typed guest confirmation and send confirm flag", () => {
+test("PVE power operations match the PVE workspace confirmation flow and send confirm flag", () => {
   const guest = read("../src/features/compute/pve/pages/PveGuestDetail.tsx");
 
-  assert.match(guest, /const \[powerConfirmName, setPowerConfirmName\] = useState\(""\);/);
-  assert.match(guest, /const powerConfirmTarget = String\(config\.name \?\? status\.name \?\? vmid\)\.trim\(\) \|\| vmid;/);
-  assert.match(guest, /const powerConfirmed = powerConfirmName\.trim\(\) === powerConfirmTarget;/);
-  assert.match(guest, /apiPostJson<PveTaskEnvelope>[\s\S]*\{ node, type: canonicalGuestType, action, confirm \}/);
-  assert.match(guest, /disabled=\{operationPending \|\| !powerConfirmed\}/);
-  assert.match(guest, /powerMut\.mutate\(\{ action, confirm: powerConfirmed \}\)/);
-  assert.doesNotMatch(guest, /powerMut\.mutate\(action\)/);
+  assert.match(guest, /ConfirmActionButton/);
+  assert.match(guest, /PVE_POWER_ACTIONS/);
+  assert.match(guest, /apiPostJson<PveTaskEnvelope>[\s\S]*withPveMutationConfirm\(\{ node, type: canonicalGuestType, action \}\)/);
+  assert.match(guest, /title="确认执行 PVE 电源操作？"/);
+  assert.match(guest, /disabled=\{operationPending\}/);
+  assert.match(guest, /powerMut\.mutate\(action\)/);
+  assert.doesNotMatch(guest, /powerConfirmName/);
+  assert.doesNotMatch(guest, /powerConfirmed/);
+  assert.doesNotMatch(guest, /powerMut\.mutate\(\{ action, confirm:/);
 });
 
 test("PVE hardware disk and snapshot mutations require explicit confirmation", () => {
