@@ -141,11 +141,11 @@ test("frontend remote smoke workflow runs the readiness preset with parameterize
   assert.match(workflow, /render-routes:/);
   assert.match(workflow, /request-timeout-ms:/);
   assert.match(workflow, /timeout-minutes:\s*15/);
-  assert.match(workflow, /REMOTE_SMOKE_BASE_URL:\s*\$\{\{\s*inputs\.base-url\s*\}\}/);
+  assert.match(workflow, /REMOTE_SMOKE_BASE_URL:\s*\$\{\{\s*inputs\['base-url'\]\s*\}\}/);
   assert.match(workflow, /SMOKE_SUMMARY_DIR:\s*\$\{\{\s*runner\.temp\s*\}\}\/frontend-remote-smoke/);
-  assert.match(workflow, /SMOKE_READINESS_CHECKS:\s*\$\{\{\s*inputs\.readiness-checks\s*\}\}/);
-  assert.match(workflow, /EASYPANEL_RENDER_SMOKE_ROUTE:\s*\$\{\{\s*inputs\.render-routes\s*\}\}/);
-  assert.match(workflow, /SMOKE_REQUEST_TIMEOUT_MS:\s*\$\{\{\s*inputs\.request-timeout-ms\s*\}\}/);
+  assert.match(workflow, /SMOKE_READINESS_CHECKS:\s*\$\{\{\s*inputs\['readiness-checks'\]\s*\}\}/);
+  assert.match(workflow, /EASYPANEL_RENDER_SMOKE_ROUTE:\s*\$\{\{\s*inputs\['render-routes'\]\s*\}\}/);
+  assert.match(workflow, /SMOKE_REQUEST_TIMEOUT_MS:\s*\$\{\{\s*inputs\['request-timeout-ms'\]\s*\}\}/);
   assert.match(workflow, /SMOKE_AUTH_COOKIE:\s*\$\{\{\s*secrets\.SMOKE_AUTH_COOKIE\s*\}\}/);
   assert.match(workflow, /SMOKE_BEARER_TOKEN:\s*\$\{\{\s*secrets\.SMOKE_BEARER_TOKEN\s*\}\}/);
   assert.match(workflow, /working-directory:\s*\.\/frontend/);
