@@ -192,6 +192,7 @@ function NodeDetailDialog({ node, open, onOpenChange }: NodeDetailDialogProps) {
       apiGetJson<PodRow[]>(`/api/k8s/pods?node=${encodeURIComponent(name)}`, { signal }),
     enabled: open && name.length > 0,
     staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 
   const runningPods =

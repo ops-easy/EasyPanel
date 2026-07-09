@@ -75,6 +75,7 @@ const ClusterNamespacePicker: React.FC = () => {
   const statsQ = useQuery({
     queryKey: ["k8s-namespaces-stats"],
     queryFn: ({ signal }) => apiGetJson<NamespaceStatsResponse>("/api/k8s/namespace-stats", { signal }),
+    refetchInterval: 30_000,
   });
 
   const itemsWithData = useMemo(() => {

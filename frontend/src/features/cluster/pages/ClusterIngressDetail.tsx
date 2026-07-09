@@ -71,6 +71,7 @@ const ClusterIngressDetail: React.FC = () => {
         `/api/k8s/ingresses?namespace=${encodeURIComponent(namespace)}`
       , { signal }),
     enabled: Boolean(namespace && ingressName),
+    refetchInterval: 30_000,
   });
 
   const row = useMemo(

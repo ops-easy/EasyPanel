@@ -70,6 +70,7 @@ const ClusterSecretDetail: React.FC = () => {
         `/api/k8s/secrets?namespace=${encodeURIComponent(namespace)}`
       , { signal }),
     enabled: Boolean(namespace && secretName),
+    refetchInterval: 30_000,
   });
 
   const row = useMemo(

@@ -69,6 +69,7 @@ const ClusterConfigMapDetail: React.FC = () => {
         `/api/k8s/configmaps?namespace=${encodeURIComponent(namespace)}`
       , { signal }),
     enabled: Boolean(namespace && configMapName),
+    refetchInterval: 30_000,
   });
 
   const row = useMemo(

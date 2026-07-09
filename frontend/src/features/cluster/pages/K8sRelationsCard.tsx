@@ -208,6 +208,7 @@ export const K8sRelationsCard: React.FC<K8sRelationsCardProps> = ({ namespace, k
         `/api/k8s/resource-relations?namespace=${encodeURIComponent(namespace)}&kind=${encodeURIComponent(kind)}&name=${encodeURIComponent(name)}`
       , { signal }),
     enabled: Boolean(namespace && name),
+    refetchInterval: 30_000,
   });
 
   const filterSelf = (xs: string[] | undefined, self: string) =>

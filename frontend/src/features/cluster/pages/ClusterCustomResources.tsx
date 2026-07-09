@@ -111,6 +111,7 @@ export function ClusterCustomResourceCrdList() {
   const q = useQuery({
     queryKey: ["k8s-crds"],
     queryFn: ({ signal }) => apiGetJson<CrdListRes>("/api/k8s/crds", { signal }),
+    refetchInterval: 30_000,
   });
   const qc = useQueryClient();
   const [delName, setDelName] = useState<string | null>(null);
@@ -253,6 +254,7 @@ export function ClusterCustomResourceInstances() {
     queryKey: ["k8s-cr-instances", crdName, listQs],
     enabled: Boolean(crdName),
     queryFn: ({ signal }) => apiGetJson<CrListRes>(apiPathCrList(crdName, listQs), { signal }),
+    refetchInterval: 30_000,
   });
 
   const qc = useQueryClient();
@@ -413,15 +415,16 @@ export function ClusterCustomResourceDetail() {
   const crdName = crdEnc ? decodeURIComponent(crdEnc) : "";
   const namespaceSeg = nsEnc ? decodeURIComponent(nsEnc) : "";
   const objName = objEnc ? decodeURIComponent(objEnc) : "";
+  const [editJson, setEditJson] = useState("");
+  const [dirty, setDirty] = useState(false);
 
   const q = useQuery({
     queryKey: ["k8s-cr-one", crdName, namespaceSeg, objName],
     enabled: Boolean(crdName && namespaceSeg && objName),
     queryFn: ({ signal }) => apiGetJson<CrGetRes>(apiPathCrOne(crdName, namespaceSeg, objName), { signal }),
+    refetchInterval: dirty ? false : 30_000,
   });
 
-  const [editJson, setEditJson] = useState("");
-  const [dirty, setDirty] = useState(false);
   useEffect(() => {
     if (q.data?.object) {
       setEditJson(JSON.stringify(q.data.object, null, 2));

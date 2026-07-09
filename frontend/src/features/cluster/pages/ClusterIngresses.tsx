@@ -68,6 +68,7 @@ const ClusterIngresses: React.FC = () => {
     queryFn: ({ signal }) =>
       apiGetJson<IngressRow[]>(`/api/k8s/ingresses?namespace=${encodeURIComponent(namespace)}`, { signal }),
     enabled: Boolean(namespace),
+    refetchInterval: 30_000,
   });
 
   const applyMut = useMutation({
@@ -160,7 +161,7 @@ const ClusterIngresses: React.FC = () => {
                   <TableHead className="text-xs font-semibold text-slate-500">Hosts</TableHead>
                   <TableHead className="min-w-[200px] text-xs font-semibold text-slate-500">后端 Service</TableHead>
                   <TableHead className="text-xs font-semibold text-slate-500">Class</TableHead>
-                  <TableHead className="pr-5 text-right text-xs font-semibold text-slate-500">操作</TableHead>
+                  <TableHead className="min-w-[128px] pr-5 text-right text-xs font-semibold text-slate-500">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -213,12 +214,12 @@ const ClusterIngresses: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-xs text-slate-600">{row.class || "—"}</TableCell>
                     <TableCell className="pr-5 text-right align-middle">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex flex-nowrap justify-end gap-1">
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-8 px-2"
+                          className="h-8 shrink-0 px-2"
                           onClick={() => void openEditYaml(row.name)}
                         >
                           <Pencil className="h-3.5 w-3.5" />
@@ -227,7 +228,7 @@ const ClusterIngresses: React.FC = () => {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-8 px-2 text-red-600"
+                          className="h-8 shrink-0 px-2 text-red-600"
                           onClick={() => setDelName(row.name)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />

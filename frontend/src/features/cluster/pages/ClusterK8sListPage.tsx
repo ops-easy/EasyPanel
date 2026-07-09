@@ -159,6 +159,7 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
       apiGetJson<Record<string, unknown>[]>(
         `/api/k8s/${apiSuffix}${effectiveNs ? `?namespace=${encodeURIComponent(effectiveNs)}` : ""}`
       , { signal }),
+    refetchInterval: 30_000,
   });
 
   const yamlKind = YAML_KIND[apiSuffix];
@@ -542,13 +543,13 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
                       )}
                       {canCrud && (
                         <TableCell className="pr-4 text-right align-middle">
-                          <div className="flex justify-end gap-1">
+                          <div className="flex flex-nowrap justify-end gap-1">
                             {canGraphic && (
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 px-2"
+                                className="h-8 shrink-0 px-2"
                                 title="图形编辑"
                                 onClick={() => {
                                   setGraphicName(name);
@@ -564,7 +565,7 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 px-2 text-violet-700 hover:text-violet-800"
+                                className="h-8 shrink-0 px-2 text-violet-700 hover:text-violet-800"
                                 title="扩容 PVC（须 StorageClass 允许扩容）"
                                 onClick={() => {
                                   const cap = String(row.capacity ?? "").trim();
@@ -580,7 +581,7 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="h-8 px-2"
+                              className="h-8 shrink-0 px-2"
                               onClick={() => void openEditYaml(name)}
                             >
                               <Pencil className="h-3.5 w-3.5" />
@@ -590,7 +591,7 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="h-8 px-2 text-red-600 hover:text-red-700"
+                              className="h-8 shrink-0 px-2 text-red-600 hover:text-red-700"
                               onClick={() => setDelTarget({ name })}
                             >
                               <Trash2 className="h-3.5 w-3.5" />

@@ -63,6 +63,7 @@ const ClusterServiceDetail: React.FC = () => {
         `/api/k8s/services?namespace=${encodeURIComponent(namespace)}`
       , { signal }),
     enabled: Boolean(namespace && serviceName),
+    refetchInterval: 30_000,
   });
 
   const row = useMemo(

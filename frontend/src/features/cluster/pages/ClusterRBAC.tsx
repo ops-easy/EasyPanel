@@ -85,6 +85,7 @@ const ClusterRBAC: React.FC = () => {
   const q = useQuery({
     queryKey: ["k8s-rbac"],
     queryFn: ({ signal }) => apiGetJson<RBACPayload>("/api/k8s/rbac", { signal }),
+    refetchInterval: 30_000,
   });
 
   /** 自动创建 ClusterRole super-reader（全资源 get/list/watch） */

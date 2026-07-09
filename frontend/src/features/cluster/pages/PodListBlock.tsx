@@ -249,6 +249,7 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
       const qs = q.toString();
       return apiGetJson<PodRow[]>(`/api/k8s/pods${qs ? `?${qs}` : ""}`, { signal });
     },
+    refetchInterval: 30_000,
   });
 
   const metricsQ = useQuery({
@@ -489,7 +490,7 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                   <TableHead className="min-w-[108px] text-xs font-semibold text-slate-500" title="Prometheus 用量 ÷ requests">
                     对齐
                   </TableHead>
-                  <TableHead className="min-w-[220px] pr-5 text-right text-xs font-semibold text-slate-500">
+                  <TableHead className="min-w-[272px] pr-5 text-right text-xs font-semibold text-slate-500">
                     操作
                   </TableHead>
                 </TableRow>
@@ -552,15 +553,15 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                       {alignLine}
                     </TableCell>
                     <TableCell className="pr-5 text-right align-middle">
-                      <div className="flex flex-wrap items-center justify-end gap-1">
-                        <Button variant="outline" size="sm" className="h-8 gap-1 border-slate-200 text-xs" asChild>
+                      <div className="flex flex-nowrap items-center justify-end gap-1">
+                        <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1 whitespace-nowrap border-slate-200 text-xs" asChild>
                           <Link to={podDetailHref(p.namespace, p.name)}>详情</Link>
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="h-8 gap-1 border-slate-200 text-xs text-slate-800"
+                          className="h-8 shrink-0 gap-1 whitespace-nowrap border-slate-200 text-xs text-slate-800"
                           disabled={!p.firstContainer}
                           title={!p.firstContainer ? "无可用容器名" : "查看 stdout/stderr"}
                           onClick={() =>
@@ -579,7 +580,7 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-8 px-2 text-slate-600"
+                          className="h-8 shrink-0 px-2 text-slate-600"
                           onClick={() => void openEditYaml(podNs(p), p.name)}
                         >
                           <Pencil className="h-3.5 w-3.5" />
@@ -588,7 +589,7 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-8 px-2 text-red-600 hover:text-red-700"
+                          className="h-8 shrink-0 px-2 text-red-600 hover:text-red-700"
                           onClick={() => setDelTarget({ namespace: podNs(p), name: p.name })}
                         >
                           <Trash2 className="h-3.5 w-3.5" />

@@ -139,6 +139,7 @@ export const ClusterWorkloadDetail: React.FC<ClusterWorkloadDetailProps> = ({
         { signal }
       ),
     enabled: Boolean(namespace && workloadName),
+    refetchInterval: 30_000,
   });
 
   const row = useMemo(

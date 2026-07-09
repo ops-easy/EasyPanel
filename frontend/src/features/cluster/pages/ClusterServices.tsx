@@ -58,6 +58,7 @@ const ClusterServices: React.FC = () => {
         `/api/k8s/services?namespace=${encodeURIComponent(namespace)}`
       , { signal }),
     enabled: Boolean(namespace),
+    refetchInterval: 30_000,
   });
 
   const applyMut = useMutation({
@@ -218,12 +219,12 @@ const ClusterServices: React.FC = () => {
                       ) : null}
                     </TableCell>
                     <TableCell className="pr-5 text-right align-middle">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex flex-nowrap justify-end gap-1">
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-8 px-2"
+                          className="h-8 shrink-0 px-2"
                           title="图形编辑：切换 ClusterIP / NodePort 等"
                           onClick={() => {
                             setGraphicSvcMode("edit");
@@ -238,7 +239,7 @@ const ClusterServices: React.FC = () => {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-8 px-2"
+                          className="h-8 shrink-0 px-2"
                           title="编辑 YAML"
                           onClick={() => void openEditYaml(s.name)}
                         >
@@ -248,7 +249,7 @@ const ClusterServices: React.FC = () => {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-8 px-2 text-red-600"
+                          className="h-8 shrink-0 px-2 text-red-600"
                           onClick={() => setDelName(s.name)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />

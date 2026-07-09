@@ -49,6 +49,7 @@ const ClusterRBACServiceAccountDetail: React.FC = () => {
     queryKey: ["k8s-rbac-sa-detail", namespace, name],
     queryFn: ({ signal }) => apiGetJson<SADetail>(path, { signal }),
     enabled: Boolean(namespace && name),
+    refetchInterval: 30_000,
   });
 
   return (

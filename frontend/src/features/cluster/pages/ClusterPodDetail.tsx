@@ -386,6 +386,7 @@ const ClusterPodDetail: React.FC = () => {
     queryKey: ["k8s-pod", namespace, name],
     queryFn: ({ signal }) => apiGetJson<PodDetail>(podApiPath(namespace, name), { signal }),
     enabled: Boolean(namespace && name),
+    refetchInterval: 30_000,
   });
 
   const metricsQ = useQuery({
