@@ -471,8 +471,8 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
               {metricsQ.isFetching ? " · 拉取中…" : ""}
             </span>
           </div>
-          <div className="overflow-x-auto">
-            <Table className="min-w-[1320px]">
+          <div className="[&_[data-slot=table-container]]:pb-2">
+            <Table className="min-w-[1240px]">
               <TableHeader>
                 <TableRow className="border-slate-100 hover:bg-transparent">
                   <TableHead className="min-w-[200px] pl-5 text-xs font-semibold text-slate-500">
@@ -490,7 +490,7 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                   <TableHead className="min-w-[108px] text-xs font-semibold text-slate-500" title="Prometheus 用量 ÷ requests">
                     对齐
                   </TableHead>
-                  <TableHead className="sticky right-0 z-20 w-[244px] min-w-[244px] bg-white/95 pr-5 text-right text-xs font-semibold text-slate-500 shadow-[-10px_0_16px_-14px_rgba(15,23,42,0.45)]">
+                  <TableHead className="sticky right-0 z-20 w-[220px] min-w-[220px] border-l border-slate-100/80 bg-white pl-3 pr-4 text-right text-xs font-semibold text-slate-500">
                     操作
                   </TableHead>
                 </TableRow>
@@ -552,8 +552,8 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                     <TableCell className="align-middle font-mono text-[11px] tabular-nums leading-snug text-slate-600">
                       {alignLine}
                     </TableCell>
-                    <TableCell className="sticky right-0 z-10 w-[244px] min-w-[244px] bg-inherit pr-5 text-right align-middle shadow-[-10px_0_16px_-14px_rgba(15,23,42,0.45)]">
-                      <div className="flex w-full flex-nowrap items-center justify-end gap-1">
+                    <TableCell className="sticky right-0 z-10 w-[220px] min-w-[220px] border-l border-slate-100/80 bg-inherit pl-3 pr-4 text-right align-middle">
+                      <div className="flex w-full flex-nowrap items-center justify-end gap-1.5">
                         <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1 whitespace-nowrap border-slate-200 text-xs" asChild>
                           <Link to={podDetailHref(p.namespace, p.name)}>详情</Link>
                         </Button>
@@ -580,7 +580,7 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-8 shrink-0 px-2 text-slate-600"
+                          className="h-8 w-8 shrink-0 px-0 text-slate-600"
                           onClick={() => void openEditYaml(podNs(p), p.name)}
                         >
                           <Pencil className="h-3.5 w-3.5" />
@@ -589,7 +589,7 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-8 shrink-0 px-2 text-red-600 hover:text-red-700"
+                          className="h-8 w-8 shrink-0 px-0 text-red-600 hover:text-red-700"
                           onClick={() => setDelTarget({ namespace: podNs(p), name: p.name })}
                         >
                           <Trash2 className="h-3.5 w-3.5" />

@@ -28,8 +28,14 @@ test("pod row data auto-refreshes alongside pod metrics", () => {
 test("pod table row actions stay fully visible in horizontal overflow", () => {
   assert.match(
     source,
-    /<Table className="min-w-\[1320px\]">/,
-    "The Pod table needs a stable minimum width so browsers do not squeeze the action column"
+    /<div className="\[&_\[data-slot=table-container\]\]:pb-2">/,
+    "The Pod table should use the shared table scroll container and leave breathing room above the horizontal scrollbar"
+  );
+
+  assert.match(
+    source,
+    /<Table className="min-w-\[1240px\]">/,
+    "The Pod table should be wide enough for data columns without forcing awkward desktop overflow"
   );
 
   const actionHeader = sliceBetween(
@@ -39,13 +45,18 @@ test("pod table row actions stay fully visible in horizontal overflow", () => {
 
   assert.match(
     actionHeader,
-    /w-\[244px\][\s\S]*min-w-\[244px\]/,
+    /w-\[220px\][\s\S]*min-w-\[220px\]/,
     "The action column needs enough stable width for detail, log, edit, and delete controls"
   );
   assert.match(
     actionHeader,
-    /bg-white\/95[\s\S]*shadow-\[-10px_0_16px_-14px_rgba\(15,23,42,0\.45\)\]/,
-    "The pinned action header should cover scrolled content instead of visually clipping"
+    /border-l[\s\S]*border-slate-100\/80[\s\S]*bg-white/,
+    "The pinned action header should feel integrated with the table instead of looking like a floating white slab"
+  );
+  assert.doesNotMatch(
+    actionHeader,
+    /shadow-\[-10px_0_16px_-14px_rgba/,
+    "The pinned action header should not use a heavy overlay shadow"
   );
 
   const actionCell = sliceBetween(
@@ -55,12 +66,22 @@ test("pod table row actions stay fully visible in horizontal overflow", () => {
 
   assert.match(
     actionCell,
-    /w-\[244px\][\s\S]*min-w-\[244px\]/,
+    /w-\[220px\][\s\S]*min-w-\[220px\]/,
     "Each action cell should reserve the same width as the header"
   );
   assert.match(
+    actionCell,
+    /border-l[\s\S]*border-slate-100\/80[\s\S]*bg-inherit/,
+    "Pinned action cells should inherit the row surface and use only a subtle divider"
+  );
+  assert.doesNotMatch(
+    actionCell,
+    /shadow-\[-10px_0_16px_-14px_rgba/,
+    "Pinned action cells should not look like a separate overlay panel"
+  );
+  assert.match(
     source,
-    /className="flex w-full flex-nowrap items-center justify-end gap-1"/,
-    "The table action group should fill the pinned column without wrapping or spilling outside it"
+    /className="flex w-full flex-nowrap items-center justify-end gap-1\.5"/,
+    "The table action group should fill the pinned column with comfortable, non-wrapping spacing"
   );
 });
