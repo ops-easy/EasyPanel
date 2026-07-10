@@ -51,7 +51,7 @@ const pveConsoleQualityProfiles: Record<PveConsoleQuality, { label: string; qual
 };
 const PVE_POWER_ACTIONS: PvePowerAction[] = [
   { action: "start", label: "开机", description: "启动当前虚拟机或容器", enabledStates: ["stopped"] },
-  { action: "shutdown", label: "正常关机", description: "向系统发送正常关机请求", enabledStates: ["running"] },
+  { action: "shutdown", label: "正常关机", description: "请求系统关机，60 秒未停止则由 PVE 强制停止", enabledStates: ["running"] },
   { action: "reboot", label: "正常重启", description: "向系统发送正常重启请求", enabledStates: ["running"] },
   { action: "stop", label: "强制关机", description: "立即停止电源，可能造成未保存数据丢失", enabledStates: ["running"], danger: true },
   { action: "reset", label: "强制重启", description: "立即重置电源，可能造成未保存数据丢失", enabledStates: ["running"], danger: true },
@@ -661,7 +661,7 @@ export default function PveGuestDetail() {
     queryKey: ["pve-guest-detail", targetId, node, canonicalGuestType, vmid],
     queryFn: ({ signal }) => apiGetJson<PveDetailEnvelope>(detailPath, { signal }),
     enabled: Boolean(targetId && node && canonicalGuestType && vmid),
-    refetchInterval: 30_000,
+    refetchInterval: taskId ? 2000 : 30_000,
   });
 
   const metricsQ = useQuery({
@@ -801,6 +801,7 @@ export default function PveGuestDetail() {
       {taskId ? (
         <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
           正在跟踪 PVE 任务：<span className="font-mono text-xs">{taskId}</span>
+          <span className="ml-2 text-blue-700">状态会自动刷新。</span>
         </div>
       ) : null}
 

@@ -51,11 +51,13 @@ test("PVE power operations match the PVE workspace confirmation flow and send co
   assert.match(guest, /PVE_POWER_ACTIONS/);
   assert.match(guest, /label: "开机"/);
   assert.match(guest, /label: "正常关机"/);
+  assert.match(guest, /60 秒未停止则由 PVE 强制停止/);
   assert.match(guest, /label: "正常重启"/);
   assert.match(guest, /label: "强制关机"/);
   assert.match(guest, /label: "强制重启"/);
   assert.match(guest, /enabledStates: \["stopped"\]/);
   assert.match(guest, /enabledStates: \["running"\]/);
+  assert.match(guest, /refetchInterval: taskId \? 2000 : 30_000/);
   assert.match(guest, /availablePowerActions/);
   assert.match(guest, /pvePowerStateFromStatus/);
   assert.match(guest, /apiPostJson<PveTaskEnvelope>[\s\S]*withPveMutationConfirm\(\{ node, type: canonicalGuestType, action \}\)/);

@@ -89,6 +89,38 @@ func TestPVEGuestPowerRejectsMissingConfirmationBeforeClientLookup(t *testing.T)
 	}
 }
 
+func TestPVEGuestPowerFormAddsShutdownFallback(t *testing.T) {
+	qemuForm, err := pveGuestPowerForm("qemu", "shutdown")
+	if err != nil {
+		t.Fatalf("qemu shutdown form returned error: %v", err)
+	}
+	if got := qemuForm.Get("timeout"); got != "60" {
+		t.Fatalf("qemu shutdown timeout=%q, want 60", got)
+	}
+	if got := qemuForm.Get("forceStop"); got != "1" {
+		t.Fatalf("qemu shutdown forceStop=%q, want 1", got)
+	}
+
+	lxcForm, err := pveGuestPowerForm("lxc", "shutdown")
+	if err != nil {
+		t.Fatalf("lxc shutdown form returned error: %v", err)
+	}
+	if got := lxcForm.Get("timeout"); got != "60" {
+		t.Fatalf("lxc shutdown timeout=%q, want 60", got)
+	}
+	if got := lxcForm.Get("forceStop"); got != "" {
+		t.Fatalf("lxc shutdown forceStop=%q, want empty", got)
+	}
+
+	startForm, err := pveGuestPowerForm("qemu", "start")
+	if err != nil {
+		t.Fatalf("start form returned error: %v", err)
+	}
+	if len(startForm) != 0 {
+		t.Fatalf("start form=%#v, want empty", startForm)
+	}
+}
+
 func TestPVETargetMutationsRejectMissingConfirmationBeforeKVLookup(t *testing.T) {
 	cases := []struct {
 		name   string

@@ -310,8 +310,26 @@ type pveGuestPowerBody struct {
 	Confirm bool   `json:"confirm"`
 }
 
+const pveGuestShutdownTimeoutSeconds = 60
+
 func pveGuestPowerActionRequiresConfirm(action string) bool {
 	return validatePVEGuestPowerAction(action) == nil
+}
+
+func pveGuestPowerForm(guestType, action string) (url.Values, error) {
+	form := url.Values{}
+	if strings.TrimSpace(action) != "shutdown" {
+		return form, nil
+	}
+	segment, err := pveGuestAPISegment(guestType)
+	if err != nil {
+		return nil, err
+	}
+	form.Set("timeout", strconv.Itoa(pveGuestShutdownTimeoutSeconds))
+	if segment == "qemu" {
+		form.Set("forceStop", "1")
+	}
+	return form, nil
 }
 
 func handlePVEGuestPower(c *gin.Context, app *ServerApp) {
@@ -333,11 +351,16 @@ func handlePVEGuestPower(c *gin.Context, app *ServerApp) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "PVE 电源操作需要显式 confirm=true"})
 		return
 	}
+	form, err := pveGuestPowerForm(body.Type, action)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	client, _, ok := pveClientForRequest(c, app)
 	if !ok {
 		return
 	}
-	data, err := client.Do(c.Request.Context(), http.MethodPost, path, nil, map[string]string{})
+	data, err := client.Do(c.Request.Context(), http.MethodPost, path, nil, form)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
