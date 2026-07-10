@@ -166,12 +166,14 @@ function PodTableRows({
           </TableCell>
           <TableCell className="whitespace-nowrap text-xs text-slate-600">{parseAge(p.age)}</TableCell>
           <TableCell className="tabular-nums text-xs">{p.restarts}</TableCell>
-          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+          <TableCell className="text-left" onClick={(e) => e.stopPropagation()}>
             <Button
               type="button"
               variant="outline"
               size="sm"
               className="h-7 text-xs"
+              title="打开 Pod 详情"
+              aria-label="打开 Pod 详情"
               onClick={() => onRowNavigate(p)}
             >
               Pod 详情
@@ -261,7 +263,7 @@ function NodeDetailDialog({ node, open, onOpenChange }: NodeDetailDialogProps) {
                           <TableHead className="w-[88px] text-xs">阶段</TableHead>
                           <TableHead className="w-[100px] text-xs">Age</TableHead>
                           <TableHead className="w-[56px] text-xs">重启</TableHead>
-                          <TableHead className="w-[96px] text-right text-xs">操作</TableHead>
+                          <TableHead className="w-[96px] text-left text-xs">操作</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -285,7 +287,7 @@ function NodeDetailDialog({ node, open, onOpenChange }: NodeDetailDialogProps) {
                           <TableHead className="w-[88px] text-xs">阶段</TableHead>
                           <TableHead className="w-[100px] text-xs">Age</TableHead>
                           <TableHead className="w-[56px] text-xs">重启</TableHead>
-                          <TableHead className="w-[96px] text-right text-xs">操作</TableHead>
+                          <TableHead className="w-[96px] text-left text-xs">操作</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -385,7 +387,7 @@ const ClusterNodes: React.FC = () => {
                   <TableHead className="h-12 min-w-[100px] text-xs font-semibold uppercase tracking-wide text-slate-600">
                     Age
                   </TableHead>
-                  <TableHead className="h-12 w-[104px] text-right text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <TableHead className="h-12 w-[104px] text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                     操作
                   </TableHead>
                 </TableRow>
@@ -423,12 +425,14 @@ const ClusterNodes: React.FC = () => {
                     <TableCell className="align-middle whitespace-nowrap py-3 text-xs text-slate-600">
                       {parseAge(n.age)}
                     </TableCell>
-                    <TableCell className="align-middle py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="align-middle py-3 text-left" onClick={(e) => e.stopPropagation()}>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         className="h-8 border-slate-200 bg-white text-xs font-medium shadow-sm hover:bg-slate-50"
+                        title="查看节点与 Pod"
+                        aria-label="查看节点与 Pod"
                         onClick={() => openDetail(n)}
                       >
                         节点与 Pod

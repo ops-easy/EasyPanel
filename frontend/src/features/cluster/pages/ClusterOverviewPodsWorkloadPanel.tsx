@@ -759,7 +759,7 @@ const ClusterOverviewPodsWorkloadPanel: React.FC = () => {
                       <TableHead className="text-[11px]">CPU 均比</TableHead>
                       <TableHead className="text-[11px]">Mem 均比</TableHead>
                       <TableHead className="text-[11px]">建议 requests</TableHead>
-                      <TableHead className="pr-3 text-right text-[11px]">操作</TableHead>
+                      <TableHead className="pr-3 text-left text-[11px]">操作</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -794,7 +794,7 @@ const ClusterOverviewPodsWorkloadPanel: React.FC = () => {
                           <TableCell className="max-w-[200px] text-[10px] leading-snug text-muted-foreground">
                             {[r.suggestedCpuRequest, r.suggestedMemoryRequest].filter(Boolean).join(" · ") || "—"}
                           </TableCell>
-                          <TableCell className="pr-3 text-right">
+                          <TableCell className="pr-3 text-left">
                             <ConfirmActionButton
                               type="button"
                               size="sm"
@@ -900,7 +900,7 @@ const ClusterOverviewPodsWorkloadPanel: React.FC = () => {
                   <TableHead className="w-10 text-center text-[11px] font-medium text-muted-foreground" title="缺 limits">
                     L
                   </TableHead>
-                  <TableHead className="pr-4 text-right text-[11px] font-medium text-muted-foreground">操作</TableHead>
+                  <TableHead className="pr-4 text-left text-[11px] font-medium text-muted-foreground">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1040,9 +1040,15 @@ const ClusterOverviewPodsWorkloadPanel: React.FC = () => {
                           <span className="text-muted-foreground/40">·</span>
                         )}
                       </TableCell>
-                      <TableCell className="pr-4 text-right">
+                      <TableCell className="pr-4 text-left">
                         <Button variant="link" className="h-auto p-0 text-xs" asChild>
-                          <Link to={podDetailHref(row.namespace, row.pod)}>详情</Link>
+                          <Link
+                            to={podDetailHref(row.namespace, row.pod)}
+                            title="查看 Pod 详情"
+                            aria-label="查看 Pod 详情"
+                          >
+                            详情
+                          </Link>
                         </Button>
                       </TableCell>
                     </TableRow>

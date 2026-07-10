@@ -156,7 +156,7 @@ export function ClusterCustomResourceCrdList() {
                 <TableHead>Scope</TableHead>
                 <TableHead>版本</TableHead>
                 <TableHead>创建时间</TableHead>
-                <TableHead className="w-[120px] text-right">操作</TableHead>
+                <TableHead className="w-[120px] text-left">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -180,13 +180,15 @@ export function ClusterCustomResourceCrdList() {
                     <div>{row.createdAt ? parseAge(row.createdAt) : "—"}</div>
                     <div className="text-[11px] text-slate-400">{row.createdAt || ""}</div>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-left">
                     {isAdmin && (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         className="text-red-600 hover:text-red-700"
+                        title="删除 CRD"
+                        aria-label="删除 CRD"
                         onClick={(e) => {
                           e.preventDefault();
                           setDelName(row.name);

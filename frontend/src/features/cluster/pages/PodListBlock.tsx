@@ -462,14 +462,30 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
 
       {podsQ.data && podsQ.data.length > 0 && !showCards && (
         <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-gradient-to-r from-slate-50/90 to-white px-4 py-3 sm:px-5">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Pod 列表
-            </span>
-            <span className="text-[11px] text-slate-500">
-              实际用量来自 Prometheus（5m rate / working_set）；申请来自 Pod spec requests；对齐列为 实际÷申请，约 30s 刷新
-              {metricsQ.isFetching ? " · 拉取中…" : ""}
-            </span>
+          <div className="flex flex-col gap-3 border-b border-slate-100 bg-gradient-to-r from-slate-50/90 to-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div className="min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Pod 列表
+                </span>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                  {podsQ.data.length} 个
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-500">
+                CPU/内存为 Prometheus 5m 实际用量；资源占比 = 实际用量 ÷ requests。
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-2 text-[11px] text-slate-500">
+              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-medium">
+                30s 自动刷新
+              </span>
+              {metricsQ.isFetching ? (
+                <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 font-medium text-blue-700">
+                  指标拉取中…
+                </span>
+              ) : null}
+            </div>
           </div>
           <div className="[&_[data-slot=table-container]]:pb-2">
             <Table className="min-w-[1240px]">
@@ -478,19 +494,19 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                   <TableHead className="min-w-[200px] pl-5 text-xs font-semibold text-slate-500">
                     名称
                   </TableHead>
-                  <TableHead className="w-[112px] text-xs font-semibold text-slate-500">阶段</TableHead>
+                  <TableHead className="w-[112px] text-xs font-semibold text-slate-500">状态</TableHead>
                   <TableHead className="min-w-[140px] text-xs font-semibold text-slate-500">节点</TableHead>
                   <TableHead className="w-[72px] text-xs font-semibold text-slate-500">重启</TableHead>
-                  <TableHead className="w-[100px] text-xs font-semibold text-slate-500">Age</TableHead>
+                  <TableHead className="w-[100px] text-xs font-semibold text-slate-500">运行时长</TableHead>
                   <TableHead className="min-w-[108px] text-xs font-semibold text-slate-500" title="resources.requests 合计（工作容器）">
-                    申请
+                    资源申请
                   </TableHead>
-                  <TableHead className="w-[88px] text-xs font-semibold text-slate-500">CPU 实际</TableHead>
-                  <TableHead className="min-w-[100px] text-xs font-semibold text-slate-500">内存实际</TableHead>
-                  <TableHead className="min-w-[108px] text-xs font-semibold text-slate-500" title="Prometheus 用量 ÷ requests">
-                    对齐
+                  <TableHead className="w-[88px] text-xs font-semibold text-slate-500">CPU 用量</TableHead>
+                  <TableHead className="min-w-[100px] text-xs font-semibold text-slate-500">内存用量</TableHead>
+                  <TableHead className="min-w-[108px] text-xs font-semibold text-slate-500" title="CPU / 内存实际用量 ÷ requests">
+                    使用/申请
                   </TableHead>
-                  <TableHead className="sticky right-0 z-20 w-[220px] min-w-[220px] border-l border-slate-100/80 bg-white pl-3 pr-4 text-right text-xs font-semibold text-slate-500">
+                  <TableHead className="sticky right-0 z-20 w-[220px] min-w-[220px] border-l border-slate-100/80 bg-white pl-3 pr-4 text-left text-xs font-semibold text-slate-500">
                     操作
                   </TableHead>
                 </TableRow>
@@ -552,10 +568,16 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                     <TableCell className="align-middle font-mono text-[11px] tabular-nums leading-snug text-slate-600">
                       {alignLine}
                     </TableCell>
-                    <TableCell className="sticky right-0 z-10 w-[220px] min-w-[220px] border-l border-slate-100/80 bg-inherit pl-3 pr-4 text-right align-middle">
-                      <div className="flex w-full flex-nowrap items-center justify-end gap-1.5">
+                    <TableCell className="sticky right-0 z-10 w-[220px] min-w-[220px] border-l border-slate-100/80 bg-inherit pl-3 pr-4 text-left align-middle">
+                      <div className="flex w-full flex-nowrap items-center justify-start gap-1.5">
                         <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1 whitespace-nowrap border-slate-200 text-xs" asChild>
-                          <Link to={podDetailHref(p.namespace, p.name)}>详情</Link>
+                          <Link
+                            to={podDetailHref(p.namespace, p.name)}
+                            title="查看 Pod 详情"
+                            aria-label="查看 Pod 详情"
+                          >
+                            详情
+                          </Link>
                         </Button>
                         <Button
                           type="button"
@@ -563,7 +585,8 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                           size="sm"
                           className="h-8 shrink-0 gap-1 whitespace-nowrap border-slate-200 text-xs text-slate-800"
                           disabled={!p.firstContainer}
-                          title={!p.firstContainer ? "无可用容器名" : "查看 stdout/stderr"}
+                          title={!p.firstContainer ? "无可用容器名，无法查看日志" : "查看 Pod 日志"}
+                          aria-label="查看 Pod 日志"
                           onClick={() =>
                             p.firstContainer &&
                             setLogTarget({
@@ -581,6 +604,8 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 shrink-0 px-0 text-slate-600"
+                          title="编辑 YAML"
+                          aria-label="编辑 YAML"
                           onClick={() => void openEditYaml(podNs(p), p.name)}
                         >
                           <Pencil className="h-3.5 w-3.5" />
@@ -590,6 +615,8 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 shrink-0 px-0 text-red-600 hover:text-red-700"
+                          title="删除 Pod"
+                          aria-label="删除 Pod"
                           onClick={() => setDelTarget({ namespace: podNs(p), name: p.name })}
                         >
                           <Trash2 className="h-3.5 w-3.5" />

@@ -170,7 +170,7 @@ const ClusterServices: React.FC = () => {
                   <TableHead className="w-[220px] max-w-[240px] text-xs font-semibold text-slate-500">
                     端口 / NodePort
                   </TableHead>
-                  <TableHead className="min-w-[220px] pr-5 text-right text-xs font-semibold text-slate-500">
+                  <TableHead className="min-w-[220px] pl-2 pr-5 text-left text-xs font-semibold text-slate-500">
                     操作
                   </TableHead>
                 </TableRow>
@@ -218,14 +218,15 @@ const ClusterServices: React.FC = () => {
                         <p className="mt-1 text-[10px] text-slate-400">更多端口请打开详情</p>
                       ) : null}
                     </TableCell>
-                    <TableCell className="pr-5 text-right align-middle">
-                      <div className="flex flex-nowrap justify-end gap-1">
+                    <TableCell className="pl-2 pr-5 text-left align-middle">
+                      <div className="flex flex-nowrap justify-start gap-1">
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           className="h-8 shrink-0 px-2"
                           title="图形编辑：切换 ClusterIP / NodePort 等"
+                          aria-label="图形编辑 Service"
                           onClick={() => {
                             setGraphicSvcMode("edit");
                             setGraphicName(s.name);
@@ -241,6 +242,7 @@ const ClusterServices: React.FC = () => {
                           size="sm"
                           className="h-8 shrink-0 px-2"
                           title="编辑 YAML"
+                          aria-label="编辑 Service YAML"
                           onClick={() => void openEditYaml(s.name)}
                         >
                           <Pencil className="h-3.5 w-3.5" />
@@ -250,6 +252,8 @@ const ClusterServices: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           className="h-8 shrink-0 px-2 text-red-600"
+                          title="删除 Service"
+                          aria-label="删除 Service"
                           onClick={() => setDelName(s.name)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />

@@ -384,7 +384,7 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
                   )}
                   {canCrud && (
                     <TableHead
-                      className={`pr-4 text-right text-xs font-semibold text-slate-500 ${showPvcExpand ? "w-[220px]" : "w-[180px]"}`}
+                      className={`pl-2 pr-4 text-left text-xs font-semibold text-slate-500 ${showPvcExpand ? "w-[220px]" : "w-[180px]"}`}
                     >
                       操作
                     </TableHead>
@@ -542,8 +542,8 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
                         </TableCell>
                       )}
                       {canCrud && (
-                        <TableCell className="pr-4 text-right align-middle">
-                          <div className="flex flex-nowrap justify-end gap-1">
+                        <TableCell className="pl-2 pr-4 text-left align-middle">
+                          <div className="flex flex-nowrap justify-start gap-1">
                             {canGraphic && (
                               <Button
                                 type="button"
@@ -551,6 +551,7 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
                                 size="sm"
                                 className="h-8 shrink-0 px-2"
                                 title="图形编辑"
+                                aria-label="图形编辑"
                                 onClick={() => {
                                   setGraphicName(name);
                                   setGraphicOpen(true);
@@ -567,6 +568,7 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
                                 size="sm"
                                 className="h-8 shrink-0 px-2 text-violet-700 hover:text-violet-800"
                                 title="扩容 PVC（须 StorageClass 允许扩容）"
+                                aria-label="扩容 PVC"
                                 onClick={() => {
                                   const cap = String(row.capacity ?? "").trim();
                                   setExpandTarget({ name, capacity: cap });
@@ -582,6 +584,8 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
                               variant="ghost"
                               size="sm"
                               className="h-8 shrink-0 px-2"
+                              title="编辑 YAML"
+                              aria-label="编辑 YAML"
                               onClick={() => void openEditYaml(name)}
                             >
                               <Pencil className="h-3.5 w-3.5" />
@@ -592,6 +596,8 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
                               variant="ghost"
                               size="sm"
                               className="h-8 shrink-0 px-2 text-red-600 hover:text-red-700"
+                              title="删除资源"
+                              aria-label="删除资源"
                               onClick={() => setDelTarget({ name })}
                             >
                               <Trash2 className="h-3.5 w-3.5" />

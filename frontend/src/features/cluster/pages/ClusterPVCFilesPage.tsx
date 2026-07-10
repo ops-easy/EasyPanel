@@ -463,7 +463,7 @@ const ClusterPVCFilesPage: React.FC = () => {
                     <TableHead>名称</TableHead>
                     <TableHead>类型</TableHead>
                     <TableHead className="text-right">大小</TableHead>
-                    <TableHead className="w-[220px] text-right">操作</TableHead>
+                    <TableHead className="w-[220px] text-left">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -497,8 +497,8 @@ const ClusterPVCFilesPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="text-sm">{row.type}</TableCell>
                         <TableCell className="text-right tabular-nums text-sm">{row.size}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
+                        <TableCell className="text-left">
+                          <div className="flex justify-start gap-1">
                             {row.type !== "dir" && (
                               <>
                                 <Button
@@ -506,6 +506,8 @@ const ClusterPVCFilesPage: React.FC = () => {
                                   variant="ghost"
                                   size="sm"
                                   className="h-8 px-2"
+                                  title="下载文件"
+                                  aria-label="下载文件"
                                   onClick={() => void downloadFile(row.name)}
                                 >
                                   <Download className="h-3.5 w-3.5" />
@@ -515,6 +517,8 @@ const ClusterPVCFilesPage: React.FC = () => {
                                   variant="ghost"
                                   size="sm"
                                   className="h-8 px-2"
+                                  title="编辑文件"
+                                  aria-label="编辑文件"
                                   onClick={() => void openRead(row.name)}
                                 >
                                   <Pencil className="h-3.5 w-3.5" />
@@ -528,6 +532,8 @@ const ClusterPVCFilesPage: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 px-2"
+                                title="重命名文件"
+                                aria-label="重命名文件"
                                 onClick={() => {
                                   setRenameFrom(row.name);
                                   setRenameTo(row.name);
@@ -543,6 +549,8 @@ const ClusterPVCFilesPage: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 px-2 text-red-600"
+                                title="删除文件或目录"
+                                aria-label="删除文件或目录"
                                 onClick={() => {
                                   setDeleteName(row.name);
                                   setDeleteOpen(true);
