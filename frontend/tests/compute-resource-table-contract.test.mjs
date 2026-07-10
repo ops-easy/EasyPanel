@@ -13,7 +13,6 @@ test("compute resource page delegates filters table status and actions", () => {
     "ComputeResourceFilters",
     "ComputeResourceTable",
     "ComputeStatusBadge",
-    "ComputeRowActions",
   ]) {
     assert.match(page, new RegExp(component));
   }
@@ -41,6 +40,12 @@ test("compute resource table defines resource-specific columns and action metada
   }
   assert.match(table, /actions/);
   assert.match(table, /statusLabel/);
+  assert.match(table, /capabilityLabel/);
+  assert.match(table, /power: "电源"/);
+  assert.match(table, /hardware: "硬件"/);
+  assert.match(table, /function formatCpuCores/);
+  assert.match(table, /sourceValue\(row, "maxcpu", "cores", "cpus", "vcpus"\)/);
+  assert.doesNotMatch(table, /sourceValue\(row, "cpu", "maxcpu"\)/);
 });
 
 test("compute filters expose semantic pressed states for custom controls", () => {
@@ -65,19 +70,18 @@ test("compute row actions deep link to console and ssh detail tabs", () => {
   assert.match(pveDetail, /defaultValue=\{initialTab\}/);
 });
 
-test("compute row PVE power actions use inline confirmation instead of a disabled or typed-name entry", () => {
+test("compute row PVE power actions stay in detail pages instead of the unified table", () => {
   const page = read("../src/features/compute/pages/ComputeResourcePage.tsx");
   const table = read("../src/features/compute/components/ComputeResourceTable.tsx");
   const actions = read("../src/features/compute/components/ComputeRowActions.tsx");
+  const pveDetail = read("../src/features/compute/pve/pages/PveGuestDetail.tsx");
 
-  assert.match(page, /pvePowerMut/);
-  assert.match(page, /withPveMutationConfirm\(\{ node, type, action \}\)/);
-  assert.match(page, /\/api\/pve\/targets\/\$\{encodeURIComponent\(targetId\)\}\/guests\/\$\{encodeURIComponent\(vmid\)\}\/power/);
-  assert.match(table, /onPvePower/);
-  assert.match(actions, /ConfirmActionButton/);
-  assert.match(actions, /PVE_POWER_ACTIONS/);
-  assert.match(actions, /onPvePower\(\{ targetId, vmid, node, type, action \}\)/);
-  assert.doesNotMatch(actions, /disabled title="电源操作在详情页确认后执行"/);
-  assert.doesNotMatch(actions, /#power/);
-  assert.doesNotMatch(actions, /powerConfirmName/);
+  assert.doesNotMatch(page, /pvePowerMut/);
+  assert.doesNotMatch(page, /\/api\/pve\/targets\/\$\{encodeURIComponent\(targetId\)\}\/guests\/\$\{encodeURIComponent\(vmid\)\}\/power/);
+  assert.doesNotMatch(table, /onPvePower/);
+  assert.doesNotMatch(actions, /ConfirmActionButton/);
+  assert.doesNotMatch(actions, /PVE_POWER_ACTIONS/);
+  assert.match(actions, /详情/);
+  assert.match(pveDetail, /PVE_POWER_ACTIONS/);
+  assert.match(pveDetail, /powerMut\.mutate\(item\.action\)/);
 });

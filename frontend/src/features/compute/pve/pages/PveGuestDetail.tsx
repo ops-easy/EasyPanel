@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Cpu, HardDrive, Loader2, Monitor, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Cpu, HardDrive, Loader2, Monitor, Plus, Power, RefreshCw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -35,13 +35,27 @@ type PveTaskEnvelope = { task?: unknown };
 type PveConsoleEnvelope = { console?: Record<string, unknown> };
 type NoVNCRFB = InstanceType<typeof import("@novnc/novnc").default>;
 type PveConsoleQuality = "smooth" | "balanced" | "sharp";
+type PvePowerState = "running" | "stopped" | "unknown";
+type PvePowerAction = {
+  action: string;
+  label: string;
+  description: string;
+  enabledStates: PvePowerState[];
+  danger?: boolean;
+};
 
 const pveConsoleQualityProfiles: Record<PveConsoleQuality, { label: string; qualityLevel: number; compressionLevel: number; resizeSession: boolean }> = {
   smooth: { label: "流畅", qualityLevel: 3, compressionLevel: 2, resizeSession: true },
   balanced: { label: "均衡", qualityLevel: 5, compressionLevel: 2, resizeSession: true },
   sharp: { label: "清晰", qualityLevel: 7, compressionLevel: 1, resizeSession: false },
 };
-const PVE_POWER_ACTIONS = ["start", "shutdown", "reboot", "stop", "reset"];
+const PVE_POWER_ACTIONS: PvePowerAction[] = [
+  { action: "start", label: "开机", description: "启动当前虚拟机或容器", enabledStates: ["stopped"] },
+  { action: "shutdown", label: "正常关机", description: "向系统发送正常关机请求", enabledStates: ["running"] },
+  { action: "reboot", label: "正常重启", description: "向系统发送正常重启请求", enabledStates: ["running"] },
+  { action: "stop", label: "强制关机", description: "立即停止电源，可能造成未保存数据丢失", enabledStates: ["running"], danger: true },
+  { action: "reset", label: "强制重启", description: "立即重置电源，可能造成未保存数据丢失", enabledStates: ["running"], danger: true },
+];
 
 function asRows(raw: unknown): Record<string, unknown>[] {
   if (Array.isArray(raw)) return raw as Record<string, unknown>[];
@@ -62,6 +76,21 @@ function valueText(v: unknown): string {
 function optionalText(v: unknown): string | undefined {
   const s = valueText(v).trim();
   return s && s !== "-" ? s : undefined;
+}
+
+function pvePowerStateFromStatus(status: Record<string, unknown>): PvePowerState {
+  const raw = String(status.status ?? status.qmpstatus ?? "").trim().toLowerCase();
+  if (!raw) return "unknown";
+  if (raw.includes("running") || raw.includes("poweredon")) return "running";
+  if (raw.includes("stopped") || raw.includes("poweredoff")) return "stopped";
+  return "unknown";
+}
+
+function pvePowerStateLabel(state: PvePowerState, rawStatus: unknown): string {
+  if (state === "running") return "运行中";
+  if (state === "stopped") return "已停止";
+  const raw = optionalText(rawStatus);
+  return raw ?? "未知";
 }
 
 function numberText(v: unknown): string {
@@ -727,6 +756,9 @@ export default function PveGuestDetail() {
 
   const status = detailQ.data?.status ?? {};
   const config = detailQ.data?.config ?? {};
+  const powerState = pvePowerStateFromStatus(status);
+  const powerStateLabel = pvePowerStateLabel(powerState, status.status);
+  const availablePowerActions = PVE_POWER_ACTIONS.filter((item) => item.enabledStates.includes(powerState));
   const metricRows = useMemo(() => asRows(metricsQ.data?.metrics), [metricsQ.data?.metrics]);
   const snapshotRows = useMemo(() => asRows(snapshotsQ.data?.snapshots), [snapshotsQ.data?.snapshots]);
   const loading = detailQ.isLoading || metricsQ.isLoading;
@@ -787,7 +819,9 @@ export default function PveGuestDetail() {
           <section className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs text-slate-500">状态</p>
-              <div className="mt-2"><Badge>{valueText(status.status)}</Badge></div>
+              <div className="mt-2">
+                <Badge variant={powerState === "running" ? "default" : "outline"}>{powerStateLabel}</Badge>
+              </div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs text-slate-500">CPU</p>
@@ -799,24 +833,46 @@ export default function PveGuestDetail() {
             </div>
           </section>
           <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-950">电源操作</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {PVE_POWER_ACTIONS.map((action) => (
-                <ConfirmActionButton
-                  key={action}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={operationPending}
-                  title="确认执行 PVE 电源操作？"
-                  description={`将对 ${canonicalGuestType} ${node}/${vmid} 执行 ${action} 操作。`}
-                  confirmLabel="执行"
-                  onConfirm={() => powerMut.mutate(action)}
-                >
-                  {action}
-                </ConfirmActionButton>
-              ))}
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-950">电源操作</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  当前状态：{powerStateLabel}。这里只显示当前可以执行的操作。
+                </p>
+              </div>
+              {detailQ.isFetching ? (
+                <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  正在刷新状态
+                </span>
+              ) : null}
             </div>
+            {availablePowerActions.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {availablePowerActions.map((item) => (
+                  <ConfirmActionButton
+                    key={item.action}
+                    type="button"
+                    variant={item.danger ? "outline" : "default"}
+                    size="sm"
+                    className={item.danger ? "gap-1.5 border-red-200 text-red-700 hover:bg-red-50" : "gap-1.5 bg-amber-600 hover:bg-amber-700"}
+                    disabled={operationPending}
+                    title="确认执行 PVE 电源操作？"
+                    description={`${item.description}：${canonicalGuestType} ${node}/${vmid}。`}
+                    confirmLabel={item.label}
+                    confirmButtonClassName={item.danger ? "bg-red-600 text-white hover:bg-red-700" : undefined}
+                    onConfirm={() => powerMut.mutate(item.action)}
+                  >
+                    <Power className="h-3.5 w-3.5" />
+                    {item.label}
+                  </ConfirmActionButton>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+                暂时无法判断可用电源操作，请刷新状态后再试。
+              </p>
+            )}
           </section>
           {loading ? <div className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" />加载中...</div> : null}
           <section className="grid gap-4 xl:grid-cols-2">

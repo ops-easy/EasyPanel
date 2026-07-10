@@ -1,7 +1,7 @@
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { Badge } from "@/shared/ui/badge";
-import { computeProviderLabels, type ComputeRow, type ComputeView, type PvePowerActionRequest } from "./compute-resource-types";
+import { computeProviderLabels, type ComputeRow, type ComputeView } from "./compute-resource-types";
 import ComputeRowActions from "./ComputeRowActions";
 import ComputeStatusBadge from "./ComputeStatusBadge";
 import { cn } from "@/lib/utils";
@@ -56,6 +56,12 @@ function formatPct(value: unknown): string {
   return `${pct.toFixed(1)}%`;
 }
 
+function formatCpuCores(value: unknown): string {
+  const n = numberValue(value);
+  if (n == null || n <= 0) return "-";
+  return `${Number.isInteger(n) ? n.toFixed(0) : n.toFixed(1)} 核`;
+}
+
 function formatTime(value: unknown): string {
   const raw = valueText(value, "");
   if (!raw) return "-";
@@ -87,7 +93,7 @@ function CapabilityList({ row }: { row: ComputeRow }) {
     <div className="flex max-w-[260px] flex-wrap gap-1">
       {items.map((item) => (
         <span key={item} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600">
-          {item}
+          {capabilityLabel(item)}
         </span>
       ))}
       {(row.actions ?? row.capabilities ?? []).length > items.length ? (
@@ -99,11 +105,33 @@ function CapabilityList({ row }: { row: ComputeRow }) {
   );
 }
 
+function capabilityLabel(item: string): string {
+  const labels: Record<string, string> = {
+    detail: "详情",
+    metrics: "性能",
+    power: "电源",
+    hardware: "硬件",
+    console: "控制台",
+    ssh: "SSH",
+    sftp: "SFTP",
+    snapshots: "快照",
+    storage: "存储",
+    tasks: "任务",
+  };
+  return labels[item] ?? item;
+}
+
 function guestSpec(row: ComputeRow): string {
-  const cpu = valueText(sourceValue(row, "cpu", "maxcpu"), "-");
+  const cpuSource = row.provider === "pve"
+    ? sourceValue(row, "maxcpu", "cores", "cpus", "vcpus")
+    : sourceValue(row, "numCpu", "cpu", "cores", "maxcpu");
+  const cpu = formatCpuCores(cpuSource);
   const mem = row.provider === "vcenter" ? numberValue(sourceValue(row, "memoryMB")) : numberValue(sourceValue(row, "maxmem"));
   const memText = row.provider === "vcenter" && mem != null ? `${(mem / 1024).toFixed(1)} GiB` : formatBytes(mem);
-  return cpu === "-" && memText === "-" ? "-" : `${cpu} CPU / ${memText}`;
+  if (cpu === "-" && memText === "-") return "-";
+  if (cpu === "-") return memText;
+  if (memText === "-") return cpu;
+  return `${cpu} / ${memText}`;
 }
 
 function hostMetrics(row: ComputeRow): string {
@@ -133,12 +161,9 @@ export type ComputeResourceTableProps = {
   rows: ComputeRow[];
   loading: boolean;
   emptyLabel: string;
-  canWrite?: boolean;
-  pvePowerPending?: boolean;
-  onPvePower?: (body: PvePowerActionRequest) => void;
 };
 
-const ComputeResourceTable: React.FC<ComputeResourceTableProps> = ({ view, rows, loading, emptyLabel, canWrite, pvePowerPending, onPvePower }) => {
+const ComputeResourceTable: React.FC<ComputeResourceTableProps> = ({ view, rows, loading, emptyLabel }) => {
   const columns = columnLabels(view);
   return (
     <section className="overflow-auto rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -222,7 +247,7 @@ const ComputeResourceTable: React.FC<ComputeResourceTableProps> = ({ view, rows,
                   </>
                 )}
                 <TableCell className="text-right">
-                  <ComputeRowActions view={view} row={row} canWrite={canWrite} pvePowerPending={pvePowerPending} onPvePower={onPvePower} />
+                  <ComputeRowActions view={view} row={row} />
                 </TableCell>
               </TableRow>
             ))

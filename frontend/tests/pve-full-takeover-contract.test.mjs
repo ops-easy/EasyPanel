@@ -45,13 +45,26 @@ test("PVE console embeds a noVNC client instead of only exposing proxy URLs", ()
 
 test("PVE power operations match the PVE workspace confirmation flow and send confirm flag", () => {
   const guest = read("../src/features/compute/pve/pages/PveGuestDetail.tsx");
+  const workspace = read("../src/features/compute/pve/pages/PveWorkspace.tsx");
 
   assert.match(guest, /ConfirmActionButton/);
   assert.match(guest, /PVE_POWER_ACTIONS/);
+  assert.match(guest, /label: "开机"/);
+  assert.match(guest, /label: "正常关机"/);
+  assert.match(guest, /label: "正常重启"/);
+  assert.match(guest, /label: "强制关机"/);
+  assert.match(guest, /label: "强制重启"/);
+  assert.match(guest, /enabledStates: \["stopped"\]/);
+  assert.match(guest, /enabledStates: \["running"\]/);
+  assert.match(guest, /availablePowerActions/);
+  assert.match(guest, /pvePowerStateFromStatus/);
   assert.match(guest, /apiPostJson<PveTaskEnvelope>[\s\S]*withPveMutationConfirm\(\{ node, type: canonicalGuestType, action \}\)/);
   assert.match(guest, /title="确认执行 PVE 电源操作？"/);
   assert.match(guest, /disabled=\{operationPending\}/);
-  assert.match(guest, /powerMut\.mutate\(action\)/);
+  assert.match(guest, /powerMut\.mutate\(item\.action\)/);
+  assert.match(workspace, /电源和硬件等操作统一在详情页确认执行/);
+  assert.doesNotMatch(workspace, /\["start", "shutdown", "reboot", "stop"\]/);
+  assert.doesNotMatch(workspace, /onPower/);
   assert.doesNotMatch(guest, /powerConfirmName/);
   assert.doesNotMatch(guest, /powerConfirmed/);
   assert.doesNotMatch(guest, /powerMut\.mutate\(\{ action, confirm:/);

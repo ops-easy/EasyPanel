@@ -1,11 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Monitor, Power, SquareTerminal } from "lucide-react";
+import { ChevronRight, Monitor, SquareTerminal } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
-import type { ComputeRow, ComputeView, PvePowerActionRequest } from "./compute-resource-types";
-
-const PVE_POWER_ACTIONS = ["start", "shutdown", "reboot", "stop"];
+import type { ComputeRow, ComputeView } from "./compute-resource-types";
 
 function valueText(value: unknown, fallback = ""): string {
   if (value == null || value === "") return fallback;
@@ -60,27 +57,13 @@ function withDetailTab(path: string | null, tab: "console" | "ssh"): string | nu
   return `${path}${separator}${query}`;
 }
 
-function pvePowerRequest(row: ComputeRow, action: string): PvePowerActionRequest | null {
-  if (row.provider !== "pve") return null;
-  const targetId = valueText(row.targetId, "");
-  const vmid = rowId(row);
-  const node = valueText(row.node ?? sourceValue(row, "node"), "");
-  const type = valueText(row.guestType ?? sourceValue(row, "type"), "qemu");
-  if (!targetId || !vmid || !node || !type) return null;
-  return { targetId, vmid, node, type, action };
-}
-
 const ComputeRowActions: React.FC<{
   view: ComputeView;
   row: ComputeRow;
-  canWrite?: boolean;
-  pvePowerPending?: boolean;
-  onPvePower?: (body: PvePowerActionRequest) => void;
-}> = ({ view, row, canWrite = false, pvePowerPending = false, onPvePower }) => {
+}> = ({ view, row }) => {
   const detailTo = computeDetailPath(view, row);
   const consoleTo = view === "guests" && hasAction(row, "console") ? withDetailTab(detailTo, "console") : null;
   const sshTo = view === "guests" && hasAction(row, "ssh") ? withDetailTab(detailTo, "ssh") : null;
-  const showPvePower = view === "guests" && row.provider === "pve" && hasAction(row, "power") && onPvePower;
 
   return (
     <div className="flex justify-end gap-1">
@@ -99,34 +82,6 @@ const ComputeRowActions: React.FC<{
             SSH
           </Link>
         </Button>
-      ) : null}
-      {showPvePower ? (
-        <>
-          {PVE_POWER_ACTIONS.map((action) => {
-            const request = pvePowerRequest(row, action);
-            const targetLabel = request ? `${request.type} ${request.node}/${request.vmid}` : "当前 PVE Guest";
-            return (
-              <ConfirmActionButton
-                key={action}
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1 px-2"
-                disabled={!canWrite || pvePowerPending || !request}
-                title="确认执行 PVE 电源操作？"
-                description={`将对 ${targetLabel} 执行 ${action} 操作。`}
-                confirmLabel="执行"
-                onConfirm={() => {
-                  if (!request) return;
-                  const { targetId, vmid, node, type } = request;
-                  onPvePower({ targetId, vmid, node, type, action });
-                }}
-              >
-                <Power className="h-3.5 w-3.5" />
-                {action}
-              </ConfirmActionButton>
-            );
-          })}
-        </>
       ) : null}
       {detailTo ? (
         <Button variant="ghost" size="sm" className="h-8 gap-1 px-2" asChild>

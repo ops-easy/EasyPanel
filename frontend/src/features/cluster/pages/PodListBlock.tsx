@@ -472,7 +472,7 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
             </span>
           </div>
           <div className="overflow-x-auto">
-            <Table>
+            <Table className="min-w-[1320px]">
               <TableHeader>
                 <TableRow className="border-slate-100 hover:bg-transparent">
                   <TableHead className="min-w-[200px] pl-5 text-xs font-semibold text-slate-500">
@@ -490,7 +490,7 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                   <TableHead className="min-w-[108px] text-xs font-semibold text-slate-500" title="Prometheus 用量 ÷ requests">
                     对齐
                   </TableHead>
-                  <TableHead className="min-w-[272px] pr-5 text-right text-xs font-semibold text-slate-500">
+                  <TableHead className="sticky right-0 z-20 w-[244px] min-w-[244px] bg-white/95 pr-5 text-right text-xs font-semibold text-slate-500 shadow-[-10px_0_16px_-14px_rgba(15,23,42,0.45)]">
                     操作
                   </TableHead>
                 </TableRow>
@@ -552,8 +552,8 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                     <TableCell className="align-middle font-mono text-[11px] tabular-nums leading-snug text-slate-600">
                       {alignLine}
                     </TableCell>
-                    <TableCell className="pr-5 text-right align-middle">
-                      <div className="flex flex-nowrap items-center justify-end gap-1">
+                    <TableCell className="sticky right-0 z-10 w-[244px] min-w-[244px] bg-inherit pr-5 text-right align-middle shadow-[-10px_0_16px_-14px_rgba(15,23,42,0.45)]">
+                      <div className="flex w-full flex-nowrap items-center justify-end gap-1">
                         <Button variant="outline" size="sm" className="h-8 shrink-0 gap-1 whitespace-nowrap border-slate-200 text-xs" asChild>
                           <Link to={podDetailHref(p.namespace, p.name)}>详情</Link>
                         </Button>

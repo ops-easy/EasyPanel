@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, Cpu, Database, HardDrive, Loader2, PlugZap, Power, RefreshCw, Server, ShieldCheck, Trash2 } from "lucide-react";
+import { Activity, ChevronRight, Cpu, Database, HardDrive, Loader2, PlugZap, RefreshCw, Server, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -55,7 +55,7 @@ const pageMeta: Record<PveView, { title: string; desc: string; icon: typeof Serv
   },
   guests: {
     title: "PVE 虚拟机 / CT",
-    desc: "按 PVE 资源接口列出虚拟机与容器，并保留已有基础电源操作。",
+    desc: "按 PVE 资源接口列出虚拟机与容器，电源和硬件等操作统一在详情页确认执行。",
     icon: Cpu,
   },
   storage: {
@@ -133,7 +133,19 @@ function fmtUpdatedAt(v: unknown): string {
 function StatusBadge({ value }: { value: unknown }) {
   const s = String(value ?? "").toLowerCase();
   const ok = s === "online" || s === "running" || s === "ok" || s === "success" || s === "available";
-  return <Badge variant={ok ? "default" : "outline"}>{text(value)}</Badge>;
+  return <Badge variant={ok ? "default" : "outline"}>{statusLabel(value)}</Badge>;
+}
+
+function statusLabel(value: unknown): string {
+  const s = String(value ?? "").trim().toLowerCase();
+  if (!s) return "未知";
+  if (s === "running" || s === "poweredon") return "运行中";
+  if (s === "stopped" || s === "poweredoff") return "已停止";
+  if (s === "online" || s === "connected") return "在线";
+  if (s === "available") return "可用";
+  if (s === "ok" || s === "success") return "正常";
+  if (s === "failed" || s === "error") return "异常";
+  return text(value);
 }
 
 function LoadingCell({ colSpan, label = "加载中..." }: { colSpan: number; label?: string }) {
@@ -268,18 +280,6 @@ function PveWorkspace({ view }: { view: PveView }) {
     onError: (e) => toast.error(String(e)),
   });
 
-  const powerMut = useMutation({
-    mutationFn: (body: { vmid: string; node: string; type: string; action: string }) =>
-      apiPostJson(`/api/pve/targets/${encodeURIComponent(activeId)}/guests/${encodeURIComponent(body.vmid)}/power`, withPveMutationConfirm(body)),
-    onSuccess: () => {
-      toast.success("PVE 电源任务已提交");
-      void qc.invalidateQueries({ queryKey: ["pve-summary", activeId] });
-      void qc.invalidateQueries({ queryKey: ["pve-guests", activeId] });
-      void qc.invalidateQueries({ queryKey: ["pve-tasks", activeId] });
-    },
-    onError: (e) => toast.error(String(e)),
-  });
-
   const refresh = () => {
     if (view === "nodes") void nodesQ.refetch();
     else if (view === "guests") void guestsQ.refetch();
@@ -362,10 +362,7 @@ function PveWorkspace({ view }: { view: PveView }) {
               <PveGuestsPanel
                 rows={guests}
                 loading={guestsQ.isLoading}
-                canWrite={canWrite}
                 activeId={activeId}
-                powerPending={powerMut.isPending}
-                onPower={(body) => powerMut.mutate(body)}
               />
             ) : null}
             {view === "storage" ? <PveStoragePanel rows={storage} loading={storageQ.isLoading} /> : null}
@@ -618,17 +615,11 @@ function PveNodesPanel({ rows, loading, activeId }: { rows: PveRecord[]; loading
 function PveGuestsPanel({
   rows,
   loading,
-  canWrite,
   activeId,
-  powerPending,
-  onPower,
 }: {
   rows: PVEGuest[];
   loading: boolean;
-  canWrite: boolean;
   activeId: string;
-  powerPending: boolean;
-  onPower: (body: { vmid: string; node: string; type: string; action: string }) => void;
 }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -676,24 +667,16 @@ function PveGuestsPanel({
                       <TableCell className="font-mono text-xs">{fmtBytes(g.mem)} / {fmtBytes(g.maxmem)}</TableCell>
                       <TableCell className="font-mono text-xs">{fmtBytes(g.disk)} / {fmtBytes(g.maxdisk)}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {["start", "shutdown", "reboot", "stop"].map((action) => (
-                            <ConfirmActionButton
-                              key={action}
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 gap-1 px-2"
-                              disabled={!canWrite || !activeId || !vmid || !node || powerPending}
-                              title="确认执行 PVE 电源操作？"
-                              description={`将对 ${type} ${node}/${vmid} 执行 ${action} 操作。`}
-                              confirmLabel="执行"
-                              onConfirm={() => onPower({ vmid, node, type, action })}
-                            >
-                              <Power className="h-3.5 w-3.5" />
-                              {action}
-                            </ConfirmActionButton>
-                          ))}
-                        </div>
+                        {activeId && vmid && node ? (
+                          <Button variant="ghost" size="sm" className="h-8 gap-1 px-2" asChild>
+                            <Link to={`/cluster/compute/pve/guests/${encodeURIComponent(activeId)}/${encodeURIComponent(node)}/${encodeURIComponent(type)}/${encodeURIComponent(vmid)}`}>
+                              详情
+                              <ChevronRight className="h-3.5 w-3.5 opacity-70" />
+                            </Link>
+                          </Button>
+                        ) : (
+                          <span className="px-2 text-xs text-slate-400">-</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
