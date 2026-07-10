@@ -3535,7 +3535,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/nodes",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterNodes.tsx",
-      "sourceLine": 312,
+      "sourceLine": 314,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3815,7 +3815,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/pods",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterNodes.tsx",
-      "sourceLine": 192,
+      "sourceLine": 194,
       "needsManualReview": true,
       "kind": "http"
     },
