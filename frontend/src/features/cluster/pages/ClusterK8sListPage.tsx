@@ -47,6 +47,7 @@ import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { toast } from "sonner";
 import { parseAge } from "./parseAge";
 import { cn } from "@/lib/utils";
+import { ClusterRowActionsMenu } from "@/features/cluster/components/ClusterRowActionsMenu";
 import { K8sObjectRevisionTriggerButton } from "@/features/cluster/components/K8sObjectRevisionDialog";
 import { K8sGraphicEditDialogLazy } from "./k8s/K8sGraphicEditDialogLazy";
 import type { K8sGraphicKind } from "./k8s/K8sGraphicEditDialog.types";
@@ -384,7 +385,7 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
                   )}
                   {canCrud && (
                     <TableHead
-                      className={`pl-2 pr-4 text-left text-xs font-semibold text-slate-500 ${showPvcExpand ? "w-[220px]" : "w-[180px]"}`}
+                      className="w-[132px] pl-2 pr-4 text-left text-xs font-semibold text-slate-500"
                     >
                       操作
                     </TableHead>
@@ -543,66 +544,43 @@ export const ClusterK8sListPage: React.FC<ClusterK8sListPageProps> = ({
                       )}
                       {canCrud && (
                         <TableCell className="pl-2 pr-4 text-left align-middle">
-                          <div className="flex flex-nowrap justify-start gap-1">
-                            {canGraphic && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 shrink-0 px-2"
-                                title="图形编辑"
-                                aria-label="图形编辑"
-                                onClick={() => {
-                                  setGraphicName(name);
-                                  setGraphicOpen(true);
-                                }}
-                              >
-                                <LayoutGrid className="h-3.5 w-3.5" />
-                                <span className="sr-only">图形</span>
-                              </Button>
-                            )}
-                            {showPvcExpand && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 shrink-0 px-2 text-violet-700 hover:text-violet-800"
-                                title="扩容 PVC（须 StorageClass 允许扩容）"
-                                aria-label="扩容 PVC"
-                                onClick={() => {
-                                  const cap = String(row.capacity ?? "").trim();
-                                  setExpandTarget({ name, capacity: cap });
-                                  setExpandSizeDraft(cap && cap !== "—" ? cap : "");
-                                }}
-                              >
-                                <Maximize2 className="h-3.5 w-3.5" />
-                                <span className="sr-only">扩容</span>
-                              </Button>
-                            )}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 shrink-0 px-2"
-                              title="编辑 YAML"
-                              aria-label="编辑 YAML"
-                              onClick={() => void openEditYaml(name)}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              <span className="sr-only">YAML</span>
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 shrink-0 px-2 text-red-600 hover:text-red-700"
-                              title="删除资源"
-                              aria-label="删除资源"
-                              onClick={() => setDelTarget({ name })}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              <span className="sr-only">删除</span>
-                            </Button>
+                          <div className="flex flex-nowrap justify-start">
+                            <ClusterRowActionsMenu
+                              actions={[
+                                canGraphic && {
+                                  key: "graphic-edit",
+                                  label: "图形编辑",
+                                  icon: <LayoutGrid className="h-3.5 w-3.5" />,
+                                  onSelect: () => {
+                                    setGraphicName(name);
+                                    setGraphicOpen(true);
+                                  },
+                                },
+                                showPvcExpand && {
+                                  key: "expand-pvc",
+                                  label: "扩容 PVC",
+                                  icon: <Maximize2 className="h-3.5 w-3.5" />,
+                                  onSelect: () => {
+                                    const cap = String(row.capacity ?? "").trim();
+                                    setExpandTarget({ name, capacity: cap });
+                                    setExpandSizeDraft(cap && cap !== "—" ? cap : "");
+                                  },
+                                },
+                                {
+                                  key: "edit-yaml",
+                                  label: "编辑 YAML",
+                                  icon: <Pencil className="h-3.5 w-3.5" />,
+                                  onSelect: () => void openEditYaml(name),
+                                },
+                                {
+                                  key: "delete",
+                                  label: "删除资源",
+                                  icon: <Trash2 className="h-3.5 w-3.5" />,
+                                  variant: "destructive",
+                                  onSelect: () => setDelTarget({ name }),
+                                },
+                              ]}
+                            />
                           </div>
                         </TableCell>
                       )}

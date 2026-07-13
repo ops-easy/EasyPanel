@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { formatCpuCores, formatMemBytes } from "@/lib/k8s-metrics-format";
 import { withK8sMutationConfirm, withK8sMutationConfirmQuery } from "@/features/cluster/lib/k8sMutationConfirm";
 import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
+import { ClusterRowActionsMenu } from "@/features/cluster/components/ClusterRowActionsMenu";
 
 function podMetricKey(p: PodRow): string {
   return `${p.namespace}/${p.name}`;
@@ -189,24 +190,23 @@ function PodCard({
             <FileText className="h-3.5 w-3.5" />
             日志
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 px-2"
-            onClick={onEditYaml}
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-red-600 hover:text-red-700"
-            onClick={onDelete}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          <ClusterRowActionsMenu
+            actions={[
+              {
+                key: "edit-yaml",
+                label: "编辑 YAML",
+                icon: <Pencil className="h-3.5 w-3.5" />,
+                onSelect: onEditYaml,
+              },
+              {
+                key: "delete",
+                label: "删除 Pod",
+                icon: <Trash2 className="h-3.5 w-3.5" />,
+                variant: "destructive",
+                onSelect: onDelete,
+              },
+            ]}
+          />
         </div>
       </CardFooter>
     </Card>
@@ -599,28 +599,23 @@ export const PodListBlock: React.FC<PodListBlockProps> = ({
                           <FileText className="h-3.5 w-3.5" />
                           日志
                         </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 shrink-0 px-0 text-slate-600"
-                          title="编辑 YAML"
-                          aria-label="编辑 YAML"
-                          onClick={() => void openEditYaml(podNs(p), p.name)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 shrink-0 px-0 text-red-600 hover:text-red-700"
-                          title="删除 Pod"
-                          aria-label="删除 Pod"
-                          onClick={() => setDelTarget({ namespace: podNs(p), name: p.name })}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <ClusterRowActionsMenu
+                          actions={[
+                            {
+                              key: "edit-yaml",
+                              label: "编辑 YAML",
+                              icon: <Pencil className="h-3.5 w-3.5" />,
+                              onSelect: () => void openEditYaml(podNs(p), p.name),
+                            },
+                            {
+                              key: "delete",
+                              label: "删除 Pod",
+                              icon: <Trash2 className="h-3.5 w-3.5" />,
+                              variant: "destructive",
+                              onSelect: () => setDelTarget({ namespace: podNs(p), name: p.name }),
+                            },
+                          ]}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>

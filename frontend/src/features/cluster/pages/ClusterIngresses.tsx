@@ -34,6 +34,7 @@ import {
 } from "@/shared/ui/dialog";
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { ClusterRowActionsMenu } from "@/features/cluster/components/ClusterRowActionsMenu";
 import { withK8sMutationConfirm, withK8sMutationConfirmQuery } from "@/features/cluster/lib/k8sMutationConfirm";
 import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
 
@@ -161,7 +162,7 @@ const ClusterIngresses: React.FC = () => {
                   <TableHead className="text-xs font-semibold text-slate-500">Hosts</TableHead>
                   <TableHead className="min-w-[200px] text-xs font-semibold text-slate-500">后端 Service</TableHead>
                   <TableHead className="text-xs font-semibold text-slate-500">Class</TableHead>
-                  <TableHead className="min-w-[128px] pl-2 pr-5 text-left text-xs font-semibold text-slate-500">操作</TableHead>
+                  <TableHead className="w-[132px] pl-2 pr-5 text-left text-xs font-semibold text-slate-500">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -214,29 +215,24 @@ const ClusterIngresses: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-xs text-slate-600">{row.class || "—"}</TableCell>
                     <TableCell className="pl-2 pr-5 text-left align-middle">
-                      <div className="flex flex-nowrap justify-start gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 shrink-0 px-2"
-                          title="编辑 Ingress YAML"
-                          aria-label="编辑 Ingress YAML"
-                          onClick={() => void openEditYaml(row.name)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 shrink-0 px-2 text-red-600"
-                          title="删除 Ingress"
-                          aria-label="删除 Ingress"
-                          onClick={() => setDelName(row.name)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                      <div className="flex flex-nowrap justify-start">
+                        <ClusterRowActionsMenu
+                          actions={[
+                            {
+                              key: "edit-yaml",
+                              label: "编辑 YAML",
+                              icon: <Pencil className="h-3.5 w-3.5" />,
+                              onSelect: () => void openEditYaml(row.name),
+                            },
+                            {
+                              key: "delete",
+                              label: "删除 Ingress",
+                              icon: <Trash2 className="h-3.5 w-3.5" />,
+                              variant: "destructive",
+                              onSelect: () => setDelName(row.name),
+                            },
+                          ]}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>

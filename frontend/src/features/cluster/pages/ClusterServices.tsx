@@ -30,6 +30,7 @@ import {
 } from "@/shared/ui/dialog";
 import { apiDelete, apiGetJson, apiPostJson } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { ClusterRowActionsMenu } from "@/features/cluster/components/ClusterRowActionsMenu";
 import type { SvcRow } from "./types";
 import { K8sGraphicEditDialogLazy } from "./k8s/K8sGraphicEditDialogLazy";
 import { normalizePortEntries, servicePortsPreview } from "./servicePortsDisplay";
@@ -170,7 +171,7 @@ const ClusterServices: React.FC = () => {
                   <TableHead className="w-[220px] max-w-[240px] text-xs font-semibold text-slate-500">
                     端口 / NodePort
                   </TableHead>
-                  <TableHead className="min-w-[220px] pl-2 pr-5 text-left text-xs font-semibold text-slate-500">
+                  <TableHead className="w-[132px] pl-2 pr-5 text-left text-xs font-semibold text-slate-500">
                     操作
                   </TableHead>
                 </TableRow>
@@ -219,45 +220,34 @@ const ClusterServices: React.FC = () => {
                       ) : null}
                     </TableCell>
                     <TableCell className="pl-2 pr-5 text-left align-middle">
-                      <div className="flex flex-nowrap justify-start gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 shrink-0 px-2"
-                          title="图形编辑：切换 ClusterIP / NodePort 等"
-                          aria-label="图形编辑 Service"
-                          onClick={() => {
-                            setGraphicSvcMode("edit");
-                            setGraphicName(s.name);
-                            setGraphicOpen(true);
-                          }}
-                        >
-                          <LayoutGrid className="h-3.5 w-3.5" />
-                          <span className="sr-only">图形</span>
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 shrink-0 px-2"
-                          title="编辑 YAML"
-                          aria-label="编辑 Service YAML"
-                          onClick={() => void openEditYaml(s.name)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 shrink-0 px-2 text-red-600"
-                          title="删除 Service"
-                          aria-label="删除 Service"
-                          onClick={() => setDelName(s.name)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                      <div className="flex flex-nowrap justify-start">
+                        <ClusterRowActionsMenu
+                          actions={[
+                            {
+                              key: "graphic-edit",
+                              label: "图形编辑",
+                              icon: <LayoutGrid className="h-3.5 w-3.5" />,
+                              onSelect: () => {
+                                setGraphicSvcMode("edit");
+                                setGraphicName(s.name);
+                                setGraphicOpen(true);
+                              },
+                            },
+                            {
+                              key: "edit-yaml",
+                              label: "编辑 YAML",
+                              icon: <Pencil className="h-3.5 w-3.5" />,
+                              onSelect: () => void openEditYaml(s.name),
+                            },
+                            {
+                              key: "delete",
+                              label: "删除 Service",
+                              icon: <Trash2 className="h-3.5 w-3.5" />,
+                              variant: "destructive",
+                              onSelect: () => setDelName(s.name),
+                            },
+                          ]}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>

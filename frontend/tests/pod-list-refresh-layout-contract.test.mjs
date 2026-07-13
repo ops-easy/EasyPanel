@@ -134,6 +134,21 @@ test("pod table row actions stay fully visible in horizontal overflow", () => {
   );
   assert.match(
     source,
+    /ClusterRowActionsMenu/,
+    "Pod secondary actions should use the shared collapsed row action menu"
+  );
+  assert.match(
+    source,
+    /label:\s*"编辑 YAML"[\s\S]*label:\s*"删除 Pod"[\s\S]*variant:\s*"destructive"/,
+    "Edit YAML and delete should be folded behind the row's More menu"
+  );
+  assert.doesNotMatch(
+    source,
+    /title="编辑 YAML"[\s\S]{0,260}<Pencil className="h-3\.5 w-3\.5" \/>[\s\S]{0,260}<\/Button>[\s\S]{0,260}<Button[\s\S]{0,260}title="删除 Pod"/,
+    "The Pod table should not expose edit and delete as separate inline icon buttons"
+  );
+  assert.match(
+    source,
     /title="查看 Pod 详情"[\s\S]*aria-label="查看 Pod 详情"/,
     "The detail action needs an explicit title and accessible name"
   );

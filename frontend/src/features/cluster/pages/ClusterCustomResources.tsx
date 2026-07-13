@@ -36,6 +36,7 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { ClusterRowActionsMenu } from "@/features/cluster/components/ClusterRowActionsMenu";
 
 /** 与后端 internal/k8s_crd_handlers.go 中 crClusterNamespaceToken 一致 */
 export const CLUSTER_CR_NAMESPACE_CLUSTER = "__cluster__";
@@ -156,7 +157,7 @@ export function ClusterCustomResourceCrdList() {
                 <TableHead>Scope</TableHead>
                 <TableHead>版本</TableHead>
                 <TableHead>创建时间</TableHead>
-                <TableHead className="w-[120px] text-left">操作</TableHead>
+                <TableHead className="w-[112px] text-left">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -182,20 +183,17 @@ export function ClusterCustomResourceCrdList() {
                   </TableCell>
                   <TableCell className="text-left">
                     {isAdmin && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700"
-                        title="删除 CRD"
-                        aria-label="删除 CRD"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setDelName(row.name);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <ClusterRowActionsMenu
+                        actions={[
+                          {
+                            key: "delete-crd",
+                            label: "删除 CRD",
+                            icon: <Trash2 className="h-3.5 w-3.5" />,
+                            variant: "destructive",
+                            onSelect: () => setDelName(row.name),
+                          },
+                        ]}
+                      />
                     )}
                   </TableCell>
                 </TableRow>

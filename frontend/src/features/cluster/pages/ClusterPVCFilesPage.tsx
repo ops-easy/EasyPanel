@@ -60,6 +60,7 @@ import { ApiHttpError, apiGetJson, apiPostJson, apiPostNoBody, apiPutRaw } from 
 import { withK8sMutationConfirm, withK8sMutationConfirmQuery } from "@/features/cluster/lib/k8sMutationConfirm";
 import { k8sPodExecAllowed } from "@/lib/platform-permissions";
 import { ConfirmActionButton } from "@/shared/ui/confirm-action-button";
+import { ClusterRowActionsMenu } from "@/features/cluster/components/ClusterRowActionsMenu";
 
 type Mount = { pod: string; container: string; mountPath: string };
 type ListEntry = { name: string; type: string; size: number };
@@ -463,7 +464,7 @@ const ClusterPVCFilesPage: React.FC = () => {
                     <TableHead>名称</TableHead>
                     <TableHead>类型</TableHead>
                     <TableHead className="text-right">大小</TableHead>
-                    <TableHead className="w-[220px] text-left">操作</TableHead>
+                    <TableHead className="w-[180px] text-left">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -526,38 +527,30 @@ const ClusterPVCFilesPage: React.FC = () => {
                                 </Button>
                               </>
                             )}
-                            {canWriteK8s && row.type !== "dir" && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 px-2"
-                                title="重命名文件"
-                                aria-label="重命名文件"
-                                onClick={() => {
-                                  setRenameFrom(row.name);
-                                  setRenameTo(row.name);
-                                  setRenameOpen(true);
-                                }}
-                              >
-                                改名
-                              </Button>
-                            )}
                             {canWriteK8s && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 px-2 text-red-600"
-                                title="删除文件或目录"
-                                aria-label="删除文件或目录"
-                                onClick={() => {
-                                  setDeleteName(row.name);
-                                  setDeleteOpen(true);
-                                }}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
+                              <ClusterRowActionsMenu
+                                actions={[
+                                  row.type !== "dir" && {
+                                    key: "rename",
+                                    label: "重命名",
+                                    onSelect: () => {
+                                      setRenameFrom(row.name);
+                                      setRenameTo(row.name);
+                                      setRenameOpen(true);
+                                    },
+                                  },
+                                  {
+                                    key: "delete",
+                                    label: "删除文件或目录",
+                                    icon: <Trash2 className="h-3.5 w-3.5" />,
+                                    variant: "destructive",
+                                    onSelect: () => {
+                                      setDeleteName(row.name);
+                                      setDeleteOpen(true);
+                                    },
+                                  },
+                                ]}
+                              />
                             )}
                           </div>
                         </TableCell>

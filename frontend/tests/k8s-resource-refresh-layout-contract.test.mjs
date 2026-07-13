@@ -130,35 +130,41 @@ test("Kubernetes resource table actions use stable horizontal layouts", () => {
   const generic = read("features/cluster/pages/ClusterK8sListPage.tsx");
   assert.match(
     generic,
-    /className=\{`pl-2 pr-4 text-left text-xs font-semibold text-slate-500 \$\{showPvcExpand \? "w-\[220px\]" : "w-\[180px\]"\}`\}/,
+    /className="w-\[132px\] pl-2 pr-4 text-left text-xs font-semibold text-slate-500"/,
     "Generic Kubernetes resource action headers should be left-aligned with the rest of the table"
   );
   assert.match(generic, /<TableCell className="pl-2 pr-4 text-left align-middle">/);
-  assert.match(generic, /className="flex flex-nowrap justify-start gap-1"/);
+  assert.match(generic, /ClusterRowActionsMenu/);
+  assert.match(generic, /label:\s*"图形编辑"[\s\S]*label:\s*"扩容 PVC"[\s\S]*label:\s*"编辑 YAML"[\s\S]*label:\s*"删除资源"[\s\S]*variant:\s*"destructive"/);
+  assert.match(generic, /className="flex flex-nowrap justify-start"/);
   assert.doesNotMatch(generic, /className="flex flex-nowrap justify-end gap-1"/);
-  assert.match(generic, /showPvcExpand \? "w-\[220px\]" : "w-\[180px\]"/);
-  assert.match(generic, /title="编辑 YAML"[\s\S]*aria-label="编辑 YAML"/);
-  assert.match(generic, /title="删除资源"[\s\S]*aria-label="删除资源"/);
+  assert.doesNotMatch(generic, /showPvcExpand \? "w-\[220px\]" : "w-\[180px\]"/);
+  assert.doesNotMatch(generic, /title="编辑 YAML"[\s\S]{0,260}<Pencil/);
+  assert.doesNotMatch(generic, /title="删除资源"[\s\S]{0,260}<Trash2/);
 
   const services = read("features/cluster/pages/ClusterServices.tsx");
-  assert.match(services, /min-w-\[220px\] pl-2 pr-5 text-left[\s\S]*操作/);
+  assert.match(services, /w-\[132px\] pl-2 pr-5 text-left[\s\S]*操作/);
   assert.match(services, /<TableCell className="pl-2 pr-5 text-left align-middle">/);
-  assert.match(services, /className="flex flex-nowrap justify-start gap-1"/);
-  assert.match(services, /title="删除 Service"[\s\S]*aria-label="删除 Service"/);
+  assert.match(services, /ClusterRowActionsMenu/);
+  assert.match(services, /label:\s*"图形编辑"[\s\S]*label:\s*"编辑 YAML"[\s\S]*label:\s*"删除 Service"[\s\S]*variant:\s*"destructive"/);
+  assert.doesNotMatch(services, /title="删除 Service"[\s\S]{0,260}<Trash2/);
 
   const ingresses = read("features/cluster/pages/ClusterIngresses.tsx");
-  assert.match(ingresses, /min-w-\[128px\] pl-2 pr-5 text-left[\s\S]*操作/);
+  assert.match(ingresses, /w-\[132px\] pl-2 pr-5 text-left[\s\S]*操作/);
   assert.match(ingresses, /<TableCell className="pl-2 pr-5 text-left align-middle">/);
-  assert.match(ingresses, /className="flex flex-nowrap justify-start gap-1"/);
-  assert.match(ingresses, /title="编辑 Ingress YAML"[\s\S]*aria-label="编辑 Ingress YAML"/);
-  assert.match(ingresses, /title="删除 Ingress"[\s\S]*aria-label="删除 Ingress"/);
+  assert.match(ingresses, /ClusterRowActionsMenu/);
+  assert.match(ingresses, /label:\s*"编辑 YAML"[\s\S]*label:\s*"删除 Ingress"[\s\S]*variant:\s*"destructive"/);
+  assert.doesNotMatch(ingresses, /title="编辑 Ingress YAML"[\s\S]{0,260}<Pencil/);
+  assert.doesNotMatch(ingresses, /title="删除 Ingress"[\s\S]{0,260}<Trash2/);
 });
 
 test("secondary Kubernetes operation tables follow the same action-column rhythm", () => {
   const customResources = read("features/cluster/pages/ClusterCustomResources.tsx");
-  assert.match(customResources, /<TableHead className="w-\[120px\] text-left">操作<\/TableHead>/);
+  assert.match(customResources, /<TableHead className="w-\[112px\] text-left">操作<\/TableHead>/);
   assert.match(customResources, /<TableCell className="text-left">/);
-  assert.match(customResources, /title="删除 CRD"[\s\S]*aria-label="删除 CRD"/);
+  assert.match(customResources, /ClusterRowActionsMenu/);
+  assert.match(customResources, /label:\s*"删除 CRD"[\s\S]*variant:\s*"destructive"/);
+  assert.doesNotMatch(customResources, /title="删除 CRD"[\s\S]{0,260}<Trash2/);
 
   const nodes = read("features/cluster/pages/ClusterNodes.tsx");
   assert.doesNotMatch(nodes, /<TableHead className="[^"]*text-right[^"]*">操作<\/TableHead>/);
@@ -174,9 +180,11 @@ test("secondary Kubernetes operation tables follow the same action-column rhythm
   assert.match(overview, /<TableCell className="pr-4 text-left">/);
 
   const pvcFiles = read("features/cluster/pages/ClusterPVCFilesPage.tsx");
-  assert.match(pvcFiles, /<TableHead className="w-\[220px\] text-left">操作<\/TableHead>/);
+  assert.match(pvcFiles, /<TableHead className="w-\[180px\] text-left">操作<\/TableHead>/);
   assert.match(pvcFiles, /<TableCell className="text-left">/);
+  assert.match(pvcFiles, /ClusterRowActionsMenu/);
   assert.match(pvcFiles, /className="flex justify-start gap-1"/);
   assert.match(pvcFiles, /title="下载文件"[\s\S]*aria-label="下载文件"/);
-  assert.match(pvcFiles, /title="删除文件或目录"[\s\S]*aria-label="删除文件或目录"/);
+  assert.match(pvcFiles, /label:\s*"重命名"[\s\S]*label:\s*"删除文件或目录"[\s\S]*variant:\s*"destructive"/);
+  assert.doesNotMatch(pvcFiles, /title="删除文件或目录"[\s\S]{0,260}<Trash2/);
 });

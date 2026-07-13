@@ -3199,7 +3199,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/:param",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sListPage.tsx",
-      "sourceLine": 160,
+      "sourceLine": 161,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3367,7 +3367,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterIngresses.tsx",
-      "sourceLine": 76,
+      "sourceLine": 77,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3375,7 +3375,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sListPage.tsx",
-      "sourceLine": 200,
+      "sourceLine": 201,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3399,7 +3399,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/apply-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterServices.tsx",
-      "sourceLine": 66,
+      "sourceLine": 67,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3439,7 +3439,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/crds",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterCustomResources.tsx",
-      "sourceLine": 113,
+      "sourceLine": 114,
       "needsManualReview": false,
       "kind": "http"
     },
@@ -3447,7 +3447,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/k8s/crds/:param",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterCustomResources.tsx",
-      "sourceLine": 87,
+      "sourceLine": 88,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -3455,7 +3455,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/k8s/crds/:param/instances:param",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterCustomResources.tsx",
-      "sourceLine": 92,
+      "sourceLine": 93,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -3463,7 +3463,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/k8s/crds/:param/instances/:param/:param",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterCustomResources.tsx",
-      "sourceLine": 96,
+      "sourceLine": 97,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -3511,7 +3511,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/ingresses",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterIngresses.tsx",
-      "sourceLine": 69,
+      "sourceLine": 70,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3631,7 +3631,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterIngresses.tsx",
-      "sourceLine": 112,
+      "sourceLine": 113,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3639,7 +3639,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sListPage.tsx",
-      "sourceLine": 265,
+      "sourceLine": 266,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3679,7 +3679,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/object-yaml",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterServices.tsx",
-      "sourceLine": 100,
+      "sourceLine": 101,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3719,7 +3719,7 @@
       "method": "DELETE",
       "pathPattern": "/api/k8s/objects/:param/:param/:param",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sListPage.tsx",
-      "sourceLine": 225,
+      "sourceLine": 226,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3727,7 +3727,7 @@
       "method": "DELETE",
       "pathPattern": "/api/k8s/objects/ingress/:param/:param",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterIngresses.tsx",
-      "sourceLine": 89,
+      "sourceLine": 90,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3743,7 +3743,7 @@
       "method": "DELETE",
       "pathPattern": "/api/k8s/objects/service/:param/:param",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterServices.tsx",
-      "sourceLine": 78,
+      "sourceLine": 79,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3919,7 +3919,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/k8s/pvc-files/:param/:param/delete",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
-      "sourceLine": 177,
+      "sourceLine": 178,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -3927,7 +3927,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/pvc-files/:param/:param/list",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
-      "sourceLine": 152,
+      "sourceLine": 153,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3935,7 +3935,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/k8s/pvc-files/:param/:param/mkdir",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
-      "sourceLine": 185,
+      "sourceLine": 186,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -3943,7 +3943,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/pvc-files/:param/:param/mounts",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
-      "sourceLine": 126,
+      "sourceLine": 127,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -3951,7 +3951,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/k8s/pvc-files/:param/:param/read",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
-      "sourceLine": 162,
+      "sourceLine": 163,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -3959,7 +3959,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/k8s/pvc-files/:param/:param/rename",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
-      "sourceLine": 193,
+      "sourceLine": 194,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -3967,7 +3967,7 @@
       "method": "UNKNOWN",
       "pathPattern": "/api/k8s/pvc-files/:param/:param/write",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterPVCFilesPage.tsx",
-      "sourceLine": 169,
+      "sourceLine": 170,
       "needsManualReview": true,
       "kind": "literal"
     },
@@ -3975,7 +3975,7 @@
       "method": "POST",
       "pathPattern": "/api/k8s/pvcs/:param/:param/expand",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterK8sListPage.tsx",
-      "sourceLine": 238,
+      "sourceLine": 239,
       "needsManualReview": true,
       "kind": "http"
     },
@@ -4031,7 +4031,7 @@
       "method": "GET",
       "pathPattern": "/api/k8s/services",
       "sourceFile": "frontend/src/features/cluster/pages/ClusterServices.tsx",
-      "sourceLine": 58,
+      "sourceLine": 59,
       "needsManualReview": true,
       "kind": "http"
     },
